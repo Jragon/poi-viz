@@ -4,6 +4,7 @@ import type {
   FlowerMode,
   FlowerPetalCount,
   HandsState,
+  PresetId,
   PresetDefinition
 } from "@/types/state";
 import { PETAL_COUNTS, SAME_TIME_PHASE_OFFSET, SPLIT_TIME_PHASE_OFFSET } from "@/state/constants";
@@ -135,3 +136,10 @@ export const PRESET_CATALOG: PresetDefinition[] = [
   ...FLOWER_PRESETS.map(createFlowerPresetDefinition)
 ];
 
+export function applyPresetById(state: AppState, id: PresetId): AppState {
+  const preset = PRESET_CATALOG.find((entry) => entry.id === id);
+  if (!preset) {
+    return cloneState(state);
+  }
+  return preset.apply(state);
+}

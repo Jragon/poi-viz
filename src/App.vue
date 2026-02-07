@@ -1,9 +1,22 @@
 <script setup lang="ts">
+import Controls from "@/components/Controls.vue";
 import PatternCanvas from "@/components/PatternCanvas.vue";
 import WaveCanvas from "@/components/WaveCanvas.vue";
 import { secondsToBeats } from "@/engine/math";
 import { normalizeLoopBeat } from "@/render/math";
+import {
+  applyPreset,
+  setGlobalBoolean,
+  setGlobalNumber,
+  setHandNumber,
+  setScrubBeat,
+  togglePlayback,
+  type GlobalBooleanKey,
+  type GlobalNumberKey,
+  type HandNumberKey
+} from "@/state/actions";
 import { createDefaultState } from "@/state/defaults";
+import type { AppState, HandId, PresetId } from "@/types/state";
 import { computed, onBeforeUnmount, onMounted, reactive } from "vue";
 
 const state = reactive(createDefaultState());
@@ -16,8 +29,11 @@ let lastFrameTimeMs = 0;
 
 const loopedPlayheadBeats = computed(() => normalizeLoopBeat(state.global.t, state.global.loopBeats));
 const scrubStep = computed(() => Math.max(state.global.loopBeats / SCRUB_DIVISIONS, MIN_SCRUB_STEP));
-const bpmLabel = computed(() => `${state.global.bpm.toFixed(0)} BPM`);
-const loopLabel = computed(() => `${state.global.loopBeats.toFixed(2)} beats`);
+
+function commitState(nextState: AppState): void {
+  state.global = nextState.global;
+  state.hands = nextState.hands;
+}
 
 function advancePlayhead(frameDeltaSeconds: number): void {
   if (!state.global.isPlaying) {
@@ -40,25 +56,28 @@ function animationLoop(frameTimeMs: number): void {
   animationFrameId = requestAnimationFrame(animationLoop);
 }
 
-function togglePlayback(): void {
-  state.global.isPlaying = !state.global.isPlaying;
+function handleTogglePlayback(): void {
+  commitState(togglePlayback(state));
 }
 
-function handleScrub(nextValue: string): void {
-  const parsed = Number.parseFloat(nextValue);
-  if (!Number.isFinite(parsed)) {
-    return;
-  }
-  state.global.t = normalizeLoopBeat(parsed, state.global.loopBeats);
-  state.global.isPlaying = false;
+function handleSetScrub(beatValue: number): void {
+  commitState(setScrubBeat(state, beatValue));
 }
 
-function onScrubInput(event: Event): void {
-  const target = event.target;
-  if (!(target instanceof HTMLInputElement)) {
-    return;
-  }
-  handleScrub(target.value);
+function handleSetGlobalNumber(key: GlobalNumberKey, value: number): void {
+  commitState(setGlobalNumber(state, key, value));
+}
+
+function handleSetGlobalBoolean(key: GlobalBooleanKey, value: boolean): void {
+  commitState(setGlobalBoolean(state, key, value));
+}
+
+function handleSetHandNumber(handId: HandId, key: HandNumberKey, value: number): void {
+  commitState(setHandNumber(state, handId, key, value));
+}
+
+function handleApplyPreset(presetId: PresetId): void {
+  commitState(applyPreset(state, presetId));
 }
 
 onMounted(() => {
@@ -74,7 +93,7 @@ onBeforeUnmount(() => {
   <main class="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-4 p-4 text-zinc-100 md:p-6">
     <header class="rounded border border-zinc-800 bg-zinc-950/70 p-4">
       <h1 class="text-2xl font-semibold tracking-tight md:text-3xl">Poi Phase Visualiser</h1>
-      <p class="text-sm text-zinc-400">Phase 6: Canvas viewport and waveform inspector with synced playhead.</p>
+      <p class="text-sm text-zinc-400">Phase 7: Full controls + presets wired to Canvas renderers.</p>
     </header>
 
     <section class="grid gap-4 lg:grid-cols-12">
@@ -88,38 +107,17 @@ onBeforeUnmount(() => {
         <WaveCanvas :state="state" :t-beats="state.global.t" />
       </article>
 
-      <article class="rounded border border-zinc-800 bg-zinc-950/70 p-4 lg:col-span-12">
-        <h2 class="mb-4 text-xs font-medium uppercase tracking-wide text-zinc-400">Controls (Phase 7 Pending)</h2>
-        <div class="flex flex-wrap items-center gap-3">
-          <button
-            class="rounded border border-zinc-700 px-3 py-2 text-sm font-medium hover:border-zinc-500"
-            type="button"
-            @click="togglePlayback"
-          >
-            {{ state.global.isPlaying ? "Pause" : "Play" }}
-          </button>
-          <p class="text-sm text-zinc-400">Playhead: {{ loopedPlayheadBeats.toFixed(3) }} beats</p>
-          <p class="text-sm text-zinc-500">{{ bpmLabel }}</p>
-          <p class="text-sm text-zinc-500">{{ loopLabel }}</p>
-        </div>
-
-        <label class="mt-4 block text-xs uppercase tracking-wide text-zinc-400">
-          Scrub Loop
-          <input
-            class="mt-2 w-full accent-cyan-400"
-            type="range"
-            min="0"
-            :max="state.global.loopBeats"
-            :step="scrubStep"
-            :value="loopedPlayheadBeats"
-            @input="onScrubInput"
-          />
-        </label>
-
-        <p class="mt-3 text-sm text-zinc-500">
-          Phase 7 will replace this panel with full transport, parameter editing, presets, and toggles.
-        </p>
-      </article>
+      <Controls
+        :state="state"
+        :looped-playhead-beats="loopedPlayheadBeats"
+        :scrub-step="scrubStep"
+        @toggle-playback="handleTogglePlayback"
+        @set-scrub="handleSetScrub"
+        @set-global-number="handleSetGlobalNumber"
+        @set-global-boolean="handleSetGlobalBoolean"
+        @set-hand-number="handleSetHandNumber"
+        @apply-preset="handleApplyPreset"
+      />
     </section>
   </main>
 </template>

@@ -12,16 +12,14 @@ Phase checklist:
 - [x] Phase 4: validation test layer (invariants, special cases, tolerance helpers, fixture-comparison harness).
 - [x] Phase 5: fixture generator writes golden position fixtures for presets and fixture regression tests.
 - [x] Phase 6: Canvas renderers (`PatternCanvas.vue`, `WaveCanvas.vue`) and sync plumbing.
-- [ ] Phase 7: controls UI (`Controls.vue`) with transport, per-hand params, presets.
+- [x] Phase 7: controls UI (`Controls.vue`) with transport, per-hand params, presets.
 - [ ] Phase 8: URL + localStorage persistence and copy-link flow.
 - [ ] Phase 9: responsive 3-panel integration and final validation loop.
 
 Still not implemented:
 
-- Canvas viewport renderer (`PatternCanvas.vue`).
-- Canvas waveform inspector (`WaveCanvas.vue`).
-- Full controls UI (`Controls.vue`) with per-hand editing, presets, and toggles.
 - URL/localStorage persistence and copy-link sharing.
+- Final hardening pass for responsive integration and end-to-end UX polish.
 
 ## Math Model
 
@@ -81,6 +79,8 @@ Current Vitest coverage:
 
 - `tests/state/defaults.test.ts`
 - `tests/state/presets.test.ts`
+- `tests/state/actions.test.ts`
+- `tests/state/angle-units.test.ts`
 - `tests/engine/angles.test.ts`
 - `tests/engine/positions.test.ts`
 - `tests/engine/sampling.test.ts`
@@ -121,7 +121,21 @@ Fixtures are deterministic snapshots of head positions sampled over a loop for:
 - Draw order in pattern viewport follows spec:
   - background -> grid -> trails -> tether lines -> dots
 - Playhead sync is driven by a requestAnimationFrame transport loop in `src/App.vue`.
-- Current controls are intentionally minimal in-app transport/scrub controls; full controls UI is Phase 7.
+
+## Controls Workflow (Phase 7)
+
+- `Controls.vue` owns controls UI for:
+  - a dedicated transport box (play/pause + scrub) above global controls
+  - BPM, loop length, play speed
+  - trails/waves toggles and trail sampling controls
+  - per-hand arm/poi parameter editing for both L and R
+  - element and flower preset buttons
+- Angle input mode can be switched between `Degrees` and `Radians` for speed/phase fields.
+  Engine/state remain radians internally; conversion is UI-only.
+- Each control now includes on-page helper text describing what the parameter changes in the visualizer.
+- A detailed "How This Works and How To Use It" box is shown below controls for guided usage.
+- `src/state/actions.ts` provides pure typed state update helpers used by `App.vue`.
+- `App.vue` orchestrates playback timing and commits immutable state transitions from control events.
 
 ## Commands
 

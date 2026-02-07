@@ -31,3 +31,20 @@
 - 2026-02-07T11:20:31Z [ASSUMPTION] Phase 6 scope is render-layer only: implement `PatternCanvas.vue` + `WaveCanvas.vue`, renderer modules, and playhead sync wiring without full controls/persistence work.
 - 2026-02-07T11:28:23Z [USER] Requested documentation file paths to be project-root-relative instead of absolute workspace paths.
 - 2026-02-07T11:28:23Z [CODE] Normalized path references in `README.md` and `.agent/CONTINUITY.md` from absolute to project-relative format.
+- 2026-02-07T11:29:35Z [USER] Requested planning walkthrough for Phase 7 implementation.
+- 2026-02-07T11:29:35Z [ASSUMPTION] Phase 7 scope is controls UI and state mutation wiring only (transport, parameters, presets, toggles), while URL/localStorage persistence remains Phase 8.
+- 2026-02-07T11:33:59Z [USER] Approved Phase 7 execution.
+- 2026-02-07T11:33:59Z [CODE] Implemented `src/components/Controls.vue` with transport, scrub, global settings, per-hand parameter editing, trail/wave toggles, and element/flower preset buttons.
+- 2026-02-07T11:33:59Z [CODE] Added pure state action layer in `src/state/actions.ts` and preset-id action support in `src/state/presets.ts`; rewired `src/App.vue` to commit control events through action helpers.
+- 2026-02-07T11:33:59Z [CODE] Added `tests/state/actions.test.ts` and updated `README.md` Phase status/controls workflow documentation.
+- 2026-02-07T11:33:59Z [TOOL] Verified Phase 7 with passing `npm run test` (37 tests) and `npm run build`.
+- 2026-02-07T11:33:59Z [ASSUMPTION] Next phase is Phase 8: URL querystring state sharing + localStorage restore/sync + copy-link action.
+- 2026-02-07T11:41:12Z [USER] Requested degree/radian input mode support and clearer on-page explanations for each parameter.
+- 2026-02-07T11:41:12Z [CODE] Added `src/state/angleUnits.ts`, wired angle-unit switching in `src/components/Controls.vue` (defaulting to degrees display), and kept engine/state values in radians.
+- 2026-02-07T11:41:12Z [CODE] Expanded controls UI with parameter-level helper text describing behavior for global settings, hand fields, toggles, and presets.
+- 2026-02-07T11:41:12Z [CODE] Added `tests/state/angle-units.test.ts` and updated `README.md` controls/test documentation.
+- 2026-02-07T11:41:12Z [TOOL] Verified post-change stability with passing `npm run test` (40 tests) and `npm run build`.
+- 2026-02-07T11:45:16Z [USER] Requested transport to be a single box above global controls and asked for a detailed explanatory text box below controls.
+- 2026-02-07T11:45:16Z [CODE] Restructured `src/components/Controls.vue` so transport is a full-width top panel, moved global settings below it, and added a detailed "How This Works and How To Use It" guidance box beneath the control sections.
+- 2026-02-07T11:45:16Z [CODE] Updated `README.md` controls workflow notes to reflect the new layout and explanatory help box.
+- 2026-02-07T11:45:16Z [TOOL] Verified UI change safety with passing `npm run test` (40 tests) and `npm run build`.
