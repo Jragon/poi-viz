@@ -131,6 +131,30 @@ VTG canonical generation wrapper (`src/vtg/generate.ts`) applies:
 - phase bucket sets absolute left-head orientation (0/90/180/270), while poi timing classification stays independent (`same-time` vs `split-time`).
 - classifier bucket tolerance is ±5°.
 
+### Elements vs Orientation
+
+Earth/Air/Water/Fire are relation labels, not absolute directions:
+- Authoritative classification in `src/vtg/classify.ts` uses only timing (`Δφ ≈ 0` vs `Δφ ≈ π`) and direction sign (`same` vs `opposite`).
+- That makes `classifyArmElement` and `classifyPoiElement` invariant under global rotation.
+- `phaseDeg` is the only orientation bucket (`0/90/180/270`), where this engine uses `0° = right (+x)`, `90° = up (+y)`.
+
+Traditional VTG diagrams are often drawn with a different absolute zero. That is only a constant rotation, not a different element definition.
+
+Cardinal language ("top/sides/together/apart") is a descriptive aid for both arms and poi-head relationships, not the classifier itself:
+
+| Element | Right (0°) | Up (90°) | Left (180°) | Down (270°) |
+| --- | --- | --- | --- | --- |
+| Earth | together | together | together | together |
+| Air | apart | together | apart | together |
+| Water | apart | apart | apart | apart |
+| Fire | together | apart | together | apart |
+
+Mapping used by the authoritative classifier:
+- Earth = same-time + same-direction
+- Air = split-time + opposite-direction
+- Water = split-time + same-direction
+- Fire = same-time + opposite-direction
+
 Notes:
 - `ω_rel = 0` gives extension behavior (head offset locked to arm angle).
 - Signs and magnitude ratios of `ω_rel` relative to `ω_arm` produce inspin/antispin flowers.
@@ -298,6 +322,7 @@ Render tests:
 - `tests/render/wave-renderer.test.ts`
 
 VTG tests:
+- `tests/vtg/classify.test.ts`
 - `tests/vtg/generate.test.ts`
 
 ## Project Structure

@@ -139,3 +139,16 @@
 - 2026-02-07T17:41:50Z [CODE] Updated `src/App.vue` header layout to include copy-link action button at top-right and changed title text to `Poi Visuliser`; removed copy-link wiring from transport controls.
 - 2026-02-07T17:41:50Z [CODE] Updated `README.md` controls/persistence notes to reflect copy-link now living in the header instead of Transport panel.
 - 2026-02-07T17:41:50Z [TOOL] Verified with passing `npm run build`.
+- 2026-02-07T17:48:43Z [USER] Requested a surgical VTG clarification pass: formalize Earth/Air/Water/Fire definitions as relation-based, fix phase/orientation ambiguity, add rotation-invariance tests, and update documentation.
+- 2026-02-07T17:48:43Z [CODE] Replaced `src/vtg/classify.ts` with explicit authoritative classifiers (timing+direction only) plus descriptive-only cardinal helpers (`describeElement/Arm/PoiGeometryAtCardinals`) and docstrings separating authoritative vs descriptive logic.
+- 2026-02-07T17:48:43Z [CODE] Added `tests/vtg/classify.test.ts` covering global-rotation invariance for arm/poi element classification and canonical together/apart cardinal mapping checks for both arm and poi helpers.
+- 2026-02-07T17:48:43Z [CODE] Updated `README.md` with an "Elements vs Orientation" section documenting coordinate conventions, rotation invariance, cardinal interpretation table, and authoritative timing/direction mapping.
+- 2026-02-07T17:48:43Z [TOOL] Verified with passing `npm test` (67 tests) and `npm run build`.
+- 2026-02-07T17:55:33Z [USER] Reported VTG UI mismatch where selecting Air appeared to render Fire geometry and requested a one-pass fix.
+- 2026-02-07T17:55:33Z [CODE] Corrected VTG element relation mapping in `src/vtg/types.ts` so Air maps to split-time+opposite-direction and Fire maps to same-time+opposite-direction, aligning generator/classifier labels with intended cardinal behavior.
+- 2026-02-07T17:55:33Z [CODE] Updated `src/vtg/classify.ts` descriptive helpers to compute together/apart at cardinals from actual arm/head kinematics instead of label lookup, while keeping authoritative classification strictly timing+direction based.
+- 2026-02-07T17:55:33Z [CODE] Updated `README.md` mapping text to reflect corrected Air/Fire relation definitions.
+- 2026-02-07T17:55:33Z [TOOL] Verified with passing `npm test` (67 tests) and `npm run build`.
+- 2026-02-07T17:57:19Z [USER] Requested VTG panel layout change: place derived readout, current VTG state, and help block at the bottom of the VTG box.
+- 2026-02-07T17:57:19Z [CODE] Reordered `src/components/VtgPanel.vue` so the 4x4 grid appears first and the derived/current/help blocks render at the bottom; derived line now consistently displays in cycles/beat.
+- 2026-02-07T17:57:19Z [TOOL] Verified with passing `npm run build`.

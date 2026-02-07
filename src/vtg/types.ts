@@ -55,11 +55,11 @@ export function getRelationForElement(element: VTGElement): VTGRelation {
     case "Earth":
       return { timing: "same-time", direction: "same-direction" };
     case "Air":
-      return { timing: "same-time", direction: "opposite-direction" };
+      return { timing: "split-time", direction: "opposite-direction" };
     case "Water":
       return { timing: "split-time", direction: "same-direction" };
     case "Fire":
-      return { timing: "split-time", direction: "opposite-direction" };
+      return { timing: "same-time", direction: "opposite-direction" };
   }
 }
 
@@ -68,7 +68,7 @@ export function getRelationForElement(element: VTGElement): VTGRelation {
  */
 export function getElementForRelation(relation: VTGRelation): VTGElement {
   if (relation.timing === "same-time") {
-    return relation.direction === "same-direction" ? "Earth" : "Air";
+    return relation.direction === "same-direction" ? "Earth" : "Fire";
   }
-  return relation.direction === "same-direction" ? "Water" : "Fire";
+  return relation.direction === "same-direction" ? "Water" : "Air";
 }

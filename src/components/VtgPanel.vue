@@ -81,10 +81,10 @@ function parseFiniteNumber(value: string): number | null {
 }
 
 /**
- * Formats a radian-per-beat speed value in the active UI unit.
+ * Formats a radian-per-beat speed value in cycles/beat for the VTG derived readout.
  */
 function formatSpeed(radiansPerBeat: number): string {
-  return speedFromRadiansPerBeat(radiansPerBeat, props.speedUnit).toFixed(VTG_READOUT_DECIMALS);
+  return speedFromRadiansPerBeat(radiansPerBeat, "cycles").toFixed(VTG_READOUT_DECIMALS);
 }
 
 /**
@@ -269,36 +269,6 @@ watch(isExpanded, (nextValue) => {
         </div>
       </div>
 
-      <div class="rounded border border-zinc-800 bg-zinc-900/40 p-3 text-xs text-zinc-400">
-        <p>
-          Derived ({{ props.speedUnit === "cycles" ? "cycles/beat" : "deg/beat" }}):
-          <span class="font-mono">ω_arm_L={{ formatSpeed(TWO_PI) }}</span>,
-          <span class="font-mono">ω_head_L={{ formatSpeed(getLeftHeadSpeed()) }}</span>,
-          <span class="font-mono">ω_rel_L={{ formatSpeed(getLeftRelativeSpeed()) }}</span>
-        </p>
-        <p class="mt-1">
-          Current VTG state:
-          <span v-if="currentVtgClassification" class="font-mono">
-            arms={{ currentVtgClassification.armElement }}, poi={{ currentVtgClassification.poiElement }},
-            phase={{ currentVtgClassification.phaseDeg }}°
-          </span>
-          <span v-else class="font-mono text-amber-300">UNCONFIRMED</span>
-        </p>
-      </div>
-
-      <details class="rounded border border-zinc-800 bg-zinc-900/30 p-3">
-        <summary class="cursor-pointer text-xs uppercase tracking-wide text-zinc-400">Help</summary>
-        <ul class="mt-2 list-disc space-y-1 pl-4 text-xs text-zinc-400">
-          <li>Arms = timing + direction between hands.</li>
-          <li>Poi = timing + direction between head motions (world frame).</li>
-          <li>Phase rotates the pattern orientation in 90° buckets.</li>
-          <li>
-            Signed poi cycles/arm cycle sets head cycles directly.
-            <span class="font-mono">+3</span> means 2-petal inspin and <span class="font-mono">-3</span> means 4-petal antispin.
-          </li>
-        </ul>
-      </details>
-
       <div>
         <p class="mb-2 text-xs uppercase tracking-wide text-zinc-500">Arms (timing + direction)</p>
         <div class="overflow-x-auto">
@@ -345,6 +315,36 @@ watch(isExpanded, (nextValue) => {
           </table>
         </div>
       </div>
+
+      <div class="rounded border border-zinc-800 bg-zinc-900/40 p-3 text-xs text-zinc-400">
+        <p>
+          Derived (cycles/beat):
+          <span class="font-mono">ω_arm_L={{ formatSpeed(TWO_PI) }}</span>,
+          <span class="font-mono">ω_head_L={{ formatSpeed(getLeftHeadSpeed()) }}</span>,
+          <span class="font-mono">ω_rel_L={{ formatSpeed(getLeftRelativeSpeed()) }}</span>
+        </p>
+        <p class="mt-1">
+          Current VTG state:
+          <span v-if="currentVtgClassification" class="font-mono">
+            arms={{ currentVtgClassification.armElement }}, poi={{ currentVtgClassification.poiElement }},
+            phase={{ currentVtgClassification.phaseDeg }}°
+          </span>
+          <span v-else class="font-mono text-amber-300">UNCONFIRMED</span>
+        </p>
+      </div>
+
+      <details class="rounded border border-zinc-800 bg-zinc-900/30 p-3">
+        <summary class="cursor-pointer text-xs uppercase tracking-wide text-zinc-400">Help</summary>
+        <ul class="mt-2 list-disc space-y-1 pl-4 text-xs text-zinc-400">
+          <li>Arms = timing + direction between hands.</li>
+          <li>Poi = timing + direction between head motions (world frame).</li>
+          <li>Phase rotates the pattern orientation in 90° buckets.</li>
+          <li>
+            Signed poi cycles/arm cycle sets head cycles directly.
+            <span class="font-mono">+3</span> means 2-petal inspin and <span class="font-mono">-3</span> means 4-petal antispin.
+          </li>
+        </ul>
+      </details>
     </div>
   </details>
 </template>
