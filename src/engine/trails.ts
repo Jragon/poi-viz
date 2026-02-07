@@ -1,0 +1,112 @@
+import { getPositions } from "@/engine/positions";
+import { createRingBuffer, pushRingBuffer, ringBufferToArray, type RingBuffer } from "@/engine/ringBuffer";
+import { getTrailCapacity, sampleHzToStepBeats, ZERO } from "@/engine/math";
+import type { EngineParams, TrailPoint, TrailSamplerConfig } from "@/engine/types";
+
+interface TrailBuffers {
+  L: RingBuffer<TrailPoint>;
+  R: RingBuffer<TrailPoint>;
+}
+
+export interface TrailSamplerState {
+  config: TrailSamplerConfig;
+  sampleStepBeats: number;
+  nextSampleBeat: number;
+  lastFrameBeat: number;
+  trails: TrailBuffers;
+}
+
+function createTrailBuffers(capacity: number): TrailBuffers {
+  return {
+    L: createRingBuffer<TrailPoint>(capacity),
+    R: createRingBuffer<TrailPoint>(capacity)
+  };
+}
+
+function appendTrailSample(trails: TrailBuffers, params: EngineParams, tBeats: number): TrailBuffers {
+  const positions = getPositions(params, tBeats);
+
+  return {
+    L: pushRingBuffer(trails.L, {
+      tBeats,
+      point: positions.L.head
+    }),
+    R: pushRingBuffer(trails.R, {
+      tBeats,
+      point: positions.R.head
+    })
+  };
+}
+
+/**
+ * Creates a trail sampler with a seeded sample at startBeat.
+ * Sampling thereafter is fixed-step in beat-space, independent of render FPS.
+ */
+export function createTrailSampler(config: TrailSamplerConfig, params: EngineParams, startBeat: number): TrailSamplerState {
+  const capacity = getTrailCapacity(config.trailSampleHz, config.trailBeats, config.bpm);
+  const sampleStepBeats = sampleHzToStepBeats(config.trailSampleHz, config.bpm);
+  const trails = createTrailBuffers(capacity);
+  const seededTrails = appendTrailSample(trails, params, startBeat);
+
+  return {
+    config,
+    sampleStepBeats,
+    nextSampleBeat: startBeat + sampleStepBeats,
+    lastFrameBeat: startBeat,
+    trails: seededTrails
+  };
+}
+
+function resetTrailSampler(state: TrailSamplerState, params: EngineParams, frameBeat: number): TrailSamplerState {
+  return createTrailSampler(state.config, params, frameBeat);
+}
+
+function getPendingSampleCount(nextSampleBeat: number, frameBeat: number, sampleStepBeats: number): number {
+  if (frameBeat < nextSampleBeat) {
+    return ZERO;
+  }
+
+  const beatDelta = frameBeat - nextSampleBeat;
+  return Math.floor(beatDelta / sampleStepBeats) + 1;
+}
+
+/**
+ * Advances trails up to frameBeat.
+ * If frameBeat rewinds, state is reset and reseeded at the new beat.
+ */
+export function advanceTrailSampler(state: TrailSamplerState, params: EngineParams, frameBeat: number): TrailSamplerState {
+  if (frameBeat < state.lastFrameBeat) {
+    return resetTrailSampler(state, params, frameBeat);
+  }
+
+  const pendingSampleCount = getPendingSampleCount(state.nextSampleBeat, frameBeat, state.sampleStepBeats);
+  if (pendingSampleCount === ZERO) {
+    return {
+      ...state,
+      lastFrameBeat: frameBeat
+    };
+  }
+
+  let nextTrails = state.trails;
+  for (let sampleIndex = ZERO; sampleIndex < pendingSampleCount; sampleIndex += 1) {
+    const tBeats = state.nextSampleBeat + sampleIndex * state.sampleStepBeats;
+    nextTrails = appendTrailSample(nextTrails, params, tBeats);
+  }
+
+  return {
+    ...state,
+    trails: nextTrails,
+    nextSampleBeat: state.nextSampleBeat + pendingSampleCount * state.sampleStepBeats,
+    lastFrameBeat: frameBeat
+  };
+}
+
+/**
+ * Returns trail points ordered from oldest to newest.
+ */
+export function getTrailPoints(state: TrailSamplerState) {
+  return {
+    L: ringBufferToArray(state.trails.L),
+    R: ringBufferToArray(state.trails.R)
+  };
+}
