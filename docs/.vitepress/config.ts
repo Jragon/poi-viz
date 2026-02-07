@@ -16,6 +16,7 @@ function getCommitHash(): string {
 const commitHash = getCommitHash();
 
 export default defineConfig({
+  base: "/poi-viz/docs/",
   title: "Poi Visualiser Docs",
   description: "Executable documentation for engine math, VTG generation, and deterministic validation.",
   lastUpdated: true,

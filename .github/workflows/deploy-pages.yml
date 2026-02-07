@@ -34,8 +34,15 @@ jobs:
       - name: Build docs artifacts
         run: npm run docs:all
 
-      - name: Build
+      - name: Build app
         run: npm run build
+
+      - name: Merge docs into Pages artifact
+        run: |
+          mkdir -p dist/docs
+          cp -R docs/.vitepress/dist/. dist/docs/
+          mkdir -p dist/docs/api
+          cp -R docs/api/. dist/docs/api/
 
       - name: Upload pages artifact
         uses: actions/upload-pages-artifact@v3

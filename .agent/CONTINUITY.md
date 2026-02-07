@@ -160,3 +160,6 @@
 - 2026-02-07T18:18:18Z [USER] Requested replacing `README.md` with a concise app overview that points to detailed docs, and updating `AGENTS.md` to enforce ongoing documentation maintenance.
 - 2026-02-07T18:18:18Z [CODE] Rewrote `README.md` to an overview-first format with a documentation map and contributor workflow links into `docs/*` and `docs/api/index.html`.
 - 2026-02-07T18:18:18Z [CODE] Updated `AGENTS.md` documentation rules and Definition of Done to require `docs/` updates, TypeDoc regeneration for API-surface changes, and `npm run docs:all` for docs/API-affecting changes.
+- 2026-02-07T18:26:08Z [USER] Requested implementation of docs deployment at `/poi-viz/docs` with docs API output excluded from source control.
+- 2026-02-07T18:26:08Z [CODE] Updated `docs/.vitepress/config.ts` with `base: "/poi-viz/docs/"` and updated `.github/workflows/deploy-pages.yml` to merge `docs/.vitepress/dist` and `docs/api` into `dist/docs` before Pages artifact upload.
+- 2026-02-07T18:26:08Z [TOOL] Verified locally by running `npm run docs:all`, `npm run build`, and artifact merge checks confirming `dist/docs/index.html` and `dist/docs/api/index.html` are produced.
