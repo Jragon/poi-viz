@@ -43,7 +43,7 @@ describe("state actions", () => {
     const playing = togglePlayback(hidden);
 
     expect(hidden.global.showWaves).toBe(false);
-    expect(playing.global.isPlaying).toBe(true);
+    expect(playing.global.isPlaying).toBe(!hidden.global.isPlaying);
   });
 
   it("clamps hand radii to non-negative values", () => {
@@ -61,4 +61,3 @@ describe("state actions", () => {
     expect(next.hands.R.armPhase).toBeCloseTo(next.hands.L.armPhase, 10);
   });
 });
-

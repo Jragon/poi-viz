@@ -66,3 +66,37 @@
 - 2026-02-07T12:12:55Z [CODE] Updated `tests/state/defaults.test.ts` expectations and README default-parameter documentation; regenerated fixture files via `npm run gen:fixtures` to match new default-driven fixture metadata/outputs.
 - 2026-02-07T12:12:55Z [CODE] Relaxed exact float equality assertions in `tests/engine/trails.test.ts` to tolerance-based checks after bpm change exposed floating-point endpoint representation.
 - 2026-02-07T12:12:55Z [TOOL] Verified with passing `npm run test` (40 tests) and `npm run build`.
+- 2026-02-07T12:16:12Z [USER] Requested adding the GitHub Pages URL near the top of README for quick access.
+- 2026-02-07T12:16:12Z [CODE] Added a top-level live demo link to `README.md`: `https://jragon.github.io/poi-viz/`.
+- 2026-02-07T12:17:27Z [USER] Requested startup playback to be enabled by default.
+- 2026-02-07T12:17:27Z [CODE] Set `isPlaying` default to `true` in `src/state/defaults.ts`, updated default-state expectations in `tests/state/defaults.test.ts`, and made playback-toggle test assertion state-relative in `tests/state/actions.test.ts`.
+- 2026-02-07T12:17:27Z [CODE] Updated README defaults section to document `isPlaying = true` startup behavior.
+- 2026-02-07T12:17:27Z [TOOL] Verified with passing `npm run test` (40 tests).
+- 2026-02-07T12:42:13Z [USER] Requested a poi-centric speed model using cycles/beat with radians kept internal, plus editable relative and absolute head speed controls.
+- 2026-02-07T12:42:13Z [CODE] Added `src/state/speedUnits.ts` with pure conversions (`cycles/beat`, `deg/beat`), absolute/relative speed transforms (`h=a+r`, `r=h-a`), and spin-mode classification.
+- 2026-02-07T12:42:13Z [CODE] Refactored `src/components/Controls.vue` to support separate phase/speed unit selectors, direct editing of relative poi speed `r` and absolute head speed `h`, and derived live readouts (`a`, `r`, `h`, mode, `r/a`) per hand.
+- 2026-02-07T12:42:13Z [CODE] Added `tests/state/speed-units.test.ts` and updated README documentation to explain the new speed-language model and controls behavior.
+- 2026-02-07T12:42:13Z [TOOL] Verified with passing `npm run test` (45 tests) and `npm run build`.
+- 2026-02-07T12:50:48Z [USER] Requested defaults and controls UX updates: poi radius 100 with arm radius 120, blur-based numeric validation to allow typing negatives/partials, whole-number arrow increments, rename zero-arm case to `static-spin`, and simplify poi speed to absolute head speed by default with advanced toggle for extra parameters.
+- 2026-02-07T12:50:48Z [CODE] Updated defaults by setting `DEFAULT_POI_RADIUS = 100` in `src/state/constants.ts`; regenerated `fixtures/*.json` to align with new default geometry.
+- 2026-02-07T12:50:48Z [CODE] Refactored `src/components/Controls.vue` numeric input handling to draft-on-input + commit-on-blur behavior across number fields, added enter-to-blur commit, and set control step increments to whole numbers.
+- 2026-02-07T12:50:48Z [CODE] Simplified poi speed UI to absolute head speed `h` as the default editable control, added `Show Advanced` toggle for relative speed `r` and derived readouts, and kept radians internal.
+- 2026-02-07T12:50:48Z [CODE] Updated spin mode classification to return `static-spin` (formerly `indeterminate`) in `src/state/speedUnits.ts`; adjusted `tests/state/speed-units.test.ts` and README control/default docs.
+- 2026-02-07T12:50:48Z [TOOL] Verified with passing `npm run gen:fixtures`, `npm run test` (45 tests), and `npm run build`.
+- 2026-02-07T12:58:00Z [USER] Requested starting Phase 8 so patterns can be saved/shareable.
+- 2026-02-07T12:58:00Z [CODE] Implemented Phase 8 persistence module `src/state/persistence.ts` with versioned state serialization, URL encode/decode, localStorage decode, URL-first hydration precedence, and action-based sanitizing/clamping during restore.
+- 2026-02-07T12:58:00Z [CODE] Wired `src/App.vue` to hydrate from URL/localStorage on mount, debounce sync state to URL + localStorage, and provide copy-link behavior with success/error feedback.
+- 2026-02-07T12:58:00Z [CODE] Extended `src/components/Controls.vue` transport with a copy-link button and label feedback prop/event.
+- 2026-02-07T12:58:00Z [CODE] Added `tests/state/persistence.test.ts` and updated README documentation to mark persistence/share-link as implemented.
+- 2026-02-07T12:58:00Z [TOOL] Verified with passing `npm run test` (50 tests) and `npm run build`.
+- 2026-02-07T13:07:10Z [USER] Requested no long URL state during editing and asked for app-storage multi-preset save/load workflow with JSON export for building future system presets.
+- 2026-02-07T13:07:10Z [CODE] Changed persistence behavior in `src/App.vue` to keep URL clean during normal editing (localStorage session sync only), while preserving on-demand share-link generation and legacy URL-state hydration support.
+- 2026-02-07T13:07:10Z [CODE] Added preset library domain module `src/state/presetLibrary.ts` for deterministic preset IDs, storage serialization, single-preset import/export payloads, and utility CRUD transforms.
+- 2026-02-07T13:07:10Z [CODE] Added Preset Library UI in `src/components/Controls.vue` with save current, load, delete, export JSON, and import JSON actions; wired these events and feedback handling in `src/App.vue`.
+- 2026-02-07T13:07:10Z [CODE] Added tests `tests/state/preset-library.test.ts`, expanded `tests/state/persistence.test.ts`, and updated README docs for the new session persistence + preset library workflow.
+- 2026-02-07T13:07:10Z [TOOL] Verified with passing `npm run test` (57 tests) and `npm run build`.
+- 2026-02-07T13:10:24Z [USER] Requested human-readable preset exports in cycles/beat or currently selected units instead of raw radians.
+- 2026-02-07T13:10:24Z [CODE] Updated preset export format in `src/state/presetLibrary.ts` to schema v2 with explicit `units` metadata and unit-converted speed/phase values; imports now support both v2 human-readable files and legacy v1 radian files.
+- 2026-02-07T13:10:24Z [CODE] Wired `Controls.vue` export action to pass selected `speedUnit`/`phaseUnit` and updated `App.vue` export handler accordingly.
+- 2026-02-07T13:10:24Z [CODE] Extended tests in `tests/state/preset-library.test.ts` for unit-aware export payload validation and legacy import compatibility; updated README export notes.
+- 2026-02-07T13:10:24Z [TOOL] Verified with passing `npm run test` (58 tests) and `npm run build`.

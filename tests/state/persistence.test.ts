@@ -1,0 +1,104 @@
+import { describe, expect, it } from "vitest";
+import { createDefaultState } from "@/state/defaults";
+import {
+  buildStateUrl,
+  deserializeState,
+  readStateFromStorage,
+  readStateFromUrl,
+  resolveInitialState,
+  serializeState,
+  stripStateQueryParam
+} from "@/state/persistence";
+
+describe("state persistence", () => {
+  it("round-trips full state through URL payload", () => {
+    const state = createDefaultState();
+    state.global.bpm = 42;
+    state.global.showWaves = false;
+    state.hands.L.armPhase = 1.25;
+    state.hands.R.poiRadius = 77;
+
+    const url = buildStateUrl(state, "https://jragon.github.io/poi-viz/");
+    const decoded = readStateFromUrl(url, createDefaultState());
+
+    expect(decoded).not.toBeNull();
+    expect(decoded?.global.bpm).toBe(42);
+    expect(decoded?.global.showWaves).toBe(false);
+    expect(decoded?.hands.L.armPhase).toBeCloseTo(1.25, 10);
+    expect(decoded?.hands.R.poiRadius).toBe(77);
+  });
+
+  it("prefers URL state over storage state when both exist", () => {
+    const urlState = createDefaultState();
+    urlState.global.bpm = 30;
+
+    const storageState = createDefaultState();
+    storageState.global.bpm = 60;
+
+    const url = buildStateUrl(urlState, "https://jragon.github.io/poi-viz/");
+    const storagePayload = serializeState(storageState);
+    const resolved = resolveInitialState(createDefaultState(), url, storagePayload);
+
+    expect(resolved.global.bpm).toBe(30);
+  });
+
+  it("falls back to storage state when URL has no state payload", () => {
+    const storageState = createDefaultState();
+    storageState.global.loopBeats = 8;
+
+    const resolved = resolveInitialState(
+      createDefaultState(),
+      "https://jragon.github.io/poi-viz/?foo=bar",
+      serializeState(storageState)
+    );
+
+    expect(resolved.global.loopBeats).toBe(8);
+  });
+
+  it("sanitizes persisted numeric values through action clamps", () => {
+    const defaults = createDefaultState();
+    const raw = JSON.stringify({
+      schemaVersion: 1,
+      state: {
+        global: {
+          bpm: -5,
+          loopBeats: -10,
+          playSpeed: -3,
+          trailBeats: -2,
+          trailSampleHz: 0
+        },
+        hands: {
+          L: { armRadius: -100, poiRadius: -200 },
+          R: { armRadius: -50, poiRadius: -75 }
+        }
+      }
+    });
+
+    const parsed = deserializeState(raw, defaults);
+
+    expect(parsed).not.toBeNull();
+    expect(parsed?.global.bpm).toBe(1);
+    expect(parsed?.global.loopBeats).toBe(0.25);
+    expect(parsed?.global.playSpeed).toBe(0);
+    expect(parsed?.global.trailBeats).toBe(0);
+    expect(parsed?.global.trailSampleHz).toBe(1);
+    expect(parsed?.hands.L.armRadius).toBe(0);
+    expect(parsed?.hands.L.poiRadius).toBe(0);
+    expect(parsed?.hands.R.armRadius).toBe(0);
+    expect(parsed?.hands.R.poiRadius).toBe(0);
+  });
+
+  it("returns null for invalid storage payload", () => {
+    const parsed = readStateFromStorage("{ not-json", createDefaultState());
+    expect(parsed).toBeNull();
+  });
+
+  it("removes state query parameter from URL", () => {
+    const url = "https://jragon.github.io/poi-viz/?state=abc123&foo=bar";
+    const stripped = stripStateQueryParam(url);
+    const parsed = new URL(stripped);
+
+    expect(parsed.searchParams.get("state")).toBeNull();
+    expect(parsed.searchParams.get("foo")).toBe("bar");
+  });
+});

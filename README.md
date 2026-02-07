@@ -1,5 +1,7 @@
 # Poi Phase Visualiser
 
+[Live Demo (GitHub Pages)](https://jragon.github.io/poi-viz/)
+
 A Vue 3 + TypeScript single-page app for visualizing wall-plane poi motion from coupled oscillators.
 
 It renders:
@@ -19,7 +21,8 @@ The controls let you:
 - edit global timing and trail settings,
 - edit left/right hand parameters,
 - switch angle entry between degrees and radians,
-- apply element and flower presets.
+- apply element and flower presets,
+- save/load your own preset library and export/import preset JSON.
 
 ## Current Feature Coverage
 
@@ -29,14 +32,12 @@ Implemented:
 - Wave renderer in `src/render/waveRenderer.ts` + `src/components/WaveCanvas.vue`.
 - Full controls UI in `src/components/Controls.vue`.
 - Typed immutable state update actions in `src/state/actions.ts`.
+- Session persistence + share-link encoding in `src/state/persistence.ts` and `src/App.vue`.
+- Local preset library save/load/export/import in `src/state/presetLibrary.ts` and `src/components/Controls.vue`.
 - Preset system (elements + flowers) in `src/state/presets.ts`.
 - Golden fixture generation and regression tests (`scripts/gen-fixtures.ts`, `fixtures/*.json`, `tests/engine/fixtures.test.ts`).
 - Responsive app shell in `src/App.vue`.
 - GitHub Pages workflow in `.github/workflows/deploy-pages.yml`.
-
-Not yet implemented:
-- URL querystring persistence / share-link copy flow.
-- localStorage restore/sync flow.
 
 ## Quick Start
 
@@ -80,7 +81,9 @@ npm install --cache .npm-cache
 
 - Engine (`src/engine/*`): pure math and deterministic sampling.
 - Render (`src/render/*`): pure Canvas draw functions and transforms.
-- State (`src/state/*`): defaults, constants, action reducers, presets, angle-unit conversions.
+- State (`src/state/*`): defaults, constants, action reducers, presets, angle-unit and speed-unit conversions.
+- Persistence (`src/state/persistence.ts`): serialize/deserialize + URL/localStorage integration helpers.
+- Preset library (`src/state/presetLibrary.ts`): local preset records + JSON import/export helpers.
 - Vue components (`src/components/*`): event wiring + canvas lifecycle only.
 
 ### Data and control flow
@@ -92,6 +95,7 @@ npm install --cache .npm-cache
    - Pattern canvas computes positions/trails and renders geometry.
    - Wave canvas samples one loop and renders oscillator traces + playhead cursor.
 5. Preset buttons call `applyPresetById` via state actions.
+6. Persistence layer syncs session state to localStorage (debounced), keeps URL clean during editing, and still supports share-link state encoding on demand.
 
 ## Math Model (Single Source of Truth)
 
@@ -108,10 +112,17 @@ For each hand `i ∈ {L, R}`:
 - `P_i(t) = H_i(t) + R_poi_i * [cos(θ_arm_i + θ_rel_i), sin(θ_arm_i + θ_rel_i)]`
 - `Tether_i(t) = P_i(t) - H_i(t)`
 
+Speed-language mapping used in controls:
+- `a = armSpeed` (arm cycles per beat)
+- `r = poiSpeed` (relative poi cycles per beat)
+- `h = a + r` (absolute head cycles per beat)
+- Inverse form when editing absolute speed: `r = h - a`
+
 Notes:
 - `ω_rel = 0` gives extension behavior (head offset locked to arm angle).
 - Signs and magnitude ratios of `ω_rel` relative to `ω_arm` produce inspin/antispin flowers.
-- The UI can display degrees, but engine/state values remain radians.
+- UI speed can be shown as cycles/beat or degrees/beat; phases can be shown as degrees/radians.
+  Engine/state values remain radians internally.
 
 ## State Model
 
@@ -133,8 +144,8 @@ Per-hand state (`HandState` for `L` and `R`):
 - `poiSpeed`, `poiPhase`, `poiRadius`
 
 Defaults are created in `src/state/defaults.ts` from constants in `src/state/constants.ts`:
-- `bpm = 10`, `loopBeats = 4`, `playSpeed = 1`
-- `armRadius = 120`, `poiRadius = 180`
+- `bpm = 10`, `loopBeats = 4`, `playSpeed = 1`, `isPlaying = true`
+- `armRadius = 120`, `poiRadius = 100`
 - Left arm speed `2π`, phase `0`
 - Right arm speed `2π`, phase `0` (same-time / earth timing for hands)
 - Left relative poi speed `-6π` (3-petal antispin baseline), phase `0`
@@ -143,14 +154,33 @@ Defaults are created in `src/state/defaults.ts` from constants in `src/state/con
 ## Controls Reference
 
 `src/components/Controls.vue` provides:
-- Transport panel: play/pause + scrub.
+- Transport panel: play/pause + scrub + copy-link button.
 - Global settings: BPM, loop beats, play speed, trail settings, trails/waves toggles.
-- Angle units switch: degrees/radians display mode for speed/phase fields.
-- Per-hand parameter inputs for L/R.
+- Unit controls:
+  - phase unit: degrees/radians
+  - speed unit: cycles/beat or degrees/beat
+- Advanced toggle to reveal extra poi model controls.
+- Per-hand parameter inputs for L/R with poi-centric default editing:
+  - absolute head speed `h` (default-visible control)
+  - relative poi speed `r` and derived readouts (`a`, `r`, `h`, spin mode, `r/a`) in advanced mode
+- Number inputs commit/validate on blur to allow uninterrupted typing of partial/negative values.
 - Preset groups:
   - Elements: Earth, Air, Water, Fire.
   - Flowers: inspin/antispin 3-, 4-, 5-petal.
+- Preset Library section:
+  - save current state to app storage,
+  - load/delete/export saved entries,
+  - import preset JSON files.
+  - export files use currently selected speed/phase units for human-readable values.
 - Detailed on-page explanation block for usage guidance.
+
+Persistence behavior in `src/App.vue` + `src/state/persistence.ts`:
+- On load: legacy URL state is parsed first; if absent/invalid, localStorage session state is used; otherwise defaults.
+- The app removes `state` query params after hydration so editing does not keep long URLs visible.
+- On state changes: session state is updated in localStorage with debounce.
+- Copy link button creates a shareable URL snapshot without mutating the current browser URL.
+- Preset library records are stored separately in localStorage and can be exported/imported as JSON.
+- Exported preset JSON keeps speed/phase values in selected UI units and includes unit metadata for reliable re-import.
 
 State writes are routed through pure reducers in `src/state/actions.ts`:
 - finite-number sanitization,
@@ -229,6 +259,9 @@ State tests:
 - `tests/state/presets.test.ts`
 - `tests/state/actions.test.ts`
 - `tests/state/angle-units.test.ts`
+- `tests/state/speed-units.test.ts`
+- `tests/state/persistence.test.ts`
+- `tests/state/preset-library.test.ts`
 
 Engine tests:
 - `tests/engine/angles.test.ts`

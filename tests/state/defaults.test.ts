@@ -19,7 +19,7 @@ describe("createDefaultState", () => {
     expect(state.global.bpm).toBe(DEFAULT_BPM);
     expect(state.global.loopBeats).toBe(DEFAULT_LOOP_BEATS);
     expect(state.global.playSpeed).toBe(1);
-    expect(state.global.isPlaying).toBe(false);
+    expect(state.global.isPlaying).toBe(true);
     expect(state.global.t).toBe(0);
     expect(state.global.showTrails).toBe(true);
     expect(state.global.trailBeats).toBe(DEFAULT_TRAIL_BEATS);

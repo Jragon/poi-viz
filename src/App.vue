@@ -5,6 +5,33 @@ import WaveCanvas from "@/components/WaveCanvas.vue";
 import { secondsToBeats } from "@/engine/math";
 import { normalizeLoopBeat } from "@/render/math";
 import {
+  buildStateUrl,
+  LOCAL_STORAGE_STATE_KEY,
+  PERSISTENCE_DEBOUNCE_MS,
+  resolveInitialState,
+  serializeState,
+  stripStateQueryParam
+} from "@/state/persistence";
+import {
+  createPresetFileName,
+  createPresetId,
+  createUserPresetRecord,
+  createUserPresetSummary,
+  deserializeUserPresetFile,
+  deserializeUserPresetLibrary,
+  ensureUniquePresetId,
+  getUserPreset,
+  PRESET_LIBRARY_STORAGE_KEY,
+  removeUserPreset,
+  sanitizePresetName,
+  serializeUserPresetFile,
+  serializeUserPresetLibrary,
+  upsertUserPreset,
+  type UserPresetRecord
+} from "@/state/presetLibrary";
+import type { AngleUnit } from "@/state/angleUnits";
+import type { SpeedUnit } from "@/state/speedUnits";
+import {
   applyPreset,
   setGlobalBoolean,
   setGlobalNumber,
@@ -17,22 +44,127 @@ import {
 } from "@/state/actions";
 import { createDefaultState } from "@/state/defaults";
 import type { AppState, HandId, PresetId } from "@/types/state";
-import { computed, onBeforeUnmount, onMounted, reactive } from "vue";
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 
 const state = reactive(createDefaultState());
 
 const SCRUB_DIVISIONS = 400;
 const MIN_SCRUB_STEP = 0.001;
+const COPY_LINK_LABEL_IDLE = "Copy Link";
+const COPY_LINK_LABEL_SUCCESS = "Link Copied";
+const COPY_LINK_LABEL_ERROR = "Copy Failed";
+const COPY_LABEL_RESET_DELAY_MS = 1800;
+const PRESET_LIBRARY_STATUS_RESET_DELAY_MS = 2400;
 
 let animationFrameId = 0;
 let lastFrameTimeMs = 0;
+let copyLabelTimerId = 0;
+let persistenceTimerId = 0;
+let presetLibraryStatusTimerId = 0;
+let persistenceEnabled = false;
 
 const loopedPlayheadBeats = computed(() => normalizeLoopBeat(state.global.t, state.global.loopBeats));
 const scrubStep = computed(() => Math.max(state.global.loopBeats / SCRUB_DIVISIONS, MIN_SCRUB_STEP));
+const copyLinkLabel = ref(COPY_LINK_LABEL_IDLE);
+const presetLibraryStatus = ref("");
+const userPresetRecords = ref<UserPresetRecord[]>([]);
+const userPresetSummaries = computed(() => userPresetRecords.value.map(createUserPresetSummary));
+
+interface ExportPresetRequest {
+  presetId: string;
+  speedUnit: SpeedUnit;
+  phaseUnit: AngleUnit;
+}
 
 function commitState(nextState: AppState): void {
   state.global = nextState.global;
   state.hands = nextState.hands;
+}
+
+function getStorageValue(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function setStorageValue(key: string, value: string): void {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // Ignore write failures (private mode, quota, disabled storage).
+  }
+}
+
+function getSessionStorageValue(): string | null {
+  return getStorageValue(LOCAL_STORAGE_STATE_KEY);
+}
+
+function persistSessionStateNow(): void {
+  setStorageValue(LOCAL_STORAGE_STATE_KEY, serializeState(state));
+}
+
+function getPresetLibraryStorageValue(): string | null {
+  return getStorageValue(PRESET_LIBRARY_STORAGE_KEY);
+}
+
+function persistPresetLibraryNow(): void {
+  setStorageValue(PRESET_LIBRARY_STORAGE_KEY, serializeUserPresetLibrary(userPresetRecords.value));
+}
+
+function schedulePersistenceSync(): void {
+  if (!persistenceEnabled) {
+    return;
+  }
+
+  if (persistenceTimerId !== 0) {
+    window.clearTimeout(persistenceTimerId);
+  }
+
+  persistenceTimerId = window.setTimeout(() => {
+    persistSessionStateNow();
+    persistenceTimerId = 0;
+  }, PERSISTENCE_DEBOUNCE_MS);
+}
+
+function resetCopyLinkLabelSoon(): void {
+  if (copyLabelTimerId !== 0) {
+    window.clearTimeout(copyLabelTimerId);
+  }
+  copyLabelTimerId = window.setTimeout(() => {
+    copyLinkLabel.value = COPY_LINK_LABEL_IDLE;
+    copyLabelTimerId = 0;
+  }, COPY_LABEL_RESET_DELAY_MS);
+}
+
+function resetPresetLibraryStatusSoon(): void {
+  if (presetLibraryStatusTimerId !== 0) {
+    window.clearTimeout(presetLibraryStatusTimerId);
+  }
+  presetLibraryStatusTimerId = window.setTimeout(() => {
+    presetLibraryStatus.value = "";
+    presetLibraryStatusTimerId = 0;
+  }, PRESET_LIBRARY_STATUS_RESET_DELAY_MS);
+}
+
+function copyTextFallback(text: string): boolean {
+  try {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    textarea.style.pointerEvents = "none";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    const copied = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    return copied;
+  } catch {
+    return false;
+  }
 }
 
 function advancePlayhead(frameDeltaSeconds: number): void {
@@ -80,12 +212,169 @@ function handleApplyPreset(presetId: PresetId): void {
   commitState(applyPreset(state, presetId));
 }
 
+async function handleCopyLink(): Promise<void> {
+  const shareBaseUrl = stripStateQueryParam(window.location.href);
+  const shareUrl = buildStateUrl(state, shareBaseUrl);
+  let copied = false;
+
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      copied = true;
+    } catch {
+      copied = false;
+    }
+  }
+
+  if (!copied) {
+    copied = copyTextFallback(shareUrl);
+  }
+
+  copyLinkLabel.value = copied ? COPY_LINK_LABEL_SUCCESS : COPY_LINK_LABEL_ERROR;
+  resetCopyLinkLabelSoon();
+}
+
+function downloadTextFile(fileName: string, content: string): void {
+  const blob = new Blob([content], { type: "application/json;charset=utf-8" });
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(objectUrl);
+}
+
+function handleSaveUserPreset(name: string): void {
+  const sanitizedName = sanitizePresetName(name);
+  const existingByName = userPresetRecords.value.find((record) => record.name === sanitizedName);
+  const now = new Date();
+
+  const nextRecord = existingByName
+    ? createUserPresetRecord(sanitizedName, state, now, existingByName.id)
+    : createUserPresetRecord(
+        sanitizedName,
+        state,
+        now,
+        ensureUniquePresetId(userPresetRecords.value, createPresetId(sanitizedName, now))
+      );
+
+  userPresetRecords.value = upsertUserPreset(userPresetRecords.value, nextRecord);
+  persistPresetLibraryNow();
+  presetLibraryStatus.value = existingByName ? "Preset updated" : "Preset saved";
+  resetPresetLibraryStatusSoon();
+}
+
+function handleLoadUserPreset(presetId: string): void {
+  const preset = getUserPreset(userPresetRecords.value, presetId);
+  if (!preset) {
+    presetLibraryStatus.value = "Preset not found";
+    resetPresetLibraryStatusSoon();
+    return;
+  }
+
+  commitState(preset.state);
+  presetLibraryStatus.value = `Loaded: ${preset.name}`;
+  resetPresetLibraryStatusSoon();
+}
+
+function handleDeleteUserPreset(presetId: string): void {
+  const preset = getUserPreset(userPresetRecords.value, presetId);
+  if (!preset) {
+    presetLibraryStatus.value = "Preset not found";
+    resetPresetLibraryStatusSoon();
+    return;
+  }
+
+  userPresetRecords.value = removeUserPreset(userPresetRecords.value, presetId);
+  persistPresetLibraryNow();
+  presetLibraryStatus.value = `Deleted: ${preset.name}`;
+  resetPresetLibraryStatusSoon();
+}
+
+function handleExportUserPreset(request: ExportPresetRequest): void {
+  const preset = getUserPreset(userPresetRecords.value, request.presetId);
+  if (!preset) {
+    presetLibraryStatus.value = "Preset not found";
+    resetPresetLibraryStatusSoon();
+    return;
+  }
+
+  const fileName = createPresetFileName(preset.name);
+  const payload = serializeUserPresetFile(preset, {
+    speedUnit: request.speedUnit,
+    phaseUnit: request.phaseUnit
+  });
+  downloadTextFile(fileName, payload);
+  presetLibraryStatus.value = `Exported: ${fileName}`;
+  resetPresetLibraryStatusSoon();
+}
+
+async function handleImportUserPreset(file: File): Promise<void> {
+  try {
+    const content = await file.text();
+    const defaults = createDefaultState();
+    const importedPreset = deserializeUserPresetFile(content, defaults);
+    if (!importedPreset) {
+      presetLibraryStatus.value = "Import failed: invalid preset file";
+      resetPresetLibraryStatusSoon();
+      return;
+    }
+
+    const existing = getUserPreset(userPresetRecords.value, importedPreset.id);
+    const nextPreset = existing
+      ? importedPreset
+      : {
+          ...importedPreset,
+          id: ensureUniquePresetId(userPresetRecords.value, importedPreset.id)
+        };
+
+    userPresetRecords.value = upsertUserPreset(userPresetRecords.value, nextPreset);
+    persistPresetLibraryNow();
+    presetLibraryStatus.value = existing ? `Updated import: ${nextPreset.name}` : `Imported: ${nextPreset.name}`;
+    resetPresetLibraryStatusSoon();
+  } catch {
+    presetLibraryStatus.value = "Import failed: unreadable file";
+    resetPresetLibraryStatusSoon();
+  }
+}
+
+watch(
+  state,
+  () => {
+    schedulePersistenceSync();
+  },
+  { deep: true }
+);
+
 onMounted(() => {
+  const defaults = createDefaultState();
+  const initialState = resolveInitialState(defaults, window.location.href, getSessionStorageValue());
+  commitState(initialState);
+  userPresetRecords.value = deserializeUserPresetLibrary(getPresetLibraryStorageValue(), defaults);
+
+  const cleanUrl = stripStateQueryParam(window.location.href);
+  if (cleanUrl !== window.location.href) {
+    window.history.replaceState(null, "", cleanUrl);
+  }
+
+  persistenceEnabled = true;
+  persistSessionStateNow();
   animationFrameId = requestAnimationFrame(animationLoop);
 });
 
 onBeforeUnmount(() => {
   cancelAnimationFrame(animationFrameId);
+  if (copyLabelTimerId !== 0) {
+    window.clearTimeout(copyLabelTimerId);
+  }
+  if (persistenceTimerId !== 0) {
+    window.clearTimeout(persistenceTimerId);
+  }
+  if (presetLibraryStatusTimerId !== 0) {
+    window.clearTimeout(presetLibraryStatusTimerId);
+  }
 });
 </script>
 
@@ -120,12 +409,21 @@ onBeforeUnmount(() => {
         :state="state"
         :looped-playhead-beats="loopedPlayheadBeats"
         :scrub-step="scrubStep"
+        :copy-link-label="copyLinkLabel"
+        :user-presets="userPresetSummaries"
+        :preset-library-status="presetLibraryStatus"
         @toggle-playback="handleTogglePlayback"
+        @copy-link="handleCopyLink"
         @set-scrub="handleSetScrub"
         @set-global-number="handleSetGlobalNumber"
         @set-global-boolean="handleSetGlobalBoolean"
         @set-hand-number="handleSetHandNumber"
         @apply-preset="handleApplyPreset"
+        @save-user-preset="handleSaveUserPreset"
+        @load-user-preset="handleLoadUserPreset"
+        @delete-user-preset="handleDeleteUserPreset"
+        @export-user-preset="handleExportUserPreset"
+        @import-user-preset="handleImportUserPreset"
       />
     </section>
   </main>

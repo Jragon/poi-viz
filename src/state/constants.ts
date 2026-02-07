@@ -10,7 +10,7 @@ export const DEFAULT_TRAIL_BEATS = 4;
 export const DEFAULT_TRAIL_SAMPLE_HZ = 120;
 
 export const DEFAULT_ARM_RADIUS = 120;
-export const DEFAULT_POI_RADIUS = 180;
+export const DEFAULT_POI_RADIUS = 100;
 
 export const DEFAULT_ARM_CYCLES_PER_BEAT = 1;
 export const DEFAULT_LEFT_POI_CYCLES_PER_ARM_CYCLE = -3;

@@ -62,7 +62,7 @@ export function createDefaultState(): AppState {
       bpm: DEFAULT_BPM,
       loopBeats: DEFAULT_LOOP_BEATS,
       playSpeed: DEFAULT_PLAY_SPEED,
-      isPlaying: false,
+      isPlaying: true,
       t: DEFAULT_PLAYHEAD_BEATS,
       showTrails: true,
       trailBeats: DEFAULT_TRAIL_BEATS,
