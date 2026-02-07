@@ -58,3 +58,6 @@
 - 2026-02-07T11:53:07Z [TOOL] Verified runtime integrity after layout fix with passing `npm run build`.
 - 2026-02-07T11:55:06Z [USER] Requested a complete README rewrite as polished single-page documentation for the whole codebase, not phase-oriented notes.
 - 2026-02-07T11:55:06Z [CODE] Replaced `README.md` with holistic documentation covering product purpose, implemented vs pending features, architecture/data flow, math model, state/controls/presets, rendering behavior, deterministic sampling, fixtures, tests, project structure, and deployment.
+- 2026-02-07T12:07:49Z [USER] Provided GitHub Pages target URL `https://jragon.github.io/poi-viz/` and implied Pages base-path alignment.
+- 2026-02-07T12:07:49Z [CODE] Updated `vite.config.ts` to use `base: "/poi-viz/"` on build and `"/"` in dev so production assets resolve under project Pages URL.
+- 2026-02-07T12:07:49Z [TOOL] Verified configuration with passing `npm run build`.
