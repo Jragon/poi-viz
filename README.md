@@ -11,7 +11,7 @@ Phase checklist:
 - [x] Phase 3: pure deterministic engine math and fixed-step trail sampling utilities.
 - [x] Phase 4: validation test layer (invariants, special cases, tolerance helpers, fixture-comparison harness).
 - [x] Phase 5: fixture generator writes golden position fixtures for presets and fixture regression tests.
-- [ ] Phase 6: Canvas renderers (`PatternCanvas.vue`, `WaveCanvas.vue`) and sync plumbing.
+- [x] Phase 6: Canvas renderers (`PatternCanvas.vue`, `WaveCanvas.vue`) and sync plumbing.
 - [ ] Phase 7: controls UI (`Controls.vue`) with transport, per-hand params, presets.
 - [ ] Phase 8: URL + localStorage persistence and copy-link flow.
 - [ ] Phase 9: responsive 3-panel integration and final validation loop.
@@ -20,7 +20,8 @@ Still not implemented:
 
 - Canvas viewport renderer (`PatternCanvas.vue`).
 - Canvas waveform inspector (`WaveCanvas.vue`).
-- Full controls UI, playback loop wiring, URL/localStorage sync.
+- Full controls UI (`Controls.vue`) with per-hand editing, presets, and toggles.
+- URL/localStorage persistence and copy-link sharing.
 
 ## Math Model
 
@@ -28,7 +29,7 @@ All motion uses wall-plane coordinates `(x right, y up)` and beats `t`.
 
 Detailed engine walkthrough for teaching/documentation:
 
-- `/Users/rory/code/poi/src/engine/README.md`
+- `src/engine/README.md`
 
 For each hand `i ∈ {L, R}`:
 
@@ -38,7 +39,7 @@ For each hand `i ∈ {L, R}`:
 - `P_i(t) = H_i(t) + R_poi_i * [cos(θ_arm_i + θ_rel_i), sin(θ_arm_i + θ_rel_i)]`
 - `Tether_i(t) = P_i(t) - H_i(t)`
 
-Implemented APIs in `/Users/rory/code/poi/src/engine/engine.ts`:
+Implemented APIs in `src/engine/engine.ts`:
 
 - `getAngles(params, tBeats)`
 - `getPositions(params, tBeats)`
@@ -49,7 +50,7 @@ Implemented APIs in `/Users/rory/code/poi/src/engine/engine.ts`:
 
 ## State Model
 
-Canonical state contracts are in `/Users/rory/code/poi/src/types/state.ts`.
+Canonical state contracts are in `src/types/state.ts`.
 
 Global state includes:
 
@@ -62,11 +63,11 @@ Per-hand state includes:
 - arm oscillator: `armSpeed`, `armPhase`, `armRadius`
 - relative poi oscillator: `poiSpeed`, `poiPhase`, `poiRadius`
 
-Defaults are implemented in `/Users/rory/code/poi/src/state/defaults.ts` to match `spec.md`.
+Defaults are implemented in `src/state/defaults.ts` to match `spec.md`.
 
 ## Presets
 
-Preset transforms are pure and immutable in `/Users/rory/code/poi/src/state/presets.ts`.
+Preset transforms are pure and immutable in `src/state/presets.ts`.
 
 - Elements: `earth`, `air`, `water`, `fire`
 - Flowers: `inspin-{3,4,5}`, `antispin-{3,4,5}`
@@ -78,16 +79,18 @@ Flower presets set `poiSpeed = ±k * armSpeed` and reset `poiPhase = 0`.
 
 Current Vitest coverage:
 
-- `/Users/rory/code/poi/tests/state/defaults.test.ts`
-- `/Users/rory/code/poi/tests/state/presets.test.ts`
-- `/Users/rory/code/poi/tests/engine/angles.test.ts`
-- `/Users/rory/code/poi/tests/engine/positions.test.ts`
-- `/Users/rory/code/poi/tests/engine/sampling.test.ts`
-- `/Users/rory/code/poi/tests/engine/trails.test.ts`
-- `/Users/rory/code/poi/tests/engine/invariants.test.ts`
-- `/Users/rory/code/poi/tests/engine/special-cases.test.ts`
-- `/Users/rory/code/poi/tests/engine/fixture-harness.test.ts`
-- `/Users/rory/code/poi/tests/engine/fixtures.test.ts`
+- `tests/state/defaults.test.ts`
+- `tests/state/presets.test.ts`
+- `tests/engine/angles.test.ts`
+- `tests/engine/positions.test.ts`
+- `tests/engine/sampling.test.ts`
+- `tests/engine/trails.test.ts`
+- `tests/engine/invariants.test.ts`
+- `tests/engine/special-cases.test.ts`
+- `tests/engine/fixture-harness.test.ts`
+- `tests/engine/fixtures.test.ts`
+- `tests/render/pattern-renderer.test.ts`
+- `tests/render/wave-renderer.test.ts`
 
 You can fully test completed phases now with:
 
@@ -99,7 +102,7 @@ npm run build
 
 ## Fixture Workflow
 
-Golden numeric fixtures live in `/Users/rory/code/poi/fixtures`.
+Golden numeric fixtures live in `fixtures`.
 
 - Generate/update fixtures:
   - `npm run gen:fixtures`
@@ -110,6 +113,15 @@ Fixtures are deterministic snapshots of head positions sampled over a loop for:
 
 - elements: `earth`, `air`, `water`, `fire`
 - flowers: `inspin-{3,4,5}`, `antispin-{3,4,5}`
+
+## Rendering Workflow (Phase 6)
+
+- `PatternCanvas.vue` uses `renderPattern` from `src/render/patternRenderer.ts`.
+- `WaveCanvas.vue` uses `renderWaves` from `src/render/waveRenderer.ts`.
+- Draw order in pattern viewport follows spec:
+  - background -> grid -> trails -> tether lines -> dots
+- Playhead sync is driven by a requestAnimationFrame transport loop in `src/App.vue`.
+- Current controls are intentionally minimal in-app transport/scrub controls; full controls UI is Phase 7.
 
 ## Commands
 
@@ -139,13 +151,16 @@ npm install --cache .npm-cache
 ├── scripts/gen-fixtures.ts
 ├── src
 │   ├── App.vue
+│   ├── components
 │   ├── engine
 │   ├── main.ts
+│   ├── render
 │   ├── state
 │   ├── style.css
 │   └── types
 ├── tests
 │   ├── engine
+│   ├── render
 │   └── state
 ├── AGENTS.md
 ├── spec.md

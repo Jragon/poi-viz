@@ -1,23 +1,33 @@
 # Continuity Log
 
-- 2026-02-07T11:04:11Z [TOOL] Reviewed `/Users/rory/code/poi/AGENTS.md` and confirmed required documentation rules include README sync plus mandatory continuity tracking at `/Users/rory/code/poi/.agent/CONTINUITY.md`.
-- 2026-02-07T11:04:11Z [CODE] Added and validated Phase 3 engine modules under `/Users/rory/code/poi/src/engine` with deterministic math (`getAngles`, `getPositions`, `sampleLoop`) and fixed-step trail sampling.
+- 2026-02-07T11:04:11Z [TOOL] Reviewed `AGENTS.md` and confirmed required documentation rules include README sync plus mandatory continuity tracking at `.agent/CONTINUITY.md`.
+- 2026-02-07T11:04:11Z [CODE] Added and validated Phase 3 engine modules under `src/engine` with deterministic math (`getAngles`, `getPositions`, `sampleLoop`) and fixed-step trail sampling.
 - 2026-02-07T11:04:11Z [TOOL] Verified current code health after Phase 3 with passing `npm run test` and `npm run build`.
-- 2026-02-07T11:04:11Z [CODE] Updated `/Users/rory/code/poi/README.md` to reflect Phase 3 implementation status, math equations, engine API, and current test coverage.
+- 2026-02-07T11:04:11Z [CODE] Updated `README.md` to reflect Phase 3 implementation status, math equations, engine API, and current test coverage.
 - 2026-02-07T11:05:47Z [USER] Requested walkthrough of Phase 4 implementation planning before coding.
 - 2026-02-07T11:05:47Z [ASSUMPTION] Phase 4 scope is the `spec.md` validation loop only: invariants, special-case geometry checks, fixture generation, and fixture comparison tests with documented tolerances.
 - 2026-02-07T11:09:43Z [USER] Requested execution of the next implementation phase plus explicit logging, next-step callout, and test instructions.
-- 2026-02-07T11:09:43Z [CODE] Implemented Phase 4 test layer: tolerance helpers, invariants suite, special-cases suite, and a fixture comparison harness under `/Users/rory/code/poi/tests/engine`.
+- 2026-02-07T11:09:43Z [CODE] Implemented Phase 4 test layer: tolerance helpers, invariants suite, special-cases suite, and a fixture comparison harness under `tests/engine`.
 - 2026-02-07T11:09:43Z [TOOL] Verified Phase 4 with passing `npm run test` (23 tests) and `npm run build`.
 - 2026-02-07T11:09:43Z [ASSUMPTION] Next phase is Phase 5: replace fixture scaffold generation with real golden position fixtures and add file-backed fixture regression tests using the harness.
 - 2026-02-07T11:13:06Z [USER] Requested comprehensive engine documentation to support understanding and teaching.
-- 2026-02-07T11:13:06Z [CODE] Added API-level JSDoc across engine modules and created `/Users/rory/code/poi/src/engine/README.md` with equations, API mapping, determinism notes, and a worked example.
-- 2026-02-07T11:13:06Z [CODE] Updated `/Users/rory/code/poi/README.md` to point to dedicated engine documentation.
+- 2026-02-07T11:13:06Z [CODE] Added API-level JSDoc across engine modules and created `src/engine/README.md` with equations, API mapping, determinism notes, and a worked example.
+- 2026-02-07T11:13:06Z [CODE] Updated `README.md` to point to dedicated engine documentation.
 - 2026-02-07T11:14:24Z [USER] Requested planning walkthrough for the next implementation phase.
 - 2026-02-07T11:14:24Z [ASSUMPTION] Next phase scope is Phase 5 only: replace fixture placeholder generation with real preset position fixtures and add file-backed regression tests.
-- 2026-02-07T11:18:17Z [CODE] Completed Phase 5 implementation: replaced fixture placeholder script with deterministic preset fixture generation, added fixture schema utilities in `/Users/rory/code/poi/src/engine/fixtures.ts`, and generated `/Users/rory/code/poi/fixtures/*.json`.
-- 2026-02-07T11:18:17Z [CODE] Added file-backed regression suite `/Users/rory/code/poi/tests/engine/fixtures.test.ts` using fixture harness comparisons at fixture tolerance.
-- 2026-02-07T11:18:17Z [CODE] Updated `/Users/rory/code/poi/README.md` and `/Users/rory/code/poi/src/engine/README.md` to document Phase 5 fixture workflow and testability.
+- 2026-02-07T11:18:17Z [CODE] Completed Phase 5 implementation: replaced fixture placeholder script with deterministic preset fixture generation, added fixture schema utilities in `src/engine/fixtures.ts`, and generated `fixtures/*.json`.
+- 2026-02-07T11:18:17Z [CODE] Added file-backed regression suite `tests/engine/fixtures.test.ts` using fixture harness comparisons at fixture tolerance.
+- 2026-02-07T11:18:17Z [CODE] Updated `README.md` and `src/engine/README.md` to document Phase 5 fixture workflow and testability.
 - 2026-02-07T11:18:17Z [ASSUMPTION] Next implementation phase is Phase 6: Canvas renderers and render-sync wiring (`PatternCanvas.vue`, `WaveCanvas.vue`).
 - 2026-02-07T11:19:27Z [CODE] Hardened fixture manifest generation to derive and validate uniform `sampleHz`/`startBeat` from generated payloads.
 - 2026-02-07T11:19:27Z [TOOL] Re-ran full Phase 5 validation: `npm run gen:fixtures`, `npm run test` (25 tests), and `npm run build` all passed.
+- 2026-02-07T11:20:31Z [USER] Approved Phase 6 implementation and requested execution.
+- 2026-02-07T11:26:29Z [CODE] Implemented Phase 6 render layer: added Canvas render modules in `src/render`, created `src/components/PatternCanvas.vue` and `src/components/WaveCanvas.vue`, and rewired `src/App.vue` to responsive 3-panel layout with synced RAF playhead.
+- 2026-02-07T11:26:29Z [CODE] Added render helper tests in `tests/render/pattern-renderer.test.ts` and `tests/render/wave-renderer.test.ts`.
+- 2026-02-07T11:26:29Z [TOOL] Verified Phase 6 with passing `npm run test` (31 tests) and `npm run build`.
+- 2026-02-07T11:26:29Z [ASSUMPTION] Next phase is Phase 7: implement full `Controls.vue` with transport/params/presets/toggles and move temporary controls out of `App.vue`.
+- 2026-02-07T11:20:31Z [USER] Requested implementation plan for Phase 6.
+- 2026-02-07T11:20:31Z [TOOL] Confirmed current UI is still scaffold-only in `src/App.vue`; canvas components and renderer modules are not yet present.
+- 2026-02-07T11:20:31Z [ASSUMPTION] Phase 6 scope is render-layer only: implement `PatternCanvas.vue` + `WaveCanvas.vue`, renderer modules, and playhead sync wiring without full controls/persistence work.
+- 2026-02-07T11:28:23Z [USER] Requested documentation file paths to be project-root-relative instead of absolute workspace paths.
+- 2026-02-07T11:28:23Z [CODE] Normalized path references in `README.md` and `.agent/CONTINUITY.md` from absolute to project-relative format.
