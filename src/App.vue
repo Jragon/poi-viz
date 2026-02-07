@@ -93,18 +93,27 @@ onBeforeUnmount(() => {
   <main class="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-4 p-4 text-zinc-100 md:p-6">
     <header class="rounded border border-zinc-800 bg-zinc-950/70 p-4">
       <h1 class="text-2xl font-semibold tracking-tight md:text-3xl">Poi Phase Visualiser</h1>
-      <p class="text-sm text-zinc-400">Phase 7: Full controls + presets wired to Canvas renderers.</p>
     </header>
 
     <section class="grid gap-4 lg:grid-cols-12">
-      <article class="h-[360px] rounded border border-zinc-800 bg-zinc-950/70 p-2 sm:h-[480px] lg:col-span-7">
+      <article
+        class="flex h-[360px] flex-col rounded border border-zinc-800 bg-zinc-950/70 p-2 sm:h-[480px]"
+        :class="state.global.showWaves ? 'lg:col-span-7' : 'lg:col-span-12'"
+      >
         <h2 class="mb-2 px-2 text-xs font-medium uppercase tracking-wide text-zinc-400">Pattern Viewport</h2>
-        <PatternCanvas :state="state" :t-beats="state.global.t" />
+        <div class="min-h-0 flex-1">
+          <PatternCanvas :state="state" :t-beats="state.global.t" />
+        </div>
       </article>
 
-      <article class="h-[360px] rounded border border-zinc-800 bg-zinc-950/70 p-2 sm:h-[480px] lg:col-span-5">
+      <article
+        v-if="state.global.showWaves"
+        class="flex h-[360px] flex-col rounded border border-zinc-800 bg-zinc-950/70 p-2 sm:h-[480px] lg:col-span-5"
+      >
         <h2 class="mb-2 px-2 text-xs font-medium uppercase tracking-wide text-zinc-400">Waveform Inspector</h2>
-        <WaveCanvas :state="state" :t-beats="state.global.t" />
+        <div class="min-h-0 flex-1">
+          <WaveCanvas :state="state" :t-beats="state.global.t" />
+        </div>
       </article>
 
       <Controls
