@@ -168,7 +168,8 @@ Defaults are created in `src/state/defaults.ts` from constants in `src/state/con
 
 `src/components/Controls.vue` provides:
 - Foldable panels for transport, global settings, both hands, preset library, and usage help.
-- Transport panel: play/pause + scrub + copy-link button.
+- Default panel states: Global Settings and Preset Library start collapsed; "How This Works and How To Use It" starts expanded.
+- Transport panel: play/pause + scrub.
 - Global settings: BPM, loop beats, play speed, trail settings, trails/waves toggles.
 - Unit controls:
   - phase unit: degrees/radians
@@ -196,7 +197,7 @@ Persistence behavior in `src/App.vue` + `src/state/persistence.ts`:
 - On load: legacy URL state is parsed first; if absent/invalid, localStorage session state is used; otherwise defaults.
 - The app removes `state` query params after hydration so editing does not keep long URLs visible.
 - On state changes: session state is updated in localStorage with debounce.
-- Copy link button creates a shareable URL snapshot without mutating the current browser URL.
+- Header copy-link button creates a shareable URL snapshot without mutating the current browser URL.
 - Preset library records are stored separately in localStorage and can be exported/imported as JSON.
 - Exported preset JSON keeps speed/phase values in selected UI units and includes unit metadata for reliable re-import.
 

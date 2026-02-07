@@ -131,3 +131,11 @@
 - 2026-02-07T17:39:13Z [CODE] Removed unused preset apply handler wiring in `src/App.vue` and updated controls help copy to focus on VTG + hand tuning workflow.
 - 2026-02-07T17:39:13Z [CODE] Updated `README.md` controls/data-flow docs to reflect removed preset panels while preserving programmatic preset-system notes.
 - 2026-02-07T17:39:13Z [TOOL] Verified with passing `npm test` (65 tests) and `npm run build`.
+- 2026-02-07T17:40:13Z [USER] Requested default panel-state changes: Global Settings and Preset Library hidden by default, while How To Use remains expanded.
+- 2026-02-07T17:40:13Z [CODE] Updated `src/components/Controls.vue` details defaults so Global Settings and Preset Library start collapsed; retained open default for How To Use panel.
+- 2026-02-07T17:40:13Z [CODE] Updated `README.md` controls reference to document default panel states.
+- 2026-02-07T17:40:13Z [TOOL] Verified with passing `npm run build`.
+- 2026-02-07T17:41:50Z [USER] Requested moving the copy-link button to the top-right header area and renaming the title text to "Poi Visuliser".
+- 2026-02-07T17:41:50Z [CODE] Updated `src/App.vue` header layout to include copy-link action button at top-right and changed title text to `Poi Visuliser`; removed copy-link wiring from transport controls.
+- 2026-02-07T17:41:50Z [CODE] Updated `README.md` controls/persistence notes to reflect copy-link now living in the header instead of Transport panel.
+- 2026-02-07T17:41:50Z [TOOL] Verified with passing `npm run build`.

@@ -20,7 +20,6 @@ interface ControlsProps {
   state: AppState;
   loopedPlayheadBeats: number;
   scrubStep: number;
-  copyLinkLabel: string;
   userPresets: UserPresetSummary[];
   presetLibraryStatus: string;
 }
@@ -35,7 +34,6 @@ const props = defineProps<ControlsProps>();
 
 const emit = defineEmits<{
   (event: "toggle-playback"): void;
-  (event: "copy-link"): void;
   (event: "save-user-preset", name: string): void;
   (event: "load-user-preset", presetId: string): void;
   (event: "delete-user-preset", presetId: string): void;
@@ -502,13 +500,6 @@ function formatSavedAt(isoString: string): string {
           >
             {{ props.state.global.isPlaying ? "Pause" : "Play" }}
           </button>
-          <button
-            class="rounded border border-zinc-700 px-3 py-2 text-sm font-medium hover:border-zinc-500"
-            type="button"
-            @click="emit('copy-link')"
-          >
-            {{ props.copyLinkLabel }}
-          </button>
           <p class="text-sm text-zinc-400">Playhead: {{ props.loopedPlayheadBeats.toFixed(3) }} beats</p>
         </div>
 
@@ -528,7 +519,7 @@ function formatSavedAt(isoString: string): string {
       </div>
     </details>
 
-    <details class="mt-4 rounded border border-zinc-800 p-3" open>
+    <details class="mt-4 rounded border border-zinc-800 p-3">
       <summary class="cursor-pointer text-xs uppercase tracking-wide text-zinc-400">Global Settings</summary>
       <div class="mt-3">
         <div class="mb-4 rounded border border-zinc-800 bg-zinc-900/50 p-3">
@@ -702,7 +693,7 @@ function formatSavedAt(isoString: string): string {
       </details>
     </div>
 
-    <details class="mt-4 rounded border border-zinc-800 p-3" open>
+    <details class="mt-4 rounded border border-zinc-800 p-3">
       <summary class="cursor-pointer text-xs uppercase tracking-wide text-zinc-400">Preset Library</summary>
       <div class="mt-3">
         <p class="text-xs text-zinc-500">

@@ -382,7 +382,16 @@ onBeforeUnmount(() => {
 <template>
   <main class="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-4 p-4 text-zinc-100 md:p-6">
     <header class="rounded border border-zinc-800 bg-zinc-950/70 p-4">
-      <h1 class="text-2xl font-semibold tracking-tight md:text-3xl">Poi Phase Visualiser</h1>
+      <div class="flex items-start justify-between gap-3">
+        <h1 class="text-2xl font-semibold tracking-tight md:text-3xl">Poi Visuliser</h1>
+        <button
+          class="rounded border border-zinc-700 px-3 py-2 text-sm font-medium hover:border-zinc-500"
+          type="button"
+          @click="handleCopyLink"
+        >
+          {{ copyLinkLabel }}
+        </button>
+      </div>
     </header>
 
     <section class="grid gap-4 lg:grid-cols-12">
@@ -410,11 +419,9 @@ onBeforeUnmount(() => {
         :state="state"
         :looped-playhead-beats="loopedPlayheadBeats"
         :scrub-step="scrubStep"
-        :copy-link-label="copyLinkLabel"
         :user-presets="userPresetSummaries"
         :preset-library-status="presetLibraryStatus"
         @toggle-playback="handleTogglePlayback"
-        @copy-link="handleCopyLink"
         @set-scrub="handleSetScrub"
         @set-global-number="handleSetGlobalNumber"
         @set-global-boolean="handleSetGlobalBoolean"
