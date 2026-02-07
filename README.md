@@ -21,7 +21,7 @@ The controls let you:
 - edit global timing and trail settings,
 - edit left/right hand parameters,
 - switch angle entry between degrees and radians,
-- apply element and flower presets,
+- generate canonical VTG states from a 4×4 arm/poi relationship grid,
 - save/load your own preset library and export/import preset JSON.
 
 ## Current Feature Coverage
@@ -30,11 +30,12 @@ Implemented:
 - Pure deterministic engine math in `src/engine`.
 - Pattern renderer in `src/render/patternRenderer.ts` + `src/components/PatternCanvas.vue`.
 - Wave renderer in `src/render/waveRenderer.ts` + `src/components/WaveCanvas.vue`.
-- Full controls UI in `src/components/Controls.vue`.
+- Full controls UI in `src/components/Controls.vue` with dedicated VTG panel in `src/components/VtgPanel.vue`.
 - Typed immutable state update actions in `src/state/actions.ts`.
 - Session persistence + share-link encoding in `src/state/persistence.ts` and `src/App.vue`.
 - Local preset library save/load/export/import in `src/state/presetLibrary.ts` and `src/components/Controls.vue`.
 - Preset system (elements + flowers) in `src/state/presets.ts`.
+- VTG domain layer (`src/vtg/types.ts`, `src/vtg/classify.ts`, `src/vtg/generate.ts`) and VTG grid controls in `src/components/VtgPanel.vue`.
 - Golden fixture generation and regression tests (`scripts/gen-fixtures.ts`, `fixtures/*.json`, `tests/engine/fixtures.test.ts`).
 - Responsive app shell in `src/App.vue`.
 - GitHub Pages workflow in `.github/workflows/deploy-pages.yml`.
@@ -75,13 +76,16 @@ npm install --cache .npm-cache
 - `src/components/WaveCanvas.vue`
   Samples loop channels and delegates drawing to wave renderer.
 - `src/components/Controls.vue`
-  Emits typed events for global/hand updates, transport actions, and presets.
+  Hosts foldable control sections and emits typed events for global/hand updates, transport actions, VTG apply, and presets.
+- `src/components/VtgPanel.vue`
+  Renders the foldable VTG selector/grid panel and emits `VTGDescriptor` updates on grid, phase, and cycles changes.
 
 ### Separation of concerns
 
 - Engine (`src/engine/*`): pure math and deterministic sampling.
 - Render (`src/render/*`): pure Canvas draw functions and transforms.
 - State (`src/state/*`): defaults, constants, action reducers, presets, angle-unit and speed-unit conversions.
+- VTG (`src/vtg/*`): pure descriptor generation/classification independent of Vue and rendering.
 - Persistence (`src/state/persistence.ts`): serialize/deserialize + URL/localStorage integration helpers.
 - Preset library (`src/state/presetLibrary.ts`): local preset records + JSON import/export helpers.
 - Vue components (`src/components/*`): event wiring + canvas lifecycle only.
@@ -94,7 +98,7 @@ npm install --cache .npm-cache
 4. Canvases read state and `t`:
    - Pattern canvas computes positions/trails and renders geometry.
    - Wave canvas samples one loop and renders oscillator traces + playhead cursor.
-5. Preset buttons call `applyPresetById` via state actions.
+5. VTG grid/phase/cycles controls emit `VTGDescriptor` values and apply canonical angular params through `generateVTGState`.
 6. Persistence layer syncs session state to localStorage (debounced), keeps URL clean during editing, and still supports share-link state encoding on demand.
 
 ## Math Model (Single Source of Truth)
@@ -117,6 +121,15 @@ Speed-language mapping used in controls:
 - `r = poiSpeed` (relative poi cycles per beat)
 - `h = a + r` (absolute head cycles per beat)
 - Inverse form when editing absolute speed: `r = h - a`
+
+VTG canonical generation wrapper (`src/vtg/generate.ts`) applies:
+- `ω_arm_L = 2π`, `φ_arm_L = 0`
+- right arm timing/direction from VTG arm element
+- `ω_head_L = poiCyclesPerArmCycle * 2π` (signed head cycles per arm cycle)
+- right head direction from VTG poi element and right head timing from VTG poi timing (`same-time`/`split-time`) relative to left head
+- relative solve per hand: `ω_rel = ω_head - ω_arm`, `φ_rel = φ_head - φ_arm`
+- phase bucket sets absolute left-head orientation (0/90/180/270), while poi timing classification stays independent (`same-time` vs `split-time`).
+- classifier bucket tolerance is ±5°.
 
 Notes:
 - `ω_rel = 0` gives extension behavior (head offset locked to arm angle).
@@ -154,6 +167,7 @@ Defaults are created in `src/state/defaults.ts` from constants in `src/state/con
 ## Controls Reference
 
 `src/components/Controls.vue` provides:
+- Foldable panels for transport, global settings, both hands, preset library, and usage help.
 - Transport panel: play/pause + scrub + copy-link button.
 - Global settings: BPM, loop beats, play speed, trail settings, trails/waves toggles.
 - Unit controls:
@@ -164,9 +178,13 @@ Defaults are created in `src/state/defaults.ts` from constants in `src/state/con
   - absolute head speed `h` (default-visible control)
   - relative poi speed `r` and derived readouts (`a`, `r`, `h`, spin mode, `r/a`) in advanced mode
 - Number inputs commit/validate on blur to allow uninterrupted typing of partial/negative values.
-- Preset groups:
-  - Elements: Earth, Air, Water, Fire.
-  - Flowers: inspin/antispin 3-, 4-, 5-petal.
+- VTG panel:
+  - moved to `src/components/VtgPanel.vue` and mounted directly below Global Settings,
+  - collapsible by default with persisted open/closed state,
+  - selectors for signed non-zero poi cycles per arm cycle and phase chips (`0/90/180/270`),
+  - 4×4 clickable grid: rows are arm elements, columns are poi-head elements,
+  - read-only classifier for current VTG arm/poi/phase state,
+  - collapsible help text with concise timing/direction semantics.
 - Preset Library section:
   - save current state to app storage,
   - load/delete/export saved entries,
@@ -191,6 +209,7 @@ State writes are routed through pure reducers in `src/state/actions.ts`:
 ## Preset System
 
 Preset catalog is defined in `src/state/presets.ts`.
+Element/flower presets remain available as pure programmatic transforms, but their dedicated control panels are no longer shown in the UI.
 
 Element presets (`earth`, `air`, `water`, `fire`) modify right-hand arm relation relative to left hand:
 - same/split time (`φ_arm_R` offset of `0` or `π`)
@@ -277,6 +296,9 @@ Render tests:
 - `tests/render/pattern-renderer.test.ts`
 - `tests/render/wave-renderer.test.ts`
 
+VTG tests:
+- `tests/vtg/generate.test.ts`
+
 ## Project Structure
 
 ```text
@@ -290,17 +312,20 @@ Render tests:
 │   ├── components/
 │   │   ├── Controls.vue
 │   │   ├── PatternCanvas.vue
+│   │   ├── VtgPanel.vue
 │   │   └── WaveCanvas.vue
 │   ├── engine/
 │   ├── render/
 │   ├── state/
 │   ├── types/
+│   ├── vtg/
 │   ├── main.ts
 │   └── style.css
 ├── tests/
 │   ├── engine/
 │   ├── render/
-│   └── state/
+│   ├── state/
+│   └── vtg/
 ├── AGENTS.md
 ├── spec.md
 └── README.md

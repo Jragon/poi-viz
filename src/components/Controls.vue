@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import VtgPanel from "@/components/VtgPanel.vue";
 import { degreesToRadians, radiansToDegrees, type AngleUnit } from "@/state/angleUnits";
-import { PRESET_CATALOG } from "@/state/presets";
 import type { UserPresetSummary } from "@/state/presetLibrary";
 import {
   classifyPoiSpinMode,
@@ -12,7 +12,8 @@ import {
   type SpeedUnit
 } from "@/state/speedUnits";
 import type { GlobalBooleanKey, GlobalNumberKey, HandNumberKey } from "@/state/actions";
-import type { AppState, HandId, PresetId } from "@/types/state";
+import type { AppState, HandId } from "@/types/state";
+import type { VTGDescriptor } from "@/vtg/types";
 import { ref } from "vue";
 
 interface ControlsProps {
@@ -44,19 +45,10 @@ const emit = defineEmits<{
   (event: "set-global-number", key: GlobalNumberKey, value: number): void;
   (event: "set-global-boolean", key: GlobalBooleanKey, value: boolean): void;
   (event: "set-hand-number", handId: HandId, key: HandNumberKey, value: number): void;
-  (event: "apply-preset", presetId: PresetId): void;
+  (event: "apply-vtg", descriptor: VTGDescriptor): void;
 }>();
 
 const HAND_IDS: HandId[] = ["L", "R"];
-const ELEMENT_PRESET_IDS: PresetId[] = ["earth", "air", "water", "fire"];
-const FLOWER_PRESET_IDS: PresetId[] = [
-  "inspin-3",
-  "inspin-4",
-  "inspin-5",
-  "antispin-3",
-  "antispin-4",
-  "antispin-5"
-];
 
 const PHASE_RADIAN_STEP = 1;
 const PHASE_DEGREE_STEP = 1;
@@ -442,12 +434,8 @@ function getHandFieldDescription(field: HandNumberFieldConfig): string {
   return `${field.description} (${getHandFieldUnit(field)}).`;
 }
 
-function onPresetClick(presetId: PresetId): void {
-  emit("apply-preset", presetId);
-}
-
-function getPresetLabel(presetId: PresetId): string {
-  return PRESET_CATALOG.find((preset) => preset.id === presetId)?.label ?? presetId;
+function onApplyVtg(descriptor: VTGDescriptor): void {
+  emit("apply-vtg", descriptor);
 }
 
 function saveCurrentAsUserPreset(): void {
@@ -503,357 +491,331 @@ function formatSavedAt(isoString: string): string {
   <section class="rounded border border-zinc-800 bg-zinc-950/70 p-4 lg:col-span-12">
     <h2 class="mb-4 text-xs font-medium uppercase tracking-wide text-zinc-400">Controls</h2>
 
-    <article class="rounded border border-zinc-800 p-3">
-      <h3 class="mb-3 text-xs uppercase tracking-wide text-zinc-400">Transport</h3>
-      <div class="flex flex-wrap items-center gap-3">
-        <button
-          class="rounded border border-zinc-700 px-3 py-2 text-sm font-medium hover:border-zinc-500"
-          type="button"
-          @click="emit('toggle-playback')"
-        >
-          {{ props.state.global.isPlaying ? "Pause" : "Play" }}
-        </button>
-        <button
-          class="rounded border border-zinc-700 px-3 py-2 text-sm font-medium hover:border-zinc-500"
-          type="button"
-          @click="emit('copy-link')"
-        >
-          {{ props.copyLinkLabel }}
-        </button>
-        <p class="text-sm text-zinc-400">Playhead: {{ props.loopedPlayheadBeats.toFixed(3) }} beats</p>
-      </div>
-
-      <label class="mt-3 block text-xs uppercase tracking-wide text-zinc-500">
-        Scrub
-        <input
-          class="mt-2 w-full accent-cyan-400"
-          type="range"
-          min="0"
-          :max="props.state.global.loopBeats"
-          :step="props.scrubStep"
-          :value="props.loopedPlayheadBeats"
-          @input="onScrubInput"
-        />
-      </label>
-      <p class="mt-2 text-xs text-zinc-500">Move to a specific beat inside the loop and pause playback.</p>
-    </article>
-
-    <article class="mt-4 rounded border border-zinc-800 p-3">
-      <h3 class="mb-3 text-xs uppercase tracking-wide text-zinc-400">Global Settings</h3>
-      <div class="mb-4 rounded border border-zinc-800 bg-zinc-900/50 p-3">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <p class="text-xs uppercase tracking-wide text-zinc-500">Input Units</p>
-          <label class="flex items-center gap-2 text-xs uppercase tracking-wide text-zinc-400">
-            <input class="accent-cyan-400" type="checkbox" :checked="showAdvanced" @change="onAdvancedToggle" />
-            Show Advanced
-          </label>
-        </div>
-        <p class="mt-1 text-xs text-zinc-500">Engine math always uses radians internally. Unit selectors change UI input/display only.</p>
-        <div class="mt-3 grid gap-4 sm:grid-cols-2">
-          <div>
-            <p class="text-xs uppercase tracking-wide text-zinc-500">Phase Units</p>
-            <div class="mt-2 flex gap-2">
-              <button
-                class="rounded border px-3 py-1.5 text-sm"
-                :class="isPhaseUnit('degrees') ? 'border-cyan-400 text-cyan-300' : 'border-zinc-700 text-zinc-300'"
-                type="button"
-                @click="setPhaseUnit('degrees')"
-              >
-                Degrees
-              </button>
-              <button
-                class="rounded border px-3 py-1.5 text-sm"
-                :class="isPhaseUnit('radians') ? 'border-cyan-400 text-cyan-300' : 'border-zinc-700 text-zinc-300'"
-                type="button"
-                @click="setPhaseUnit('radians')"
-              >
-                Radians
-              </button>
-            </div>
-          </div>
-          <div>
-            <p class="text-xs uppercase tracking-wide text-zinc-500">Speed Units</p>
-            <div class="mt-2 flex gap-2">
-              <button
-                class="rounded border px-3 py-1.5 text-sm"
-                :class="isSpeedUnit('cycles') ? 'border-cyan-400 text-cyan-300' : 'border-zinc-700 text-zinc-300'"
-                type="button"
-                @click="setSpeedUnit('cycles')"
-              >
-                Cycles / Beat
-              </button>
-              <button
-                class="rounded border px-3 py-1.5 text-sm"
-                :class="isSpeedUnit('degrees') ? 'border-cyan-400 text-cyan-300' : 'border-zinc-700 text-zinc-300'"
-                type="button"
-                @click="setSpeedUnit('degrees')"
-              >
-                Degrees / Beat
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <label v-for="field in GLOBAL_NUMBER_FIELDS" :key="field.key" class="block text-xs tracking-wide text-zinc-500">
-          <span class="uppercase">{{ field.label }}</span>
-          <input
-            class="mt-1 w-full rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-sm text-zinc-100"
-            type="number"
-            :min="field.min"
-            :step="field.step"
-            :value="getNumericDraftValue(getGlobalDraftKey(field.key), props.state.global[field.key])"
-            @input="updateNumericDraft(getGlobalDraftKey(field.key), $event)"
-            @blur="commitGlobalNumberInput(field.key)"
-            @keydown.enter="commitDraftOnEnter"
-          />
-          <span class="mt-1 block text-[11px] leading-4 text-zinc-500">{{ field.description }}</span>
-        </label>
-      </div>
-
-      <div class="mt-4 flex flex-wrap items-center gap-4">
-        <label class="flex items-center gap-2 text-sm text-zinc-300">
-          <input
-            class="accent-cyan-400"
-            type="checkbox"
-            :checked="props.state.global.showTrails"
-            @change="onGlobalBooleanInput('showTrails', $event)"
-          />
-          Show Trails
-        </label>
-        <label class="flex items-center gap-2 text-sm text-zinc-300">
-          <input
-            class="accent-cyan-400"
-            type="checkbox"
-            :checked="props.state.global.showWaves"
-            @change="onGlobalBooleanInput('showWaves', $event)"
-          />
-          Show Waves
-        </label>
-      </div>
-      <p class="mt-2 text-xs text-zinc-500">Trails show historical head paths. Waves show oscillator sin/cos channels.</p>
-    </article>
-
-    <div class="mt-4 grid gap-4 xl:grid-cols-2">
-      <article v-for="handId in HAND_IDS" :key="handId" class="rounded border border-zinc-800 p-3">
-        <h3 class="mb-3 text-xs uppercase tracking-wide text-zinc-400">Hand {{ handId }}</h3>
-        <div class="grid gap-3 sm:grid-cols-2">
-          <label
-            v-for="field in HAND_BASE_FIELDS"
-            :key="`${handId}-${field.key}`"
-            class="block text-xs tracking-wide text-zinc-500"
+    <details class="rounded border border-zinc-800 p-3" open>
+      <summary class="cursor-pointer text-xs uppercase tracking-wide text-zinc-400">Transport</summary>
+      <div class="mt-3">
+        <div class="flex flex-wrap items-center gap-3">
+          <button
+            class="rounded border border-zinc-700 px-3 py-2 text-sm font-medium hover:border-zinc-500"
+            type="button"
+            @click="emit('toggle-playback')"
           >
-            <span class="uppercase">{{ field.label }} ({{ getHandFieldUnit(field) }})</span>
+            {{ props.state.global.isPlaying ? "Pause" : "Play" }}
+          </button>
+          <button
+            class="rounded border border-zinc-700 px-3 py-2 text-sm font-medium hover:border-zinc-500"
+            type="button"
+            @click="emit('copy-link')"
+          >
+            {{ props.copyLinkLabel }}
+          </button>
+          <p class="text-sm text-zinc-400">Playhead: {{ props.loopedPlayheadBeats.toFixed(3) }} beats</p>
+        </div>
+
+        <label class="mt-3 block text-xs uppercase tracking-wide text-zinc-500">
+          Scrub
+          <input
+            class="mt-2 w-full accent-cyan-400"
+            type="range"
+            min="0"
+            :max="props.state.global.loopBeats"
+            :step="props.scrubStep"
+            :value="props.loopedPlayheadBeats"
+            @input="onScrubInput"
+          />
+        </label>
+        <p class="mt-2 text-xs text-zinc-500">Move to a specific beat inside the loop and pause playback.</p>
+      </div>
+    </details>
+
+    <details class="mt-4 rounded border border-zinc-800 p-3" open>
+      <summary class="cursor-pointer text-xs uppercase tracking-wide text-zinc-400">Global Settings</summary>
+      <div class="mt-3">
+        <div class="mb-4 rounded border border-zinc-800 bg-zinc-900/50 p-3">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <p class="text-xs uppercase tracking-wide text-zinc-500">Input Units</p>
+            <label class="flex items-center gap-2 text-xs uppercase tracking-wide text-zinc-400">
+              <input class="accent-cyan-400" type="checkbox" :checked="showAdvanced" @change="onAdvancedToggle" />
+              Show Advanced
+            </label>
+          </div>
+          <p class="mt-1 text-xs text-zinc-500">Engine math always uses radians internally. Unit selectors change UI input/display only.</p>
+          <div class="mt-3 grid gap-4 sm:grid-cols-2">
+            <div>
+              <p class="text-xs uppercase tracking-wide text-zinc-500">Phase Units</p>
+              <div class="mt-2 flex gap-2">
+                <button
+                  class="rounded border px-3 py-1.5 text-sm"
+                  :class="isPhaseUnit('degrees') ? 'border-cyan-400 text-cyan-300' : 'border-zinc-700 text-zinc-300'"
+                  type="button"
+                  @click="setPhaseUnit('degrees')"
+                >
+                  Degrees
+                </button>
+                <button
+                  class="rounded border px-3 py-1.5 text-sm"
+                  :class="isPhaseUnit('radians') ? 'border-cyan-400 text-cyan-300' : 'border-zinc-700 text-zinc-300'"
+                  type="button"
+                  @click="setPhaseUnit('radians')"
+                >
+                  Radians
+                </button>
+              </div>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-wide text-zinc-500">Speed Units</p>
+              <div class="mt-2 flex gap-2">
+                <button
+                  class="rounded border px-3 py-1.5 text-sm"
+                  :class="isSpeedUnit('cycles') ? 'border-cyan-400 text-cyan-300' : 'border-zinc-700 text-zinc-300'"
+                  type="button"
+                  @click="setSpeedUnit('cycles')"
+                >
+                  Cycles / Beat
+                </button>
+                <button
+                  class="rounded border px-3 py-1.5 text-sm"
+                  :class="isSpeedUnit('degrees') ? 'border-cyan-400 text-cyan-300' : 'border-zinc-700 text-zinc-300'"
+                  type="button"
+                  @click="setSpeedUnit('degrees')"
+                >
+                  Degrees / Beat
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <label v-for="field in GLOBAL_NUMBER_FIELDS" :key="field.key" class="block text-xs tracking-wide text-zinc-500">
+            <span class="uppercase">{{ field.label }}</span>
             <input
               class="mt-1 w-full rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-sm text-zinc-100"
               type="number"
               :min="field.min"
-              :step="getHandFieldStep(field)"
-              :value="getNumericDraftValue(getHandFieldDraftKey(handId, field.key), getHandDisplayValue(handId, field))"
-              @input="updateNumericDraft(getHandFieldDraftKey(handId, field.key), $event)"
-              @blur="commitHandFieldInput(handId, field)"
+              :step="field.step"
+              :value="getNumericDraftValue(getGlobalDraftKey(field.key), props.state.global[field.key])"
+              @input="updateNumericDraft(getGlobalDraftKey(field.key), $event)"
+              @blur="commitGlobalNumberInput(field.key)"
               @keydown.enter="commitDraftOnEnter"
             />
-            <span class="mt-1 block text-[11px] leading-4 text-zinc-500">{{ getHandFieldDescription(field) }}</span>
+            <span class="mt-1 block text-[11px] leading-4 text-zinc-500">{{ field.description }}</span>
           </label>
         </div>
 
-        <div class="mt-4 rounded border border-zinc-800 bg-zinc-900/40 p-3">
-          <h4 class="text-xs uppercase tracking-wide text-zinc-400">Poi Head Speed</h4>
-          <p class="mt-1 text-xs text-zinc-500">
-            This is world-space head speed <span class="font-mono">h</span>. The app solves
-            <span class="font-mono">r = h - a</span> internally.
-          </p>
-
-          <label class="mt-3 block text-xs tracking-wide text-zinc-500">
-            <span class="uppercase">Absolute Head Speed (h) ({{ getSpeedUnitLabel() }})</span>
+        <div class="mt-4 flex flex-wrap items-center gap-4">
+          <label class="flex items-center gap-2 text-sm text-zinc-300">
             <input
-              class="mt-1 w-full rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-sm text-zinc-100"
-              type="number"
-              :step="getSpeedStep()"
-              :value="getNumericDraftValue(getAbsoluteHeadSpeedDraftKey(handId), getAbsoluteHeadSpeedDisplay(handId))"
-              @input="updateNumericDraft(getAbsoluteHeadSpeedDraftKey(handId), $event)"
-              @blur="commitAbsoluteHeadSpeedInput(handId)"
-              @keydown.enter="commitDraftOnEnter"
+              class="accent-cyan-400"
+              type="checkbox"
+              :checked="props.state.global.showTrails"
+              @change="onGlobalBooleanInput('showTrails', $event)"
             />
+            Show Trails
           </label>
+          <label class="flex items-center gap-2 text-sm text-zinc-300">
+            <input
+              class="accent-cyan-400"
+              type="checkbox"
+              :checked="props.state.global.showWaves"
+              @change="onGlobalBooleanInput('showWaves', $event)"
+            />
+            Show Waves
+          </label>
+        </div>
+        <p class="mt-2 text-xs text-zinc-500">Trails show historical head paths. Waves show oscillator sin/cos channels.</p>
+      </div>
+    </details>
 
-          <div v-if="showAdvanced" class="mt-3 border-t border-zinc-800 pt-3">
-            <label class="block text-xs tracking-wide text-zinc-500">
-              <span class="uppercase">Relative Poi Speed (r) ({{ getSpeedUnitLabel() }})</span>
+    <VtgPanel class="mt-4" :state="props.state" :speed-unit="speedUnit" @apply-vtg="onApplyVtg" />
+
+    <div class="mt-4 grid gap-4 xl:grid-cols-2">
+      <details v-for="handId in HAND_IDS" :key="handId" class="rounded border border-zinc-800 p-3" open>
+        <summary class="cursor-pointer text-xs uppercase tracking-wide text-zinc-400">Hand {{ handId }}</summary>
+        <div class="mt-3">
+          <div class="grid gap-3 sm:grid-cols-2">
+            <label
+              v-for="field in HAND_BASE_FIELDS"
+              :key="`${handId}-${field.key}`"
+              class="block text-xs tracking-wide text-zinc-500"
+            >
+              <span class="uppercase">{{ field.label }} ({{ getHandFieldUnit(field) }})</span>
+              <input
+                class="mt-1 w-full rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-sm text-zinc-100"
+                type="number"
+                :min="field.min"
+                :step="getHandFieldStep(field)"
+                :value="getNumericDraftValue(getHandFieldDraftKey(handId, field.key), getHandDisplayValue(handId, field))"
+                @input="updateNumericDraft(getHandFieldDraftKey(handId, field.key), $event)"
+                @blur="commitHandFieldInput(handId, field)"
+                @keydown.enter="commitDraftOnEnter"
+              />
+              <span class="mt-1 block text-[11px] leading-4 text-zinc-500">{{ getHandFieldDescription(field) }}</span>
+            </label>
+          </div>
+
+          <div class="mt-4 rounded border border-zinc-800 bg-zinc-900/40 p-3">
+            <h4 class="text-xs uppercase tracking-wide text-zinc-400">Poi Head Speed</h4>
+            <p class="mt-1 text-xs text-zinc-500">
+              This is world-space head speed <span class="font-mono">h</span>. The app solves
+              <span class="font-mono">r = h - a</span> internally.
+            </p>
+
+            <label class="mt-3 block text-xs tracking-wide text-zinc-500">
+              <span class="uppercase">Absolute Head Speed (h) ({{ getSpeedUnitLabel() }})</span>
               <input
                 class="mt-1 w-full rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-sm text-zinc-100"
                 type="number"
                 :step="getSpeedStep()"
-                :value="getNumericDraftValue(getRelativePoiSpeedDraftKey(handId), getRelativePoiSpeedDisplay(handId))"
-                @input="updateNumericDraft(getRelativePoiSpeedDraftKey(handId), $event)"
-                @blur="commitRelativePoiSpeedInput(handId)"
+                :value="getNumericDraftValue(getAbsoluteHeadSpeedDraftKey(handId), getAbsoluteHeadSpeedDisplay(handId))"
+                @input="updateNumericDraft(getAbsoluteHeadSpeedDraftKey(handId), $event)"
+                @blur="commitAbsoluteHeadSpeedInput(handId)"
                 @keydown.enter="commitDraftOnEnter"
               />
             </label>
 
-            <p class="mt-3 text-xs text-zinc-500">
-              Derived (cycles/beat):
-              <span class="font-mono">a={{ formatDerivedCycles(getArmSpeedCyclesPerBeat(handId)) }}</span>,
-              <span class="font-mono">r={{ formatDerivedCycles(getRelativePoiSpeedCyclesPerBeat(handId)) }}</span>,
-              <span class="font-mono">h={{ formatDerivedCycles(getAbsoluteHeadSpeedCyclesPerBeat(handId)) }}</span>,
-              mode=<span class="font-mono">{{ getPoiModeLabel(handId) }}</span>,
-              r/a=<span class="font-mono">{{ getRelativeRatio(handId) }}</span>
-            </p>
+            <div v-if="showAdvanced" class="mt-3 border-t border-zinc-800 pt-3">
+              <label class="block text-xs tracking-wide text-zinc-500">
+                <span class="uppercase">Relative Poi Speed (r) ({{ getSpeedUnitLabel() }})</span>
+                <input
+                  class="mt-1 w-full rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-sm text-zinc-100"
+                  type="number"
+                  :step="getSpeedStep()"
+                  :value="getNumericDraftValue(getRelativePoiSpeedDraftKey(handId), getRelativePoiSpeedDisplay(handId))"
+                  @input="updateNumericDraft(getRelativePoiSpeedDraftKey(handId), $event)"
+                  @blur="commitRelativePoiSpeedInput(handId)"
+                  @keydown.enter="commitDraftOnEnter"
+                />
+              </label>
+
+              <p class="mt-3 text-xs text-zinc-500">
+                Derived (cycles/beat):
+                <span class="font-mono">a={{ formatDerivedCycles(getArmSpeedCyclesPerBeat(handId)) }}</span>,
+                <span class="font-mono">r={{ formatDerivedCycles(getRelativePoiSpeedCyclesPerBeat(handId)) }}</span>,
+                <span class="font-mono">h={{ formatDerivedCycles(getAbsoluteHeadSpeedCyclesPerBeat(handId)) }}</span>,
+                mode=<span class="font-mono">{{ getPoiModeLabel(handId) }}</span>,
+                r/a=<span class="font-mono">{{ getRelativeRatio(handId) }}</span>
+              </p>
+            </div>
           </div>
         </div>
-      </article>
+      </details>
     </div>
 
-    <div class="mt-4 grid gap-4 xl:grid-cols-2">
-      <article class="rounded border border-zinc-800 p-3">
-        <h3 class="mb-3 text-xs uppercase tracking-wide text-zinc-400">Element Presets</h3>
-        <p class="mb-3 text-xs text-zinc-500">
-          Changes right-hand timing/direction relative to left hand: earth, air, water, fire.
+    <details class="mt-4 rounded border border-zinc-800 p-3" open>
+      <summary class="cursor-pointer text-xs uppercase tracking-wide text-zinc-400">Preset Library</summary>
+      <div class="mt-3">
+        <p class="text-xs text-zinc-500">
+          Save patterns to app storage, reload them later, and export JSON files to build shared system presets.
         </p>
-        <div class="flex flex-wrap gap-2">
+
+        <div class="mt-3 flex flex-wrap gap-2">
+          <input
+            v-model="presetNameDraft"
+            class="min-w-[220px] flex-1 rounded border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-100"
+            type="text"
+            maxlength="80"
+            placeholder="Preset name"
+            @keydown.enter.prevent="saveCurrentAsUserPreset"
+          />
           <button
-            v-for="presetId in ELEMENT_PRESET_IDS"
-            :key="presetId"
             class="rounded border border-zinc-700 px-3 py-1.5 text-sm hover:border-zinc-500"
             type="button"
-            @click="onPresetClick(presetId)"
+            @click="saveCurrentAsUserPreset"
           >
-            {{ getPresetLabel(presetId) }}
+            Save Current
           </button>
-        </div>
-      </article>
-
-      <article class="rounded border border-zinc-800 p-3">
-        <h3 class="mb-3 text-xs uppercase tracking-wide text-zinc-400">Flower Presets</h3>
-        <p class="mb-3 text-xs text-zinc-500">
-          Sets relative poi speeds to inspin/antispin ratios for 3-, 4-, and 5-petal examples.
-        </p>
-        <div class="flex flex-wrap gap-2">
           <button
-            v-for="presetId in FLOWER_PRESET_IDS"
-            :key="presetId"
             class="rounded border border-zinc-700 px-3 py-1.5 text-sm hover:border-zinc-500"
             type="button"
-            @click="onPresetClick(presetId)"
+            @click="openImportPicker"
           >
-            {{ getPresetLabel(presetId) }}
+            Import JSON
           </button>
+          <input ref="importInputRef" class="hidden" type="file" accept="application/json,.json" @change="onImportFileChange" />
         </div>
-      </article>
-    </div>
 
-    <article class="mt-4 rounded border border-zinc-800 p-3">
-      <h3 class="mb-3 text-xs uppercase tracking-wide text-zinc-400">Preset Library</h3>
-      <p class="text-xs text-zinc-500">
-        Save patterns to app storage, reload them later, and export JSON files to build shared system presets.
-      </p>
+        <p v-if="props.presetLibraryStatus" class="mt-2 text-xs text-cyan-300">{{ props.presetLibraryStatus }}</p>
 
-      <div class="mt-3 flex flex-wrap gap-2">
-        <input
-          v-model="presetNameDraft"
-          class="min-w-[220px] flex-1 rounded border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-100"
-          type="text"
-          maxlength="80"
-          placeholder="Preset name"
-          @keydown.enter.prevent="saveCurrentAsUserPreset"
-        />
-        <button
-          class="rounded border border-zinc-700 px-3 py-1.5 text-sm hover:border-zinc-500"
-          type="button"
-          @click="saveCurrentAsUserPreset"
-        >
-          Save Current
-        </button>
-        <button
-          class="rounded border border-zinc-700 px-3 py-1.5 text-sm hover:border-zinc-500"
-          type="button"
-          @click="openImportPicker"
-        >
-          Import JSON
-        </button>
-        <input ref="importInputRef" class="hidden" type="file" accept="application/json,.json" @change="onImportFileChange" />
-      </div>
+        <div v-if="props.userPresets.length === 0" class="mt-3 rounded border border-zinc-800 bg-zinc-900/40 p-3 text-xs text-zinc-500">
+          No saved presets yet.
+        </div>
 
-      <p v-if="props.presetLibraryStatus" class="mt-2 text-xs text-cyan-300">{{ props.presetLibraryStatus }}</p>
-
-      <div v-if="props.userPresets.length === 0" class="mt-3 rounded border border-zinc-800 bg-zinc-900/40 p-3 text-xs text-zinc-500">
-        No saved presets yet.
-      </div>
-
-      <div v-else class="mt-3 grid gap-2">
-        <div
-          v-for="preset in props.userPresets"
-          :key="preset.id"
-          class="rounded border border-zinc-800 bg-zinc-900/40 p-3"
-        >
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <p class="text-sm font-medium text-zinc-100">{{ preset.name }}</p>
-              <p class="text-xs text-zinc-500">{{ formatSavedAt(preset.savedAt) }}</p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <button
-                class="rounded border border-zinc-700 px-2.5 py-1 text-xs hover:border-zinc-500"
-                type="button"
-                @click="loadUserPreset(preset.id)"
-              >
-                Load
-              </button>
-              <button
-                class="rounded border border-zinc-700 px-2.5 py-1 text-xs hover:border-zinc-500"
-                type="button"
-                @click="exportUserPreset(preset.id)"
-              >
-                Export
-              </button>
-              <button
-                class="rounded border border-zinc-700 px-2.5 py-1 text-xs hover:border-zinc-500"
-                type="button"
-                @click="deleteUserPreset(preset.id)"
-              >
-                Delete
-              </button>
+        <div v-else class="mt-3 grid gap-2">
+          <div
+            v-for="preset in props.userPresets"
+            :key="preset.id"
+            class="rounded border border-zinc-800 bg-zinc-900/40 p-3"
+          >
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p class="text-sm font-medium text-zinc-100">{{ preset.name }}</p>
+                <p class="text-xs text-zinc-500">{{ formatSavedAt(preset.savedAt) }}</p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  class="rounded border border-zinc-700 px-2.5 py-1 text-xs hover:border-zinc-500"
+                  type="button"
+                  @click="loadUserPreset(preset.id)"
+                >
+                  Load
+                </button>
+                <button
+                  class="rounded border border-zinc-700 px-2.5 py-1 text-xs hover:border-zinc-500"
+                  type="button"
+                  @click="exportUserPreset(preset.id)"
+                >
+                  Export
+                </button>
+                <button
+                  class="rounded border border-zinc-700 px-2.5 py-1 text-xs hover:border-zinc-500"
+                  type="button"
+                  @click="deleteUserPreset(preset.id)"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </article>
+    </details>
 
-    <article class="mt-4 rounded border border-cyan-900/60 bg-cyan-950/20 p-4">
-      <h3 class="text-sm font-semibold text-cyan-200">How This Works and How To Use It</h3>
-      <p class="mt-2 text-sm leading-6 text-zinc-200">
-        This tool models each hand with two coupled rotations: arm rotation around center and poi rotation relative to
-        the hand. The pattern viewport shows the physical result (hands, tethers, heads, and trails), while the wave
-        inspector shows the sin/cos oscillator channels that generate that motion.
-      </p>
-      <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-zinc-300">
-        <li>
-          Start with a preset to get a known relationship quickly. Element presets change hand timing/direction
-          relations; flower presets change relative poi speed ratios.
-        </li>
-        <li>
-          Use Transport to play or pause motion and scrub to any beat in the loop. Scrubbing pauses playback so you can
-          inspect exact positions.
-        </li>
-        <li>
-          Set Loop Beats to choose how long one phrase is before it wraps. BPM changes real-time speed only; beat-space
-          math stays deterministic.
-        </li>
-        <li>
-          Edit absolute poi head speed <span class="font-mono">h</span> directly for poi-centric tuning. In advanced mode,
-          you can also inspect and edit relative speed <span class="font-mono">r</span>.
-        </li>
-        <li>
-          Inputs validate on blur so typing negative or partial numbers is not interrupted mid-edit. Keyboard arrows use
-          whole-number steps.
-        </li>
-        <li>
-          Toggle Trails to inspect path geometry over time and toggle Waves to focus on oscillator signals when tuning
-          phase relationships.
-        </li>
-      </ol>
-    </article>
+    <details class="mt-4 rounded border border-cyan-900/60 bg-cyan-950/20 p-4" open>
+      <summary class="cursor-pointer text-sm font-semibold text-cyan-200">How This Works and How To Use It</summary>
+      <div class="mt-3">
+        <p class="text-sm leading-6 text-zinc-200">
+          This tool models each hand with two coupled rotations: arm rotation around center and poi rotation relative to
+          the hand. The pattern viewport shows the physical result (hands, tethers, heads, and trails), while the wave
+          inspector shows the sin/cos oscillator channels that generate that motion.
+        </p>
+        <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-zinc-300">
+          <li>
+            Use the VTG panel to choose arm/poi relationships and phase in discrete steps, then refine timing and
+            geometry with the hand controls.
+          </li>
+          <li>
+            Use Transport to play or pause motion and scrub to any beat in the loop. Scrubbing pauses playback so you can
+            inspect exact positions.
+          </li>
+          <li>
+            Set Loop Beats to choose how long one phrase is before it wraps. BPM changes real-time speed only; beat-space
+            math stays deterministic.
+          </li>
+          <li>
+            Edit absolute poi head speed <span class="font-mono">h</span> directly for poi-centric tuning. In advanced mode,
+            you can also inspect and edit relative speed <span class="font-mono">r</span>.
+          </li>
+          <li>
+            Inputs validate on blur so typing negative or partial numbers is not interrupted mid-edit. Keyboard arrows use
+            whole-number steps.
+          </li>
+          <li>
+            Toggle Trails to inspect path geometry over time and toggle Waves to focus on oscillator signals when tuning
+            phase relationships.
+          </li>
+        </ol>
+      </div>
+    </details>
   </section>
 </template>

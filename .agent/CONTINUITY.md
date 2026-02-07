@@ -100,3 +100,34 @@
 - 2026-02-07T13:10:24Z [CODE] Wired `Controls.vue` export action to pass selected `speedUnit`/`phaseUnit` and updated `App.vue` export handler accordingly.
 - 2026-02-07T13:10:24Z [CODE] Extended tests in `tests/state/preset-library.test.ts` for unit-aware export payload validation and legacy import compatibility; updated README export notes.
 - 2026-02-07T13:10:24Z [TOOL] Verified with passing `npm run test` (58 tests) and `npm run build`.
+- 2026-02-07T16:59:06Z [USER] Requested Phase 1 VTG implementation: collapsible VTG grid panel, pure VTG descriptor generator/classifiers, and tests without engine-math changes.
+- 2026-02-07T16:59:06Z [CODE] Added pure VTG domain modules in `src/vtg` (`types.ts`, `classify.ts`, `generate.ts`) with canonical descriptor generation, ±5° phase bucketing, and deterministic classifier validation.
+- 2026-02-07T16:59:06Z [CODE] Added collapsible VTG controls in `src/components/Controls.vue` (petals/spin/phase selectors, 4×4 arm×poi grid, help text, current VTG readout) and wired VTG apply handling in `src/App.vue`.
+- 2026-02-07T16:59:06Z [CODE] Added VTG regression coverage in `tests/vtg/generate.test.ts` for generator/classifier consistency, phase tolerance behavior, finite param sanity, and sampled invariants.
+- 2026-02-07T16:59:06Z [TOOL] Verified updates with passing `npm test` (61 tests) and `npm run build`.
+- 2026-02-07T17:09:03Z [USER] Requested VTG to be extracted into a separate component mounted directly below Global Settings, and requested all controls panels to be foldable.
+- 2026-02-07T17:09:03Z [CODE] Extracted VTG UI/state logic from `src/components/Controls.vue` into new `src/components/VtgPanel.vue` and wired `apply-vtg` through the parent controls emitter.
+- 2026-02-07T17:09:03Z [CODE] Refactored controls layout so transport, global settings, hand panels, presets, preset library, VTG, and help are all foldable `<details>` panels; VTG now renders immediately below Global Settings.
+- 2026-02-07T17:09:03Z [CODE] Updated `README.md` controls/architecture sections to reflect `VtgPanel.vue`, VTG placement, and foldable panel behavior.
+- 2026-02-07T17:09:03Z [TOOL] Verified with passing `npm test` (61 tests) and `npm run build`.
+- 2026-02-07T17:15:49Z [USER] Reported VTG bugs: Water/Fire grid selection mismatch, petal changes not updating visualization, requested replacing petals+spin with poi-cycles-per-arm-cycle, and phase selector semantics fix.
+- 2026-02-07T17:15:49Z [CODE] Identified likely causes in `src/components/VtgPanel.vue` and `src/vtg/classify.ts`: selector controls only apply on cell click and phase/timing bucket aliasing can collapse Water/Fire to Earth/Air for overlapping phase deltas.
+- 2026-02-07T17:15:49Z [ASSUMPTION] `poi cycles per arm cycle` mapping is ambiguous without an explicit sign convention; implementation plan will include a normalization rule and requires user confirmation if they want unsigned vs signed cycles semantics.
+- 2026-02-07T17:25:55Z [USER] Confirmed signed cycles model and requested implementation of VTG bug fixes plus control semantics updates.
+- 2026-02-07T17:25:55Z [CODE] Reworked VTG descriptor to use signed `poiCyclesPerArmCycle` and removed `petals`/`spinMode` from `src/vtg/types.ts`, generator, UI wiring, and tests.
+- 2026-02-07T17:25:55Z [CODE] Updated VTG generator/classifier semantics: phase now sets left-head orientation bucket while poi timing classification is resolved independently to prevent Water/Fire aliasing into Earth/Air.
+- 2026-02-07T17:25:55Z [CODE] Refactored `src/components/VtgPanel.vue` controls to signed cycles + phase, immediate apply on cycles/phase changes, explicit selected-cell highlighting, and updated help/readouts.
+- 2026-02-07T17:25:55Z [CODE] Expanded VTG regression coverage in `tests/vtg/generate.test.ts` for Water/Fire classification stability, signed cycles mapping, and phase-orientation effect.
+- 2026-02-07T17:25:55Z [TOOL] Verified with passing `npm test` (64 tests) and `npm run build`.
+- 2026-02-07T17:33:36Z [USER] Requested VTG controls layout tweak to place poi head cycle control and phase selector on one line.
+- 2026-02-07T17:33:36Z [CODE] Updated `src/components/VtgPanel.vue` selector-row layout to a single horizontal flex row with overflow support while preserving existing control behavior.
+- 2026-02-07T17:33:36Z [TOOL] Verified with passing `npm run build`.
+- 2026-02-07T17:36:34Z [USER] Requested VTG selector refinements: phase aligned right, hide native number input arrows, and disallow zero cycles to avoid divide-by-zero style failures.
+- 2026-02-07T17:36:34Z [CODE] Updated `src/components/VtgPanel.vue` to right-align phase controls, hide browser number spinners via scoped CSS, and enforce non-zero signed cycles with zero-skipping step behavior.
+- 2026-02-07T17:36:34Z [CODE] Enforced non-zero `poiCyclesPerArmCycle` validation in `src/vtg/generate.ts` and added zero-rejection coverage in `tests/vtg/generate.test.ts`.
+- 2026-02-07T17:36:34Z [TOOL] Verified with passing `npm test` (65 tests) and `npm run build`.
+- 2026-02-07T17:39:13Z [USER] Requested removal of Element Presets and Flower Presets control panels.
+- 2026-02-07T17:39:13Z [CODE] Removed element/flower preset panels from `src/components/Controls.vue` and deleted related preset UI emit wiring/imports.
+- 2026-02-07T17:39:13Z [CODE] Removed unused preset apply handler wiring in `src/App.vue` and updated controls help copy to focus on VTG + hand tuning workflow.
+- 2026-02-07T17:39:13Z [CODE] Updated `README.md` controls/data-flow docs to reflect removed preset panels while preserving programmatic preset-system notes.
+- 2026-02-07T17:39:13Z [TOOL] Verified with passing `npm test` (65 tests) and `npm run build`.

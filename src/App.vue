@@ -32,7 +32,6 @@ import {
 import type { AngleUnit } from "@/state/angleUnits";
 import type { SpeedUnit } from "@/state/speedUnits";
 import {
-  applyPreset,
   setGlobalBoolean,
   setGlobalNumber,
   setHandNumber,
@@ -43,7 +42,9 @@ import {
   type HandNumberKey
 } from "@/state/actions";
 import { createDefaultState } from "@/state/defaults";
-import type { AppState, HandId, PresetId } from "@/types/state";
+import type { AppState, HandId } from "@/types/state";
+import { generateVTGState } from "@/vtg/generate";
+import type { VTGDescriptor } from "@/vtg/types";
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 
 const state = reactive(createDefaultState());
@@ -208,8 +209,8 @@ function handleSetHandNumber(handId: HandId, key: HandNumberKey, value: number):
   commitState(setHandNumber(state, handId, key, value));
 }
 
-function handleApplyPreset(presetId: PresetId): void {
-  commitState(applyPreset(state, presetId));
+function handleApplyVTG(descriptor: VTGDescriptor): void {
+  commitState(generateVTGState(descriptor, state));
 }
 
 async function handleCopyLink(): Promise<void> {
@@ -418,7 +419,7 @@ onBeforeUnmount(() => {
         @set-global-number="handleSetGlobalNumber"
         @set-global-boolean="handleSetGlobalBoolean"
         @set-hand-number="handleSetHandNumber"
-        @apply-preset="handleApplyPreset"
+        @apply-vtg="handleApplyVTG"
         @save-user-preset="handleSaveUserPreset"
         @load-user-preset="handleLoadUserPreset"
         @delete-user-preset="handleDeleteUserPreset"
