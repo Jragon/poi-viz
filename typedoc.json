@@ -1,0 +1,22 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "src/engine",
+    "src/vtg",
+    "src/state"
+  ],
+  "entryPointStrategy": "expand",
+  "out": "docs/api",
+  "tsconfig": "tsconfig.typedoc.json",
+  "exclude": [
+    "**/*.test.ts"
+  ],
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "readme": "none",
+  "plugin": [],
+  "sort": [
+    "source-order"
+  ]
+}

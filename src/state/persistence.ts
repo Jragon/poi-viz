@@ -98,10 +98,23 @@ function mergeStateCandidateWithDefaults(candidate: unknown, defaults: AppState)
   return merged;
 }
 
+/**
+ * Serializes app state into versioned persistence payload JSON.
+ *
+ * @param state App state to persist.
+ * @returns JSON payload string safe for URL/localStorage usage.
+ */
 export function serializeState(state: AppState): string {
   return JSON.stringify(toPayload(state));
 }
 
+/**
+ * Parses serialized payload and merges valid fields with defaults.
+ *
+ * @param serialized JSON payload from URL/localStorage.
+ * @param defaults Default state used for schema fallback and clamps.
+ * @returns Hydrated state, or `null` when payload cannot be parsed.
+ */
 export function deserializeState(serialized: string, defaults: AppState): AppState | null {
   try {
     const payload = JSON.parse(serialized) as unknown;
@@ -115,18 +128,38 @@ export function deserializeState(serialized: string, defaults: AppState): AppSta
   }
 }
 
+/**
+ * Builds a shareable URL containing encoded state in the `state` query param.
+ *
+ * @param state App state snapshot to encode.
+ * @param currentHref Current page URL used as base.
+ * @returns URL string with encoded `state` query payload.
+ */
 export function buildStateUrl(state: AppState, currentHref: string): string {
   const url = new URL(currentHref);
   url.searchParams.set(STATE_QUERY_PARAM_KEY, serializeState(state));
   return url.toString();
 }
 
+/**
+ * Removes encoded state query parameter from a URL.
+ *
+ * @param urlString URL string to sanitize.
+ * @returns URL string without persisted state query payload.
+ */
 export function stripStateQueryParam(urlString: string): string {
   const url = new URL(urlString);
   url.searchParams.delete(STATE_QUERY_PARAM_KEY);
   return url.toString();
 }
 
+/**
+ * Reads and decodes state payload from a URL query param.
+ *
+ * @param urlString URL that may contain serialized state.
+ * @param defaults Default state used for merge/clamp fallback.
+ * @returns Decoded state, or `null` when absent/invalid.
+ */
 export function readStateFromUrl(urlString: string, defaults: AppState): AppState | null {
   try {
     const url = new URL(urlString);
@@ -140,6 +173,13 @@ export function readStateFromUrl(urlString: string, defaults: AppState): AppStat
   }
 }
 
+/**
+ * Reads and decodes state payload from localStorage value.
+ *
+ * @param serialized Serialized state payload from storage.
+ * @param defaults Default state used for merge/clamp fallback.
+ * @returns Decoded state, or `null` when absent/invalid.
+ */
 export function readStateFromStorage(serialized: string | null, defaults: AppState): AppState | null {
   if (!serialized) {
     return null;
@@ -147,6 +187,14 @@ export function readStateFromStorage(serialized: string | null, defaults: AppSta
   return deserializeState(serialized, defaults);
 }
 
+/**
+ * Resolves initial state with URL priority, then storage, then defaults.
+ *
+ * @param defaults Baseline default state.
+ * @param urlString Current page URL.
+ * @param storageValue Raw serialized storage value.
+ * @returns Initial app state chosen by hydration precedence.
+ */
 export function resolveInitialState(defaults: AppState, urlString: string, storageValue: string | null): AppState {
   const fromUrl = readStateFromUrl(urlString, defaults);
   if (fromUrl) {

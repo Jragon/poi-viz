@@ -8,9 +8,6 @@ export { getPositions } from "@/engine/positions";
 export { sampleLoop } from "@/engine/sampling";
 export { createTrailSampler, advanceTrailSampler, getTrailPoints } from "@/engine/trails";
 export type {
-  FixtureManifestFile,
-  FixtureSample,
-  PresetFixtureFile,
   EngineParams,
   AnglesByHand,
   PositionsByHand,
@@ -19,3 +16,4 @@ export type {
   TrailPoint,
   TrailSamplerConfig
 } from "@/engine/types";
+export type { FixtureManifestFile, FixtureSample, PresetFixtureFile } from "@/engine/fixtures";

@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/engine/**/*.ts",
+    "src/vtg/**/*.ts",
+    "src/state/**/*.ts",
+    "src/types/state.ts"
+  ],
+  "exclude": [
+    "tests",
+    "src/main.ts",
+    "src/render",
+    "src/components",
+    "src/**/*.vue"
+  ]
+}

@@ -94,6 +94,13 @@ function applyFlowerPreset(hands: HandsState, mode: FlowerMode, petals: FlowerPe
   };
 }
 
+/**
+ * Applies arm timing/direction element preset while preserving non-arm fields.
+ *
+ * @param state Current app state.
+ * @param id Element preset identifier.
+ * @returns New state with arm relation updated by preset rules.
+ */
 export function applyElementPreset(state: AppState, id: ElementPresetId): AppState {
   const preset = ELEMENT_PRESETS.find((entry) => entry.id === id);
   if (!preset) {
@@ -107,6 +114,14 @@ export function applyElementPreset(state: AppState, id: ElementPresetId): AppSta
   };
 }
 
+/**
+ * Applies flower preset by setting relative poi speeds from petal count and mode.
+ *
+ * @param state Current app state.
+ * @param mode Flower mode (`inspin` or `antispin`).
+ * @param petals Flower petal count.
+ * @returns New state with per-hand relative poi speeds/phases adjusted.
+ */
 export function applyFlowerModePreset(state: AppState, mode: FlowerMode, petals: FlowerPetalCount): AppState {
   const cloned = cloneState(state);
   return {
@@ -136,6 +151,13 @@ export const PRESET_CATALOG: PresetDefinition[] = [
   ...FLOWER_PRESETS.map(createFlowerPresetDefinition)
 ];
 
+/**
+ * Applies preset transform by preset id.
+ *
+ * @param state Current app state.
+ * @param id Preset id from `PRESET_CATALOG`.
+ * @returns Preset-transformed state, or cloned original when id is unknown.
+ */
 export function applyPresetById(state: AppState, id: PresetId): AppState {
   const preset = PRESET_CATALOG.find((entry) => entry.id === id);
   if (!preset) {

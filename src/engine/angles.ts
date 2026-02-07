@@ -28,6 +28,10 @@ function getHandAnglesForTime(
 /**
  * Computes arm, relative, and absolute head angles for both hands at beat time t.
  * This is the canonical angle entrypoint used by rendering/sampling layers.
+ *
+ * @param params Engine inputs where speeds are radians per beat and phases are radians.
+ * @param tBeats Beat-domain sample time.
+ * @returns Per-hand angular channels where `head = arm + rel`.
  */
 export function getAngles(params: EngineParams, tBeats: number): AnglesByHand {
   return {

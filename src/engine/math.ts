@@ -24,6 +24,13 @@ function assertNonNegativeNumber(name: string, value: number): void {
   }
 }
 
+/**
+ * Converts beat-domain time to seconds using BPM.
+ *
+ * @param beats Beat-domain duration.
+ * @param bpm Tempo in beats per minute.
+ * @returns Elapsed seconds for the given beat duration.
+ */
 export function beatsToSeconds(beats: number, bpm: number): number {
   assertFiniteNumber("beats", beats);
   assertPositiveNumber("bpm", bpm);
@@ -31,7 +38,11 @@ export function beatsToSeconds(beats: number, bpm: number): number {
 }
 
 /**
- * Converts elapsed seconds into beat units using BPM.
+ * Converts elapsed seconds into beat-domain units.
+ *
+ * @param seconds Elapsed seconds.
+ * @param bpm Tempo in beats per minute.
+ * @returns Equivalent duration in beats.
  */
 export function secondsToBeats(seconds: number, bpm: number): number {
   assertFiniteNumber("seconds", seconds);
@@ -40,7 +51,11 @@ export function secondsToBeats(seconds: number, bpm: number): number {
 }
 
 /**
- * Converts a sample frequency (samples/second) into a deterministic beat step.
+ * Converts sample rate to deterministic beat step size.
+ *
+ * @param sampleHz Sampling frequency in samples per second.
+ * @param bpm Tempo in beats per minute.
+ * @returns Fixed beat step between adjacent samples.
  */
 export function sampleHzToStepBeats(sampleHz: number, bpm: number): number {
   assertPositiveNumber("sampleHz", sampleHz);
@@ -49,6 +64,10 @@ export function sampleHzToStepBeats(sampleHz: number, bpm: number): number {
 
 /**
  * Converts trail window length from beats to seconds.
+ *
+ * @param trailBeats Trail window length in beats.
+ * @param bpm Tempo in beats per minute.
+ * @returns Trail window duration in seconds.
  */
 export function getTrailSeconds(trailBeats: number, bpm: number): number {
   assertNonNegativeNumber("trailBeats", trailBeats);
@@ -58,6 +77,11 @@ export function getTrailSeconds(trailBeats: number, bpm: number): number {
 /**
  * Ring-buffer capacity for trail samples:
  * ceil(trailSampleHz * trailSeconds).
+ *
+ * @param trailSampleHz Trail sample frequency in samples per second.
+ * @param trailBeats Trail history length in beats.
+ * @param bpm Tempo in beats per minute.
+ * @returns Required trail point capacity for bounded history.
  */
 export function getTrailCapacity(trailSampleHz: number, trailBeats: number, bpm: number): number {
   assertPositiveNumber("trailSampleHz", trailSampleHz);
@@ -67,6 +91,10 @@ export function getTrailCapacity(trailSampleHz: number, trailBeats: number, bpm:
 
 /**
  * Converts polar coordinates to Cartesian vector.
+ *
+ * @param radius Radius magnitude.
+ * @param angle Angle in radians (CCW+, x-right, y-up).
+ * @returns Cartesian vector representing the polar coordinate.
  */
 export function vectorFromPolar(radius: number, angle: number): Vector2 {
   assertFiniteNumber("radius", radius);
@@ -77,6 +105,13 @@ export function vectorFromPolar(radius: number, angle: number): Vector2 {
   };
 }
 
+/**
+ * Adds two Cartesian vectors component-wise.
+ *
+ * @param a Left vector.
+ * @param b Right vector.
+ * @returns Summed vector `a + b`.
+ */
 export function addVectors(a: Vector2, b: Vector2): Vector2 {
   return {
     x: a.x + b.x,
@@ -84,6 +119,13 @@ export function addVectors(a: Vector2, b: Vector2): Vector2 {
   };
 }
 
+/**
+ * Subtracts two Cartesian vectors component-wise.
+ *
+ * @param a Left vector.
+ * @param b Right vector.
+ * @returns Difference vector `a - b`.
+ */
 export function subtractVectors(a: Vector2, b: Vector2): Vector2 {
   return {
     x: a.x - b.x,
@@ -93,6 +135,9 @@ export function subtractVectors(a: Vector2, b: Vector2): Vector2 {
 
 /**
  * Euclidean vector length.
+ *
+ * @param vector Cartesian vector.
+ * @returns Magnitude `sqrt(x^2 + y^2)`.
  */
 export function vectorMagnitude(vector: Vector2): number {
   return Math.hypot(vector.x, vector.y);

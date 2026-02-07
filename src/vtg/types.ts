@@ -49,6 +49,9 @@ export const VTG_PHASE_BUCKETS: VTGPhaseDeg[] = [0, 90, 180, 270];
 
 /**
  * Resolves timing + direction relation metadata for a VTG element label.
+ *
+ * @param element VTG element label.
+ * @returns Timing and direction relation encoded by the element.
  */
 export function getRelationForElement(element: VTGElement): VTGRelation {
   switch (element) {
@@ -65,6 +68,9 @@ export function getRelationForElement(element: VTGElement): VTGRelation {
 
 /**
  * Converts timing + direction metadata back into a VTG element label.
+ *
+ * @param relation VTG timing and direction pair.
+ * @returns VTG element label matching the relation.
  */
 export function getElementForRelation(relation: VTGRelation): VTGElement {
   if (relation.timing === "same-time") {

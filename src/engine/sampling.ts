@@ -6,6 +6,10 @@ import type { EngineParams, LoopSample } from "@/engine/types";
 /**
  * Number of fixed intervals needed to span loopBeats with stepBeats.
  * Sample count is interval count + 1 because both endpoints are included.
+ *
+ * @param loopBeats Loop duration in beats.
+ * @param stepBeats Beat-domain sample interval.
+ * @returns Number of intervals needed to cover the loop duration.
  */
 export function getLoopIntervalCount(loopBeats: number, stepBeats: number): number {
   if (loopBeats < ZERO) {
@@ -26,6 +30,12 @@ function getSampleBeat(startBeat: number, loopBeats: number, stepBeats: number, 
 /**
  * Deterministically samples angles and positions across one beat loop.
  * Sampling is in fixed beat steps derived from sampleHz and bpm.
+ *
+ * @param params Engine inputs used to compute angles and positions.
+ * @param sampleHz Sample rate in samples per second.
+ * @param loopBeats Loop duration in beats.
+ * @param startBeat Beat offset where sampling begins.
+ * @returns Ordered snapshots including both start and end beats.
  */
 export function sampleLoop(params: EngineParams, sampleHz: number, loopBeats: number, startBeat = ZERO): LoopSample[] {
   const stepBeats = sampleHzToStepBeats(sampleHz, params.bpm);

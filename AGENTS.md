@@ -58,12 +58,13 @@ Verification expectations for code changes:
 
 ## Project Documentation (REQUIRED)
 
-- Keep `/Users/rory/code/poi/README.md` up to date as the canonical project documentation.
-- When behavior changes, update README sections that explain:
-  - how the app works (state flow, rendering flow, controls, presets, persistence),
-  - how the math works (angles, phase, speeds, position equations, invariants, and special cases).
-- Prefer concrete equations and examples over vague descriptions.
-- If implementation and README diverge, align README in the same change.
+- Keep `/Users/rory/code/poi/README.md` as a concise project overview and navigation entrypoint.
+- Keep detailed technical documentation in `/Users/rory/code/poi/docs/` up to date with implementation changes.
+- When behavior, math, state flow, VTG semantics, or validation changes:
+  - update the relevant pages in `/Users/rory/code/poi/docs/`,
+  - update `/Users/rory/code/poi/README.md` links/overview if scope or navigation changes.
+- When exported APIs change in `src/engine/**`, `src/vtg/**`, or `src/state/**`, regenerate TypeDoc output and commit updated files in `/Users/rory/code/poi/docs/api/`.
+- Do not leave documentation drift: code, tests, and docs must be updated in the same change.
 
 ## CONTINUITY.md (REQUIRED)
 
@@ -88,6 +89,8 @@ A task is done when:
 - requested behavior is implemented,
 - relevant tests are added/updated and passing,
 - build passes when app code changed,
-- `/Users/rory/code/poi/README.md` is updated for behavior/math changes,
+- `/Users/rory/code/poi/README.md` is updated when project overview/scope/navigation changes,
+- `/Users/rory/code/poi/docs/` is updated for behavior/math/state/VTG/validation changes,
+- `npm run docs:all` succeeds when API/docs-affecting code changes were made,
 - `/Users/rory/code/poi/.agent/CONTINUITY.md` is updated when task state materially changed,
 - follow-ups are called out when intentionally out of scope.

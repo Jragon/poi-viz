@@ -152,3 +152,11 @@
 - 2026-02-07T17:57:19Z [USER] Requested VTG panel layout change: place derived readout, current VTG state, and help block at the bottom of the VTG box.
 - 2026-02-07T17:57:19Z [CODE] Reordered `src/components/VtgPanel.vue` so the 4x4 grid appears first and the derived/current/help blocks render at the bottom; derived line now consistently displays in cycles/beat.
 - 2026-02-07T17:57:19Z [TOOL] Verified with passing `npm run build`.
+- 2026-02-07T18:15:41Z [USER] Requested full documentation system: VitePress guide pages, TypeDoc API output, JSDoc upgrades, docs hygiene lint/CI, and docs-to-tests contract links without engine behavior changes.
+- 2026-02-07T18:15:41Z [CODE] Added documentation stack with VitePress (`docs/` pages + `.vitepress/config.ts`), TypeDoc config/output (`typedoc.json`, `tsconfig.typedoc.json`, `docs/api`), ESLint JSDoc enforcement (`eslint.config.mjs`), and CI workflow (`.github/workflows/ci.yml`).
+- 2026-02-07T18:15:41Z [CODE] Upgraded JSDoc coverage across exported functions in `src/engine`, `src/vtg`, and `src/state`; added state/type contract doc comments and type-only refactors in `src/state/defaults.ts`, `src/vtg/generate.ts`, and `src/engine/engine.ts` to keep TypeDoc generation green without runtime semantic changes.
+- 2026-02-07T18:15:41Z [CODE] Updated `README.md` with documentation tooling commands, docs architecture paths, and CI verification contract.
+- 2026-02-07T18:15:41Z [TOOL] Verified with passing `npm run lint`, `npm test` (67 tests), `npm run docs:all` (TypeDoc warnings only, build succeeded), and `npm run build`.
+- 2026-02-07T18:18:18Z [USER] Requested replacing `README.md` with a concise app overview that points to detailed docs, and updating `AGENTS.md` to enforce ongoing documentation maintenance.
+- 2026-02-07T18:18:18Z [CODE] Rewrote `README.md` to an overview-first format with a documentation map and contributor workflow links into `docs/*` and `docs/api/index.html`.
+- 2026-02-07T18:18:18Z [CODE] Updated `AGENTS.md` documentation rules and Definition of Done to require `docs/` updates, TypeDoc regeneration for API-surface changes, and `npm run docs:all` for docs/API-affecting changes.

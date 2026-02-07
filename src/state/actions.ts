@@ -66,6 +66,14 @@ function clampHandNumber(key: HandNumberKey, value: number, state: AppState, han
   }
 }
 
+/**
+ * Sets one numeric global field with finite checks and key-specific clamping.
+ *
+ * @param state Current app state.
+ * @param key Global numeric field to update.
+ * @param nextValue Candidate value before sanitization/clamping.
+ * @returns New state with normalized global number applied.
+ */
 export function setGlobalNumber(state: AppState, key: GlobalNumberKey, nextValue: number): AppState {
   const cloned = cloneState(state);
   const currentValue = cloned.global[key];
@@ -84,21 +92,51 @@ export function setGlobalNumber(state: AppState, key: GlobalNumberKey, nextValue
   return cloned;
 }
 
+/**
+ * Sets one boolean global field.
+ *
+ * @param state Current app state.
+ * @param key Global boolean field to update.
+ * @param nextValue Next boolean value.
+ * @returns New state with boolean field applied.
+ */
 export function setGlobalBoolean(state: AppState, key: GlobalBooleanKey, nextValue: boolean): AppState {
   const cloned = cloneState(state);
   cloned.global[key] = nextValue;
   return cloned;
 }
 
+/**
+ * Toggles playback transport state.
+ *
+ * @param state Current app state.
+ * @returns New state with `global.isPlaying` inverted.
+ */
 export function togglePlayback(state: AppState): AppState {
   return setGlobalBoolean(state, "isPlaying", !state.global.isPlaying);
 }
 
+/**
+ * Moves playhead and pauses playback for scrub interactions.
+ *
+ * @param state Current app state.
+ * @param beatValue Target beat value before loop normalization.
+ * @returns New state with normalized playhead and paused transport.
+ */
 export function setScrubBeat(state: AppState, beatValue: number): AppState {
   const scrubbed = setGlobalNumber(state, "t", beatValue);
   return setGlobalBoolean(scrubbed, "isPlaying", false);
 }
 
+/**
+ * Sets one numeric hand field with finite checks and radius clamping.
+ *
+ * @param state Current app state.
+ * @param handId Hand identifier (`L` or `R`).
+ * @param key Hand numeric field to update.
+ * @param nextValue Candidate value before sanitization/clamping.
+ * @returns New state with sanitized hand number applied.
+ */
 export function setHandNumber(state: AppState, handId: HandId, key: HandNumberKey, nextValue: number): AppState {
   const cloned = cloneState(state);
   const currentValue = cloned.hands[handId][key];
@@ -108,6 +146,13 @@ export function setHandNumber(state: AppState, handId: HandId, key: HandNumberKe
   return cloned;
 }
 
+/**
+ * Applies a preset transformation by id.
+ *
+ * @param state Current app state.
+ * @param presetId Preset identifier.
+ * @returns New preset-transformed state.
+ */
 export function applyPreset(state: AppState, presetId: PresetId): AppState {
   return applyPresetById(state, presetId);
 }

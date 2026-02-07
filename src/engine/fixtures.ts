@@ -9,17 +9,26 @@ export const FIXTURE_SCHEMA_VERSION = 1;
 export const FIXTURE_SAMPLE_HZ = DEFAULT_TRAIL_SAMPLE_HZ;
 export const FIXTURE_START_BEAT = DEFAULT_PLAYHEAD_BEATS;
 
+/**
+ * Serializable XY point in fixture payloads.
+ */
 export interface FixturePoint {
   x: number;
   y: number;
 }
 
+/**
+ * One sampled beat row in a fixture file.
+ */
 export interface FixtureSample {
   tBeats: number;
   L: FixturePoint;
   R: FixturePoint;
 }
 
+/**
+ * Persisted fixture payload for one preset.
+ */
 export interface PresetFixtureFile {
   schemaVersion: number;
   presetId: PresetId;
@@ -31,11 +40,17 @@ export interface PresetFixtureFile {
   samples: FixtureSample[];
 }
 
+/**
+ * Manifest entry pointing a preset id to its fixture filename.
+ */
 export interface FixtureManifestPresetEntry {
   id: PresetId;
   file: string;
 }
 
+/**
+ * Fixture manifest for all generated preset fixtures.
+ */
 export interface FixtureManifestFile {
   schemaVersion: number;
   sampleHz: number;
@@ -72,10 +87,25 @@ function sampleFixtureFromState(state: AppState, sampleHz: number, startBeat: nu
   return loopSamples.map(toFixtureSample);
 }
 
+/**
+ * Returns the canonical fixture filename for a preset id.
+ *
+ * @param presetId Preset identifier.
+ * @returns Fixture filename under `fixtures/`.
+ */
 export function getPresetFixtureFilename(presetId: PresetId): string {
   return `${presetId}.json`;
 }
 
+/**
+ * Builds deterministic fixture samples for one preset.
+ *
+ * @param preset Preset definition to apply before sampling.
+ * @param baseState Baseline state used as the preset input.
+ * @param sampleHz Sample rate in samples per second.
+ * @param startBeat Beat offset where sampling starts.
+ * @returns Serializable fixture payload for the preset.
+ */
 export function buildPresetFixture(
   preset: PresetDefinition,
   baseState: AppState,
@@ -97,6 +127,13 @@ export function buildPresetFixture(
   };
 }
 
+/**
+ * Builds fixture files for the full preset catalog.
+ *
+ * @param sampleHz Sample rate in samples per second.
+ * @param startBeat Beat offset where fixture sampling starts.
+ * @returns Deterministic fixture payloads for all presets.
+ */
 export function buildAllPresetFixtures(sampleHz = FIXTURE_SAMPLE_HZ, startBeat = FIXTURE_START_BEAT): PresetFixtureFile[] {
   const baseState = createDefaultState();
   return PRESET_CATALOG.map((preset) => buildPresetFixture(preset, baseState, sampleHz, startBeat));
@@ -115,6 +152,12 @@ function getUniformFixtureField(
   return firstValue;
 }
 
+/**
+ * Builds a manifest describing generated fixture files.
+ *
+ * @param fixtures Fixture payloads generated from presets.
+ * @returns Manifest with uniform sample settings and file map.
+ */
 export function buildFixtureManifest(fixtures: PresetFixtureFile[]): FixtureManifestFile {
   const sampleHz = getUniformFixtureField(fixtures, "sampleHz", FIXTURE_SAMPLE_HZ);
   const startBeat = getUniformFixtureField(fixtures, "startBeat", FIXTURE_START_BEAT);

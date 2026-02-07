@@ -1,4 +1,4 @@
-import type { AppState, HandId, HandState, HandsState } from "@/types/state";
+import type { AppState, HandState, HandsState } from "@/types/state";
 import {
   DEFAULT_ARM_CYCLES_PER_BEAT,
   DEFAULT_ARM_RADIUS,
@@ -15,9 +15,6 @@ import {
   DEFAULT_TRAIL_SAMPLE_HZ,
   TWO_PI
 } from "@/state/constants";
-
-const LEFT_HAND_ID: HandId = "L";
-const RIGHT_HAND_ID: HandId = "R";
 
 const DEFAULT_ARM_SPEED = DEFAULT_ARM_CYCLES_PER_BEAT * TWO_PI;
 const DEFAULT_LEFT_POI_SPEED = DEFAULT_LEFT_RELATIVE_POI_CYCLES_PER_BEAT * TWO_PI;
@@ -45,17 +42,23 @@ function createHandState(config: HandDefaultConfig): HandState {
 
 function createDefaultHandsState(): HandsState {
   return {
-    [LEFT_HAND_ID]: createHandState({
+    L: createHandState({
       armPhase: DEFAULT_LEFT_ARM_PHASE,
       poiSpeed: DEFAULT_LEFT_POI_SPEED
     }),
-    [RIGHT_HAND_ID]: createHandState({
+    R: createHandState({
       armPhase: DEFAULT_RIGHT_ARM_PHASE,
       poiSpeed: DEFAULT_RIGHT_POI_SPEED
     })
   };
 }
 
+/**
+ * Creates deterministic default application state.
+ * Angular values are stored in radians and radians-per-beat.
+ *
+ * @returns New immutable default `AppState` instance.
+ */
 export function createDefaultState(): AppState {
   return {
     global: {

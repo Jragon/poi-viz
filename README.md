@@ -2,43 +2,37 @@
 
 [Live Demo (GitHub Pages)](https://jragon.github.io/poi-viz/)
 
-A Vue 3 + TypeScript single-page app for visualizing wall-plane poi motion from coupled oscillators.
+Poi Phase Visualiser is a Vue 3 + TypeScript app for exploring wall-plane poi motion from deterministic coupled oscillators.
 
-It renders:
-- a pattern viewport (hands, tethers, poi heads, optional trails), and
-- a waveform inspector (sin/cos channels for arm/relative oscillators),
-all synchronized to one beat-based playhead.
+The app gives you:
+- a pattern viewport (hands, tethers, heads, optional trails),
+- a synchronized waveform inspector,
+- interactive controls for timing, per-hand parameters, VTG generation, and preset library workflows,
+- deterministic sampling/fixtures so behavior is testable and reproducible.
 
-## What This Project Does
+## What The App Does
 
-Given per-hand oscillator parameters, the app computes deterministic 2D motion and draws it with Canvas 2D:
-- Left and right hand points orbit around the origin (arm oscillator).
-- Poi heads rotate relative to each hand (relative oscillator).
-- The resulting geometry produces extensions, flowers, and antispin patterns.
+At a high level:
+- models each hand as an arm oscillator plus a relative poi oscillator,
+- computes positions in beat-space with pure engine math,
+- renders pattern + waves from the same playhead,
+- supports VTG descriptor generation/classification for canonical relationship states,
+- persists/share-links state and supports user preset import/export.
 
-The controls let you:
-- play/pause and scrub through a loop,
-- edit global timing and trail settings,
-- edit left/right hand parameters,
-- switch angle entry between degrees and radians,
-- generate canonical VTG states from a 4×4 arm/poi relationship grid,
-- save/load your own preset library and export/import preset JSON.
+## Documentation Map
 
-## Current Feature Coverage
+Start here for implementation details:
 
-Implemented:
-- Pure deterministic engine math in `src/engine`.
-- Pattern renderer in `src/render/patternRenderer.ts` + `src/components/PatternCanvas.vue`.
-- Wave renderer in `src/render/waveRenderer.ts` + `src/components/WaveCanvas.vue`.
-- Full controls UI in `src/components/Controls.vue` with dedicated VTG panel in `src/components/VtgPanel.vue`.
-- Typed immutable state update actions in `src/state/actions.ts`.
-- Session persistence + share-link encoding in `src/state/persistence.ts` and `src/App.vue`.
-- Local preset library save/load/export/import in `src/state/presetLibrary.ts` and `src/components/Controls.vue`.
-- Preset system (elements + flowers) in `src/state/presets.ts`.
-- VTG domain layer (`src/vtg/types.ts`, `src/vtg/classify.ts`, `src/vtg/generate.ts`) and VTG grid controls in `src/components/VtgPanel.vue`.
-- Golden fixture generation and regression tests (`scripts/gen-fixtures.ts`, `fixtures/*.json`, `tests/engine/fixtures.test.ts`).
-- Responsive app shell in `src/App.vue`.
-- GitHub Pages workflow in `.github/workflows/deploy-pages.yml`.
+- Overview: `docs/index.md`
+- Math model and invariants: `docs/math-model.md`
+- Engine modules and deterministic sampling flow: `docs/engine-architecture.md`
+- VTG generation/classification contracts: `docs/vtg-layer.md`
+- Validation workflow, fixtures, and safe change process: `docs/validation.md`
+- Terminology and symbols: `docs/glossary.md`
+- Documentation conventions for contributors: `docs/style.md`
+
+Generated API docs (TypeDoc):
+- `docs/api/index.html`
 
 ## Quick Start
 
@@ -47,327 +41,41 @@ npm install
 npm run dev
 ```
 
-Open the local Vite URL printed in terminal.
-
-## Build, Test, Fixtures
-
-```bash
-npm run test
-npm run build
-npm run gen:fixtures
-```
-
 If npm cache permissions fail locally:
 
 ```bash
 npm install --cache .npm-cache
 ```
 
-## Architecture Overview
+## Core Commands
 
-### Runtime composition
-
-- `src/main.ts`
-  Bootstraps Vue and global styles.
-- `src/App.vue`
-  Owns app state, RAF transport loop, and wires events from controls to pure state actions.
-- `src/components/PatternCanvas.vue`
-  Pulls engine positions + trail sampler output, then delegates drawing to pattern renderer.
-- `src/components/WaveCanvas.vue`
-  Samples loop channels and delegates drawing to wave renderer.
-- `src/components/Controls.vue`
-  Hosts foldable control sections and emits typed events for global/hand updates, transport actions, VTG apply, and presets.
-- `src/components/VtgPanel.vue`
-  Renders the foldable VTG selector/grid panel and emits `VTGDescriptor` updates on grid, phase, and cycles changes.
-
-### Separation of concerns
-
-- Engine (`src/engine/*`): pure math and deterministic sampling.
-- Render (`src/render/*`): pure Canvas draw functions and transforms.
-- State (`src/state/*`): defaults, constants, action reducers, presets, angle-unit and speed-unit conversions.
-- VTG (`src/vtg/*`): pure descriptor generation/classification independent of Vue and rendering.
-- Persistence (`src/state/persistence.ts`): serialize/deserialize + URL/localStorage integration helpers.
-- Preset library (`src/state/presetLibrary.ts`): local preset records + JSON import/export helpers.
-- Vue components (`src/components/*`): event wiring + canvas lifecycle only.
-
-### Data and control flow
-
-1. `src/App.vue` initializes state via `createDefaultState()`.
-2. RAF advances `state.global.t` in beats when `isPlaying` is true.
-3. Controls emit updates; `src/state/actions.ts` returns a cloned next state.
-4. Canvases read state and `t`:
-   - Pattern canvas computes positions/trails and renders geometry.
-   - Wave canvas samples one loop and renders oscillator traces + playhead cursor.
-5. VTG grid/phase/cycles controls emit `VTGDescriptor` values and apply canonical angular params through `generateVTGState`.
-6. Persistence layer syncs session state to localStorage (debounced), keeps URL clean during editing, and still supports share-link state encoding on demand.
-
-## Math Model (Single Source of Truth)
-
-Coordinates:
-- Wall plane with `x` right, `y` up.
-- Angles are radians, positive counter-clockwise.
-- Time is beats (`t`).
-
-For each hand `i ∈ {L, R}`:
-
-- `θ_arm_i(t) = ω_arm_i * t + φ_arm_i`
-- `θ_rel_i(t) = ω_rel_i * t + φ_rel_i`
-- `H_i(t) = R_arm_i * [cos(θ_arm_i), sin(θ_arm_i)]`
-- `P_i(t) = H_i(t) + R_poi_i * [cos(θ_arm_i + θ_rel_i), sin(θ_arm_i + θ_rel_i)]`
-- `Tether_i(t) = P_i(t) - H_i(t)`
-
-Speed-language mapping used in controls:
-- `a = armSpeed` (arm cycles per beat)
-- `r = poiSpeed` (relative poi cycles per beat)
-- `h = a + r` (absolute head cycles per beat)
-- Inverse form when editing absolute speed: `r = h - a`
-
-VTG canonical generation wrapper (`src/vtg/generate.ts`) applies:
-- `ω_arm_L = 2π`, `φ_arm_L = 0`
-- right arm timing/direction from VTG arm element
-- `ω_head_L = poiCyclesPerArmCycle * 2π` (signed head cycles per arm cycle)
-- right head direction from VTG poi element and right head timing from VTG poi timing (`same-time`/`split-time`) relative to left head
-- relative solve per hand: `ω_rel = ω_head - ω_arm`, `φ_rel = φ_head - φ_arm`
-- phase bucket sets absolute left-head orientation (0/90/180/270), while poi timing classification stays independent (`same-time` vs `split-time`).
-- classifier bucket tolerance is ±5°.
-
-### Elements vs Orientation
-
-Earth/Air/Water/Fire are relation labels, not absolute directions:
-- Authoritative classification in `src/vtg/classify.ts` uses only timing (`Δφ ≈ 0` vs `Δφ ≈ π`) and direction sign (`same` vs `opposite`).
-- That makes `classifyArmElement` and `classifyPoiElement` invariant under global rotation.
-- `phaseDeg` is the only orientation bucket (`0/90/180/270`), where this engine uses `0° = right (+x)`, `90° = up (+y)`.
-
-Traditional VTG diagrams are often drawn with a different absolute zero. That is only a constant rotation, not a different element definition.
-
-Cardinal language ("top/sides/together/apart") is a descriptive aid for both arms and poi-head relationships, not the classifier itself:
-
-| Element | Right (0°) | Up (90°) | Left (180°) | Down (270°) |
-| --- | --- | --- | --- | --- |
-| Earth | together | together | together | together |
-| Air | apart | together | apart | together |
-| Water | apart | apart | apart | apart |
-| Fire | together | apart | together | apart |
-
-Mapping used by the authoritative classifier:
-- Earth = same-time + same-direction
-- Air = split-time + opposite-direction
-- Water = split-time + same-direction
-- Fire = same-time + opposite-direction
-
-Notes:
-- `ω_rel = 0` gives extension behavior (head offset locked to arm angle).
-- Signs and magnitude ratios of `ω_rel` relative to `ω_arm` produce inspin/antispin flowers.
-- UI speed can be shown as cycles/beat or degrees/beat; phases can be shown as degrees/radians.
-  Engine/state values remain radians internally.
-
-## State Model
-
-Canonical types are in `src/types/state.ts`.
-
-Global state (`GlobalState`):
-- `bpm`
-- `loopBeats`
-- `playSpeed`
-- `isPlaying`
-- `t`
-- `showTrails`
-- `trailBeats`
-- `trailSampleHz`
-- `showWaves`
-
-Per-hand state (`HandState` for `L` and `R`):
-- `armSpeed`, `armPhase`, `armRadius`
-- `poiSpeed`, `poiPhase`, `poiRadius`
-
-Defaults are created in `src/state/defaults.ts` from constants in `src/state/constants.ts`:
-- `bpm = 10`, `loopBeats = 4`, `playSpeed = 1`, `isPlaying = true`
-- `armRadius = 120`, `poiRadius = 100`
-- Left arm speed `2π`, phase `0`
-- Right arm speed `2π`, phase `0` (same-time / earth timing for hands)
-- Left relative poi speed `-6π` (3-petal antispin baseline), phase `0`
-- Right relative poi speed `0` (extension baseline), phase `0`
-
-## Controls Reference
-
-`src/components/Controls.vue` provides:
-- Foldable panels for transport, global settings, both hands, preset library, and usage help.
-- Default panel states: Global Settings and Preset Library start collapsed; "How This Works and How To Use It" starts expanded.
-- Transport panel: play/pause + scrub.
-- Global settings: BPM, loop beats, play speed, trail settings, trails/waves toggles.
-- Unit controls:
-  - phase unit: degrees/radians
-  - speed unit: cycles/beat or degrees/beat
-- Advanced toggle to reveal extra poi model controls.
-- Per-hand parameter inputs for L/R with poi-centric default editing:
-  - absolute head speed `h` (default-visible control)
-  - relative poi speed `r` and derived readouts (`a`, `r`, `h`, spin mode, `r/a`) in advanced mode
-- Number inputs commit/validate on blur to allow uninterrupted typing of partial/negative values.
-- VTG panel:
-  - moved to `src/components/VtgPanel.vue` and mounted directly below Global Settings,
-  - collapsible by default with persisted open/closed state,
-  - selectors for signed non-zero poi cycles per arm cycle and phase chips (`0/90/180/270`),
-  - 4×4 clickable grid: rows are arm elements, columns are poi-head elements,
-  - read-only classifier for current VTG arm/poi/phase state,
-  - collapsible help text with concise timing/direction semantics.
-- Preset Library section:
-  - save current state to app storage,
-  - load/delete/export saved entries,
-  - import preset JSON files.
-  - export files use currently selected speed/phase units for human-readable values.
-- Detailed on-page explanation block for usage guidance.
-
-Persistence behavior in `src/App.vue` + `src/state/persistence.ts`:
-- On load: legacy URL state is parsed first; if absent/invalid, localStorage session state is used; otherwise defaults.
-- The app removes `state` query params after hydration so editing does not keep long URLs visible.
-- On state changes: session state is updated in localStorage with debounce.
-- Header copy-link button creates a shareable URL snapshot without mutating the current browser URL.
-- Preset library records are stored separately in localStorage and can be exported/imported as JSON.
-- Exported preset JSON keeps speed/phase values in selected UI units and includes unit metadata for reliable re-import.
-
-State writes are routed through pure reducers in `src/state/actions.ts`:
-- finite-number sanitization,
-- min-clamping for constrained fields,
-- loop-safe playhead normalization,
-- immutable clone-on-write updates.
-
-## Preset System
-
-Preset catalog is defined in `src/state/presets.ts`.
-Element/flower presets remain available as pure programmatic transforms, but their dedicated control panels are no longer shown in the UI.
-
-Element presets (`earth`, `air`, `water`, `fire`) modify right-hand arm relation relative to left hand:
-- same/split time (`φ_arm_R` offset of `0` or `π`)
-- same/opposite direction (sign relation between `ω_arm_R` and `ω_arm_L`)
-
-Flower presets (`inspin-*`, `antispin-*`) set:
-- `poiSpeed = ±petals * armSpeed`
-- `poiPhase = 0`
-for both hands.
-
-## Rendering Details
-
-Pattern rendering (`src/render/patternRenderer.ts`):
-- Draw order:
-  - background
-  - polar grid + axes
-  - trails (optional)
-  - tether lines
-  - hand/head dots
-- World radius derives from max reach of both hands.
-- Trails use age-based alpha fading.
-
-Wave rendering (`src/render/waveRenderer.ts`):
-- Lanes:
-  - `arm L`, `rel L`, `arm R`, `rel R`
-- Traces:
-  - sin and cos for each lane
-- Includes vertical cursor for current playhead.
-
-Responsive behavior (`src/App.vue`):
-- Pattern and wave panels are side-by-side on large screens.
-- If waves are disabled, the pattern panel expands full width.
-- Controls panel sits below the visual panels.
-
-## Deterministic Sampling and Trails
-
-Engine sampling APIs (`src/engine/engine.ts` barrel):
-- `getAngles(params, tBeats)`
-- `getPositions(params, tBeats)`
-- `sampleLoop(params, sampleHz, loopBeats, startBeat?)`
-- `createTrailSampler(config, params, startBeat)`
-- `advanceTrailSampler(state, params, frameBeat)`
-- `getTrailPoints(state)`
-
-Trail capacity:
-- `trailSeconds = trailBeats * (60 / bpm)`
-- `capacity = ceil(trailSampleHz * trailSeconds)`
-
-Implementation uses fixed-step sampling and ring buffers to remain deterministic and bounded.
-
-## Fixtures and Regression Testing
-
-Fixture generation:
-- Script: `scripts/gen-fixtures.ts`
-- Output files: `fixtures/*.json` and `fixtures/manifest.json`
-- Source of fixture values: engine loop sampling on preset-derived states
-
-Tolerances:
-- strict math checks: `1e-6`
-- fixture comparisons: `1e-4`
-
-## Test Suite Map
-
-State tests:
-- `tests/state/defaults.test.ts`
-- `tests/state/presets.test.ts`
-- `tests/state/actions.test.ts`
-- `tests/state/angle-units.test.ts`
-- `tests/state/speed-units.test.ts`
-- `tests/state/persistence.test.ts`
-- `tests/state/preset-library.test.ts`
-
-Engine tests:
-- `tests/engine/angles.test.ts`
-- `tests/engine/positions.test.ts`
-- `tests/engine/sampling.test.ts`
-- `tests/engine/trails.test.ts`
-- `tests/engine/invariants.test.ts`
-- `tests/engine/special-cases.test.ts`
-- `tests/engine/fixture-harness.test.ts`
-- `tests/engine/fixtures.test.ts`
-
-Render tests:
-- `tests/render/pattern-renderer.test.ts`
-- `tests/render/wave-renderer.test.ts`
-
-VTG tests:
-- `tests/vtg/classify.test.ts`
-- `tests/vtg/generate.test.ts`
-
-## Project Structure
-
-```text
-.
-├── .github/workflows/deploy-pages.yml
-├── fixtures/
-├── scripts/
-│   └── gen-fixtures.ts
-├── src/
-│   ├── App.vue
-│   ├── components/
-│   │   ├── Controls.vue
-│   │   ├── PatternCanvas.vue
-│   │   ├── VtgPanel.vue
-│   │   └── WaveCanvas.vue
-│   ├── engine/
-│   ├── render/
-│   ├── state/
-│   ├── types/
-│   ├── vtg/
-│   ├── main.ts
-│   └── style.css
-├── tests/
-│   ├── engine/
-│   ├── render/
-│   ├── state/
-│   └── vtg/
-├── AGENTS.md
-├── spec.md
-└── README.md
+```bash
+npm test
+npm run build
+npm run lint
+npm run gen:fixtures
+npm run docs:dev
+npm run docs:api
+npm run docs:build
+npm run docs:all
 ```
 
-## Engineering Principles Used In This Codebase
+## Project Areas
 
-- TypeScript-first contracts for state, engine, and render boundaries.
-- Deterministic pure math and sampling; no hidden randomness.
-- Named constants instead of magic numbers.
-- Small, testable functions.
-- Canvas 2D rendering only.
+- `src/engine/`: pure math, sampling, trails, fixtures
+- `src/vtg/`: VTG descriptor types, generator, classifier
+- `src/state/`: defaults, constants, units, actions, persistence, preset library
+- `src/render/`: Canvas drawing helpers
+- `src/components/`: Vue UI and panel composition
+- `tests/`: regression coverage for engine/state/render/vtg contracts
+- `docs/`: human documentation
+- `docs/api/`: generated API reference
 
-## Deployment
+## Contributor Rule Of Thumb
 
-GitHub Actions workflow for static deployment lives at:
-- `.github/workflows/deploy-pages.yml`
-
-It builds Vite output from the repository and publishes `dist/` to GitHub Pages.
+For behavior changes:
+1. update code,
+2. update/add tests,
+3. update the relevant `docs/*.md` pages,
+4. regenerate API docs when exported APIs change,
+5. run `npm test`, `npm run lint`, and `npm run docs:all`.

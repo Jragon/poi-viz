@@ -9,6 +9,9 @@ export const PRESET_FILE_SCHEMA_VERSION = 2;
 export const PRESET_NAME_MAX_LENGTH = 80;
 const DEFAULT_PRESET_NAME = "Untitled Preset";
 
+/**
+ * Full persisted user preset record.
+ */
 export interface UserPresetRecord {
   id: string;
   name: string;
@@ -16,6 +19,9 @@ export interface UserPresetRecord {
   state: AppState;
 }
 
+/**
+ * Lightweight preset metadata used by UI lists.
+ */
 export interface UserPresetSummary {
   id: string;
   name: string;
@@ -50,6 +56,9 @@ interface PresetFileRecord {
   state: PresetFileState;
 }
 
+/**
+ * Unit selection used when exporting human-readable preset files.
+ */
 export interface PresetFileExportOptions {
   speedUnit: SpeedUnit;
   phaseUnit: AngleUnit;
@@ -194,6 +203,12 @@ function convertExportStateToInternal(candidate: unknown, units: PresetFileUnits
   };
 }
 
+/**
+ * Normalizes preset name to non-empty bounded-length text.
+ *
+ * @param name Raw preset name input.
+ * @returns Sanitized preset name suitable for storage/display.
+ */
 export function sanitizePresetName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length === 0) {
@@ -213,12 +228,24 @@ function sanitizeFileSegment(input: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+/**
+ * Converts preset name to a filesystem-safe JSON filename.
+ *
+ * @param name Preset display name.
+ * @returns Lowercase kebab-case filename ending in `.json`.
+ */
 export function createPresetFileName(name: string): string {
   const segment = sanitizeFileSegment(name);
   const safeSegment = segment.length > 0 ? segment : "preset";
   return `${safeSegment}.json`;
 }
 
+/**
+ * Extracts list-safe metadata from a full preset record.
+ *
+ * @param record Full preset record.
+ * @returns Lightweight summary object.
+ */
 export function createUserPresetSummary(record: UserPresetRecord): UserPresetSummary {
   return {
     id: record.id,
@@ -232,10 +259,24 @@ function createPresetIdSegment(name: string): string {
   return safeSegment.length > 0 ? safeSegment : "preset";
 }
 
+/**
+ * Builds deterministic preset id from name and timestamp.
+ *
+ * @param name Preset display name.
+ * @param nowDate Timestamp source for deterministic tests.
+ * @returns Stable preset id string.
+ */
 export function createPresetId(name: string, nowDate = new Date()): string {
   return `preset-${createPresetIdSegment(name)}-${nowDate.getTime()}`;
 }
 
+/**
+ * Ensures preset id uniqueness by appending numeric suffix when needed.
+ *
+ * @param records Existing preset records.
+ * @param baseId Candidate id to validate.
+ * @returns Unique id not present in `records`.
+ */
 export function ensureUniquePresetId(records: UserPresetRecord[], baseId: string): string {
   const existingIds = new Set(records.map((record) => record.id));
   if (!existingIds.has(baseId)) {
@@ -249,6 +290,15 @@ export function ensureUniquePresetId(records: UserPresetRecord[], baseId: string
   return `${baseId}-${suffix}`;
 }
 
+/**
+ * Creates a full preset record from current state snapshot.
+ *
+ * @param name Preset display name.
+ * @param state App state snapshot to persist.
+ * @param nowDate Timestamp source for deterministic tests.
+ * @param presetId Optional precomputed id.
+ * @returns New user preset record.
+ */
 export function createUserPresetRecord(
   name: string,
   state: AppState,
@@ -270,19 +320,46 @@ function sortBySavedAtDescending(records: UserPresetRecord[]): UserPresetRecord[
   return [...records].sort((a, b) => b.savedAt.localeCompare(a.savedAt));
 }
 
+/**
+ * Inserts or replaces preset record by id, then sorts newest-first.
+ *
+ * @param records Existing preset records.
+ * @param record Preset record to insert/update.
+ * @returns New sorted preset record array.
+ */
 export function upsertUserPreset(records: UserPresetRecord[], record: UserPresetRecord): UserPresetRecord[] {
   const withoutExisting = records.filter((entry) => entry.id !== record.id);
   return sortBySavedAtDescending([...withoutExisting, { ...record, state: cloneState(record.state) }]);
 }
 
+/**
+ * Removes one preset record by id.
+ *
+ * @param records Existing preset records.
+ * @param presetId Preset id to remove.
+ * @returns Record array without the target id.
+ */
 export function removeUserPreset(records: UserPresetRecord[], presetId: string): UserPresetRecord[] {
   return records.filter((entry) => entry.id !== presetId);
 }
 
+/**
+ * Returns one preset by id.
+ *
+ * @param records Existing preset records.
+ * @param presetId Preset id to look up.
+ * @returns Matching preset record, or `null` when missing.
+ */
 export function getUserPreset(records: UserPresetRecord[], presetId: string): UserPresetRecord | null {
   return records.find((entry) => entry.id === presetId) ?? null;
 }
 
+/**
+ * Serializes preset library records to versioned JSON.
+ *
+ * @param records Preset records to serialize.
+ * @returns JSON payload for localStorage persistence.
+ */
 export function serializeUserPresetLibrary(records: UserPresetRecord[]): string {
   const payload: UserPresetLibraryPayload = {
     schemaVersion: PRESET_LIBRARY_SCHEMA_VERSION,
@@ -375,6 +452,13 @@ function parsePresetCandidateV2(rawPreset: unknown, defaults: AppState): UserPre
   };
 }
 
+/**
+ * Parses preset library JSON and filters invalid entries.
+ *
+ * @param serialized Raw serialized library payload from storage.
+ * @param defaults Default app state for merge/clamp fallback.
+ * @returns Sorted valid preset records, or empty array on parse/schema failure.
+ */
 export function deserializeUserPresetLibrary(serialized: string | null, defaults: AppState): UserPresetRecord[] {
   if (!serialized) {
     return [];
@@ -405,6 +489,13 @@ export function deserializeUserPresetLibrary(serialized: string | null, defaults
   }
 }
 
+/**
+ * Serializes one preset into shareable JSON file payload with explicit units.
+ *
+ * @param record Preset record to export.
+ * @param options Unit options for exported speed/phase values.
+ * @returns Pretty-printed versioned preset JSON string.
+ */
 export function serializeUserPresetFile(record: UserPresetRecord, options: PresetFileExportOptions): string {
   const payload: PresetFileRecord = {
     id: record.id,
@@ -427,6 +518,13 @@ export function serializeUserPresetFile(record: UserPresetRecord, options: Prese
   );
 }
 
+/**
+ * Parses one preset JSON file payload (v1 legacy or v2 unit-aware schema).
+ *
+ * @param serialized Raw JSON file content.
+ * @param defaults Default app state for merge/clamp fallback.
+ * @returns Parsed preset record, or `null` when payload is invalid.
+ */
 export function deserializeUserPresetFile(serialized: string, defaults: AppState): UserPresetRecord | null {
   try {
     const payload = JSON.parse(serialized) as unknown;
@@ -434,7 +532,7 @@ export function deserializeUserPresetFile(serialized: string, defaults: AppState
       return null;
     }
 
-    const payloadWithSchema = payload as UserPresetFilePayload;
+    const payloadWithSchema = payload as unknown as UserPresetFilePayload;
     if (payloadWithSchema.schemaVersion === PRESET_LIBRARY_SCHEMA_VERSION) {
       return parsePresetCandidate(payloadWithSchema.preset, defaults);
     }

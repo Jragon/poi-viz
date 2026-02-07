@@ -1,10 +1,7 @@
 import { PI, TWO_PI } from "@/state/constants";
-import type { AppState, HandId, HandState } from "@/types/state";
+import type { AppState, HandState } from "@/types/state";
 import { classifyVTG } from "@/vtg/classify";
 import { getRelationForElement, type VTGDescriptor, type VTGPhaseDeg, type VTGTiming } from "@/vtg/types";
-
-const LEFT_HAND_ID: HandId = "L";
-const RIGHT_HAND_ID: HandId = "R";
 
 const CANONICAL_LEFT_ARM_SPEED = TWO_PI;
 const CANONICAL_LEFT_ARM_PHASE = 0;
@@ -86,6 +83,10 @@ function assertMatchesDescriptor(state: AppState, descriptor: VTGDescriptor): vo
 /**
  * Generates one canonical VTG state by overriding only angular arm/poi parameters.
  * Non-angular settings (radii, bpm, trails, persistence fields) are preserved from baseState.
+ *
+ * @param descriptor VTG discrete inputs (elements, phase bucket, signed head cycles).
+ * @param baseState Source state used for non-angular fields.
+ * @returns New app state with angular fields solved from VTG descriptor constraints.
  */
 export function generateVTGState(descriptor: VTGDescriptor, baseState: AppState): AppState {
   assertValidPoiCyclesPerArmCycle(descriptor.poiCyclesPerArmCycle);
@@ -113,14 +114,14 @@ export function generateVTGState(descriptor: VTGDescriptor, baseState: AppState)
   const nextState: AppState = {
     global: { ...baseState.global },
     hands: {
-      [LEFT_HAND_ID]: applyAngularOverrides(
+      L: applyAngularOverrides(
         baseState.hands.L,
         leftArmSpeed,
         leftArmPhase,
         leftRelativePoiSpeed,
         leftRelativePoiPhase
       ),
-      [RIGHT_HAND_ID]: applyAngularOverrides(
+      R: applyAngularOverrides(
         baseState.hands.R,
         rightArmSpeed,
         rightArmPhase,

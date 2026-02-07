@@ -9,10 +9,25 @@ interface TrailBuffers {
 }
 
 export interface TrailSamplerState {
+  /**
+   * Immutable trail sampling configuration.
+   */
   config: TrailSamplerConfig;
+  /**
+   * Beat-domain sample step derived from `trailSampleHz` and `bpm`.
+   */
   sampleStepBeats: number;
+  /**
+   * Next beat timestamp that should be sampled.
+   */
   nextSampleBeat: number;
+  /**
+   * Most recent frame beat used to advance this sampler.
+   */
   lastFrameBeat: number;
+  /**
+   * Per-hand bounded trail history.
+   */
   trails: TrailBuffers;
 }
 
@@ -41,6 +56,11 @@ function appendTrailSample(trails: TrailBuffers, params: EngineParams, tBeats: n
 /**
  * Creates a trail sampler with a seeded sample at startBeat.
  * Sampling thereafter is fixed-step in beat-space, independent of render FPS.
+ *
+ * @param config Trail window and sample-rate configuration.
+ * @param params Engine inputs for positional sampling.
+ * @param startBeat Beat where the seeded sample is written.
+ * @returns Initialized deterministic trail sampler state.
  */
 export function createTrailSampler(config: TrailSamplerConfig, params: EngineParams, startBeat: number): TrailSamplerState {
   const capacity = getTrailCapacity(config.trailSampleHz, config.trailBeats, config.bpm);
@@ -73,6 +93,11 @@ function getPendingSampleCount(nextSampleBeat: number, frameBeat: number, sample
 /**
  * Advances trails up to frameBeat.
  * If frameBeat rewinds, state is reset and reseeded at the new beat.
+ *
+ * @param state Previous trail sampler state.
+ * @param params Engine inputs for positional sampling.
+ * @param frameBeat Current playhead beat.
+ * @returns Next trail sampler state after catching up to `frameBeat`.
  */
 export function advanceTrailSampler(state: TrailSamplerState, params: EngineParams, frameBeat: number): TrailSamplerState {
   if (frameBeat < state.lastFrameBeat) {
@@ -103,6 +128,9 @@ export function advanceTrailSampler(state: TrailSamplerState, params: EnginePara
 
 /**
  * Returns trail points ordered from oldest to newest.
+ *
+ * @param state Trail sampler state.
+ * @returns Per-hand ordered trail points from oldest to newest.
  */
 export function getTrailPoints(state: TrailSamplerState) {
   return {

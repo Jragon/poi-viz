@@ -3,3 +3,6 @@ dist
 .npm-cache
 .DS_Store
 coverage
+docs/api
+docs/.vitepress/dist
+docs/.vitepress/cache

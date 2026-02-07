@@ -78,6 +78,9 @@ const ELEMENT_CARDINAL_GEOMETRY: Record<VTGElement, CardinalGeometryDescription>
 
 /**
  * Normalizes an angle to the [0, 2π) range.
+ *
+ * @param angle Angle in radians.
+ * @returns Wrapped angle in `[0, 2π)`.
  */
 export function normalizeAngleRadians(angle: number): number {
   const normalized = angle % TWO_PI;
@@ -86,6 +89,10 @@ export function normalizeAngleRadians(angle: number): number {
 
 /**
  * Smallest absolute wrapped angular distance between two angles.
+ *
+ * @param a First angle in radians.
+ * @param b Second angle in radians.
+ * @returns Absolute shortest wrapped distance in radians.
  */
 export function shortestAngularDistanceRadians(a: number, b: number): number {
   const wrappedDelta = normalizeAngleRadians(a - b);
@@ -180,6 +187,9 @@ function describeGeometryAtCardinals(
 /**
  * Authoritative arm-element classifier.
  * Uses only right-vs-left timing (Δφ≈0/π) and direction-sign relation, so it is rotation-invariant.
+ *
+ * @param state Full app state with hand angular params in radians/radians-per-beat.
+ * @returns VTG arm element label derived from arm timing/direction relation.
  */
 export function classifyArmElement(state: AppState): VTGElement {
   const direction = classifyDirection(state.hands.L.armSpeed, state.hands.R.armSpeed);
@@ -191,6 +201,9 @@ export function classifyArmElement(state: AppState): VTGElement {
 /**
  * Authoritative poi-element classifier.
  * Uses only head timing/direction relations (world-frame), never absolute orientation.
+ *
+ * @param state Full app state with hand angular params in radians/radians-per-beat.
+ * @returns VTG poi element label derived from head timing/direction relation.
  */
 export function classifyPoiElement(state: AppState): VTGElement {
   const leftHeadSpeed = getHeadSpeedRadiansPerBeat(state, LEFT_HAND_ID);
@@ -209,6 +222,9 @@ export function classifyPoiElement(state: AppState): VTGElement {
 /**
  * Authoritative VTG phase bucket classifier.
  * Phase is an absolute-orientation bucket (0/90/180/270) and may change under global rotation.
+ *
+ * @param state Full app state with hand angular params in radians/radians-per-beat.
+ * @returns Phase bucket in degrees (`0`, `90`, `180`, or `270`).
  */
 export function classifyPhaseBucket(state: AppState): VTGPhaseDeg {
   const leftHeadPhase = normalizeAngleRadians(getHeadPhaseRadians(state, LEFT_HAND_ID));
@@ -233,6 +249,9 @@ export function classifyPhaseBucket(state: AppState): VTGPhaseDeg {
 /**
  * Full VTG classifier for the current state.
  * Element fields are relation-based; phaseDeg is orientation-based.
+ *
+ * @param state Full app state with hand angular params in radians/radians-per-beat.
+ * @returns VTG descriptor subset `{ armElement, poiElement, phaseDeg }`.
  */
 export function classifyVTG(state: AppState): Pick<VTGDescriptor, "armElement" | "poiElement" | "phaseDeg"> {
   return {
@@ -245,6 +264,9 @@ export function classifyVTG(state: AppState): Pick<VTGDescriptor, "armElement" |
 /**
  * Descriptive-only helper mapping element labels to together/apart cardinal language.
  * This is an interpretation aid for docs/debug and is NOT used for classification.
+ *
+ * @param element VTG element label.
+ * @returns Cardinal together/apart description table for the element.
  */
 export function describeElementGeometryAtCardinals(element: VTGElement): CardinalGeometryDescription {
   return { ...ELEMENT_CARDINAL_GEOMETRY[element] };
@@ -253,6 +275,9 @@ export function describeElementGeometryAtCardinals(element: VTGElement): Cardina
 /**
  * Descriptive-only helper for arm geometry cardinal language.
  * Computed from current arm motion at cardinal events; it is not used for element classification.
+ *
+ * @param state Full app state with hand angular params in radians/radians-per-beat.
+ * @returns Cardinal together/apart description derived from arm channels.
  */
 export function describeArmGeometryAtCardinals(state: AppState): CardinalGeometryDescription {
   return describeGeometryAtCardinals(
@@ -266,6 +291,9 @@ export function describeArmGeometryAtCardinals(state: AppState): CardinalGeometr
 /**
  * Descriptive-only helper for poi-head geometry cardinal language.
  * Computed from current head motion at cardinal events; it is not used for element classification.
+ *
+ * @param state Full app state with hand angular params in radians/radians-per-beat.
+ * @returns Cardinal together/apart description derived from head channels.
  */
 export function describePoiGeometryAtCardinals(state: AppState): CardinalGeometryDescription {
   return describeGeometryAtCardinals(

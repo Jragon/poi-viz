@@ -33,6 +33,10 @@ function getSingleHandPositions(hand: HandState, armAngle: number, headAngle: nu
 /**
  * Computes wall-plane positions for both hands at beat time t.
  * The tether vector is always head - hand.
+ *
+ * @param params Engine inputs containing per-hand radii and angular channels.
+ * @param tBeats Beat-domain sample time.
+ * @returns Per-hand positions for hand point, head point, and tether vector.
  */
 export function getPositions(params: EngineParams, tBeats: number): PositionsByHand {
   const angles = getAngles(params, tBeats);
