@@ -133,11 +133,12 @@ Per-hand state (`HandState` for `L` and `R`):
 - `poiSpeed`, `poiPhase`, `poiRadius`
 
 Defaults are created in `src/state/defaults.ts` from constants in `src/state/constants.ts`:
-- `bpm = 120`, `loopBeats = 4`, `playSpeed = 1`
+- `bpm = 10`, `loopBeats = 4`, `playSpeed = 1`
 - `armRadius = 120`, `poiRadius = 180`
 - Left arm speed `2π`, phase `0`
-- Right arm speed `2π`, phase `π` (split-time default)
-- Relative poi speed `6π`, phase `0` for both hands
+- Right arm speed `2π`, phase `0` (same-time / earth timing for hands)
+- Left relative poi speed `-6π` (3-petal antispin baseline), phase `0`
+- Right relative poi speed `0` (extension baseline), phase `0`
 
 ## Controls Reference
 

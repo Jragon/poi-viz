@@ -61,3 +61,8 @@
 - 2026-02-07T12:07:49Z [USER] Provided GitHub Pages target URL `https://jragon.github.io/poi-viz/` and implied Pages base-path alignment.
 - 2026-02-07T12:07:49Z [CODE] Updated `vite.config.ts` to use `base: "/poi-viz/"` on build and `"/"` in dev so production assets resolve under project Pages URL.
 - 2026-02-07T12:07:49Z [TOOL] Verified configuration with passing `npm run build`.
+- 2026-02-07T12:12:55Z [USER] Requested new defaults: bpm 10; both arm speeds 360 deg/beat with zero phase (earth timing); right poi relative speed 0 (extension); left poi relative speed -3 circles per arm circle (3-petal antispin baseline).
+- 2026-02-07T12:12:55Z [CODE] Updated default constants/state wiring in `src/state/constants.ts` and `src/state/defaults.ts` to encode the new baseline with explicit per-hand relative poi cycle constants.
+- 2026-02-07T12:12:55Z [CODE] Updated `tests/state/defaults.test.ts` expectations and README default-parameter documentation; regenerated fixture files via `npm run gen:fixtures` to match new default-driven fixture metadata/outputs.
+- 2026-02-07T12:12:55Z [CODE] Relaxed exact float equality assertions in `tests/engine/trails.test.ts` to tolerance-based checks after bpm change exposed floating-point endpoint representation.
+- 2026-02-07T12:12:55Z [TOOL] Verified with passing `npm run test` (40 tests) and `npm run build`.

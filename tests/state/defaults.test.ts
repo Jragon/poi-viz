@@ -3,11 +3,12 @@ import { createDefaultState } from "@/state/defaults";
 import {
   DEFAULT_ARM_RADIUS,
   DEFAULT_BPM,
+  DEFAULT_LEFT_RELATIVE_POI_CYCLES_PER_BEAT,
   DEFAULT_LOOP_BEATS,
   DEFAULT_POI_RADIUS,
+  DEFAULT_RIGHT_RELATIVE_POI_CYCLES_PER_BEAT,
   DEFAULT_TRAIL_BEATS,
   DEFAULT_TRAIL_SAMPLE_HZ,
-  SPLIT_TIME_PHASE_OFFSET,
   TWO_PI
 } from "@/state/constants";
 
@@ -37,12 +38,11 @@ describe("createDefaultState", () => {
     expect(state.hands.L.armSpeed).toBe(TWO_PI);
     expect(state.hands.R.armSpeed).toBe(TWO_PI);
     expect(state.hands.L.armPhase).toBe(0);
-    expect(state.hands.R.armPhase).toBe(SPLIT_TIME_PHASE_OFFSET);
+    expect(state.hands.R.armPhase).toBe(0);
 
-    expect(state.hands.L.poiSpeed).toBe(3 * TWO_PI);
-    expect(state.hands.R.poiSpeed).toBe(3 * TWO_PI);
+    expect(state.hands.L.poiSpeed).toBe(DEFAULT_LEFT_RELATIVE_POI_CYCLES_PER_BEAT * TWO_PI);
+    expect(state.hands.R.poiSpeed).toBe(DEFAULT_RIGHT_RELATIVE_POI_CYCLES_PER_BEAT * TWO_PI);
     expect(state.hands.L.poiPhase).toBe(0);
     expect(state.hands.R.poiPhase).toBe(0);
   });
 });
-

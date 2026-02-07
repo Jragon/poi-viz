@@ -34,8 +34,8 @@ describe("trail sampler", () => {
 
     expect(points.L).toHaveLength(expectedPoints);
     expect(points.R).toHaveLength(expectedPoints);
-    expect(points.L[0]?.tBeats).toBe(0);
-    expect(points.L.at(-1)?.tBeats).toBe(1);
+    expect(points.L[0]?.tBeats).toBeCloseTo(0, 10);
+    expect(points.L.at(-1)?.tBeats).toBeCloseTo(1, 10);
   });
 
   it("caps points at ring-buffer capacity and keeps newest samples", () => {
@@ -65,8 +65,7 @@ describe("trail sampler", () => {
 
     expect(points.L).toHaveLength(1);
     expect(points.R).toHaveLength(1);
-    expect(points.L[0]?.tBeats).toBe(1);
-    expect(points.R[0]?.tBeats).toBe(1);
+    expect(points.L[0]?.tBeats).toBeCloseTo(1, 10);
+    expect(points.R[0]?.tBeats).toBeCloseTo(1, 10);
   });
 });
-
