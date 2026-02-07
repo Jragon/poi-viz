@@ -1,0 +1,22 @@
+export const PI = Math.PI;
+export const TWO_PI = PI * 2;
+
+export const DEFAULT_BPM = 120;
+export const DEFAULT_LOOP_BEATS = 4;
+export const DEFAULT_PLAY_SPEED = 1;
+export const DEFAULT_PLAYHEAD_BEATS = 0;
+
+export const DEFAULT_TRAIL_BEATS = 4;
+export const DEFAULT_TRAIL_SAMPLE_HZ = 120;
+
+export const DEFAULT_ARM_RADIUS = 120;
+export const DEFAULT_POI_RADIUS = 180;
+
+export const DEFAULT_ARM_CYCLES_PER_BEAT = 1;
+export const DEFAULT_RELATIVE_POI_CYCLES_PER_BEAT = 3;
+
+export const SPLIT_TIME_PHASE_OFFSET = PI;
+export const SAME_TIME_PHASE_OFFSET = 0;
+
+export const PETAL_COUNTS = [3, 4, 5] as const;
+
