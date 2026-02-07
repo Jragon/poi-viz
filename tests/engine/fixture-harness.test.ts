@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { compareFixtureSamples, type FixtureSample } from "./fixture-harness";
+import type { FixtureSample } from "@/engine/fixtures";
+import { compareFixtureSamples } from "./fixture-harness";
 
 function createFixtureSamples(): FixtureSample[] {
   return [

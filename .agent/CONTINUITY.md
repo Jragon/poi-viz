@@ -13,3 +13,11 @@
 - 2026-02-07T11:13:06Z [USER] Requested comprehensive engine documentation to support understanding and teaching.
 - 2026-02-07T11:13:06Z [CODE] Added API-level JSDoc across engine modules and created `/Users/rory/code/poi/src/engine/README.md` with equations, API mapping, determinism notes, and a worked example.
 - 2026-02-07T11:13:06Z [CODE] Updated `/Users/rory/code/poi/README.md` to point to dedicated engine documentation.
+- 2026-02-07T11:14:24Z [USER] Requested planning walkthrough for the next implementation phase.
+- 2026-02-07T11:14:24Z [ASSUMPTION] Next phase scope is Phase 5 only: replace fixture placeholder generation with real preset position fixtures and add file-backed regression tests.
+- 2026-02-07T11:18:17Z [CODE] Completed Phase 5 implementation: replaced fixture placeholder script with deterministic preset fixture generation, added fixture schema utilities in `/Users/rory/code/poi/src/engine/fixtures.ts`, and generated `/Users/rory/code/poi/fixtures/*.json`.
+- 2026-02-07T11:18:17Z [CODE] Added file-backed regression suite `/Users/rory/code/poi/tests/engine/fixtures.test.ts` using fixture harness comparisons at fixture tolerance.
+- 2026-02-07T11:18:17Z [CODE] Updated `/Users/rory/code/poi/README.md` and `/Users/rory/code/poi/src/engine/README.md` to document Phase 5 fixture workflow and testability.
+- 2026-02-07T11:18:17Z [ASSUMPTION] Next implementation phase is Phase 6: Canvas renderers and render-sync wiring (`PatternCanvas.vue`, `WaveCanvas.vue`).
+- 2026-02-07T11:19:27Z [CODE] Hardened fixture manifest generation to derive and validate uniform `sampleHz`/`startBeat` from generated payloads.
+- 2026-02-07T11:19:27Z [TOOL] Re-ran full Phase 5 validation: `npm run gen:fixtures`, `npm run test` (25 tests), and `npm run build` all passed.

@@ -1,23 +1,13 @@
+import type { FixtureSample } from "@/engine/fixtures";
 import type { HandId } from "@/types/state";
 import { FIXTURE_TOLERANCE } from "./helpers";
 
-export interface FixturePoint {
-  x: number;
-  y: number;
-}
-
-export interface FixtureSample {
-  tBeats: number;
-  L: FixturePoint;
-  R: FixturePoint;
-}
-
-export type FixtureAxis = keyof FixturePoint;
+export type FixtureAxis = keyof FixtureSample["L"] | "tBeats";
 
 export interface FixtureMismatch {
   sampleIndex: number;
   tBeats: number;
-  handId: HandId;
+  handId: HandId | "GLOBAL";
   axis: FixtureAxis;
   expected: number;
   actual: number;
@@ -43,6 +33,20 @@ export function compareFixtureSamples(
     const actualSample = actualSamples[sampleIndex];
 
     if (!expectedSample || !actualSample) {
+      continue;
+    }
+
+    const beatDelta = Math.abs(expectedSample.tBeats - actualSample.tBeats);
+    if (beatDelta > tolerance) {
+      mismatches.push({
+        sampleIndex,
+        tBeats: expectedSample.tBeats,
+        handId: "GLOBAL",
+        axis: "tBeats",
+        expected: expectedSample.tBeats,
+        actual: actualSample.tBeats,
+        delta: beatDelta
+      });
       continue;
     }
 

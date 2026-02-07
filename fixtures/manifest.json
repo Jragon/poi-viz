@@ -1,17 +1,48 @@
 {
-  "phase": 2,
-  "note": "Fixture position sampling will be added with the engine implementation in a later phase.",
-  "generatedAtIso": "2026-02-07T10:47:14.409Z",
-  "presetIds": [
-    "earth",
-    "air",
-    "water",
-    "fire",
-    "inspin-3",
-    "antispin-3",
-    "inspin-4",
-    "antispin-4",
-    "inspin-5",
-    "antispin-5"
+  "schemaVersion": 1,
+  "sampleHz": 120,
+  "startBeat": 0,
+  "presetCount": 10,
+  "presets": [
+    {
+      "id": "earth",
+      "file": "earth.json"
+    },
+    {
+      "id": "air",
+      "file": "air.json"
+    },
+    {
+      "id": "water",
+      "file": "water.json"
+    },
+    {
+      "id": "fire",
+      "file": "fire.json"
+    },
+    {
+      "id": "inspin-3",
+      "file": "inspin-3.json"
+    },
+    {
+      "id": "antispin-3",
+      "file": "antispin-3.json"
+    },
+    {
+      "id": "inspin-4",
+      "file": "inspin-4.json"
+    },
+    {
+      "id": "antispin-4",
+      "file": "antispin-4.json"
+    },
+    {
+      "id": "inspin-5",
+      "file": "inspin-5.json"
+    },
+    {
+      "id": "antispin-5",
+      "file": "antispin-5.json"
+    }
   ]
 }

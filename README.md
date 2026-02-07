@@ -10,7 +10,7 @@ Phase checklist:
 - [x] Phase 2: typed app state, deterministic defaults, and preset transforms.
 - [x] Phase 3: pure deterministic engine math and fixed-step trail sampling utilities.
 - [x] Phase 4: validation test layer (invariants, special cases, tolerance helpers, fixture-comparison harness).
-- [ ] Phase 5: fixture generator writes golden position fixtures for presets.
+- [x] Phase 5: fixture generator writes golden position fixtures for presets and fixture regression tests.
 - [ ] Phase 6: Canvas renderers (`PatternCanvas.vue`, `WaveCanvas.vue`) and sync plumbing.
 - [ ] Phase 7: controls UI (`Controls.vue`) with transport, per-hand params, presets.
 - [ ] Phase 8: URL + localStorage persistence and copy-link flow.
@@ -21,7 +21,6 @@ Still not implemented:
 - Canvas viewport renderer (`PatternCanvas.vue`).
 - Canvas waveform inspector (`WaveCanvas.vue`).
 - Full controls UI, playback loop wiring, URL/localStorage sync.
-- File-backed fixture generation and golden fixture regression tests.
 
 ## Math Model
 
@@ -88,13 +87,29 @@ Current Vitest coverage:
 - `/Users/rory/code/poi/tests/engine/invariants.test.ts`
 - `/Users/rory/code/poi/tests/engine/special-cases.test.ts`
 - `/Users/rory/code/poi/tests/engine/fixture-harness.test.ts`
+- `/Users/rory/code/poi/tests/engine/fixtures.test.ts`
 
 You can fully test completed phases now with:
 
 ```bash
+npm run gen:fixtures
 npm run test
 npm run build
 ```
+
+## Fixture Workflow
+
+Golden numeric fixtures live in `/Users/rory/code/poi/fixtures`.
+
+- Generate/update fixtures:
+  - `npm run gen:fixtures`
+- Regress fixture values against current engine math:
+  - `npm run test`
+
+Fixtures are deterministic snapshots of head positions sampled over a loop for:
+
+- elements: `earth`, `air`, `water`, `fire`
+- flowers: `inspin-{3,4,5}`, `antispin-{3,4,5}`
 
 ## Commands
 

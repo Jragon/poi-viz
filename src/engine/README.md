@@ -47,6 +47,12 @@ Use the barrel file `engine.ts`.
   - rewinds deterministically when `frameBeat` goes backwards
 - `getTrailPoints(state)`:
   - returns trails ordered oldest -> newest
+- `buildPresetFixture(preset, baseState, sampleHz?, startBeat?)`:
+  - builds one preset fixture payload with sampled head positions
+- `buildAllPresetFixtures(sampleHz?, startBeat?)`:
+  - builds fixture payloads for all catalog presets
+- `buildFixtureManifest(fixtures)`:
+  - creates deterministic fixture manifest metadata
 
 ## Determinism rules
 
@@ -64,6 +70,21 @@ Use the barrel file `engine.ts`.
 - Storage is a ring buffer:
   - bounded memory
   - oldest entries dropped when full
+
+## Fixture generation notes
+
+Fixtures are golden numeric snapshots used for regression testing.
+
+- Generator: `scripts/gen-fixtures.ts`
+- Outputs: `fixtures/*.json` + `fixtures/manifest.json`
+- Sample source: `sampleLoop` over preset-modified default state
+- Captured channel: head positions (`L` and `R`) per sampled beat
+- Tolerance for comparisons: `1e-4`
+
+Regeneration and verification:
+
+- `npm run gen:fixtures`
+- `npm run test`
 
 ## Worked example (one hand)
 
@@ -98,6 +119,7 @@ Engine tests live in `tests/engine`.
 - `invariants.test.ts`: arm circle and tether length invariants
 - `special-cases.test.ts`: `omegaRel = 0` and `RArm = 0` geometry
 - `fixture-harness.test.ts`: fixture mismatch reporting behavior
+- `fixtures.test.ts`: file-backed golden fixture regression checks
 
 ## How to explain this engine to others
 
