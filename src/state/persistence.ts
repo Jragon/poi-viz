@@ -15,18 +15,18 @@ export const LOCAL_STORAGE_STATE_KEY = "poi-phase-visualiser-state";
 export const PERSISTED_STATE_SCHEMA_VERSION = 3;
 export const PERSISTENCE_DEBOUNCE_MS = 250;
 
-type DurableGlobalState = Pick<
+export type PersistedDurableGlobalState = Pick<
   AppState["global"],
   "bpm" | "loopBeats" | "playSpeed" | "showTrails" | "trailBeats" | "trailSampleHz" | "showWaves" | "phaseReference"
 >;
-type DurableState = {
-  global: DurableGlobalState;
+export type PersistedDurableState = {
+  global: PersistedDurableGlobalState;
   hands: AppState["hands"];
 };
 
 interface PersistedStatePayload {
   schemaVersion: number;
-  state: DurableState;
+  state: PersistedDurableState;
 }
 
 const HAND_IDS: HandId[] = ["L", "R"];
@@ -47,7 +47,7 @@ function isPhaseReference(value: unknown): value is PhaseReference {
   return value === "right" || value === "down" || value === "left" || value === "up";
 }
 
-function projectDurableState(state: AppState): DurableState {
+export function projectDurableState(state: AppState): PersistedDurableState {
   return {
     global: {
       bpm: state.global.bpm,
@@ -138,7 +138,17 @@ function mergeStateCandidateWithDefaults(candidate: unknown, defaults: AppState)
     }
   }
 
-  return merged;
+  return {
+    global: {
+      ...merged.global,
+      t: defaults.global.t,
+      isPlaying: defaults.global.isPlaying
+    },
+    hands: {
+      L: { ...merged.hands.L },
+      R: { ...merged.hands.R }
+    }
+  };
 }
 
 function isPersistedStatePayload(payload: unknown): payload is PersistedStatePayload {

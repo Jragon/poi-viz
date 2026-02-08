@@ -6,12 +6,18 @@ import {
   referencePhaseDegreesToCanonicalRadians,
   referenceToCanonicalPhaseRadians
 } from "@/state/phaseReference";
-import { deserializeState, PERSISTED_STATE_SCHEMA_VERSION } from "@/state/persistence";
+import {
+  deserializeState,
+  PERSISTED_STATE_SCHEMA_VERSION,
+  projectDurableState,
+  type PersistedDurableGlobalState,
+  type PersistedDurableState
+} from "@/state/persistence";
 import { speedFromRadiansPerBeat, speedToRadiansPerBeat, type SpeedUnit } from "@/state/speedUnits";
 
 export const PRESET_LIBRARY_STORAGE_KEY = "poi-phase-visualiser-preset-library";
-export const PRESET_LIBRARY_SCHEMA_VERSION = 2;
-export const PRESET_FILE_SCHEMA_VERSION = 3;
+export const PRESET_LIBRARY_SCHEMA_VERSION = 3;
+export const PRESET_FILE_SCHEMA_VERSION = 4;
 export const PRESET_NAME_MAX_LENGTH = 80;
 const DEFAULT_PRESET_NAME = "Untitled Preset";
 
@@ -36,7 +42,12 @@ export interface UserPresetSummary {
 
 interface UserPresetLibraryPayload {
   schemaVersion: number;
-  presets: UserPresetRecord[];
+  presets: Array<{
+    id: string;
+    name: string;
+    savedAt: string;
+    state: PersistedDurableState;
+  }>;
 }
 
 interface UserPresetFilePayload {
@@ -51,7 +62,7 @@ interface PresetFileUnits {
 }
 
 interface PresetFileState {
-  global: AppState["global"];
+  global: PersistedDurableGlobalState;
   hands: AppState["hands"];
 }
 
@@ -119,7 +130,16 @@ function convertStateForExport(state: AppState, options: PresetFileExportOptions
   const phaseReference = state.global.phaseReference;
 
   return {
-    global: { ...state.global, phaseReference },
+    global: {
+      bpm: state.global.bpm,
+      loopBeats: state.global.loopBeats,
+      playSpeed: state.global.playSpeed,
+      showTrails: state.global.showTrails,
+      trailBeats: state.global.trailBeats,
+      trailSampleHz: state.global.trailSampleHz,
+      showWaves: state.global.showWaves,
+      phaseReference
+    },
     hands: {
       L: {
         armSpeed: speedFromRadiansPerBeat(state.hands.L.armSpeed, options.speedUnit),
@@ -202,8 +222,6 @@ function convertExportStateToInternal(candidate: unknown, units: PresetFileUnits
       bpm: convertPlainNumber(globalRecord.bpm),
       loopBeats: convertPlainNumber(globalRecord.loopBeats),
       playSpeed: convertPlainNumber(globalRecord.playSpeed),
-      isPlaying: typeof globalRecord.isPlaying === "boolean" ? globalRecord.isPlaying : null,
-      t: convertPlainNumber(globalRecord.t),
       showTrails: typeof globalRecord.showTrails === "boolean" ? globalRecord.showTrails : null,
       trailBeats: convertPlainNumber(globalRecord.trailBeats),
       trailSampleHz: convertPlainNumber(globalRecord.trailSampleHz),
@@ -378,8 +396,10 @@ export function serializeUserPresetLibrary(records: UserPresetRecord[]): string 
   const payload: UserPresetLibraryPayload = {
     schemaVersion: PRESET_LIBRARY_SCHEMA_VERSION,
     presets: records.map((record) => ({
-      ...record,
-      state: cloneState(record.state)
+      id: record.id,
+      name: record.name,
+      savedAt: record.savedAt,
+      state: projectDurableState(record.state)
     }))
   };
 

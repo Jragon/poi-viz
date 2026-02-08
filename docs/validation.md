@@ -58,6 +58,7 @@ The current persistence contract intentionally fails closed across schema breaks
   - `LOCAL_STORAGE_STATE_KEY`,
   - `PRESET_LIBRARY_STORAGE_KEY`.
 - persisted app state includes durable edit fields only; volatile transport fields (`global.t`, `global.isPlaying`) are not serialized and are restored from defaults on hydration.
+- persisted preset-library and preset-file state payloads also exclude volatile transport fields and restore them from defaults during import/hydration.
 
 This keeps early-stage semantics simple and prevents mixed-reference persisted phase data after contract changes.
 

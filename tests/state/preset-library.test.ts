@@ -34,21 +34,43 @@ describe("preset library", () => {
 
   it("serializes and deserializes library payloads", () => {
     const defaults = createDefaultState();
-    const presetA = createUserPresetRecord("A", defaults, new Date("2026-02-07T13:00:00.000Z"), "preset-a");
-    const presetB = createUserPresetRecord("B", defaults, new Date("2026-02-07T13:01:00.000Z"), "preset-b");
+    defaults.global.t = 99;
+    defaults.global.isPlaying = false;
+
+    const sourceState = createDefaultState();
+    sourceState.global.t = 8.5;
+    sourceState.global.isPlaying = false;
+    const presetA = createUserPresetRecord("A", sourceState, new Date("2026-02-07T13:00:00.000Z"), "preset-a");
+    const presetB = createUserPresetRecord("B", sourceState, new Date("2026-02-07T13:01:00.000Z"), "preset-b");
     const serialized = serializeUserPresetLibrary([presetA, presetB]);
+    const raw = JSON.parse(serialized) as {
+      schemaVersion: number;
+      presets: Array<{ state: { global: Record<string, unknown> } }>;
+    };
     const parsed = deserializeUserPresetLibrary(serialized, defaults);
 
+    expect(raw.schemaVersion).toBe(PRESET_LIBRARY_SCHEMA_VERSION);
+    expect(raw.presets[0]?.state.global.t).toBeUndefined();
+    expect(raw.presets[0]?.state.global.isPlaying).toBeUndefined();
     expect(parsed).toHaveLength(2);
     expect(parsed[0]?.id).toBe("preset-b");
     expect(parsed[1]?.id).toBe("preset-a");
+    expect(parsed[0]?.state.global.t).toBe(99);
+    expect(parsed[0]?.state.global.isPlaying).toBe(false);
   });
 
   it("round-trips individual preset files", () => {
     const defaults = createDefaultState();
+    defaults.global.t = 12;
+    defaults.global.isPlaying = false;
     defaults.hands.L.armPhase = 0;
     defaults.global.phaseReference = "down";
-    const preset = createUserPresetRecord("Library Preset", defaults, new Date("2026-02-07T13:02:00.000Z"), "preset-lib");
+    const sourceState = createDefaultState();
+    sourceState.global.t = 5;
+    sourceState.global.isPlaying = false;
+    sourceState.hands.L.armPhase = 0;
+    sourceState.global.phaseReference = "down";
+    const preset = createUserPresetRecord("Library Preset", sourceState, new Date("2026-02-07T13:02:00.000Z"), "preset-lib");
     const filePayload = serializeUserPresetFile(preset, {
       speedUnit: "cycles",
       phaseUnit: "degrees"
@@ -57,7 +79,7 @@ describe("preset library", () => {
       schemaVersion: number;
       preset: {
         units: { speedUnit: string; phaseUnit: string; phaseReference: string };
-        state: { hands: { L: { armSpeed: number; armPhase: number } } };
+        state: { global: Record<string, unknown>; hands: { L: { armSpeed: number; armPhase: number } } };
       };
     };
 
@@ -65,7 +87,9 @@ describe("preset library", () => {
     expect(parsedRaw.preset.units.speedUnit).toBe("cycles");
     expect(parsedRaw.preset.units.phaseUnit).toBe("degrees");
     expect(parsedRaw.preset.units.phaseReference).toBe("down");
-    expect(parsedRaw.preset.state.hands.L.armSpeed).toBeCloseTo(speedFromRadiansPerBeat(defaults.hands.L.armSpeed, "cycles"), 12);
+    expect(parsedRaw.preset.state.global.t).toBeUndefined();
+    expect(parsedRaw.preset.state.global.isPlaying).toBeUndefined();
+    expect(parsedRaw.preset.state.hands.L.armSpeed).toBeCloseTo(speedFromRadiansPerBeat(sourceState.hands.L.armSpeed, "cycles"), 12);
     expect(parsedRaw.preset.state.hands.L.armPhase).toBeCloseTo(-270, 10);
 
     const parsed = deserializeUserPresetFile(filePayload, defaults);
@@ -75,7 +99,9 @@ describe("preset library", () => {
     expect(parsed?.name).toBe("Library Preset");
     expect(parsed?.state.global.bpm).toBe(defaults.global.bpm);
     expect(parsed?.state.global.phaseReference).toBe("down");
-    expect(parsed?.state.hands.L.armPhase).toBeCloseTo(defaults.hands.L.armPhase, 10);
+    expect(parsed?.state.global.t).toBe(12);
+    expect(parsed?.state.global.isPlaying).toBe(false);
+    expect(parsed?.state.hands.L.armPhase).toBeCloseTo(sourceState.hands.L.armPhase, 10);
   });
 
   it("creates safe export filenames", () => {

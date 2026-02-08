@@ -115,7 +115,7 @@ Stop persisting and diffing volatile transport fields as if they were durable ed
 
 ### Status
 
-Completed on 2026-02-08: persistence now serializes durable edit fields only; `global.t` and `global.isPlaying` are restored from defaults at hydration.
+Completed on 2026-02-08: app-state persistence plus preset-library/preset-file state payloads now serialize durable edit fields only; `global.t` and `global.isPlaying` are restored from defaults at hydration/import.
 
 ### Scope
 

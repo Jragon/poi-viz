@@ -298,3 +298,8 @@
 - 2026-02-08T12:42:03Z [CODE] Updated `src/composables/usePersistenceCoordinator.ts` to skip debounced writes when serialized durable state is unchanged, preventing playhead-only churn from transport RAF updates.
 - 2026-02-08T12:42:03Z [CODE] Expanded persistence/coordination/integration coverage (`tests/state/persistence.test.ts`, `tests/app/persistence-coordinator.test.ts`, `tests/ui/app.integration.test.ts`) and updated docs/plan (`README.md`, `docs/validation.md`, `refactor-plan.md`).
 - 2026-02-08T12:42:03Z [TOOL] Verified with passing `npm test` (124), `npm run build`, and `npm run docs:all` (TypeDoc warnings unchanged).
+- 2026-02-08T12:48:09Z [USER] Requested extending durable-state policy to preset-library storage and preset-file export/import paths so volatile transport fields are excluded consistently.
+- 2026-02-08T12:48:09Z [CODE] Updated `src/state/presetLibrary.ts` to persist/export durable global fields only, removed `t`/`isPlaying` from preset-file state payloads, and bumped preset schemas (`PRESET_LIBRARY_SCHEMA_VERSION=3`, `PRESET_FILE_SCHEMA_VERSION=4`) under explicit break policy.
+- 2026-02-08T12:48:09Z [CODE] Exported persistence durable-state projection contracts from `src/state/persistence.ts` for reuse and enforced volatile-field restoration from defaults after durable merge to avoid indirect playhead normalization side-effects.
+- 2026-02-08T12:48:09Z [CODE] Added regression assertions in `tests/state/preset-library.test.ts` that preset-library and preset-file payloads omit `global.t`/`global.isPlaying` and hydrate those values from defaults.
+- 2026-02-08T12:48:09Z [TOOL] Verified with passing `npm test` (124), `npm run build`, and `npm run docs:all` (TypeDoc warnings unchanged).
