@@ -1,6 +1,6 @@
 # Refactor Plan (Pre-Sequencer Baseline)
 
-Last updated: 2026-02-08 (Phase F complete)  
+Last updated: 2026-02-08 (Phase G complete)  
 Owner: Rory + Codex  
 Mode: One phase at a time, no bundled mega-refactors
 
@@ -36,7 +36,7 @@ These are fixed unless Rory explicitly changes them:
 | D | Split Phase Reference Semantics | Completed (2026-02-08) | View reference no longer mutates physical state implicitly |
 | E | Single Transport Clock | Completed (2026-02-08) | Exactly one RAF owner |
 | F | Persistence Centralization | Completed (2026-02-08) | Idempotent hydration + centralized policy |
-| G | Extract App Orchestration | Pending | `App.vue` becomes thin composition shell |
+| G | Extract App Orchestration | Completed (2026-02-08) | `App.vue` becomes thin composition shell |
 | H | Split Controls | Pending | `Controls.vue` reduced and panelized |
 | I | Sequencer-Ready Gate | Pending | All checklist items satisfied |
 
@@ -317,6 +317,28 @@ Make `App.vue` a thin composition shell.
 - `App.vue` script reduced materially.
 - Business logic lives outside component root.
 
+### Execution Notes
+- Completed on 2026-02-08.
+- Added orchestration composable `src/composables/useAppOrchestrator.ts` to own root-level runtime behavior:
+  - transport wiring
+  - persistence hydration/sync delegation
+  - theme toggling persistence
+  - VTG apply dispatch
+  - preset library save/load/delete/import/export handlers
+  - copy-link flow and UI status timers
+- Refactored `src/App.vue` into a thin composition shell that consumes orchestrator outputs/events and contains no business-flow orchestration.
+- Added module-level orchestration coverage:
+  - `tests/ui/app-orchestrator.integration.test.ts`
+- Existing App integration suite remained green for behavior parity:
+  - `tests/ui/app.integration.test.ts`
+- Updated docs:
+  - `README.md`
+  - `docs/index.md`
+- Validation run:
+  - `npm test` (112 passing)
+  - `npm run build` (passing)
+  - `npm run docs:all` (TypeDoc warnings only)
+
 ### Risks
 - Side-effect ordering regressions.
 
@@ -386,3 +408,4 @@ Verify architecture is clean enough to add VTG Phase 2 without reintroducing slo
 - 2026-02-08: Initial plan created from maintainability review, with all five Rory decisions locked.
 - 2026-02-08: Phase E completed with single transport clock ownership and canvas RAF removal.
 - 2026-02-08: Phase F completed with centralized persistence policy and idempotent hydration coverage.
+- 2026-02-08: Phase G completed with App orchestration extracted into `useAppOrchestrator` and root shell simplification.

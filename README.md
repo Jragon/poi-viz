@@ -36,6 +36,7 @@ At a high level:
 - advances playhead time from one transport RAF owner (`App.vue`) and feeds that beat stream to all canvases,
 - renders pattern + waves from the same playhead beat,
 - centralizes persistence policy (URL-first hydration, schema compatibility purge, debounced local sync, share-link URL generation) in one coordinator service,
+- keeps root view composition thin by extracting app orchestration into `src/composables/useAppOrchestrator.ts`,
 - supports VTG descriptor generation/classification for canonical relationship states,
 - persists/share-links state and supports user preset import/export.
 

@@ -245,3 +245,7 @@
 - 2026-02-08T08:04:22Z [CODE] Added persistence centralization coverage in `tests/app/persistence-coordinator.test.ts` and extended `tests/ui/app.integration.test.ts` with share-link URL non-mutation assertions.
 - 2026-02-08T08:04:22Z [TOOL] Verified Phase F with passing `npm test` (109 tests) and `npm run build`.
 - 2026-02-08T08:05:14Z [TOOL] Re-validated post-Phase F docs/contracts with passing `npm run docs:all` (TypeDoc warnings only, build succeeded), plus prior passing `npm test` and `npm run build`.
+- 2026-02-08T08:29:22Z [CODE] Completed Refactor Phase G by extracting root orchestration into `src/composables/useAppOrchestrator.ts`; `src/App.vue` now serves as a thin composition shell.
+- 2026-02-08T08:29:22Z [CODE] Moved App-level concerns (transport wiring, persistence delegation, theme toggle persistence, VTG apply dispatch, preset-library handlers, copy-link/status timer flows) out of component root logic and into the orchestrator composable.
+- 2026-02-08T08:29:22Z [CODE] Added orchestration module coverage in `tests/ui/app-orchestrator.integration.test.ts` and retained behavior parity under existing `tests/ui/app.integration.test.ts`.
+- 2026-02-08T08:29:22Z [TOOL] Verified Phase G with passing `npm test` (112 tests), `npm run build`, and `npm run docs:all` (TypeDoc warnings only).
