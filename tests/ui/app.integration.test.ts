@@ -48,6 +48,7 @@ const ControlsStub = defineComponent({
       <button data-testid="static-on" type="button" @click="$emit('set-static-view', true)">static-on</button>
       <button data-testid="static-off" type="button" @click="$emit('set-static-view', false)">static-off</button>
       <button data-testid="scrub-1-25" type="button" @click="$emit('set-scrub', 1.25)">scrub</button>
+      <button data-testid="set-phase-reference-up" type="button" @click="$emit('set-phase-reference', 'up')">set-phase-ref-up</button>
       <button
         data-testid="apply-vtg-air-water"
         type="button"
@@ -166,5 +167,25 @@ describe("App orchestration integration", () => {
 
     const rightHeadCyclesPerBeat = (latestState.hands.R.armSpeed + latestState.hands.R.poiSpeed) / TWO_PI;
     expect(rightHeadCyclesPerBeat).toBeCloseTo(-3, 10);
+  });
+
+  it("updates phase-reference metadata without mutating canonical arm phases", async () => {
+    wrapper = mountApp();
+    await nextTick();
+
+    expect(latestState).not.toBeNull();
+    if (!latestState) {
+      return;
+    }
+
+    const initialLeftArmPhase = latestState.hands.L.armPhase;
+    const initialRightArmPhase = latestState.hands.R.armPhase;
+
+    await wrapper.get("[data-testid='set-phase-reference-up']").trigger("click");
+    await nextTick();
+
+    expect(latestState?.global.phaseReference).toBe("up");
+    expect(latestState?.hands.L.armPhase).toBeCloseTo(initialLeftArmPhase, 10);
+    expect(latestState?.hands.R.armPhase).toBeCloseTo(initialRightArmPhase, 10);
   });
 });

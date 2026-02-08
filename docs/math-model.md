@@ -36,13 +36,13 @@ Code references:
 
 ## Global Phase Reference Transform
 
-The app applies a global rotation transform only at UI/VTG/state boundaries:
+The app applies a global reference transform at UI/VTG/state boundaries:
 
 - Canonical engine math keeps `right = 0`.
 - Reference-relative UI phase values use:
   - `φ_reference = φ_canonical - offset(reference)`
   - `φ_canonical = φ_reference + offset(reference)`
-- When `global.phaseReference` changes at runtime, arm phases are shifted by the reference-offset delta so the viewport orientation updates immediately while relative poi phase (`φ_rel`) is preserved.
+- Changing `global.phaseReference` updates reference metadata only; canonical arm/poi phases are not mutated.
 - Default offset is `down = 270°` (`3π/2`), so user-entered `0°` points down.
 
 This is a pure coordinate transform; it does not change oscillator equations or deterministic sampling behavior.

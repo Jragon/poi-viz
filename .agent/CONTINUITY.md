@@ -231,3 +231,8 @@
 - 2026-02-08T07:44:22Z [CODE] Added `tests/state/beat-math.test.ts` and expanded `tests/state/actions.test.ts` with negative playhead wrap coverage.
 - 2026-02-08T07:44:22Z [TOOL] Verified Phase C with passing `npm test` (96 tests) and `npm run build`; confirmed no `src/state` imports from `src/render`.
 - 2026-02-08T07:44:22Z [CODE] Updated `refactor plan.md` to mark Phase C complete with execution notes and validation results.
+- 2026-02-08T07:50:19Z [CODE] Completed Refactor Phase D semantics split: `setGlobalPhaseReference` in `src/state/actions.ts` now updates phase-reference metadata only and no longer mutates canonical arm phases.
+- 2026-02-08T07:50:19Z [CODE] Added/updated coverage for view-only phase-reference behavior in `tests/state/actions.test.ts`, `tests/state/persistence.test.ts`, and `tests/ui/app.integration.test.ts`.
+- 2026-02-08T07:50:19Z [CODE] Updated behavior docs in `README.md`, `docs/math-model.md`, and `docs/glossary.md` to remove implicit runtime arm-rotation claims and reflect metadata-only semantics.
+- 2026-02-08T07:50:19Z [TOOL] Verified Phase D with passing `npm test` (98 tests), `npm run build`, and `npm run docs:all` (TypeDoc warnings only).
+- 2026-02-08T07:50:19Z [CODE] Updated `refactor plan.md` to mark Phase D complete with execution notes and validation results.

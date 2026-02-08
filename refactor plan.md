@@ -1,6 +1,6 @@
 # Refactor Plan (Pre-Sequencer Baseline)
 
-Last updated: 2026-02-08 (Phase A complete)  
+Last updated: 2026-02-08 (Phase D complete)  
 Owner: Rory + Codex  
 Mode: One phase at a time, no bundled mega-refactors
 
@@ -33,7 +33,7 @@ These are fixed unless Rory explicitly changes them:
 | A | Safety Net Before Surgery | Completed (2026-02-08) | Integration tests added and stable |
 | B | Unify Competing Truths | Completed (2026-02-08) | Single mapping + shared math helpers |
 | C | Remove State -> Render Leak | Completed (2026-02-08) | Zero imports from `src/state` to `src/render` |
-| D | Split Phase Reference Semantics | Pending | View reference no longer mutates physical state implicitly |
+| D | Split Phase Reference Semantics | Completed (2026-02-08) | View reference no longer mutates physical state implicitly |
 | E | Single Transport Clock | Pending | Exactly one RAF owner |
 | F | Persistence Centralization | Pending | Idempotent hydration + centralized policy |
 | G | Extract App Orchestration | Pending | `App.vue` becomes thin composition shell |
@@ -168,18 +168,33 @@ Separate coordinate-frame display semantics from physical-state mutation.
 ### Scope
 - Define explicit contracts:
   - view reference selection
-  - optional explicit physical rebase action
+  - no implicit physical mutation on reference change
 - Align persistence and VTG behavior to explicit contracts.
 
 ### Required Tests
 - Reference toggle does not implicitly mutate physical state.
-- Explicit rebase action preserves invariants.
-- Persistence roundtrip remains stable and deterministic.
+- Persistence hydration keeps canonical arm phases stable.
+- App event pipeline preserves canonical arm phases on reference toggle.
 - VTG phase bucket behavior remains correct under reference changes.
 
 ### Acceptance Criteria
 - No hidden physical mutation on reference UI change.
 - Behavior is explicit in tests/docs.
+
+### Execution Notes
+- Completed on 2026-02-08.
+- Updated `src/state/actions.ts` so `setGlobalPhaseReference` is metadata-only (no implicit arm-phase rotation).
+- Added/expanded tests:
+  - `tests/state/actions.test.ts` now asserts reference changes preserve canonical arm phases.
+  - `tests/state/persistence.test.ts` now asserts hydration treats `phaseReference` as view metadata.
+  - `tests/ui/app.integration.test.ts` now asserts App event pipeline preserves arm phases on `set-phase-reference`.
+- Updated docs for the new contract:
+  - `README.md`
+  - `docs/math-model.md`
+  - `docs/glossary.md`
+- Validation run:
+  - `npm test` (98 passing)
+  - `npm run build` (passing)
 
 ### Risks
 - User-visible behavior shift from current implementation.

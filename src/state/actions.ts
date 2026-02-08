@@ -1,5 +1,4 @@
 import { normalizeLoopBeat } from "@/state/beatMath";
-import { getPhaseReferenceOffsetRadians } from "@/state/phaseReference";
 import { applyPresetById } from "@/state/presets";
 import type { AppState, GlobalState, HandId, HandState, PhaseReference, PresetId } from "@/types/state";
 
@@ -112,7 +111,7 @@ export function setGlobalBoolean(state: AppState, key: GlobalBooleanKey, nextVal
 }
 
 /**
- * Sets global phase-reference field.
+ * Sets global phase-reference field as view/reference metadata only.
  *
  * @param state Current app state.
  * @param key Global phase-reference field to update.
@@ -121,12 +120,7 @@ export function setGlobalBoolean(state: AppState, key: GlobalBooleanKey, nextVal
  */
 export function setGlobalPhaseReference(state: AppState, key: GlobalPhaseReferenceKey, nextValue: PhaseReference): AppState {
   const cloned = cloneState(state);
-  const currentValue = cloned.global[key];
-  const phaseOffsetDelta = getPhaseReferenceOffsetRadians(nextValue) - getPhaseReferenceOffsetRadians(currentValue);
-
   cloned.global[key] = nextValue;
-  cloned.hands.L.armPhase += phaseOffsetDelta;
-  cloned.hands.R.armPhase += phaseOffsetDelta;
   return cloned;
 }
 

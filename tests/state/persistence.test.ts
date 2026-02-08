@@ -95,6 +95,29 @@ describe("state persistence", () => {
     expect(parsed?.hands.R.poiRadius).toBe(0);
   });
 
+  it("treats phase reference as view metadata during hydration", () => {
+    const defaults = createDefaultState();
+    defaults.hands.L.armPhase = 0.75;
+    defaults.hands.R.armPhase = -1.25;
+
+    const raw = JSON.stringify({
+      schemaVersion: PERSISTED_STATE_SCHEMA_VERSION,
+      state: {
+        global: {
+          phaseReference: "up"
+        },
+        hands: {}
+      }
+    });
+
+    const parsed = deserializeState(raw, defaults);
+
+    expect(parsed).not.toBeNull();
+    expect(parsed?.global.phaseReference).toBe("up");
+    expect(parsed?.hands.L.armPhase).toBeCloseTo(0.75, 10);
+    expect(parsed?.hands.R.armPhase).toBeCloseTo(-1.25, 10);
+  });
+
   it("returns null for invalid storage payload", () => {
     const parsed = readStateFromStorage("{ not-json", createDefaultState());
     expect(parsed).toBeNull();

@@ -67,7 +67,8 @@ Code references:
 - `left`,
 - `up`.
 
-It is a global rotation transform between displayed phases and canonical internal phases:
+It is a global reference transform between displayed phases and canonical internal phases:
 - does not change element timing/direction relations,
 - does not change engine equations,
-- does change how orientation buckets/phase controls are interpreted.
+- does change how orientation buckets/phase controls are interpreted,
+- does not mutate stored canonical arm/poi phases when toggled.

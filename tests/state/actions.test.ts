@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { getPhaseReferenceOffsetRadians } from "@/state/phaseReference";
 import {
   applyPreset,
   setGlobalBoolean,
@@ -58,12 +57,13 @@ describe("state actions", () => {
 
   it("sets global phase reference explicitly", () => {
     const state = createDefaultState();
-    const expectedDelta = getPhaseReferenceOffsetRadians("up") - getPhaseReferenceOffsetRadians(state.global.phaseReference);
+    state.hands.L.armPhase = 1.23;
+    state.hands.R.armPhase = -0.67;
     const next = setGlobalPhaseReference(state, "phaseReference", "up");
 
     expect(next.global.phaseReference).toBe("up");
-    expect(next.hands.L.armPhase).toBeCloseTo(state.hands.L.armPhase + expectedDelta, 10);
-    expect(next.hands.R.armPhase).toBeCloseTo(state.hands.R.armPhase + expectedDelta, 10);
+    expect(next.hands.L.armPhase).toBeCloseTo(1.23, 10);
+    expect(next.hands.R.armPhase).toBeCloseTo(-0.67, 10);
   });
 
   it("clamps hand radii to non-negative values", () => {
