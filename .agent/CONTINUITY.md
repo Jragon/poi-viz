@@ -211,3 +211,13 @@
 - 2026-02-08T07:11:21Z [CODE] Updated `setGlobalPhaseReference` in `src/state/actions.ts` to rotate both arm phases by reference-offset delta on change, restoring immediate visible global orientation effect while keeping VTG phase chips as poi-offset semantics.
 - 2026-02-08T07:11:21Z [CODE] Expanded action coverage in `tests/state/actions.test.ts` to assert expected arm-phase shifts on phase-reference changes and updated phase-reference docs in `README.md` and `docs/math-model.md`.
 - 2026-02-08T07:11:21Z [TOOL] Verified with passing `npm test` (84 tests), `npm run build`, and `npm run docs:all` (TypeDoc warnings only).
+- 2026-02-08T07:19:28Z [USER] Requested full-repository maintainability/design review as a pre-sequencer baseline, covering engine, VTG, state, rendering, UI wiring, persistence, tests, and docs.
+- 2026-02-08T07:19:28Z [TOOL] Completed read-only audit of `src/`, `tests/`, `fixtures/`, `scripts/`, and `docs/`; executed `npm test` (84 passing) and `npm run build` (passing) to separate structural risk from immediate runtime breakage.
+- 2026-02-08T07:24:00Z [USER] Requested an ordered non-implementation refactor plan/spec to action maintainability findings before VTG Phase 2 sequencer work.
+- 2026-02-08T07:24:00Z [ASSUMPTION] Plan will prioritize reducing competing truths and boundary leaks first, then transport/orchestration/component decomposition with added UI integration safety tests before sequencer integration.
+- 2026-02-08T07:31:26Z [CODE] Added root living-plan document `refactor plan.md` with phased refactor execution order (A-I), acceptance gates, per-phase tests, rollback notes, and sequencer-ready checklist.
+- 2026-02-08T07:31:26Z [CODE] Locked Rory decisions in the plan: single RAF owner, view-only phase reference semantics, URL-first hydration precedence, lean integration test strategy, and one-phase-at-a-time batching.
+- 2026-02-08T07:35:15Z [CODE] Completed Refactor Phase A safety net: added jsdom-based Vue integration tests in `tests/ui/app.integration.test.ts` (hydration precedence, transport semantics, VTG apply flow) and `tests/ui/controls-input.integration.test.ts` (commit-on-blur/enter behavior).
+- 2026-02-08T07:35:15Z [CODE] Updated `vitest.config.ts` with Vue plugin and `environmentMatchGlobs` so only `tests/ui/**/*.test.ts` runs in jsdom while existing suites remain node-based.
+- 2026-02-08T07:35:15Z [TOOL] Verified Phase A with passing `npm test` (89 tests) and `npm run build`.
+- 2026-02-08T07:35:15Z [CODE] Updated `refactor plan.md` to mark Phase A complete and logged execution notes/results.
