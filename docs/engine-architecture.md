@@ -50,6 +50,7 @@ Fixture generation is an executable snapshot of engine outputs over explicit fix
 
 - Script: `scripts/gen-fixtures.ts`
 - Fixture case input source: `fixtures/state-cases.json` plus implicit default state
+- Fixture case schema: `fixtures/state-cases.schema.json`
 - Fixture builder: `src/engine/fixtures.ts` export `buildAllStateFixtures`
 - Manifest builder: `src/engine/fixtures.ts` export `buildFixtureManifest`
 - Persisted outputs: `fixtures/*.json` + `fixtures/manifest.json`

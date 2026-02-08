@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  applyPreset,
   setGlobalBoolean,
   setGlobalNumber,
   setGlobalPhaseReference,
@@ -73,11 +72,4 @@ describe("state actions", () => {
     expect(next.hands.L.armRadius).toBe(0);
   });
 
-  it("applies presets by id through action helpers", () => {
-    const state = createDefaultState();
-    const next = applyPreset(state, "air");
-
-    expect(Math.sign(next.hands.R.armSpeed)).toBe(-Math.sign(next.hands.L.armSpeed));
-    expect(next.hands.L.armPhase).toBeCloseTo(next.hands.R.armPhase + 0, 10);
-  });
 });

@@ -42,8 +42,8 @@ In this repo’s flower language, petal count uses the head-cycle relationship:
 
 - `headCycles = petals + 1` in antispin framing.
 
-Related implementation:
-- `src/state/presets.ts` export `applyFlowerModePreset`.
+This is descriptive vocabulary used in VTG/readout language and user discussions;
+there is no longer a canonical preset-transform API in `src/state`.
 - `src/state/constants.ts` export `PETAL_COUNTS`.
 
 ## Phase Bucket

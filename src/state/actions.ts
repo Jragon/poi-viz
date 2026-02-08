@@ -1,6 +1,5 @@
 import { normalizeLoopBeat } from "@/state/beatMath";
-import { applyPresetById } from "@/state/presets";
-import type { AppState, GlobalState, HandId, HandState, PhaseReference, PresetId } from "@/types/state";
+import type { AppState, GlobalState, HandId, HandState, PhaseReference } from "@/types/state";
 
 export type GlobalNumberKey = {
   [Key in keyof GlobalState]: GlobalState[Key] extends number ? Key : never;
@@ -162,15 +161,4 @@ export function setHandNumber(state: AppState, handId: HandId, key: HandNumberKe
   const clamped = clampHandNumber(key, sanitized, cloned, handId);
   cloned.hands[handId][key] = clamped;
   return cloned;
-}
-
-/**
- * Applies a preset transformation by id.
- *
- * @param state Current app state.
- * @param presetId Preset identifier.
- * @returns New preset-transformed state.
- */
-export function applyPreset(state: AppState, presetId: PresetId): AppState {
-  return applyPresetById(state, presetId);
 }

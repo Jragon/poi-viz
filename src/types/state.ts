@@ -99,34 +99,3 @@ export interface AppState {
   global: GlobalState;
   hands: HandsState;
 }
-
-/**
- * Discrete element preset ids used by programmatic preset transforms.
- */
-export type ElementPresetId = "earth" | "air" | "water" | "fire";
-/**
- * Flower mode labels for preset transforms.
- */
-export type FlowerMode = "inspin" | "antispin";
-/**
- * Supported flower petal counts.
- */
-export type FlowerPetalCount = 3 | 4 | 5;
-/**
- * Flower preset id format.
- */
-export type FlowerPresetId = `${FlowerMode}-${FlowerPetalCount}`;
-
-/**
- * Union of all preset identifiers.
- */
-export type PresetId = ElementPresetId | FlowerPresetId;
-
-/**
- * Pure transform definition for applying one preset.
- */
-export interface PresetDefinition {
-  id: PresetId;
-  label: string;
-  apply: (state: AppState) => AppState;
-}

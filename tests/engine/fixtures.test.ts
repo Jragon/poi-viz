@@ -23,7 +23,7 @@ async function readJsonFile<T>(path: string): Promise<T> {
 async function readFixtureCases() {
   const defaultState = createDefaultState();
   const casesSerialized = await readFile(CASES_PATH, "utf8");
-  const manualCases = parseFixtureCasesFile(casesSerialized, defaultState);
+  const manualCases = parseFixtureCasesFile(casesSerialized);
   return buildFixtureCaseSet(defaultState, manualCases);
 }
 

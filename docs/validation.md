@@ -31,6 +31,7 @@ Outputs:
 - `fixtures/*.json`
 - Manual input definitions:
   - `fixtures/state-cases.json` (`default` fixture case is always included by script).
+  - `fixtures/state-cases.schema.json` (authoring schema for `state-cases.json`).
 
 Fixture tests recompute samples from code and compare against committed files with defined tolerances.
 
