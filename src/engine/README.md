@@ -44,7 +44,7 @@ Use the barrel file `engine.ts`.
   - seeds ring buffers and prepares fixed-step trail sampling
 - `advanceTrailSampler(state, params, frameBeat)`:
   - appends fixed-step samples up to `frameBeat`
-  - rewinds deterministically when `frameBeat` goes backwards
+  - rewinds deterministically by rebuilding the trailing window ending at `frameBeat`
 - `getTrailPoints(state)`:
   - returns trails ordered oldest -> newest
 - `buildPresetFixture(preset, baseState, sampleHz?, startBeat?)`:

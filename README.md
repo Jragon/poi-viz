@@ -8,7 +8,11 @@ The app gives you:
 - a pattern viewport (hands, tethers, heads, optional trails),
 - a synchronized waveform inspector,
 - interactive controls for timing, per-hand parameters, VTG generation, and preset library workflows,
+- a transport-level static view mode for full-loop still pattern captures,
 - deterministic sampling/fixtures so behavior is testable and reproducible.
+
+Trail behavior note:
+- backward scrubbing rebuilds a deterministic trailing window ending at the current playhead beat (it does not collapse to a single seed point).
 
 ## What The App Does
 

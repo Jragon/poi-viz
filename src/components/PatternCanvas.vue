@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { advanceTrailSampler, createTrailSampler, getPositions, getTrailPoints, type TrailSamplerState } from "@/engine/engine";
 import { renderPattern } from "@/render/patternRenderer";
+import { buildStaticTrailSeries } from "@/render/staticTrails";
 import type { TrailSeries } from "@/render/types";
 import type { AppState } from "@/types/state";
 import { onBeforeUnmount, onMounted, ref } from "vue";
@@ -8,6 +9,7 @@ import { onBeforeUnmount, onMounted, ref } from "vue";
 interface PatternCanvasProps {
   state: AppState;
   tBeats: number;
+  isStaticView: boolean;
 }
 
 const props = defineProps<PatternCanvasProps>();
@@ -19,6 +21,8 @@ let animationFrameId = 0;
 let resizeObserver: ResizeObserver | null = null;
 let trailSampler: TrailSamplerState | null = null;
 let trailSamplerConfigKey = "";
+let staticTrails: TrailSeries = EMPTY_TRAILS;
+let staticTrailConfigKey = "";
 
 function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement): void {
   const devicePixelRatio = window.devicePixelRatio || 1;
@@ -52,6 +56,10 @@ function getTrailSamplerConfigKey(): string {
   ].join("|");
 }
 
+function getStaticTrailConfigKey(): string {
+  return [getTrailSamplerConfigKey(), props.state.global.loopBeats, props.tBeats].join("|");
+}
+
 function drawFrame(): void {
   const canvas = canvasRef.value;
   if (!canvas) {
@@ -69,31 +77,43 @@ function drawFrame(): void {
     bpm: props.state.global.bpm,
     hands: props.state.hands
   };
-  const nextConfigKey = getTrailSamplerConfigKey();
+  let trails = EMPTY_TRAILS;
 
-  if (!trailSampler || trailSamplerConfigKey !== nextConfigKey) {
-    trailSampler = createTrailSampler(
-      {
-        bpm: props.state.global.bpm,
-        trailBeats: props.state.global.trailBeats,
-        trailSampleHz: props.state.global.trailSampleHz
-      },
-      params,
-      props.tBeats
-    );
-    trailSamplerConfigKey = nextConfigKey;
+  if (props.isStaticView) {
+    const nextStaticConfigKey = getStaticTrailConfigKey();
+    if (staticTrailConfigKey !== nextStaticConfigKey) {
+      staticTrails = buildStaticTrailSeries(params, props.state.global.loopBeats, props.state.global.trailSampleHz, props.tBeats);
+      staticTrailConfigKey = nextStaticConfigKey;
+    }
+    trails = staticTrails;
   } else {
-    trailSampler = advanceTrailSampler(trailSampler, params, props.tBeats);
+    const nextConfigKey = getTrailSamplerConfigKey();
+    if (!trailSampler || trailSamplerConfigKey !== nextConfigKey) {
+      trailSampler = createTrailSampler(
+        {
+          bpm: props.state.global.bpm,
+          trailBeats: props.state.global.trailBeats,
+          trailSampleHz: props.state.global.trailSampleHz
+        },
+        params,
+        props.tBeats
+      );
+      trailSamplerConfigKey = nextConfigKey;
+    } else {
+      trailSampler = advanceTrailSampler(trailSampler, params, props.tBeats);
+    }
+
+    trails = trailSampler ? getTrailPoints(trailSampler) : EMPTY_TRAILS;
   }
 
-  const trails = props.state.global.showTrails && trailSampler ? getTrailPoints(trailSampler) : EMPTY_TRAILS;
+  const shouldRenderTrails = props.state.global.showTrails || props.isStaticView;
   const positions = getPositions(params, props.tBeats);
 
   renderPattern(context, canvas.width, canvas.height, {
     hands: props.state.hands,
     positions,
-    trails,
-    showTrails: props.state.global.showTrails
+    trails: shouldRenderTrails ? trails : EMPTY_TRAILS,
+    showTrails: shouldRenderTrails
   });
 
   animationFrameId = requestAnimationFrame(drawFrame);
@@ -125,4 +145,3 @@ onBeforeUnmount(() => {
     <canvas ref="canvasRef" class="h-full w-full rounded border border-zinc-800 bg-black" />
   </div>
 </template>
-

@@ -58,14 +58,35 @@ describe("trail sampler", () => {
   it("resets deterministically when playhead goes backwards", () => {
     const params = createParams();
     const config = createConfig();
+    const capacity = getTrailCapacity(config.trailSampleHz, config.trailBeats, config.bpm);
+    const sampleStepBeats = sampleHzToStepBeats(config.trailSampleHz, config.bpm);
     const sampler = createTrailSampler(config, params, 0);
     const forward = advanceTrailSampler(sampler, params, 2);
     const rewound = advanceTrailSampler(forward, params, 1);
     const points = getTrailPoints(rewound);
 
-    expect(points.L).toHaveLength(1);
-    expect(points.R).toHaveLength(1);
-    expect(points.L[0]?.tBeats).toBeCloseTo(1, 10);
-    expect(points.R[0]?.tBeats).toBeCloseTo(1, 10);
+    const expectedOldestBeat = 1 - (capacity - 1) * sampleStepBeats;
+
+    expect(points.L).toHaveLength(capacity);
+    expect(points.R).toHaveLength(capacity);
+    expect(points.L[0]?.tBeats).toBeCloseTo(expectedOldestBeat, 10);
+    expect(points.R[0]?.tBeats).toBeCloseTo(expectedOldestBeat, 10);
+    expect(points.L.at(-1)?.tBeats).toBeCloseTo(1, 10);
+    expect(points.R.at(-1)?.tBeats).toBeCloseTo(1, 10);
+  });
+
+  it("rebuilds the same rewind window regardless of prior forward history", () => {
+    const params = createParams();
+    const config = createConfig();
+    const rewindBeat = 1.25;
+
+    const fromEarlyHistory = advanceTrailSampler(advanceTrailSampler(createTrailSampler(config, params, 0), params, 2), params, rewindBeat);
+    const fromLateHistory = advanceTrailSampler(advanceTrailSampler(createTrailSampler(config, params, 0), params, 6), params, rewindBeat);
+
+    const earlyPoints = getTrailPoints(fromEarlyHistory);
+    const latePoints = getTrailPoints(fromLateHistory);
+
+    expect(earlyPoints.L).toEqual(latePoints.L);
+    expect(earlyPoints.R).toEqual(latePoints.R);
   });
 });

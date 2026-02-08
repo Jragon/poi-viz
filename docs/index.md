@@ -8,6 +8,7 @@ In scope:
 - Pure engine math and deterministic sampling in `src/engine`.
 - VTG descriptor generation/classification in `src/vtg`.
 - State defaults, unit conversion, and serialization contracts in `src/state`.
+- Transport and canvas data-flow behavior that affects deterministic visualization (for example static full-loop pattern view).
 
 Out of scope:
 - Canvas paint style details in `src/render` unless needed to explain data flow.

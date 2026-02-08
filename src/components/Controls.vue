@@ -20,6 +20,7 @@ interface ControlsProps {
   state: AppState;
   loopedPlayheadBeats: number;
   scrubStep: number;
+  isStaticView: boolean;
   userPresets: UserPresetSummary[];
   presetLibraryStatus: string;
 }
@@ -34,6 +35,7 @@ const props = defineProps<ControlsProps>();
 
 const emit = defineEmits<{
   (event: "toggle-playback"): void;
+  (event: "set-static-view", value: boolean): void;
   (event: "save-user-preset", name: string): void;
   (event: "load-user-preset", presetId: string): void;
   (event: "delete-user-preset", presetId: string): void;
@@ -352,6 +354,14 @@ function onScrubInput(event: Event): void {
   emit("set-scrub", parsed);
 }
 
+function onStaticViewInput(event: Event): void {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement)) {
+    return;
+  }
+  emit("set-static-view", target.checked);
+}
+
 function commitGlobalNumberInput(key: GlobalNumberKey): void {
   const draftKey = getGlobalDraftKey(key);
   const fallbackValue = props.state.global[key];
@@ -496,11 +506,17 @@ function formatSavedAt(isoString: string): string {
           <button
             class="rounded border border-zinc-700 px-3 py-2 text-sm font-medium hover:border-zinc-500"
             type="button"
+            :disabled="props.isStaticView"
+            :class="props.isStaticView ? 'cursor-not-allowed opacity-50' : ''"
             @click="emit('toggle-playback')"
           >
             {{ props.state.global.isPlaying ? "Pause" : "Play" }}
           </button>
           <p class="text-sm text-zinc-400">Playhead: {{ props.loopedPlayheadBeats.toFixed(3) }} beats</p>
+          <label class="ml-auto flex items-center gap-2 text-sm text-zinc-300">
+            <input class="accent-cyan-400" type="checkbox" :checked="props.isStaticView" @change="onStaticViewInput" />
+            Static View
+          </label>
         </div>
 
         <label class="mt-3 block text-xs uppercase tracking-wide text-zinc-500">
@@ -515,7 +531,7 @@ function formatSavedAt(isoString: string): string {
             @input="onScrubInput"
           />
         </label>
-        <p class="mt-2 text-xs text-zinc-500">Move to a specific beat inside the loop and pause playback.</p>
+        <p class="mt-2 text-xs text-zinc-500">Move to a specific beat inside the loop and pause playback. Static View renders a full-loop still trace for screenshots.</p>
       </div>
     </details>
 

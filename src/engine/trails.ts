@@ -78,7 +78,33 @@ export function createTrailSampler(config: TrailSamplerConfig, params: EnginePar
 }
 
 function resetTrailSampler(state: TrailSamplerState, params: EngineParams, frameBeat: number): TrailSamplerState {
-  return createTrailSampler(state.config, params, frameBeat);
+  const capacity = getTrailCapacity(state.config.trailSampleHz, state.config.trailBeats, state.config.bpm);
+  const sampleStepBeats = state.sampleStepBeats;
+  const trails = createTrailBuffers(capacity);
+
+  if (capacity === ZERO) {
+    return {
+      ...state,
+      trails,
+      nextSampleBeat: frameBeat + sampleStepBeats,
+      lastFrameBeat: frameBeat
+    };
+  }
+
+  const oldestBeat = frameBeat - (capacity - 1) * sampleStepBeats;
+  let rebuiltTrails = trails;
+
+  for (let sampleIndex = ZERO; sampleIndex < capacity; sampleIndex += 1) {
+    const sampleBeat = oldestBeat + sampleIndex * sampleStepBeats;
+    rebuiltTrails = appendTrailSample(rebuiltTrails, params, sampleBeat);
+  }
+
+  return {
+    ...state,
+    trails: rebuiltTrails,
+    nextSampleBeat: frameBeat + sampleStepBeats,
+    lastFrameBeat: frameBeat
+  };
 }
 
 function getPendingSampleCount(nextSampleBeat: number, frameBeat: number, sampleStepBeats: number): number {
@@ -92,7 +118,7 @@ function getPendingSampleCount(nextSampleBeat: number, frameBeat: number, sample
 
 /**
  * Advances trails up to frameBeat.
- * If frameBeat rewinds, state is reset and reseeded at the new beat.
+ * If frameBeat rewinds, state is rebuilt to the full trailing window ending at `frameBeat`.
  *
  * @param state Previous trail sampler state.
  * @param params Engine inputs for positional sampling.

@@ -67,6 +67,7 @@ let persistenceEnabled = false;
 const loopedPlayheadBeats = computed(() => normalizeLoopBeat(state.global.t, state.global.loopBeats));
 const scrubStep = computed(() => Math.max(state.global.loopBeats / SCRUB_DIVISIONS, MIN_SCRUB_STEP));
 const copyLinkLabel = ref(COPY_LINK_LABEL_IDLE);
+const isStaticView = ref(false);
 const presetLibraryStatus = ref("");
 const userPresetRecords = ref<UserPresetRecord[]>([]);
 const userPresetSummaries = computed(() => userPresetRecords.value.map(createUserPresetSummary));
@@ -190,11 +191,21 @@ function animationLoop(frameTimeMs: number): void {
 }
 
 function handleTogglePlayback(): void {
+  if (isStaticView.value) {
+    return;
+  }
   commitState(togglePlayback(state));
 }
 
 function handleSetScrub(beatValue: number): void {
   commitState(setScrubBeat(state, beatValue));
+}
+
+function handleSetStaticView(nextValue: boolean): void {
+  isStaticView.value = nextValue;
+  if (nextValue) {
+    commitState(setGlobalBoolean(state, "isPlaying", false));
+  }
 }
 
 function handleSetGlobalNumber(key: GlobalNumberKey, value: number): void {
@@ -401,7 +412,7 @@ onBeforeUnmount(() => {
       >
         <h2 class="mb-2 px-2 text-xs font-medium uppercase tracking-wide text-zinc-400">Pattern Viewport</h2>
         <div class="min-h-0 flex-1">
-          <PatternCanvas :state="state" :t-beats="state.global.t" />
+          <PatternCanvas :state="state" :t-beats="state.global.t" :is-static-view="isStaticView" />
         </div>
       </article>
 
@@ -419,9 +430,11 @@ onBeforeUnmount(() => {
         :state="state"
         :looped-playhead-beats="loopedPlayheadBeats"
         :scrub-step="scrubStep"
+        :is-static-view="isStaticView"
         :user-presets="userPresetSummaries"
         :preset-library-status="presetLibraryStatus"
         @toggle-playback="handleTogglePlayback"
+        @set-static-view="handleSetStaticView"
         @set-scrub="handleSetScrub"
         @set-global-number="handleSetGlobalNumber"
         @set-global-boolean="handleSetGlobalBoolean"

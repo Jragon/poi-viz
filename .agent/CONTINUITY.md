@@ -163,3 +163,17 @@
 - 2026-02-07T18:26:08Z [USER] Requested implementation of docs deployment at `/poi-viz/docs` with docs API output excluded from source control.
 - 2026-02-07T18:26:08Z [CODE] Updated `docs/.vitepress/config.ts` with `base: "/poi-viz/docs/"` and updated `.github/workflows/deploy-pages.yml` to merge `docs/.vitepress/dist` and `docs/api` into `dist/docs` before Pages artifact upload.
 - 2026-02-07T18:26:08Z [TOOL] Verified locally by running `npm run docs:all`, `npm run build`, and artifact merge checks confirming `dist/docs/index.html` and `dist/docs/api/index.html` are produced.
+- 2026-02-07T18:35:35Z [USER] Requested fixing trails while scrubbing backwards and asked for an implementation plan first.
+- 2026-02-07T18:35:35Z [TOOL] Audited `src/engine/trails.ts`, `src/components/PatternCanvas.vue`, `src/App.vue`, and `tests/engine/trails.test.ts`; rewind path currently reseeds at current beat with a single sample.
+- 2026-02-07T18:35:35Z [ASSUMPTION] Backward scrub issue is that rewind resets lose trail history; deterministic rewind should repopulate the trailing window ending at current beat instead of leaving only one point.
+- 2026-02-07T18:38:03Z [USER] Approved implementing the backward-scrub trail fix.
+- 2026-02-07T18:38:03Z [CODE] Updated `src/engine/trails.ts` rewind path to rebuild a full deterministic trailing window ending at current `frameBeat` using fixed beat-step sampling, instead of reseeding a single sample.
+- 2026-02-07T18:38:03Z [CODE] Updated `tests/engine/trails.test.ts` to validate rewind window population and added a determinism regression asserting identical rewind windows regardless of prior forward history.
+- 2026-02-07T18:38:03Z [CODE] Updated trail rewind behavior docs in `README.md`, `docs/engine-architecture.md`, and `src/engine/README.md`.
+- 2026-02-07T18:38:03Z [TOOL] Verified with passing `npm test` (68 tests) and `npm run build`.
+- 2026-02-07T18:42:28Z [USER] Requested a transport-level static visualizer mode to capture a pattern image without running playback, with implementation plan first and then execution.
+- 2026-02-07T18:42:28Z [CODE] Added transport static-view wiring across `src/components/Controls.vue` and `src/App.vue` (`set-static-view` event, static toggle UI, playback pause on enable, and static-aware play control behavior).
+- 2026-02-07T18:42:28Z [CODE] Added deterministic full-loop static trail generation in `src/render/staticTrails.ts` and integrated it in `src/components/PatternCanvas.vue` so static mode renders full-loop still traces while normal mode keeps incremental trail sampling.
+- 2026-02-07T18:42:28Z [CODE] Added `tests/render/static-trails.test.ts` to validate static trail generation against sampled head positions and deterministic repeatability.
+- 2026-02-07T18:42:28Z [CODE] Updated docs in `README.md`, `docs/index.md`, and `docs/engine-architecture.md` to document static full-loop transport view behavior.
+- 2026-02-07T18:42:28Z [TOOL] Verified with passing `npm test` (70 tests), `npm run build`, and `npm run docs:all` (TypeDoc warnings only).
