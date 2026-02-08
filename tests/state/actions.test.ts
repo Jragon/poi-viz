@@ -39,6 +39,14 @@ describe("state actions", () => {
     expect(next.global.isPlaying).toBe(false);
   });
 
+  it("wraps negative global playhead values into loop range", () => {
+    const state = createDefaultState();
+    state.global.loopBeats = 4;
+
+    const next = setGlobalNumber(state, "t", -0.25);
+    expect(next.global.t).toBeCloseTo(3.75, 10);
+  });
+
   it("applies boolean toggles and playback toggling", () => {
     const state = createDefaultState();
     const hidden = setGlobalBoolean(state, "showWaves", false);

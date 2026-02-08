@@ -32,7 +32,7 @@ These are fixed unless Rory explicitly changes them:
 |---|---|---|---|
 | A | Safety Net Before Surgery | Completed (2026-02-08) | Integration tests added and stable |
 | B | Unify Competing Truths | Completed (2026-02-08) | Single mapping + shared math helpers |
-| C | Remove State -> Render Leak | Pending | Zero imports from `src/state` to `src/render` |
+| C | Remove State -> Render Leak | Completed (2026-02-08) | Zero imports from `src/state` to `src/render` |
 | D | Split Phase Reference Semantics | Pending | View reference no longer mutates physical state implicitly |
 | E | Single Transport Clock | Pending | Exactly one RAF owner |
 | F | Persistence Centralization | Pending | Idempotent hydration + centralized policy |
@@ -138,6 +138,19 @@ Restore architectural boundary: state domain does not depend on render layer.
 ### Acceptance Criteria
 - `src/state/*` has zero imports from `src/render/*`.
 - Behavior unchanged.
+
+### Execution Notes
+- Completed on 2026-02-08.
+- Added neutral beat utility module `src/state/beatMath.ts` with `normalizeLoopBeat`.
+- Updated `src/state/actions.ts` to import `normalizeLoopBeat` from `src/state/beatMath.ts` (removed `state -> render` dependency).
+- Updated `src/render/math.ts` to consume and re-export `normalizeLoopBeat` from shared beat utility for compatibility.
+- Added/expanded tests:
+  - `tests/state/beat-math.test.ts`
+  - `tests/state/actions.test.ts` negative-playhead wrap case
+- Verified there are no `src/state` imports from `src/render`.
+- Validation run:
+  - `npm test` (96 passing)
+  - `npm run build` (passing)
 
 ### Risks
 - Minimal (mostly module move risk).

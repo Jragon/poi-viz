@@ -226,3 +226,8 @@
 - 2026-02-08T07:39:44Z [CODE] Added Phase B regression coverage in `tests/state/phase-math.test.ts` and expanded `tests/state/presets.test.ts` with VTG alignment assertions.
 - 2026-02-08T07:39:44Z [TOOL] Verified Phase B with passing `npm test` (93 tests) and `npm run build`.
 - 2026-02-08T07:39:44Z [CODE] Updated `refactor plan.md` to mark Phase B complete with execution notes and validation results.
+- 2026-02-08T07:44:22Z [CODE] Completed Refactor Phase C boundary fix: added `src/state/beatMath.ts` and moved state playhead wrapping to this neutral utility so `src/state/actions.ts` no longer imports from `src/render/math.ts`.
+- 2026-02-08T07:44:22Z [CODE] Updated `src/render/math.ts` to consume/re-export shared `normalizeLoopBeat` from `src/state/beatMath.ts` for compatibility while preserving render call sites.
+- 2026-02-08T07:44:22Z [CODE] Added `tests/state/beat-math.test.ts` and expanded `tests/state/actions.test.ts` with negative playhead wrap coverage.
+- 2026-02-08T07:44:22Z [TOOL] Verified Phase C with passing `npm test` (96 tests) and `npm run build`; confirmed no `src/state` imports from `src/render`.
+- 2026-02-08T07:44:22Z [CODE] Updated `refactor plan.md` to mark Phase C complete with execution notes and validation results.

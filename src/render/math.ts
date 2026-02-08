@@ -1,4 +1,5 @@
 import type { Vector2 } from "@/engine/types";
+import { normalizeLoopBeat } from "@/state/beatMath";
 
 export interface PatternTransform {
   centerX: number;
@@ -10,16 +11,10 @@ export const ONE = 1;
 export const TWO = ONE + ONE;
 export const ZERO = 0;
 
+export { normalizeLoopBeat };
+
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
-}
-
-export function normalizeLoopBeat(tBeats: number, loopBeats: number): number {
-  if (loopBeats <= ZERO) {
-    return ZERO;
-  }
-  const normalized = tBeats % loopBeats;
-  return normalized < ZERO ? normalized + loopBeats : normalized;
 }
 
 export function createPatternTransform(
@@ -52,4 +47,3 @@ export function beatToCanvasX(tBeats: number, loopBeats: number, left: number, w
   const normalizedBeat = normalizeLoopBeat(tBeats, loopBeats);
   return left + (normalizedBeat / loopBeats) * width;
 }
-

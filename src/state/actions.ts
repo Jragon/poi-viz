@@ -1,4 +1,4 @@
-import { normalizeLoopBeat } from "@/render/math";
+import { normalizeLoopBeat } from "@/state/beatMath";
 import { getPhaseReferenceOffsetRadians } from "@/state/phaseReference";
 import { applyPresetById } from "@/state/presets";
 import type { AppState, GlobalState, HandId, HandState, PhaseReference, PresetId } from "@/types/state";
