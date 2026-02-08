@@ -6,7 +6,7 @@ The repository uses three executable validation layers:
 
 1. Invariant tests for geometry and special cases.
 2. Deterministic sampling/trail regression tests.
-3. Golden fixtures generated from preset catalog and compared in CI.
+3. Golden fixtures generated from explicit state cases and compared in CI.
 
 Primary references:
 - `tests/engine/invariants.test.ts`
@@ -21,13 +21,16 @@ Generation entrypoint:
 - `scripts/gen-fixtures.ts`
 
 Core fixture builders:
-- `src/engine/fixtures.ts` export `buildAllPresetFixtures`.
-- `src/engine/fixtures.ts` export `buildPresetFixture`.
+- `src/engine/fixtures.ts` export `buildAllStateFixtures`.
+- `src/engine/fixtures.ts` export `buildFixtureFromStateCase`.
 - `src/engine/fixtures.ts` export `buildFixtureManifest`.
+- `src/engine/fixtureCases.ts` exports state-case parsing/build helpers.
 
 Outputs:
 - `fixtures/manifest.json`
 - `fixtures/*.json`
+- Manual input definitions:
+  - `fixtures/state-cases.json` (`default` fixture case is always included by script).
 
 Fixture tests recompute samples from code and compare against committed files with defined tolerances.
 
@@ -56,12 +59,12 @@ The current persistence contract intentionally fails closed across schema breaks
 
 This keeps early-stage semantics simple and prevents mixed-reference persisted phase data after contract changes.
 
-## Recommended Workflow For New Presets/Examples
+## Recommended Workflow For New Fixture Cases
 
-1. Add or adjust pure transforms in `src/state/presets.ts`.
-2. Add coverage in `tests/state/presets.test.ts`.
-3. Regenerate fixtures if preset catalog output changed.
-4. Update docs where preset semantics are referenced.
+1. Add a new full `AppState` case entry in `fixtures/state-cases.json` with unique kebab-case `id`.
+2. Regenerate fixtures with `npm run gen:fixtures`.
+3. Verify with `npm test`.
+4. Update docs where fixture validation expectations changed.
 
 ## Contract Checks In CI
 

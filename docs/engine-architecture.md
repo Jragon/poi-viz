@@ -15,7 +15,9 @@ Engine modules are pure TypeScript and framework-agnostic.
 - `src/engine/ringBuffer.ts`
   exports `createRingBuffer`, `pushRingBuffer`, `ringBufferToArray` for bounded history.
 - `src/engine/fixtures.ts`
-  exports `buildPresetFixture`, `buildAllPresetFixtures`, `buildFixtureManifest` for golden fixture generation.
+  exports `buildFixtureFromStateCase`, `buildAllStateFixtures`, `buildFixtureManifest` for golden fixture generation.
+- `src/engine/fixtureCases.ts`
+  exports parser/build helpers for manual fixture state-case inputs.
 
 Public barrel:
 - `src/engine/engine.ts` re-exports the supported engine API.
@@ -44,10 +46,11 @@ Code references:
 
 ## Fixture Pipeline
 
-Fixture generation is an executable snapshot of engine outputs over canonical presets.
+Fixture generation is an executable snapshot of engine outputs over explicit fixture state cases.
 
 - Script: `scripts/gen-fixtures.ts`
-- Fixture builder: `src/engine/fixtures.ts` export `buildAllPresetFixtures`
+- Fixture case input source: `fixtures/state-cases.json` plus implicit default state
+- Fixture builder: `src/engine/fixtures.ts` export `buildAllStateFixtures`
 - Manifest builder: `src/engine/fixtures.ts` export `buildFixtureManifest`
 - Persisted outputs: `fixtures/*.json` + `fixtures/manifest.json`
 

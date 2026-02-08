@@ -1,48 +1,16 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "sampleHz": 120,
   "startBeat": 0,
-  "presetCount": 10,
-  "presets": [
+  "fixtureCount": 2,
+  "fixtures": [
     {
-      "id": "earth",
-      "file": "earth.json"
+      "id": "default",
+      "file": "default.json"
     },
     {
-      "id": "air",
-      "file": "air.json"
-    },
-    {
-      "id": "water",
-      "file": "water.json"
-    },
-    {
-      "id": "fire",
-      "file": "fire.json"
-    },
-    {
-      "id": "inspin-3",
-      "file": "inspin-3.json"
-    },
-    {
-      "id": "antispin-3",
-      "file": "antispin-3.json"
-    },
-    {
-      "id": "inspin-4",
-      "file": "inspin-4.json"
-    },
-    {
-      "id": "antispin-4",
-      "file": "antispin-4.json"
-    },
-    {
-      "id": "inspin-5",
-      "file": "inspin-5.json"
-    },
-    {
-      "id": "antispin-5",
-      "file": "antispin-5.json"
+      "id": "test",
+      "file": "test.json"
     }
   ]
 }

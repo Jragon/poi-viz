@@ -1,11 +1,10 @@
 import { sampleLoop } from "@/engine/sampling";
-import { createDefaultState } from "@/state/defaults";
+import type { FixtureCaseDefinition } from "@/engine/fixtureCases";
 import { DEFAULT_PLAYHEAD_BEATS, DEFAULT_TRAIL_SAMPLE_HZ } from "@/state/constants";
-import { PRESET_CATALOG } from "@/state/presets";
 import type { LoopSample } from "@/engine/types";
-import type { AppState, PresetDefinition, PresetId } from "@/types/state";
+import type { AppState } from "@/types/state";
 
-export const FIXTURE_SCHEMA_VERSION = 1;
+export const FIXTURE_SCHEMA_VERSION = 2;
 export const FIXTURE_SAMPLE_HZ = DEFAULT_TRAIL_SAMPLE_HZ;
 export const FIXTURE_START_BEAT = DEFAULT_PLAYHEAD_BEATS;
 
@@ -27,11 +26,11 @@ export interface FixtureSample {
 }
 
 /**
- * Persisted fixture payload for one preset.
+ * Persisted fixture payload for one fixture state case.
  */
-export interface PresetFixtureFile {
+export interface StateFixtureFile {
   schemaVersion: number;
-  presetId: PresetId;
+  fixtureId: string;
   bpm: number;
   loopBeats: number;
   sampleHz: number;
@@ -41,22 +40,22 @@ export interface PresetFixtureFile {
 }
 
 /**
- * Manifest entry pointing a preset id to its fixture filename.
+ * Manifest entry pointing one fixture case id to its fixture filename.
  */
-export interface FixtureManifestPresetEntry {
-  id: PresetId;
+export interface FixtureManifestEntry {
+  id: string;
   file: string;
 }
 
 /**
- * Fixture manifest for all generated preset fixtures.
+ * Fixture manifest for all generated state-case fixtures.
  */
 export interface FixtureManifestFile {
   schemaVersion: number;
   sampleHz: number;
   startBeat: number;
-  presetCount: number;
-  presets: FixtureManifestPresetEntry[];
+  fixtureCount: number;
+  fixtures: FixtureManifestEntry[];
 }
 
 function toFixtureSample(sample: LoopSample): FixtureSample {
@@ -88,38 +87,35 @@ function sampleFixtureFromState(state: AppState, sampleHz: number, startBeat: nu
 }
 
 /**
- * Returns the canonical fixture filename for a preset id.
+ * Returns the canonical fixture filename for a fixture id.
  *
- * @param presetId Preset identifier.
+ * @param fixtureId Fixture identifier.
  * @returns Fixture filename under `fixtures/`.
  */
-export function getPresetFixtureFilename(presetId: PresetId): string {
-  return `${presetId}.json`;
+export function getFixtureFilename(fixtureId: string): string {
+  return `${fixtureId}.json`;
 }
 
 /**
- * Builds deterministic fixture samples for one preset.
+ * Builds deterministic fixture samples for one fixture state case.
  *
- * @param preset Preset definition to apply before sampling.
- * @param baseState Baseline state used as the preset input.
+ * @param fixtureCase Fixture state case to sample.
  * @param sampleHz Sample rate in samples per second.
  * @param startBeat Beat offset where sampling starts.
- * @returns Serializable fixture payload for the preset.
+ * @returns Serializable fixture payload for the input state.
  */
-export function buildPresetFixture(
-  preset: PresetDefinition,
-  baseState: AppState,
+export function buildFixtureFromStateCase(
+  fixtureCase: FixtureCaseDefinition,
   sampleHz = FIXTURE_SAMPLE_HZ,
   startBeat = FIXTURE_START_BEAT
-): PresetFixtureFile {
-  const presetState = preset.apply(baseState);
-  const samples = sampleFixtureFromState(presetState, sampleHz, startBeat);
+): StateFixtureFile {
+  const samples = sampleFixtureFromState(fixtureCase.state, sampleHz, startBeat);
 
   return {
     schemaVersion: FIXTURE_SCHEMA_VERSION,
-    presetId: preset.id,
-    bpm: presetState.global.bpm,
-    loopBeats: presetState.global.loopBeats,
+    fixtureId: fixtureCase.id,
+    bpm: fixtureCase.state.global.bpm,
+    loopBeats: fixtureCase.state.global.loopBeats,
     sampleHz,
     startBeat,
     sampleCount: samples.length,
@@ -128,26 +124,30 @@ export function buildPresetFixture(
 }
 
 /**
- * Builds fixture files for the full preset catalog.
+ * Builds fixture files for a list of fixture state cases.
  *
+ * @param fixtureCases Fixture state case list to sample in order.
  * @param sampleHz Sample rate in samples per second.
  * @param startBeat Beat offset where fixture sampling starts.
- * @returns Deterministic fixture payloads for all presets.
+ * @returns Deterministic fixture payloads for all provided cases.
  */
-export function buildAllPresetFixtures(sampleHz = FIXTURE_SAMPLE_HZ, startBeat = FIXTURE_START_BEAT): PresetFixtureFile[] {
-  const baseState = createDefaultState();
-  return PRESET_CATALOG.map((preset) => buildPresetFixture(preset, baseState, sampleHz, startBeat));
+export function buildAllStateFixtures(
+  fixtureCases: FixtureCaseDefinition[],
+  sampleHz = FIXTURE_SAMPLE_HZ,
+  startBeat = FIXTURE_START_BEAT
+): StateFixtureFile[] {
+  return fixtureCases.map((fixtureCase) => buildFixtureFromStateCase(fixtureCase, sampleHz, startBeat));
 }
 
 function getUniformFixtureField(
-  fixtures: PresetFixtureFile[],
+  fixtures: StateFixtureFile[],
   key: "sampleHz" | "startBeat",
   fallback: number
 ): number {
   const firstValue = fixtures[0]?.[key] ?? fallback;
   const hasMismatch = fixtures.some((fixture) => fixture[key] !== firstValue);
   if (hasMismatch) {
-    throw new Error(`fixture manifest requires uniform ${key} across presets`);
+    throw new Error(`fixture manifest requires uniform ${key} across fixtures`);
   }
   return firstValue;
 }
@@ -155,10 +155,10 @@ function getUniformFixtureField(
 /**
  * Builds a manifest describing generated fixture files.
  *
- * @param fixtures Fixture payloads generated from presets.
+ * @param fixtures Fixture payloads generated from state-case inputs.
  * @returns Manifest with uniform sample settings and file map.
  */
-export function buildFixtureManifest(fixtures: PresetFixtureFile[]): FixtureManifestFile {
+export function buildFixtureManifest(fixtures: StateFixtureFile[]): FixtureManifestFile {
   const sampleHz = getUniformFixtureField(fixtures, "sampleHz", FIXTURE_SAMPLE_HZ);
   const startBeat = getUniformFixtureField(fixtures, "startBeat", FIXTURE_START_BEAT);
 
@@ -166,10 +166,10 @@ export function buildFixtureManifest(fixtures: PresetFixtureFile[]): FixtureMani
     schemaVersion: FIXTURE_SCHEMA_VERSION,
     sampleHz,
     startBeat,
-    presetCount: fixtures.length,
-    presets: fixtures.map((fixture) => ({
-      id: fixture.presetId,
-      file: getPresetFixtureFilename(fixture.presetId)
+    fixtureCount: fixtures.length,
+    fixtures: fixtures.map((fixture) => ({
+      id: fixture.fixtureId,
+      file: getFixtureFilename(fixture.fixtureId)
     }))
   };
 }

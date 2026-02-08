@@ -93,6 +93,8 @@ npm run docs:all
 - `src/components/`: Vue UI composition (`Controls.vue`, canvases, `VtgPanel.vue`)
 - `src/components/controls/`: focused controls panels (transport, global, hand, preset library, help)
 - `tests/`: regression coverage for engine/state/render/vtg contracts
+- `fixtures/state-cases.json`: manually authored fixture input states (default case is always included by generator)
+- `fixtures/*.json` + `fixtures/manifest.json`: generated golden fixture outputs
 - `docs/`: human documentation
 - `docs/api/`: generated API reference
 

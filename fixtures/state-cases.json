@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "id": "water x earth",
+      "state": {
+        "global": {
+          "bpm": 10,
+          "loopBeats": 4,
+          "playSpeed": 1,
+          "isPlaying": false,
+          "t": 0,
+          "showTrails": true,
+          "trailBeats": 4,
+          "trailSampleHz": 120,
+          "showWaves": true,
+          "phaseReference": "up"
+        },
+        "hands": {
+          "L": {
+            "armSpeed": 1,
+            "armPhase": 1.5707963267948966,
+            "armRadius": 120,
+            "poiSpeed": -4,
+            "poiPhase": -4.71238898038469,
+            "poiRadius": 100
+          },
+          "R": {
+            "armSpeed": 1,
+            "armPhase": -1.5707963267948966,
+            "armRadius": 120,
+            "poiSpeed": -4,
+            "poiPhase": -1.5707963267948966,
+            "poiRadius": 100
+          }
+        }
+      }
+    }
+  ]
+}

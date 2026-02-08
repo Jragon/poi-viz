@@ -47,10 +47,10 @@ Use the barrel file `engine.ts`.
   - rewinds deterministically by rebuilding the trailing window ending at `frameBeat`
 - `getTrailPoints(state)`:
   - returns trails ordered oldest -> newest
-- `buildPresetFixture(preset, baseState, sampleHz?, startBeat?)`:
-  - builds one preset fixture payload with sampled head positions
-- `buildAllPresetFixtures(sampleHz?, startBeat?)`:
-  - builds fixture payloads for all catalog presets
+- `buildFixtureFromStateCase(fixtureCase, sampleHz?, startBeat?)`:
+  - builds one fixture payload from one explicit state case
+- `buildAllStateFixtures(fixtureCases, sampleHz?, startBeat?)`:
+  - builds fixture payloads for all provided state cases
 - `buildFixtureManifest(fixtures)`:
   - creates deterministic fixture manifest metadata
 
@@ -76,8 +76,9 @@ Use the barrel file `engine.ts`.
 Fixtures are golden numeric snapshots used for regression testing.
 
 - Generator: `scripts/gen-fixtures.ts`
+- Fixture case inputs: `fixtures/state-cases.json` (`default` state fixture is always included automatically)
 - Outputs: `fixtures/*.json` + `fixtures/manifest.json`
-- Sample source: `sampleLoop` over preset-modified default state
+- Sample source: `sampleLoop` over explicit fixture case states
 - Captured channel: head positions (`L` and `R`) per sampled beat
 - Tolerance for comparisons: `1e-4`
 
