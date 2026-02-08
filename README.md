@@ -7,7 +7,8 @@ Poi Phase Visualiser is a Vue 3 + TypeScript app for exploring wall-plane poi mo
 The app gives you:
 - a pattern viewport (hands, tethers, heads, optional trails),
 - a synchronized waveform inspector,
-- interactive controls for timing, per-hand parameters, VTG generation, and preset library workflows,
+- interactive controls for timing, per-hand parameters, VTG generation, VTG sequence editing, and preset library workflows,
+- VTG Phase 2 sequence mode (beat-based, segment list editor, optional event snap, transition guidance, JSON export/import),
 - configurable global phase-zero reference (`down` default),
 - light/dark theme switching from the title bar (persisted in browser storage),
 - a transport-level static view mode for full-loop still pattern captures,
@@ -41,6 +42,7 @@ At a high level:
 - persists durable edit state only (transport-volatiles `global.t` and `global.isPlaying` are runtime-only and restored from defaults),
 - keeps preset-library and preset-file payloads durable-only under the same volatile-field policy,
 - keeps root view composition thin by extracting app orchestration into `src/composables/useAppOrchestrator.ts`, which now composes focused controllers,
+- runs VTG sequencing as a piecewise selector (one active VTG segment at a time) while keeping engine math unchanged,
 - enforces architectural import boundaries in lint (`engine`, `vtg`, `state`, `render`, `composables`) to block cross-layer coupling regressions,
 - splits controls into focused panel components under `src/components/controls/` with shared numeric commit-on-blur utility (`src/composables/useNumericDrafts.ts`),
 - supports VTG descriptor generation/classification for canonical relationship states,
@@ -90,12 +92,12 @@ npm run docs:all
 ## Project Areas
 
 - `src/engine/`: pure math, sampling, trails, fixtures
-- `src/vtg/`: VTG descriptor types, generator, authoritative classifier, descriptive geometry helpers
+- `src/vtg/`: VTG descriptor types, generator, authoritative classifier, descriptive geometry helpers, and sequence domain logic
 - `src/state/`: defaults, constants, units, actions, persistence, preset library
 - `src/composables/`: app-level orchestration units (`useTransportClock`, `usePersistenceCoordinator`, `useTransportController`, `useThemeController`, `useShareLinkController`, `usePresetLibraryController`, `useAppOrchestrator`) plus shared UI utility (`useNumericDrafts`)
 - `src/render/`: Canvas drawing helpers
 - `src/components/`: Vue UI composition (`Controls.vue`, canvases, `VtgPanel.vue`)
-- `src/components/controls/`: focused controls panels (transport, global, hand, preset library, help)
+- `src/components/controls/`: focused controls panels (transport, global, hand, sequence, preset library, help)
 - `tests/`: regression coverage for engine/state/render/vtg contracts
 - `fixtures/state-cases.json`: manually authored fixture input states (default case is always included by generator)
 - `fixtures/*.json` + `fixtures/manifest.json`: generated golden fixture outputs

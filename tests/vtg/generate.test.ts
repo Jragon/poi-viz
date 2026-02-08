@@ -80,7 +80,7 @@ describe("VTG generator", () => {
           armElement,
           poiElement: "Earth",
           phaseDeg: 0,
-          poiCyclesPerArmCycle: 3
+          poiHeadCyclesPerArmCycle: 3
         },
         baseState
       );
@@ -97,7 +97,7 @@ describe("VTG generator", () => {
       armElement: "Air",
       poiElement: "Water",
       phaseDeg: 0,
-      poiCyclesPerArmCycle: -3
+      poiHeadCyclesPerArmCycle: -3
     };
     const phaseReferences = ["right", "down", "left", "up"] as const;
     const firstState = createDefaultState();
@@ -120,7 +120,7 @@ describe("VTG generator", () => {
   it("generates states whose classified VTG buckets match descriptor expectations", () => {
     const baseState = createDefaultState();
 
-    for (const poiCyclesPerArmCycle of VTG_TEST_HEAD_CYCLES) {
+    for (const poiHeadCyclesPerArmCycle of VTG_TEST_HEAD_CYCLES) {
       for (const armElement of VTG_ELEMENTS) {
         for (const poiElement of VTG_ELEMENTS) {
           for (const phaseDeg of VTG_PHASE_BUCKETS) {
@@ -128,7 +128,7 @@ describe("VTG generator", () => {
               armElement,
               poiElement,
               phaseDeg,
-              poiCyclesPerArmCycle
+              poiHeadCyclesPerArmCycle
             };
 
             const generated = generateVTGState(descriptor, baseState);
@@ -157,7 +157,7 @@ describe("VTG generator", () => {
         armElement: "Earth",
         poiElement: "Water",
         phaseDeg: 0,
-        poiCyclesPerArmCycle: -3
+        poiHeadCyclesPerArmCycle: -3
       },
       baseState
     );
@@ -166,7 +166,7 @@ describe("VTG generator", () => {
         armElement: "Earth",
         poiElement: "Fire",
         phaseDeg: 0,
-        poiCyclesPerArmCycle: -3
+        poiHeadCyclesPerArmCycle: -3
       },
       baseState
     );
@@ -181,7 +181,7 @@ describe("VTG generator", () => {
       armElement: "Earth",
       poiElement: "Earth",
       phaseDeg: 90,
-      poiCyclesPerArmCycle: 3
+      poiHeadCyclesPerArmCycle: 3
     };
     const generated = generateVTGState(descriptor, baseState);
 
@@ -200,7 +200,7 @@ describe("VTG generator", () => {
       armElement: "Earth",
       poiElement: "Earth",
       phaseDeg: 0,
-      poiCyclesPerArmCycle: 3
+      poiHeadCyclesPerArmCycle: 3
     };
     const rotatedDescriptor: VTGDescriptor = {
       ...baseDescriptor,
@@ -223,11 +223,11 @@ describe("VTG generator", () => {
       armElement: "Earth",
       poiElement: "Earth",
       phaseDeg: 0,
-      poiCyclesPerArmCycle: 3
+      poiHeadCyclesPerArmCycle: 3
     };
     const slowDescriptor: VTGDescriptor = {
       ...fastDescriptor,
-      poiCyclesPerArmCycle: -1
+      poiHeadCyclesPerArmCycle: -1
     };
 
     const fastState = generateVTGState(fastDescriptor, baseState);
@@ -246,7 +246,7 @@ describe("VTG generator", () => {
       armElement: "Earth",
       poiElement: "Earth",
       phaseDeg: 0,
-      poiCyclesPerArmCycle: 0
+      poiHeadCyclesPerArmCycle: 0
     };
 
     expect(() => generateVTGState(descriptor, baseState)).toThrow();
@@ -255,10 +255,10 @@ describe("VTG generator", () => {
   it("produces finite angular params and preserves engine invariants for representative states", () => {
     const baseState = createDefaultState();
     const sampledDescriptors: VTGDescriptor[] = [
-      { armElement: "Earth", poiElement: "Earth", phaseDeg: 0, poiCyclesPerArmCycle: -3 },
-      { armElement: "Air", poiElement: "Fire", phaseDeg: 90, poiCyclesPerArmCycle: -1 },
-      { armElement: "Water", poiElement: "Air", phaseDeg: 180, poiCyclesPerArmCycle: 1 },
-      { armElement: "Fire", poiElement: "Water", phaseDeg: 270, poiCyclesPerArmCycle: 3 }
+      { armElement: "Earth", poiElement: "Earth", phaseDeg: 0, poiHeadCyclesPerArmCycle: -3 },
+      { armElement: "Air", poiElement: "Fire", phaseDeg: 90, poiHeadCyclesPerArmCycle: -1 },
+      { armElement: "Water", poiElement: "Air", phaseDeg: 180, poiHeadCyclesPerArmCycle: 1 },
+      { armElement: "Fire", poiElement: "Water", phaseDeg: 270, poiHeadCyclesPerArmCycle: 3 }
     ];
 
     for (const descriptor of sampledDescriptors) {

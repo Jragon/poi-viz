@@ -7,6 +7,7 @@ The repository uses three executable validation layers:
 1. Invariant tests for geometry and special cases.
 2. Deterministic sampling/trail regression tests.
 3. Golden fixtures generated from explicit state cases and compared in CI.
+4. VTG sequence-domain validation for schema, beat mapping, snap normalization, and guidance classification.
 
 Primary references:
 - `tests/engine/invariants.test.ts`
@@ -14,6 +15,8 @@ Primary references:
 - `tests/engine/sampling.test.ts`
 - `tests/engine/trails.test.ts`
 - `tests/engine/fixtures.test.ts`
+- `tests/vtg/sequence.test.ts`
+- `tests/ui/app.integration.test.ts` (sequence mode playback/mode-switch integration coverage)
 
 ## How Fixtures Are Generated
 
@@ -48,6 +51,10 @@ When changing engine/VTG/state behavior:
    - `npm run docs:all`
    - `npm run lint`
    - `npm run build`
+
+For sequencer-specific changes, include at minimum:
+- `tests/vtg/sequence.test.ts` updates for pure sequencing contracts,
+- app-level integration assertions when sequence mode routing or render selection changes.
 
 ## Persistence Break Policy
 

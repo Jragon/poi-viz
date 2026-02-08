@@ -13,6 +13,7 @@ interface ControlsStubProps {
 }
 
 interface PatternCanvasStubProps {
+  state: AppState;
   tBeats: number;
 }
 
@@ -22,6 +23,7 @@ interface WaveCanvasStubProps {
 
 let latestState: AppState | null = null;
 let latestPatternBeat = 0;
+let latestPatternState: AppState | null = null;
 let latestWaveBeat = 0;
 let queuedRafCallbacks = new Map<number, FrameRequestCallback>();
 let nextRafId = 1;
@@ -47,7 +49,20 @@ const ControlsStub = defineComponent({
     "load-user-preset",
     "delete-user-preset",
     "export-user-preset",
-    "import-user-preset"
+    "import-user-preset",
+    "set-sequence-mode",
+    "set-sequence-name",
+    "set-sequence-loop",
+    "set-snap-setting",
+    "set-guidance-mode",
+    "add-segment",
+    "select-segment",
+    "set-selected-duration-beats",
+    "move-selected-segment",
+    "delete-selected-segment",
+    "duplicate-selected-segment",
+    "export-sequence",
+    "import-sequence"
   ],
   setup(props: ControlsStubProps) {
     watchEffect(() => {
@@ -60,21 +75,27 @@ const ControlsStub = defineComponent({
       <button data-testid="static-on" type="button" @click="$emit('set-static-view', true)">static-on</button>
       <button data-testid="static-off" type="button" @click="$emit('set-static-view', false)">static-off</button>
       <button data-testid="scrub-1-25" type="button" @click="$emit('set-scrub', 1.25)">scrub</button>
+      <button data-testid="scrub-0-25" type="button" @click="$emit('set-scrub', 0.25)">scrub-0-25</button>
       <button data-testid="set-phase-reference-up" type="button" @click="$emit('set-phase-reference', 'up')">set-phase-ref-up</button>
       <button
         data-testid="apply-vtg-air-water"
         type="button"
-        @click="$emit('apply-vtg', { armElement: 'Air', poiElement: 'Water', phaseDeg: 90, poiCyclesPerArmCycle: -3 })"
+        @click="$emit('apply-vtg', { armElement: 'Air', poiElement: 'Water', phaseDeg: 90, poiHeadCyclesPerArmCycle: -3 })"
       >
         apply-vtg
       </button>
       <button
         data-testid="apply-vtg-earth-earth"
         type="button"
-        @click="$emit('apply-vtg', { armElement: 'Earth', poiElement: 'Earth', phaseDeg: 0, poiCyclesPerArmCycle: -3 })"
+        @click="$emit('apply-vtg', { armElement: 'Earth', poiElement: 'Earth', phaseDeg: 0, poiHeadCyclesPerArmCycle: -3 })"
       >
         apply-vtg-earth-earth
       </button>
+      <button data-testid="sequence-mode-on" type="button" @click="$emit('set-sequence-mode', true)">sequence-on</button>
+      <button data-testid="sequence-mode-off" type="button" @click="$emit('set-sequence-mode', false)">sequence-off</button>
+      <button data-testid="sequence-add" type="button" @click="$emit('add-segment')">sequence-add</button>
+      <button data-testid="sequence-select-1" type="button" @click="$emit('select-segment', 'seg-1')">sequence-select-1</button>
+      <button data-testid="sequence-select-2" type="button" @click="$emit('select-segment', 'seg-2')">sequence-select-2</button>
     </div>
   `
 });
@@ -82,6 +103,10 @@ const ControlsStub = defineComponent({
 const PatternCanvasStub = defineComponent({
   name: "PatternCanvas",
   props: {
+    state: {
+      type: Object as () => AppState,
+      required: true
+    },
     tBeats: {
       type: Number,
       required: true
@@ -89,6 +114,7 @@ const PatternCanvasStub = defineComponent({
   },
   setup(props: PatternCanvasStubProps) {
     watchEffect(() => {
+      latestPatternState = props.state;
       latestPatternBeat = props.tBeats;
     });
   },
@@ -173,6 +199,7 @@ describe("App orchestration integration", () => {
   beforeEach(() => {
     latestState = null;
     latestPatternBeat = 0;
+    latestPatternState = null;
     latestWaveBeat = 0;
     installMockRaf();
     window.localStorage.clear();
@@ -301,6 +328,80 @@ describe("App orchestration integration", () => {
 
     const rightHeadCyclesPerBeat = (latestState.hands.R.armSpeed + latestState.hands.R.poiSpeed) / TWO_PI;
     expect(rightHeadCyclesPerBeat).toBeCloseTo(-3, 10);
+  });
+
+  it("renders active sequence segment state and local beat in sequence mode", async () => {
+    wrapper = mountApp();
+    await nextTick();
+
+    await wrapper.get("[data-testid='sequence-mode-on']").trigger("click");
+    await nextTick();
+
+    await wrapper.get("[data-testid='sequence-select-1']").trigger("click");
+    await nextTick();
+    await wrapper.get("[data-testid='apply-vtg-air-water']").trigger("click");
+    await nextTick();
+
+    await wrapper.get("[data-testid='sequence-add']").trigger("click");
+    await nextTick();
+    await wrapper.get("[data-testid='sequence-select-2']").trigger("click");
+    await nextTick();
+    await wrapper.get("[data-testid='apply-vtg-earth-earth']").trigger("click");
+    await nextTick();
+
+    await wrapper.get("[data-testid='scrub-1-25']").trigger("click");
+    await nextTick();
+
+    expect(latestPatternState).not.toBeNull();
+    if (!latestPatternState) {
+      return;
+    }
+    expect(classifyVTG(latestPatternState)).toEqual({
+      armElement: "Earth",
+      poiElement: "Earth",
+      phaseDeg: 0
+    });
+    expect(latestPatternBeat).toBeCloseTo(0.25, 10);
+
+    await wrapper.get("[data-testid='sequence-select-1']").trigger("click");
+    await nextTick();
+    await wrapper.get("[data-testid='scrub-0-25']").trigger("click");
+    await nextTick();
+    expect(classifyVTG(latestPatternState)).toEqual({
+      armElement: "Air",
+      poiElement: "Water",
+      phaseDeg: 90
+    });
+    expect(latestPatternBeat).toBeCloseTo(0.25, 10);
+  });
+
+  it("switches VTG apply target between sequence editing and runtime state by mode", async () => {
+    wrapper = mountApp();
+    await nextTick();
+
+    expect(latestState).not.toBeNull();
+    if (!latestState) {
+      return;
+    }
+    const baselineClassification = classifyVTG(latestState);
+
+    await wrapper.get("[data-testid='sequence-mode-on']").trigger("click");
+    await nextTick();
+    await wrapper.get("[data-testid='apply-vtg-air-water']").trigger("click");
+    await nextTick();
+
+    expect(classifyVTG(latestState)).toEqual(baselineClassification);
+
+    await wrapper.get("[data-testid='sequence-mode-off']").trigger("click");
+    await nextTick();
+    await wrapper.get("[data-testid='apply-vtg-air-water']").trigger("click");
+    await nextTick();
+
+    expect(classifyVTG(latestState)).toEqual({
+      armElement: "Air",
+      poiElement: "Water",
+      phaseDeg: 90
+    });
   });
 
   it("updates phase-reference metadata without mutating canonical arm phases", async () => {

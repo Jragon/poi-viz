@@ -3,7 +3,7 @@ import { secondsToBeats } from "@/engine/math";
 import { advancePlayhead as advancePlayheadByBeats, setGlobalBoolean, setScrubBeat, togglePlayback } from "@/state/actions";
 import { normalizeLoopBeat } from "@/state/beatMath";
 import type { AppState } from "@/types/state";
-import { computed, type ComputedRef, type Ref } from "vue";
+import { computed, ref, type ComputedRef, type Ref } from "vue";
 
 const SCRUB_DIVISIONS = 400;
 const MIN_SCRUB_STEP = 0.001;
@@ -19,10 +19,12 @@ interface TransportControllerOptions {
  */
 export interface TransportController {
   loopedPlayheadBeats: ComputedRef<number>;
+  absolutePlayheadBeats: Ref<number>;
   scrubStep: ComputedRef<number>;
   handleTogglePlayback: () => void;
   handleSetScrub: (beatValue: number) => void;
   handleSetStaticView: (nextValue: boolean) => void;
+  setAbsolutePlayheadBeats: (beatValue: number) => void;
   startTransport: () => void;
   stopTransport: () => void;
 }
@@ -32,6 +34,7 @@ export interface TransportController {
  */
 export function useTransportController(options: TransportControllerOptions): TransportController {
   const { state, isStaticView, commitState } = options;
+  const absolutePlayheadBeats = ref(state.global.t);
 
   function advancePlayhead(frameDeltaSeconds: number): void {
     if (!state.global.isPlaying) {
@@ -41,6 +44,7 @@ export function useTransportController(options: TransportControllerOptions): Tra
       return;
     }
     const beatsDelta = secondsToBeats(frameDeltaSeconds, state.global.bpm) * state.global.playSpeed;
+    absolutePlayheadBeats.value += beatsDelta;
     commitState(advancePlayheadByBeats(state, beatsDelta));
   }
 
@@ -48,6 +52,7 @@ export function useTransportController(options: TransportControllerOptions): Tra
 
   return {
     loopedPlayheadBeats: computed(() => normalizeLoopBeat(state.global.t, state.global.loopBeats)),
+    absolutePlayheadBeats,
     scrubStep: computed(() => Math.max(state.global.loopBeats / SCRUB_DIVISIONS, MIN_SCRUB_STEP)),
     handleTogglePlayback(): void {
       if (isStaticView.value) {
@@ -56,6 +61,7 @@ export function useTransportController(options: TransportControllerOptions): Tra
       commitState(togglePlayback(state));
     },
     handleSetScrub(beatValue: number): void {
+      absolutePlayheadBeats.value = beatValue;
       commitState(setScrubBeat(state, beatValue));
     },
     handleSetStaticView(nextValue: boolean): void {
@@ -64,7 +70,14 @@ export function useTransportController(options: TransportControllerOptions): Tra
         commitState(setGlobalBoolean(state, "isPlaying", false));
       }
     },
+    setAbsolutePlayheadBeats(beatValue: number): void {
+      if (!Number.isFinite(beatValue)) {
+        return;
+      }
+      absolutePlayheadBeats.value = beatValue;
+    },
     startTransport(): void {
+      absolutePlayheadBeats.value = state.global.t;
       transportClock.start();
     },
     stopTransport(): void {

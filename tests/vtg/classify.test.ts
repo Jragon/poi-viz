@@ -53,7 +53,7 @@ describe("VTG classification", () => {
         armElement: "Earth",
         poiElement: "Earth",
         phaseDeg: 90,
-        poiCyclesPerArmCycle: -3
+        poiHeadCyclesPerArmCycle: -3
       },
       baseState
     );
@@ -68,7 +68,7 @@ describe("VTG classification", () => {
         armElement: "Water",
         poiElement: "Fire",
         phaseDeg: 270,
-        poiCyclesPerArmCycle: -3
+        poiHeadCyclesPerArmCycle: -3
       },
       baseState
     );
@@ -92,14 +92,14 @@ describe("VTG classification", () => {
   it("keeps arm/poi element classification invariant under global rotation", () => {
     const baseState = createDefaultState();
 
-    for (const poiCyclesPerArmCycle of TEST_POI_CYCLES) {
+    for (const poiHeadCyclesPerArmCycle of TEST_POI_CYCLES) {
       for (const armElement of VTG_ELEMENTS) {
         for (const poiElement of VTG_ELEMENTS) {
           const descriptor: VTGDescriptor = {
             armElement,
             poiElement,
             phaseDeg: 0,
-            poiCyclesPerArmCycle
+            poiHeadCyclesPerArmCycle
           };
           const generated = generateVTGState(descriptor, baseState);
           const initial = classifyVTG(generated);
@@ -129,7 +129,7 @@ describe("VTG classification", () => {
           armElement: element,
           poiElement: "Earth",
           phaseDeg: 0,
-          poiCyclesPerArmCycle: -3
+          poiHeadCyclesPerArmCycle: -3
         },
         baseState
       );
@@ -140,7 +140,7 @@ describe("VTG classification", () => {
           armElement: "Earth",
           poiElement: element,
           phaseDeg: 0,
-          poiCyclesPerArmCycle: -3
+          poiHeadCyclesPerArmCycle: -3
         },
         baseState
       );

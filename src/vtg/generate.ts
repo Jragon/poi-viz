@@ -3,7 +3,7 @@ import type { AppState, HandState } from "@/types/state";
 import { classifyVTG } from "@/vtg/classify";
 import {
   getRelationForElement,
-  poiCyclesPerArmCycleToHeadSpeedRadiansPerBeat,
+  poiHeadCyclesPerArmCycleToHeadSpeedRadiansPerBeat,
   VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT,
   type VTGDescriptor,
   type VTGPhaseDeg,
@@ -52,20 +52,20 @@ function timingToPhaseOffset(timing: VTGTiming): number {
 /**
  * Validates signed poi cycles-per-arm-cycle input.
  */
-function assertValidPoiCyclesPerArmCycle(poiCyclesPerArmCycle: number): void {
-  if (!Number.isFinite(poiCyclesPerArmCycle)) {
-    throw new Error("VTG poiCyclesPerArmCycle must be finite.");
+function assertValidPoiHeadCyclesPerArmCycle(poiHeadCyclesPerArmCycle: number): void {
+  if (!Number.isFinite(poiHeadCyclesPerArmCycle)) {
+    throw new Error("VTG poiHeadCyclesPerArmCycle must be finite.");
   }
-  if (Math.abs(poiCyclesPerArmCycle) <= ZERO_CYCLE_TOLERANCE) {
-    throw new Error("VTG poiCyclesPerArmCycle must be non-zero.");
+  if (Math.abs(poiHeadCyclesPerArmCycle) <= ZERO_CYCLE_TOLERANCE) {
+    throw new Error("VTG poiHeadCyclesPerArmCycle must be non-zero.");
   }
 }
 
 /**
  * Converts signed head cycles-per-arm-cycle into radians-per-beat.
  */
-function getHeadSpeedRadiansPerBeat(poiCyclesPerArmCycle: number): number {
-  return poiCyclesPerArmCycleToHeadSpeedRadiansPerBeat(poiCyclesPerArmCycle);
+function getHeadSpeedRadiansPerBeat(poiHeadCyclesPerArmCycle: number): number {
+  return poiHeadCyclesPerArmCycleToHeadSpeedRadiansPerBeat(poiHeadCyclesPerArmCycle);
 }
 
 /**
@@ -94,7 +94,7 @@ function assertMatchesDescriptor(state: AppState, descriptor: VTGDescriptor): vo
  * @returns New app state with angular fields solved from VTG descriptor constraints.
  */
 export function generateVTGState(descriptor: VTGDescriptor, baseState: AppState): AppState {
-  assertValidPoiCyclesPerArmCycle(descriptor.poiCyclesPerArmCycle);
+  assertValidPoiHeadCyclesPerArmCycle(descriptor.poiHeadCyclesPerArmCycle);
 
   const armRelation = getRelationForElement(descriptor.armElement);
   const poiRelation = getRelationForElement(descriptor.poiElement);
@@ -108,7 +108,7 @@ export function generateVTGState(descriptor: VTGDescriptor, baseState: AppState)
       : -VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT;
   const leftArmPhase = rightArmPhase + timingToPhaseOffset(armRelation.timing);
 
-  const rightHeadSpeed = getHeadSpeedRadiansPerBeat(descriptor.poiCyclesPerArmCycle);
+  const rightHeadSpeed = getHeadSpeedRadiansPerBeat(descriptor.poiHeadCyclesPerArmCycle);
   const leftHeadSpeed = poiRelation.direction === "same-direction" ? rightHeadSpeed : -rightHeadSpeed;
 
   // Phase bucket rotates poi-head orientation relative to the hand baseline.

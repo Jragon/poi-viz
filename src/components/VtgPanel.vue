@@ -3,8 +3,8 @@ import { speedFromRadiansPerBeat, type SpeedUnit } from "@/state/speedUnits";
 import type { AppState } from "@/types/state";
 import { classifyVTG } from "@/vtg/classify";
 import {
-  headSpeedRadiansPerBeatToPoiCyclesPerArmCycle,
-  poiCyclesPerArmCycleToHeadSpeedRadiansPerBeat,
+  headSpeedRadiansPerBeatToPoiHeadCyclesPerArmCycle,
+  poiHeadCyclesPerArmCycleToHeadSpeedRadiansPerBeat,
   VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT,
   VTG_ELEMENTS,
   VTG_PHASE_BUCKETS,
@@ -17,6 +17,7 @@ import { computed, onMounted, ref, watch } from "vue";
 interface VtgPanelProps {
   state: AppState;
   speedUnit: SpeedUnit;
+  descriptorOverride?: VTGDescriptor | null;
 }
 
 const props = defineProps<VtgPanelProps>();
@@ -36,7 +37,7 @@ const VTG_PANEL_STORAGE_FALSE = "false";
 
 const isExpanded = ref(false);
 const vtgPhaseDeg = ref<VTGPhaseDeg>(0);
-const poiCyclesPerArmCycle = ref(-3);
+const poiHeadCyclesPerArmCycle = ref(-3);
 const selectedArmElement = ref<VTGElement>("Earth");
 const selectedPoiElement = ref<VTGElement>("Earth");
 
@@ -99,7 +100,7 @@ function formatSpeed(radiansPerBeat: number): string {
  * Right-head speed from signed poi cycles-per-arm-cycle.
  */
 function getRightHeadSpeed(): number {
-  return poiCyclesPerArmCycleToHeadSpeedRadiansPerBeat(poiCyclesPerArmCycle.value);
+  return poiHeadCyclesPerArmCycleToHeadSpeedRadiansPerBeat(poiHeadCyclesPerArmCycle.value);
 }
 
 /**
@@ -117,20 +118,20 @@ function applyCurrentDescriptor(): void {
     armElement: selectedArmElement.value,
     poiElement: selectedPoiElement.value,
     phaseDeg: vtgPhaseDeg.value,
-    poiCyclesPerArmCycle: poiCyclesPerArmCycle.value
+    poiHeadCyclesPerArmCycle: poiHeadCyclesPerArmCycle.value
   });
 }
 
 /**
  * Clamps VTG cycles input into the supported signed integer range.
  */
-function setPoiCyclesPerArmCycle(nextCycles: number): void {
+function setPoiHeadCyclesPerArmCycle(nextCycles: number): void {
   const clamped = Math.min(Math.max(Math.round(nextCycles), VTG_CYCLES_MIN), VTG_CYCLES_MAX);
   if (clamped === 0) {
-    poiCyclesPerArmCycle.value = poiCyclesPerArmCycle.value < 0 ? -VTG_NON_ZERO_MIN_MAGNITUDE : VTG_NON_ZERO_MIN_MAGNITUDE;
+    poiHeadCyclesPerArmCycle.value = poiHeadCyclesPerArmCycle.value < 0 ? -VTG_NON_ZERO_MIN_MAGNITUDE : VTG_NON_ZERO_MIN_MAGNITUDE;
     return;
   }
-  poiCyclesPerArmCycle.value = clamped;
+  poiHeadCyclesPerArmCycle.value = clamped;
 }
 
 /**
@@ -145,7 +146,7 @@ function onPoiCyclesInput(event: Event): void {
   if (parsed === null) {
     return;
   }
-  setPoiCyclesPerArmCycle(parsed);
+  setPoiHeadCyclesPerArmCycle(parsed);
   applyCurrentDescriptor();
 }
 
@@ -153,11 +154,11 @@ function onPoiCyclesInput(event: Event): void {
  * Applies descriptor after stepping the signed cycles input.
  */
 function stepPoiCycles(delta: number): void {
-  const nextCycles = poiCyclesPerArmCycle.value + delta;
+  const nextCycles = poiHeadCyclesPerArmCycle.value + delta;
   if (nextCycles === 0) {
-    setPoiCyclesPerArmCycle(delta > 0 ? VTG_NON_ZERO_MIN_MAGNITUDE : -VTG_NON_ZERO_MIN_MAGNITUDE);
+    setPoiHeadCyclesPerArmCycle(delta > 0 ? VTG_NON_ZERO_MIN_MAGNITUDE : -VTG_NON_ZERO_MIN_MAGNITUDE);
   } else {
-    setPoiCyclesPerArmCycle(nextCycles);
+    setPoiHeadCyclesPerArmCycle(nextCycles);
   }
   applyCurrentDescriptor();
 }
@@ -201,6 +202,14 @@ function onPanelToggle(event: Event): void {
  * Seeds panel controls from the current runtime state on mount.
  */
 function syncControlsFromState(): void {
+  if (props.descriptorOverride) {
+    selectedArmElement.value = props.descriptorOverride.armElement;
+    selectedPoiElement.value = props.descriptorOverride.poiElement;
+    vtgPhaseDeg.value = props.descriptorOverride.phaseDeg;
+    setPoiHeadCyclesPerArmCycle(props.descriptorOverride.poiHeadCyclesPerArmCycle);
+    return;
+  }
+
   const classification = currentVtgClassification.value;
   if (classification) {
     selectedArmElement.value = classification.armElement;
@@ -210,8 +219,8 @@ function syncControlsFromState(): void {
 
   const rightHand = props.state.hands.R;
   const rightHeadSpeedRadiansPerBeat = rightHand.armSpeed + rightHand.poiSpeed;
-  const rightHeadCyclesPerBeat = headSpeedRadiansPerBeatToPoiCyclesPerArmCycle(rightHeadSpeedRadiansPerBeat);
-  setPoiCyclesPerArmCycle(rightHeadCyclesPerBeat);
+  const rightHeadCyclesPerBeat = headSpeedRadiansPerBeatToPoiHeadCyclesPerArmCycle(rightHeadSpeedRadiansPerBeat);
+  setPoiHeadCyclesPerArmCycle(rightHeadCyclesPerBeat);
 }
 
 onMounted(() => {
@@ -220,6 +229,9 @@ onMounted(() => {
 });
 
 watch(currentVtgClassification, (classification) => {
+  if (props.descriptorOverride) {
+    return;
+  }
   if (!classification) {
     return;
   }
@@ -231,9 +243,20 @@ watch(currentVtgClassification, (classification) => {
 watch(
   () => props.state.hands.R.armSpeed + props.state.hands.R.poiSpeed,
   (rightHeadSpeedRadiansPerBeat) => {
-    const rightHeadCyclesPerBeat = headSpeedRadiansPerBeatToPoiCyclesPerArmCycle(rightHeadSpeedRadiansPerBeat);
-    setPoiCyclesPerArmCycle(rightHeadCyclesPerBeat);
+    if (props.descriptorOverride) {
+      return;
+    }
+    const rightHeadCyclesPerBeat = headSpeedRadiansPerBeatToPoiHeadCyclesPerArmCycle(rightHeadSpeedRadiansPerBeat);
+    setPoiHeadCyclesPerArmCycle(rightHeadCyclesPerBeat);
   }
+);
+
+watch(
+  () => props.descriptorOverride,
+  () => {
+    syncControlsFromState();
+  },
+  { deep: true }
 );
 
 watch(isExpanded, (nextValue) => {
@@ -264,7 +287,7 @@ watch(isExpanded, (nextValue) => {
               :min="VTG_CYCLES_MIN"
               :max="VTG_CYCLES_MAX"
               :step="VTG_CYCLES_STEP"
-              :value="poiCyclesPerArmCycle"
+              :value="poiHeadCyclesPerArmCycle"
               @input="onPoiCyclesInput"
             />
             <button

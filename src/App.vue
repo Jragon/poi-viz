@@ -6,13 +6,22 @@ import { useAppOrchestrator } from "@/composables/useAppOrchestrator";
 
 const {
   state,
+  visualState,
+  visualTBeats,
   loopedPlayheadBeats,
+  transportLoopBeats,
   scrubStep,
   copyLinkLabel,
   theme,
   isStaticView,
   presetLibraryStatus,
   userPresetSummaries,
+  sequenceMode,
+  sequence,
+  sequenceStatus,
+  sequenceSegments,
+  selectedSequenceSegmentId,
+  selectedSequenceDescriptor,
   themeButtonLabel,
   handleTogglePlayback,
   handleSetStaticView,
@@ -22,6 +31,19 @@ const {
   handleSetPhaseReference,
   handleSetHandNumber,
   handleApplyVTG,
+  handleSetSequenceMode,
+  handleSetSequenceName,
+  handleSetSequenceLoop,
+  handleSetSnapSetting,
+  handleSetGuidanceMode,
+  handleAddSequenceSegment,
+  handleSelectSequenceSegment,
+  handleSetSelectedSequenceDurationBeats,
+  handleMoveSelectedSequenceSegment,
+  handleDeleteSelectedSequenceSegment,
+  handleDuplicateSelectedSequenceSegment,
+  handleExportSequence,
+  handleImportSequence,
   handleSaveUserPreset,
   handleLoadUserPreset,
   handleDeleteUserPreset,
@@ -63,7 +85,7 @@ const {
       >
         <h2 class="mb-2 px-2 text-xs font-medium uppercase tracking-wide text-zinc-400">Pattern Viewport</h2>
         <div class="min-h-0 flex-1">
-          <PatternCanvas :state="state" :t-beats="state.global.t" :is-static-view="isStaticView" :theme="theme" />
+          <PatternCanvas :state="visualState" :t-beats="visualTBeats" :is-static-view="isStaticView" :theme="theme" />
         </div>
       </article>
 
@@ -73,17 +95,24 @@ const {
       >
         <h2 class="mb-2 px-2 text-xs font-medium uppercase tracking-wide text-zinc-400">Waveform Inspector</h2>
         <div class="min-h-0 flex-1">
-          <WaveCanvas :state="state" :t-beats="state.global.t" :theme="theme" />
+          <WaveCanvas :state="visualState" :t-beats="visualTBeats" :theme="theme" />
         </div>
       </article>
 
       <Controls
         :state="state"
         :looped-playhead-beats="loopedPlayheadBeats"
+        :transport-loop-beats="transportLoopBeats"
         :scrub-step="scrubStep"
         :is-static-view="isStaticView"
         :user-presets="userPresetSummaries"
         :preset-library-status="presetLibraryStatus"
+        :sequence-mode="sequenceMode"
+        :sequence="sequence"
+        :sequence-segments="sequenceSegments"
+        :selected-sequence-segment-id="selectedSequenceSegmentId"
+        :sequence-status="sequenceStatus"
+        :selected-sequence-descriptor="selectedSequenceDescriptor"
         @toggle-playback="handleTogglePlayback"
         @set-static-view="handleSetStaticView"
         @set-scrub="handleSetScrub"
@@ -92,6 +121,19 @@ const {
         @set-phase-reference="handleSetPhaseReference"
         @set-hand-number="handleSetHandNumber"
         @apply-vtg="handleApplyVTG"
+        @set-sequence-mode="handleSetSequenceMode"
+        @set-sequence-name="handleSetSequenceName"
+        @set-sequence-loop="handleSetSequenceLoop"
+        @set-snap-setting="handleSetSnapSetting"
+        @set-guidance-mode="handleSetGuidanceMode"
+        @add-segment="handleAddSequenceSegment"
+        @select-segment="handleSelectSequenceSegment"
+        @set-selected-duration-beats="handleSetSelectedSequenceDurationBeats"
+        @move-selected-segment="handleMoveSelectedSequenceSegment"
+        @delete-selected-segment="handleDeleteSelectedSequenceSegment"
+        @duplicate-selected-segment="handleDuplicateSelectedSequenceSegment"
+        @export-sequence="handleExportSequence"
+        @import-sequence="handleImportSequence"
         @save-user-preset="handleSaveUserPreset"
         @load-user-preset="handleLoadUserPreset"
         @delete-user-preset="handleDeleteUserPreset"

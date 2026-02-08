@@ -24,7 +24,7 @@ export interface VTGDescriptor {
   armElement: VTGElement;
   poiElement: VTGElement;
   phaseDeg: VTGPhaseDeg;
-  poiCyclesPerArmCycle: number;
+  poiHeadCyclesPerArmCycle: number;
 }
 
 /**
@@ -62,11 +62,11 @@ export const VTG_PHASE_BUCKETS: VTGPhaseDeg[] = [0, 90, 180, 270];
  * - `+N` means `N` head cycles per canonical arm cycle.
  * - `-N` means reversed-direction head motion with `N` cycles per canonical arm cycle.
  *
- * @param poiCyclesPerArmCycle Signed head cycles per canonical arm cycle.
+ * @param poiHeadCyclesPerArmCycle Signed head cycles per canonical arm cycle.
  * @returns Head angular speed in radians per beat.
  */
-export function poiCyclesPerArmCycleToHeadSpeedRadiansPerBeat(poiCyclesPerArmCycle: number): number {
-  return poiCyclesPerArmCycle * VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT;
+export function poiHeadCyclesPerArmCycleToHeadSpeedRadiansPerBeat(poiHeadCyclesPerArmCycle: number): number {
+  return poiHeadCyclesPerArmCycle * VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT;
 }
 
 /**
@@ -75,7 +75,7 @@ export function poiCyclesPerArmCycleToHeadSpeedRadiansPerBeat(poiCyclesPerArmCyc
  * @param headSpeedRadiansPerBeat Head angular speed in radians per beat.
  * @returns Signed head cycles per canonical arm cycle.
  */
-export function headSpeedRadiansPerBeatToPoiCyclesPerArmCycle(headSpeedRadiansPerBeat: number): number {
+export function headSpeedRadiansPerBeatToPoiHeadCyclesPerArmCycle(headSpeedRadiansPerBeat: number): number {
   return headSpeedRadiansPerBeat / VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT;
 }
 

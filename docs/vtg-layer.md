@@ -5,116 +5,99 @@
 The VTG layer is a discrete generator/classifier wrapper around the continuous engine.
 
 Primary code:
-- `src/vtg/types.ts` exports `VTGDescriptor`, `VTGElement`, `VTGPhaseDeg`, `getRelationForElement`.
-- `src/vtg/generate.ts` export `generateVTGState`.
-- `src/vtg/classify.ts` exports `classifyArmElement`, `classifyPoiElement`, `classifyPhaseBucket`, `classifyVTG`.
-- `src/vtg/descriptiveGeometry.ts` exports non-authoritative cardinal language helpers for docs/debug readouts.
+- `src/vtg/types.ts` exports descriptor and relation contracts (`VTGDescriptor`, `VTGElement`, `VTGPhaseDeg`, relation helpers).
+- `src/vtg/generate.ts` exports `generateVTGState` (descriptor -> canonical angular state).
+- `src/vtg/classify.ts` exports authoritative relation-based classifiers.
+- `src/vtg/descriptiveGeometry.ts` exports non-authoritative together/apart language helpers.
+- `src/vtg/sequence.ts` exports Phase 2 sequence schema and pure sequencing logic.
 
-## Arm Element Classification
+## Descriptor Contract
 
-`classifyArmElement` uses only arm timing and direction relation:
-- Timing: phase offset bucket (`same-time` when `Δφ_arm ≈ 0`, `split-time` when `Δφ_arm ≈ π`).
-- Direction: speed-sign relation (`same-direction` or `opposite-direction`).
-
-This makes arm element classification rotation-invariant.
-
-Code references:
-- `src/vtg/classify.ts` exports `classifyArmElement`, `classifyBinaryTiming`, `classifyDirection`.
-
-## Poi Element Classification (Head Motion In World Frame)
-
-`classifyPoiElement` classifies head motion, not relative poi motion:
-
-- `ω_head = ω_arm + ω_rel`
-- `φ_head = φ_arm + φ_rel`
-
-Then it applies the same timing/direction logic to left vs right head channels in world frame.
-
-Code references:
-- `src/vtg/classify.ts` exports `classifyPoiElement`.
-- `src/vtg/classify.ts` helpers `getHeadSpeedRadiansPerBeat`, `getHeadPhaseRadians`.
-
-## Phase Buckets
-
-`classifyPhaseBucket` maps the right-head phase offset relative to right-arm phase to one of `0/90/180/270` with ±5° tolerance.
-This bucket is a relative poi offset and does not change when global phase-reference changes.
-
-- Bucket set: `src/vtg/types.ts` export `VTG_PHASE_BUCKETS`.
-- Tolerance logic: `src/vtg/classify.ts` export `classifyPhaseBucket` with `VTG_PHASE_BUCKET_TOLERANCE_DEGREES`.
-
-## Relationship Table
-
-`src/vtg/types.ts` export `getRelationForElement` defines:
-
-- Earth = same-time + same-direction
-- Air = same-time + opposite-direction
-- Water = split-time + same-direction
-- Fire = split-time + opposite-direction
-
-Inverse mapping is `src/vtg/types.ts` export `getElementForRelation`.
-
-With default `phaseReference = down` and `phaseDeg = 0`, this produces the spinner-facing cardinal readouts:
-- Air: together at top/bottom, apart at sides.
-- Fire: together at sides, apart at top/bottom.
-
-## Generator Mapping (Descriptor -> Engine Params)
-
-Generator inputs:
+`VTGDescriptor` now uses:
 - `armElement`
 - `poiElement`
 - `phaseDeg`
-- `poiCyclesPerArmCycle` (signed)
+- `poiHeadCyclesPerArmCycle` (signed)
 
-`poiCyclesPerArmCycle` semantics are explicit in `src/vtg/types.ts`:
-- canonical arm speed baseline is `VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT = 2π` (1 arm cycle/beat),
+`poiHeadCyclesPerArmCycle` semantics:
+- canonical arm baseline: `VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT = 2π`,
 - conversion helpers:
-  - `poiCyclesPerArmCycleToHeadSpeedRadiansPerBeat`,
-  - `headSpeedRadiansPerBeatToPoiCyclesPerArmCycle`.
+  - `poiHeadCyclesPerArmCycleToHeadSpeedRadiansPerBeat`,
+  - `headSpeedRadiansPerBeatToPoiHeadCyclesPerArmCycle`.
 
-`generateVTGState` performs:
+This removes petals/inspin/antispin from descriptor language and keeps speed abstraction signed + relation-first.
 
-1. Set canonical right arm speed baseline: `ω_arm_R = 2π`.
-2. Resolve canonical arm orientation baseline at phase zero (`φ_arm_R = 0`, right-zero frame).
-3. Resolve left arm relation from `armElement` to get `ω_arm_L` sign and `φ_arm_L` timing offset.
-4. Convert signed head cycles to right-head speed with `poiCyclesPerArmCycleToHeadSpeedRadiansPerBeat`.
-5. Resolve left head direction/timing from `poiElement`.
-6. Apply `phaseDeg` as a poi-head offset relative to arms:
-   - `φ_head_R = φ_arm_R + phaseOffset(phaseDeg)`,
-   - `φ_head_L = φ_head_R + timingOffset(poiElement)`.
-7. Solve relative channels per hand:
-   - `ω_rel = ω_head - ω_arm`
-   - `φ_rel = φ_head - φ_arm`
-8. Validate by re-classifying with `classifyVTG`.
+## Authoritative Classification
 
-Code references:
-- `src/vtg/generate.ts` exports `generateVTGState`.
+`classifyArmElement` and `classifyPoiElement` are relation-based and rotation-invariant:
+- timing bucket from `Δφ ≈ 0` or `Δφ ≈ π`,
+- direction bucket from sign relation.
+
+`classifyPhaseBucket` buckets right-head offset relative to right-arm phase into `0/90/180/270` with ±5° tolerance.
+
+Reference (`global.phaseReference`) does not change classifier outputs.
+
+## Generator Mapping
+
+`generateVTGState` applies descriptor constraints without touching non-angular state:
+1. set canonical right-arm baseline,
+2. solve left-arm timing/direction from `armElement`,
+3. solve head speeds from signed `poiHeadCyclesPerArmCycle` and `poiElement` direction,
+4. apply `phaseDeg` as right-head relative offset,
+5. solve relative channels per hand (`ω_rel = ω_head - ω_arm`, `φ_rel = φ_head - φ_arm`),
+6. re-classify for safety.
+
+Engine math is unchanged; VTG only selects angular parameters.
+
+## Phase 2 Sequencer (VTG-only)
+
+Phase 2 adds a beat-based piecewise VTG sequencer in `src/vtg/sequence.ts`.
+
+Schema contract (`VTGSequence`):
+- metadata: `schema`, `version`,
+- sequence fields: `name`, `loop`, `snapSetting`, `guidanceMode`,
+- ordered `segments[]`, each with stable `id`, `durationBeats`, and VTG descriptor.
+
+Pure logic surface:
+- sanitize/validate: `sanitizeVTGSequence`, `validateVTGSequence`,
+- beat boundaries: `computeSequenceBoundariesBeats`,
+- playhead resolution: `resolveSequencePlayheadBeats` (global beat -> segment index + local beat),
+- optional event snap: `normalizeSequenceEventSnap`, `snapDurationToArmPhaseEvents`,
+- guidance classification: `classifySequenceTransitionGuidance`.
+
+### Event Snap Semantics
+
+Event alignment is defined in arm-phase/cardinal space:
+- event spacing in beats is derived from arm angular speed (`π/2` phase span),
+- no global hardcoded `0.25 beat` assumption in logic,
+- with canonical VTG arm speed (`2π`), spacing evaluates to `0.25` beats.
+
+### Guidance Modes
+
+Supported modes:
+- `strict`: non-canonical transitions are severity `error`,
+- `soft`: non-canonical transitions are severity `warning`,
+- `freeform`: non-canonical transitions remain classified but severity is `none`.
+
+Classification minimum is canonical vs non-canonical, based on arm-phase event alignment at segment boundaries.
 
 ## Invariants vs Reference-Relative Outputs
 
 Invariant (reference-independent):
-- `armElement` and `poiElement` classification (timing/direction only).
-- VTG generator arm/poi phase expansion (canonical `right = 0` baseline).
+- arm/poi element classification,
+- phase bucket classification,
+- descriptor-to-state generation contract.
 
 Reference-relative:
-- viewport orientation in `PatternCanvas` (render-space rotation from `global.phaseReference`).
+- render orientation in `PatternCanvas` from `global.phaseReference`.
 
-Reference-independent:
-- `phaseDeg` bucket output from `classifyVTG` (poi offset).
-- VTG phase chip semantics in `src/components/VtgPanel.vue`.
-- arm/poi/phase classification under `global.phaseReference` toggles.
-
-Descriptive-only (non-authoritative):
-- cardinal together/apart helpers in `src/vtg/descriptiveGeometry.ts`.
-
-## Warning: Generator Wrapper, Not Sequencer
-
-The VTG panel in `src/components/VtgPanel.vue` generates a single canonical continuous state.
-It does not sequence discrete phases in Phase 1.
-Engine motion remains continuous and is still defined by `src/engine/*`.
+Descriptive-only:
+- together/apart cardinal helpers in `src/vtg/descriptiveGeometry.ts`.
 
 ## Validated By
 
-- `tests/vtg/generate.test.ts` verifies descriptor round-trip classification, phase tolerance, signed cycle mapping, and invariants.
-- `tests/vtg/classify.test.ts` verifies arm/poi element rotation invariance, phase-reference invariance for authoritative classification, and descriptive cardinal descriptors.
-- `tests/vtg/types.test.ts` verifies signed cycle conversion semantics.
-- `tests/engine/invariants.test.ts` verifies generated states still satisfy engine geometric invariants.
+- `tests/vtg/generate.test.ts`
+- `tests/vtg/classify.test.ts`
+- `tests/vtg/types.test.ts`
+- `tests/vtg/sequence.test.ts`
+- `tests/ui/app.integration.test.ts` (sequence mode selection/playback integration)

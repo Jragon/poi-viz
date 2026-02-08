@@ -28,6 +28,20 @@ Code references:
 - Canonical internal phase zero is `right`.
 - User-facing phase zero is configurable via `global.phaseReference` (`right|down|left|up`), default `down`.
 
+## Sequence Time Semantics (Phase 2)
+
+VTG sequence mode is beat-first and piecewise:
+- transport provides a global beat playhead,
+- sequence logic resolves that beat to exactly one active segment plus local segment beat,
+- the active segment descriptor is converted to VTG state and rendered at that local beat.
+
+This keeps timing deterministic while avoiding generalized morph math. Engine equations stay unchanged; sequencing wraps VTG state selection.
+
+Event snap alignment is defined in arm-phase/cardinal space:
+- cardinal event spacing in beats = `(π/2) / |ω_arm|`,
+- with canonical VTG arm speed `ω_arm = 2π`, spacing is `0.25` beats,
+- implementation derives spacing from angular speed (no global hardcoded quarter-beat constant in sequencing logic).
+
 Code references:
 - `src/engine/types.ts` export `Vector2` and `EngineParams`.
 - `src/state/angleUnits.ts` exports `radiansToDegrees` and `degreesToRadians`.

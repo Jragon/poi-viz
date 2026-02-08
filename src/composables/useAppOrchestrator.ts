@@ -3,6 +3,7 @@ import { usePresetLibraryController, type ExportPresetRequest } from "@/composab
 import { useShareLinkController } from "@/composables/useShareLinkController";
 import { useThemeController } from "@/composables/useThemeController";
 import { useTransportController } from "@/composables/useTransportController";
+import { useVtgSequenceController } from "@/composables/useVtgSequenceController";
 import {
   setGlobalBoolean,
   setGlobalNumber,
@@ -16,19 +17,42 @@ import { createDefaultState } from "@/state/defaults";
 import type { UserPresetSummary } from "@/state/presetLibrary";
 import type { Theme } from "@/state/theme";
 import type { AppState, HandId, PhaseReference } from "@/types/state";
+import type { VTGSequence, VTGSequenceGuidanceMode, VTGSequenceSnapSetting } from "@/vtg/sequence";
 import { generateVTGState } from "@/vtg/generate";
 import type { VTGDescriptor } from "@/vtg/types";
 import { onBeforeUnmount, onMounted, reactive, ref, watch, type ComputedRef, type Ref } from "vue";
 
 export interface AppOrchestrator {
   state: AppState;
+  visualState: ComputedRef<AppState>;
+  visualTBeats: ComputedRef<number>;
   loopedPlayheadBeats: ComputedRef<number>;
+  transportLoopBeats: ComputedRef<number>;
   scrubStep: ComputedRef<number>;
   copyLinkLabel: Ref<string>;
   theme: Ref<Theme>;
   isStaticView: Ref<boolean>;
   presetLibraryStatus: Ref<string>;
   userPresetSummaries: ComputedRef<UserPresetSummary[]>;
+  sequenceMode: Ref<boolean>;
+  sequence: Ref<VTGSequence>;
+  sequenceStatus: Ref<string>;
+  sequenceSegments: ComputedRef<
+    Array<{
+      id: string;
+      durationBeats: number;
+      descriptor: VTGSequence["segments"][number]["descriptor"];
+      guidance: {
+        segmentId: string;
+        nextSegmentId: string | null;
+        classification: "canonical" | "non-canonical";
+        severity: "ok" | "warning" | "error" | "none";
+        message: string;
+      };
+    }>
+  >;
+  selectedSequenceSegmentId: Ref<string | null>;
+  selectedSequenceDescriptor: ComputedRef<VTGDescriptor | null>;
   themeButtonLabel: ComputedRef<string>;
   handleTogglePlayback: () => void;
   handleSetScrub: (beatValue: number) => void;
@@ -39,6 +63,19 @@ export interface AppOrchestrator {
   handleSetHandNumber: (handId: HandId, key: HandNumberKey, value: number) => void;
   handleToggleTheme: () => void;
   handleApplyVTG: (descriptor: VTGDescriptor) => void;
+  handleSetSequenceMode: (enabled: boolean) => void;
+  handleSetSequenceName: (name: string) => void;
+  handleSetSequenceLoop: (loop: boolean) => void;
+  handleSetSnapSetting: (snapSetting: VTGSequenceSnapSetting) => void;
+  handleSetGuidanceMode: (mode: VTGSequenceGuidanceMode) => void;
+  handleAddSequenceSegment: () => void;
+  handleSelectSequenceSegment: (segmentId: string) => void;
+  handleSetSelectedSequenceDurationBeats: (durationBeats: number) => void;
+  handleMoveSelectedSequenceSegment: (direction: "up" | "down") => void;
+  handleDeleteSelectedSequenceSegment: () => void;
+  handleDuplicateSelectedSequenceSegment: () => void;
+  handleExportSequence: () => void;
+  handleImportSequence: (file: File) => Promise<void>;
   handleCopyLink: () => Promise<void>;
   handleSaveUserPreset: (name: string) => void;
   handleLoadUserPreset: (presetId: string) => void;
@@ -77,6 +114,8 @@ export function useAppOrchestrator(): AppOrchestrator {
     commitState
   });
 
+  const sequenceController = useVtgSequenceController(state, transportController.absolutePlayheadBeats);
+
   const themeController = useThemeController();
 
   const presetLibraryController = usePresetLibraryController({
@@ -107,7 +146,20 @@ export function useAppOrchestrator(): AppOrchestrator {
   }
 
   function handleApplyVTG(descriptor: VTGDescriptor): void {
+    if (sequenceController.sequenceMode.value) {
+      sequenceController.handleReplaceSelectedDescriptor(descriptor);
+      return;
+    }
     commitState(generateVTGState(descriptor, state));
+  }
+
+  function handleSetSequenceMode(enabled: boolean): void {
+    sequenceController.handleSetSequenceMode(enabled, state);
+  }
+
+  function handleLoadUserPreset(presetId: string): void {
+    presetLibraryController.handleLoadUserPreset(presetId);
+    transportController.setAbsolutePlayheadBeats(state.global.t);
   }
 
   watch(
@@ -124,6 +176,7 @@ export function useAppOrchestrator(): AppOrchestrator {
 
     const hydration = persistenceCoordinator.resolveHydration(defaults, window.location.href);
     commitState(hydration.initialState);
+    transportController.setAbsolutePlayheadBeats(hydration.initialState.global.t);
     presetLibraryController.setUserPresetRecords(hydration.userPresetRecords);
 
     if (hydration.cleanHref !== window.location.href) {
@@ -140,17 +193,27 @@ export function useAppOrchestrator(): AppOrchestrator {
     persistenceCoordinator.disableSessionSync();
     shareLinkController.dispose();
     presetLibraryController.dispose();
+    sequenceController.dispose();
   });
 
   return {
     state,
-    loopedPlayheadBeats: transportController.loopedPlayheadBeats,
+    visualState: sequenceController.renderState,
+    visualTBeats: sequenceController.renderBeat,
+    loopedPlayheadBeats: sequenceController.transportPlayheadBeats,
+    transportLoopBeats: sequenceController.transportLoopBeats,
     scrubStep: transportController.scrubStep,
     copyLinkLabel: shareLinkController.copyLinkLabel,
     theme: themeController.theme,
     isStaticView,
     presetLibraryStatus: presetLibraryController.presetLibraryStatus,
     userPresetSummaries: presetLibraryController.userPresetSummaries,
+    sequenceMode: sequenceController.sequenceMode,
+    sequence: sequenceController.sequence,
+    sequenceStatus: sequenceController.sequenceStatus,
+    sequenceSegments: sequenceController.segmentViews,
+    selectedSequenceSegmentId: sequenceController.selectedSegmentId,
+    selectedSequenceDescriptor: sequenceController.selectedSegmentDescriptorForVtgPanel,
     themeButtonLabel: themeController.themeButtonLabel,
     handleTogglePlayback: transportController.handleTogglePlayback,
     handleSetScrub: transportController.handleSetScrub,
@@ -161,9 +224,22 @@ export function useAppOrchestrator(): AppOrchestrator {
     handleSetHandNumber,
     handleToggleTheme: themeController.handleToggleTheme,
     handleApplyVTG,
+    handleSetSequenceMode,
+    handleSetSequenceName: sequenceController.handleSetSequenceName,
+    handleSetSequenceLoop: sequenceController.handleSetSequenceLoop,
+    handleSetSnapSetting: sequenceController.handleSetSnapSetting,
+    handleSetGuidanceMode: sequenceController.handleSetGuidanceMode,
+    handleAddSequenceSegment: () => sequenceController.handleAddSegmentFromCurrentState(state),
+    handleSelectSequenceSegment: sequenceController.handleSelectSegment,
+    handleSetSelectedSequenceDurationBeats: sequenceController.handleSetSelectedDurationBeats,
+    handleMoveSelectedSequenceSegment: sequenceController.handleMoveSelectedSegment,
+    handleDeleteSelectedSequenceSegment: sequenceController.handleDeleteSelectedSegment,
+    handleDuplicateSelectedSequenceSegment: sequenceController.handleDuplicateSelectedSegment,
+    handleExportSequence: sequenceController.handleExportSequence,
+    handleImportSequence: sequenceController.handleImportSequence,
     handleCopyLink: shareLinkController.handleCopyLink,
     handleSaveUserPreset: presetLibraryController.handleSaveUserPreset,
-    handleLoadUserPreset: presetLibraryController.handleLoadUserPreset,
+    handleLoadUserPreset,
     handleDeleteUserPreset: presetLibraryController.handleDeleteUserPreset,
     handleExportUserPreset: presetLibraryController.handleExportUserPreset,
     handleImportUserPreset: presetLibraryController.handleImportUserPreset
