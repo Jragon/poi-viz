@@ -2,12 +2,15 @@
 import { sampleLoop } from "@/engine/sampling";
 import { DEFAULT_TRAIL_SAMPLE_HZ } from "@/state/constants";
 import { createWaveLanesFromSamples, renderWaves } from "@/render/waveRenderer";
+import { getWaveRenderPalette } from "@/render/theme";
+import type { Theme } from "@/state/theme";
 import type { AppState } from "@/types/state";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
 interface WaveCanvasProps {
   state: AppState;
   tBeats: number;
+  theme: Theme;
 }
 
 const props = defineProps<WaveCanvasProps>();
@@ -31,9 +34,10 @@ function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement): void {
 }
 
 function drawHiddenState(context: CanvasRenderingContext2D, width: number, height: number): void {
-  context.fillStyle = "#030712";
+  const palette = getWaveRenderPalette(props.theme);
+  context.fillStyle = palette.background;
   context.fillRect(0, 0, width, height);
-  context.fillStyle = "#6b7280";
+  context.fillStyle = palette.label;
   context.font = "13px ui-monospace, SFMono-Regular, Menlo, monospace";
   context.textAlign = "center";
   context.textBaseline = "middle";
@@ -70,13 +74,13 @@ function drawFrame(): void {
     loopBeats,
     0
   );
-  const lanes = createWaveLanesFromSamples(samples);
+  const lanes = createWaveLanesFromSamples(samples, props.theme);
 
   renderWaves(context, canvas.width, canvas.height, {
     loopBeats,
     tBeats: props.tBeats,
     lanes
-  });
+  }, props.theme);
 
   animationFrameId = requestAnimationFrame(drawFrame);
 }

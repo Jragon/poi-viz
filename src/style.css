@@ -2,13 +2,105 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+:root,
+:root[data-theme="dark"] {
+  --app-bg: #000000;
+  --surface-panel: rgb(9 9 11 / 0.7);
+  --surface-subtle: rgb(24 24 27 / 0.5);
+  --surface-canvas: #000000;
+  --border-strong: #27272a;
+  --border-muted: #3f3f46;
+  --border-interactive: #71717a;
+  --text-primary: #f4f4f5;
+  --text-secondary: #d4d4d8;
+  --text-muted: #a1a1aa;
+  --text-faint: #71717a;
+  --accent-text: #67e8f9;
+  --accent-border: #22d3ee;
+  --accent-surface: rgb(8 47 73 / 0.2);
   color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --app-bg: #f5f7fb;
+  --surface-panel: #ffffff;
+  --surface-subtle: #f8fafc;
+  --surface-canvas: #f8fafc;
+  --border-strong: #cbd5e1;
+  --border-muted: #cbd5e1;
+  --border-interactive: #94a3b8;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #475569;
+  --text-faint: #64748b;
+  --accent-text: #0e7490;
+  --accent-border: #0891b2;
+  --accent-surface: rgb(14 116 144 / 0.08);
+  color-scheme: light;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: #000000;
+  background-color: var(--app-bg);
+  color: var(--text-primary);
 }
 
+[data-theme="light"] .bg-zinc-950\/70,
+[data-theme="light"] .bg-zinc-900\/50,
+[data-theme="light"] .bg-zinc-900\/40,
+[data-theme="light"] .bg-zinc-900\/30 {
+  background-color: var(--surface-subtle) !important;
+}
+
+[data-theme="light"] .bg-black,
+[data-theme="light"] .bg-zinc-900 {
+  background-color: var(--surface-canvas) !important;
+}
+
+[data-theme="light"] .bg-cyan-950\/20,
+[data-theme="light"] .bg-cyan-950\/30 {
+  background-color: var(--accent-surface) !important;
+}
+
+[data-theme="light"] .border-zinc-800,
+[data-theme="light"] .border-zinc-700,
+[data-theme="light"] .border-zinc-500 {
+  border-color: var(--border-strong) !important;
+}
+
+[data-theme="light"] .border-cyan-900\/60,
+[data-theme="light"] .border-cyan-400 {
+  border-color: var(--accent-border) !important;
+}
+
+[data-theme="light"] .text-zinc-100,
+[data-theme="light"] .text-zinc-200 {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="light"] .text-zinc-300,
+[data-theme="light"] .text-zinc-400 {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="light"] .text-zinc-500 {
+  color: var(--text-faint) !important;
+}
+
+[data-theme="light"] .text-cyan-300,
+[data-theme="light"] .text-cyan-200 {
+  color: var(--accent-text) !important;
+}
+
+[data-theme="light"] .text-amber-300 {
+  color: #92400e !important;
+}
+
+[data-theme="light"] .hover\:border-zinc-500:hover {
+  border-color: var(--border-interactive) !important;
+}
+
+[data-theme="light"] .accent-cyan-400 {
+  accent-color: var(--accent-border);
+}

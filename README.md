@@ -8,6 +8,7 @@ The app gives you:
 - a pattern viewport (hands, tethers, heads, optional trails),
 - a synchronized waveform inspector,
 - interactive controls for timing, per-hand parameters, VTG generation, and preset library workflows,
+- light/dark theme switching from the title bar (persisted in browser storage),
 - a transport-level static view mode for full-loop still pattern captures,
 - deterministic sampling/fixtures so behavior is testable and reproducible.
 

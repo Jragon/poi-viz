@@ -3,6 +3,7 @@ import { advanceTrailSampler, createTrailSampler, getPositions, getTrailPoints, 
 import { renderPattern } from "@/render/patternRenderer";
 import { buildStaticTrailSeries } from "@/render/staticTrails";
 import type { TrailSeries } from "@/render/types";
+import type { Theme } from "@/state/theme";
 import type { AppState } from "@/types/state";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
@@ -10,6 +11,7 @@ interface PatternCanvasProps {
   state: AppState;
   tBeats: number;
   isStaticView: boolean;
+  theme: Theme;
 }
 
 const props = defineProps<PatternCanvasProps>();
@@ -114,7 +116,7 @@ function drawFrame(): void {
     positions,
     trails: shouldRenderTrails ? trails : EMPTY_TRAILS,
     showTrails: shouldRenderTrails
-  });
+  }, props.theme);
 
   animationFrameId = requestAnimationFrame(drawFrame);
 }

@@ -42,6 +42,7 @@ import {
   type HandNumberKey
 } from "@/state/actions";
 import { createDefaultState } from "@/state/defaults";
+import { applyThemeToDocument, getNextTheme, resolveInitialTheme, THEME_STORAGE_KEY, type Theme } from "@/state/theme";
 import type { AppState, HandId } from "@/types/state";
 import { generateVTGState } from "@/vtg/generate";
 import type { VTGDescriptor } from "@/vtg/types";
@@ -67,10 +68,12 @@ let persistenceEnabled = false;
 const loopedPlayheadBeats = computed(() => normalizeLoopBeat(state.global.t, state.global.loopBeats));
 const scrubStep = computed(() => Math.max(state.global.loopBeats / SCRUB_DIVISIONS, MIN_SCRUB_STEP));
 const copyLinkLabel = ref(COPY_LINK_LABEL_IDLE);
+const theme = ref<Theme>("dark");
 const isStaticView = ref(false);
 const presetLibraryStatus = ref("");
 const userPresetRecords = ref<UserPresetRecord[]>([]);
 const userPresetSummaries = computed(() => userPresetRecords.value.map(createUserPresetSummary));
+const themeButtonLabel = computed(() => (theme.value === "dark" ? "Light Theme" : "Dark Theme"));
 
 interface ExportPresetRequest {
   presetId: string;
@@ -220,6 +223,13 @@ function handleSetHandNumber(handId: HandId, key: HandNumberKey, value: number):
   commitState(setHandNumber(state, handId, key, value));
 }
 
+function handleToggleTheme(): void {
+  const nextTheme = getNextTheme(theme.value);
+  theme.value = nextTheme;
+  applyThemeToDocument(nextTheme);
+  setStorageValue(THEME_STORAGE_KEY, nextTheme);
+}
+
 function handleApplyVTG(descriptor: VTGDescriptor): void {
   commitState(generateVTGState(descriptor, state));
 }
@@ -362,6 +372,8 @@ watch(
 
 onMounted(() => {
   const defaults = createDefaultState();
+  theme.value = resolveInitialTheme(getStorageValue(THEME_STORAGE_KEY));
+  applyThemeToDocument(theme.value);
   const initialState = resolveInitialState(defaults, window.location.href, getSessionStorageValue());
   commitState(initialState);
   userPresetRecords.value = deserializeUserPresetLibrary(getPresetLibraryStorageValue(), defaults);
@@ -395,13 +407,22 @@ onBeforeUnmount(() => {
     <header class="rounded border border-zinc-800 bg-zinc-950/70 p-4">
       <div class="flex items-start justify-between gap-3">
         <h1 class="text-2xl font-semibold tracking-tight md:text-3xl">Poi Visuliser</h1>
-        <button
-          class="rounded border border-zinc-700 px-3 py-2 text-sm font-medium hover:border-zinc-500"
-          type="button"
-          @click="handleCopyLink"
-        >
-          {{ copyLinkLabel }}
-        </button>
+        <div class="flex items-center gap-2">
+          <button
+            class="rounded border border-zinc-700 px-3 py-2 text-sm font-medium hover:border-zinc-500"
+            type="button"
+            @click="handleToggleTheme"
+          >
+            {{ themeButtonLabel }}
+          </button>
+          <button
+            class="rounded border border-zinc-700 px-3 py-2 text-sm font-medium hover:border-zinc-500"
+            type="button"
+            @click="handleCopyLink"
+          >
+            {{ copyLinkLabel }}
+          </button>
+        </div>
       </div>
     </header>
 
@@ -412,7 +433,7 @@ onBeforeUnmount(() => {
       >
         <h2 class="mb-2 px-2 text-xs font-medium uppercase tracking-wide text-zinc-400">Pattern Viewport</h2>
         <div class="min-h-0 flex-1">
-          <PatternCanvas :state="state" :t-beats="state.global.t" :is-static-view="isStaticView" />
+          <PatternCanvas :state="state" :t-beats="state.global.t" :is-static-view="isStaticView" :theme="theme" />
         </div>
       </article>
 
@@ -422,7 +443,7 @@ onBeforeUnmount(() => {
       >
         <h2 class="mb-2 px-2 text-xs font-medium uppercase tracking-wide text-zinc-400">Waveform Inspector</h2>
         <div class="min-h-0 flex-1">
-          <WaveCanvas :state="state" :t-beats="state.global.t" />
+          <WaveCanvas :state="state" :t-beats="state.global.t" :theme="theme" />
         </div>
       </article>
 

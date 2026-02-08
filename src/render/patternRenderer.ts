@@ -1,13 +1,10 @@
 import type { TrailPoint, Vector2 } from "@/engine/types";
 import { createPatternTransform, worldToCanvas } from "@/render/math";
+import { getPatternRenderPalette, type PatternRenderPalette } from "@/render/theme";
 import type { PatternRenderInput, TrailSeries } from "@/render/types";
+import type { Theme } from "@/state/theme";
 import type { HandId, HandsState } from "@/types/state";
 
-const BACKGROUND_COLOR = "#000000";
-const GRID_COLOR = "#1f2937";
-const AXIS_COLOR = "#374151";
-const LEFT_COLOR = "#22d3ee";
-const RIGHT_COLOR = "#f97316";
 const TETHER_LINE_WIDTH = 2;
 const HAND_DOT_RADIUS = 4;
 const HEAD_DOT_RADIUS = 8;
@@ -17,8 +14,8 @@ const WORLD_PADDING_FACTOR = 1.15;
 const TRAIL_MIN_ALPHA = 0.12;
 const TRAIL_MAX_ALPHA = 0.85;
 
-function drawBackground(ctx: CanvasRenderingContext2D, width: number, height: number): void {
-  ctx.fillStyle = BACKGROUND_COLOR;
+function drawBackground(ctx: CanvasRenderingContext2D, width: number, height: number, palette: PatternRenderPalette): void {
+  ctx.fillStyle = palette.background;
   ctx.fillRect(0, 0, width, height);
 }
 
@@ -40,14 +37,15 @@ function drawGrid(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
-  worldRadius: number
+  worldRadius: number,
+  palette: PatternRenderPalette
 ): ReturnType<typeof createPatternTransform> {
   const transform = createPatternTransform(width, height, worldRadius, WORLD_PADDING_FACTOR);
   const ringRadii = createPolarRingRadii(worldRadius);
 
   ctx.save();
   ctx.lineWidth = GRID_LINE_WIDTH;
-  ctx.strokeStyle = GRID_COLOR;
+  ctx.strokeStyle = palette.grid;
 
   for (const ringRadius of ringRadii) {
     ctx.beginPath();
@@ -55,7 +53,7 @@ function drawGrid(
     ctx.stroke();
   }
 
-  ctx.strokeStyle = AXIS_COLOR;
+  ctx.strokeStyle = palette.axis;
   ctx.beginPath();
   ctx.moveTo(0, transform.centerY);
   ctx.lineTo(width, transform.centerY);
@@ -110,10 +108,11 @@ function drawTrail(
 function drawTrails(
   ctx: CanvasRenderingContext2D,
   transform: ReturnType<typeof createPatternTransform>,
-  trails: TrailSeries
+  trails: TrailSeries,
+  palette: PatternRenderPalette
 ): void {
-  drawTrail(ctx, transform, trails.L, LEFT_COLOR);
-  drawTrail(ctx, transform, trails.R, RIGHT_COLOR);
+  drawTrail(ctx, transform, trails.L, palette.left);
+  drawTrail(ctx, transform, trails.R, palette.right);
 }
 
 function drawTether(
@@ -165,17 +164,23 @@ function drawHandPoi(
   drawDot(ctx, transform, input.positions[handId].head, HEAD_DOT_RADIUS, color);
 }
 
-export function renderPattern(ctx: CanvasRenderingContext2D, width: number, height: number, input: PatternRenderInput): void {
-  drawBackground(ctx, width, height);
+export function renderPattern(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  input: PatternRenderInput,
+  theme: Theme = "dark"
+): void {
+  const palette = getPatternRenderPalette(theme);
+  drawBackground(ctx, width, height, palette);
 
   const worldRadius = getWorldRadius(input.hands);
-  const transform = drawGrid(ctx, width, height, worldRadius);
+  const transform = drawGrid(ctx, width, height, worldRadius, palette);
 
   if (input.showTrails) {
-    drawTrails(ctx, transform, input.trails);
+    drawTrails(ctx, transform, input.trails, palette);
   }
 
-  drawHandPoi(ctx, transform, input, "L", LEFT_COLOR);
-  drawHandPoi(ctx, transform, input, "R", RIGHT_COLOR);
+  drawHandPoi(ctx, transform, input, "L", palette.left);
+  drawHandPoi(ctx, transform, input, "R", palette.right);
 }
-

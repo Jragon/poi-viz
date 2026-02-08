@@ -177,3 +177,10 @@
 - 2026-02-07T18:42:28Z [CODE] Added `tests/render/static-trails.test.ts` to validate static trail generation against sampled head positions and deterministic repeatability.
 - 2026-02-07T18:42:28Z [CODE] Updated docs in `README.md`, `docs/index.md`, and `docs/engine-architecture.md` to document static full-loop transport view behavior.
 - 2026-02-07T18:42:28Z [TOOL] Verified with passing `npm test` (70 tests), `npm run build`, and `npm run docs:all` (TypeDoc warnings only).
+- 2026-02-08T04:35:11Z [USER] Requested a daytime-friendly light theme plus a header theme switcher, with implementation plan first and then execution.
+- 2026-02-08T04:35:11Z [CODE] Added persisted theme state in `src/state/theme.ts`, wired header toggle + document theme application in `src/App.vue`, and introduced renderer palettes in `src/render/theme.ts` so both pattern and wave canvases switch palettes without changing engine math.
+- 2026-02-08T04:35:11Z [CODE] Updated `src/style.css` with dark/light token overrides for existing Tailwind utility classes, threaded theme props through `src/components/PatternCanvas.vue` and `src/components/WaveCanvas.vue`, added `tests/state/theme.test.ts`, and updated `README.md`.
+- 2026-02-08T04:35:11Z [TOOL] Verified with passing `npm test` (74 tests) and `npm run build`.
+- 2026-02-08T06:04:17Z [USER] Requested ideation-only deep analysis of engine and VTG semantics, including world-space vs engine-space timing/direction mismatch for opposite-direction together patterns.
+- 2026-02-08T06:04:17Z [TOOL] Audited `README.md`, `docs/*.md`, `src/engine/*`, `src/vtg/*`, `src/state/*`, `src/render/*`, and VTG/engine tests to build a code-grounded behavior model without implementation changes.
+- 2026-02-08T06:04:17Z [CODE] Identified semantic drift: VTG relation mapping in `src/vtg/types.ts` currently differs from legacy element preset mapping in `src/state/presets.ts` for Air/Fire timing-direction pairs; this may contribute to user-facing terminology confusion.

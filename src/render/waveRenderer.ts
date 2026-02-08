@@ -1,13 +1,9 @@
 import type { LoopSample } from "@/engine/types";
 import { beatToCanvasX, clamp } from "@/render/math";
+import { getWaveRenderPalette } from "@/render/theme";
 import type { OscillatorLaneDefinition, WaveLane, WavePoint, WaveRenderInput, WaveTrace } from "@/render/types";
+import type { Theme } from "@/state/theme";
 
-const BACKGROUND_COLOR = "#030712";
-const GRID_COLOR = "#1f2937";
-const LABEL_COLOR = "#9ca3af";
-const CURSOR_COLOR = "#f43f5e";
-const SIN_COLOR = "#22d3ee";
-const COS_COLOR = "#facc15";
 const FONT = "12px ui-monospace, SFMono-Regular, Menlo, monospace";
 const LANE_VERTICAL_PADDING = 0.2;
 const MIN_HORIZONTAL_GRID_DIVISIONS = 4;
@@ -57,7 +53,9 @@ function createTrace(id: string, label: string, color: string, points: WavePoint
   };
 }
 
-export function createWaveLanesFromSamples(samples: LoopSample[]): WaveLane[] {
+export function createWaveLanesFromSamples(samples: LoopSample[], theme: Theme = "dark"): WaveLane[] {
+  const palette = getWaveRenderPalette(theme);
+
   return OSCILLATOR_LANES.map((laneDefinition) => {
     const sinTracePoints = createTracePoints(samples, (sample) => Math.sin(laneDefinition.getAngle(sample)));
     const cosTracePoints = createTracePoints(samples, (sample) => Math.cos(laneDefinition.getAngle(sample)));
@@ -65,14 +63,15 @@ export function createWaveLanesFromSamples(samples: LoopSample[]): WaveLane[] {
     return {
       id: laneDefinition.id,
       label: laneDefinition.label,
-      sin: createTrace(`${laneDefinition.id}-sin`, `${laneDefinition.label} sin`, SIN_COLOR, sinTracePoints),
-      cos: createTrace(`${laneDefinition.id}-cos`, `${laneDefinition.label} cos`, COS_COLOR, cosTracePoints)
+      sin: createTrace(`${laneDefinition.id}-sin`, `${laneDefinition.label} sin`, palette.sin, sinTracePoints),
+      cos: createTrace(`${laneDefinition.id}-cos`, `${laneDefinition.label} cos`, palette.cos, cosTracePoints)
     };
   });
 }
 
-function drawBackground(ctx: CanvasRenderingContext2D, width: number, height: number): void {
-  ctx.fillStyle = BACKGROUND_COLOR;
+function drawBackground(ctx: CanvasRenderingContext2D, width: number, height: number, theme: Theme): void {
+  const palette = getWaveRenderPalette(theme);
+  ctx.fillStyle = palette.background;
   ctx.fillRect(0, 0, width, height);
 }
 
@@ -82,14 +81,16 @@ function drawGrid(
   top: number,
   width: number,
   height: number,
-  loopBeats: number
+  loopBeats: number,
+  theme: Theme
 ): void {
   const estimatedDivisions = Math.ceil(loopBeats / BEATS_PER_GRID_DIVISION);
   const horizontalDivisions = Math.max(MIN_HORIZONTAL_GRID_DIVISIONS, estimatedDivisions);
   const divisionWidth = width / horizontalDivisions;
+  const palette = getWaveRenderPalette(theme);
 
   ctx.save();
-  ctx.strokeStyle = GRID_COLOR;
+  ctx.strokeStyle = palette.grid;
   ctx.lineWidth = 1;
 
   for (let divisionIndex = 0; divisionIndex <= horizontalDivisions; divisionIndex += 1) {
@@ -102,9 +103,10 @@ function drawGrid(
   ctx.restore();
 }
 
-function drawLabels(ctx: CanvasRenderingContext2D, left: number, laneCenterY: number, label: string): void {
+function drawLabels(ctx: CanvasRenderingContext2D, left: number, laneCenterY: number, label: string, theme: Theme): void {
+  const palette = getWaveRenderPalette(theme);
   ctx.save();
-  ctx.fillStyle = LABEL_COLOR;
+  ctx.fillStyle = palette.label;
   ctx.font = FONT;
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
@@ -155,15 +157,22 @@ function drawTrace(
   ctx.restore();
 }
 
-export function renderWaves(ctx: CanvasRenderingContext2D, width: number, height: number, input: WaveRenderInput): void {
-  drawBackground(ctx, width, height);
+export function renderWaves(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  input: WaveRenderInput,
+  theme: Theme = "dark"
+): void {
+  const palette = getWaveRenderPalette(theme);
+  drawBackground(ctx, width, height, theme);
 
   const plotLeft = MARGIN_LEFT;
   const plotTop = MARGIN_TOP;
   const plotWidth = Math.max(width - MARGIN_LEFT - MARGIN_RIGHT, 1);
   const plotHeight = Math.max(height - MARGIN_TOP - MARGIN_BOTTOM, 1);
 
-  drawGrid(ctx, plotLeft, plotTop, plotWidth, plotHeight, input.loopBeats);
+  drawGrid(ctx, plotLeft, plotTop, plotWidth, plotHeight, input.loopBeats, theme);
 
   const laneCount = Math.max(input.lanes.length, 1);
   const laneHeight = plotHeight / laneCount;
@@ -178,7 +187,7 @@ export function renderWaves(ctx: CanvasRenderingContext2D, width: number, height
     const laneCenterY = laneTop + laneHeight * 0.5;
 
     ctx.save();
-    ctx.strokeStyle = GRID_COLOR;
+    ctx.strokeStyle = palette.grid;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(plotLeft, laneCenterY);
@@ -186,14 +195,14 @@ export function renderWaves(ctx: CanvasRenderingContext2D, width: number, height
     ctx.stroke();
     ctx.restore();
 
-    drawLabels(ctx, 8, laneCenterY, lane.label);
+    drawLabels(ctx, 8, laneCenterY, lane.label, theme);
     drawTrace(ctx, lane.sin.points, input.loopBeats, plotLeft, plotWidth, laneCenterY, laneAmplitude, lane.sin.color);
     drawTrace(ctx, lane.cos.points, input.loopBeats, plotLeft, plotWidth, laneCenterY, laneAmplitude, lane.cos.color);
   }
 
   const cursorX = beatToCanvasX(input.tBeats, input.loopBeats, plotLeft, plotWidth);
   ctx.save();
-  ctx.strokeStyle = CURSOR_COLOR;
+  ctx.strokeStyle = palette.cursor;
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(cursorX, plotTop);
@@ -201,4 +210,3 @@ export function renderWaves(ctx: CanvasRenderingContext2D, width: number, height
   ctx.stroke();
   ctx.restore();
 }
-
