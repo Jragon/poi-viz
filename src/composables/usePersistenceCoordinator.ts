@@ -131,22 +131,38 @@ export function usePersistenceCoordinator(options: PersistenceCoordinatorOptions
 
   let syncEnabled = false;
   let syncTimerHandle: TimeoutHandle | null = null;
+  let lastPersistedStateSerialized: string | null = null;
+  let pendingStateSerialized: string | null = null;
 
   function cancelScheduledSync(): void {
     if (syncTimerHandle !== null) {
       clearTimeout(syncTimerHandle);
       syncTimerHandle = null;
     }
+    pendingStateSerialized = null;
+  }
+
+  function persistSerializedSessionState(serialized: string): void {
+    if (serialized === lastPersistedStateSerialized) {
+      return;
+    }
+
+    writeStorageValue(storage, LOCAL_STORAGE_STATE_KEY, serialized);
+    lastPersistedStateSerialized = serialized;
+    pendingStateSerialized = null;
   }
 
   function persistSessionStateNow(state: AppState): void {
-    writeStorageValue(storage, LOCAL_STORAGE_STATE_KEY, serializeState(state));
+    cancelScheduledSync();
+    persistSerializedSessionState(serializeState(state));
   }
 
   return {
     resolveHydration(defaults: AppState, currentHref: string): PersistenceHydrationResult {
       const compatibleStateStorageValue = getCompatibleStateStorageValue(storage);
       const compatiblePresetLibraryStorageValue = getCompatiblePresetLibraryStorageValue(storage);
+      lastPersistedStateSerialized = compatibleStateStorageValue;
+      pendingStateSerialized = null;
 
       return {
         initialState: resolveInitialState(defaults, currentHref, compatibleStateStorageValue),
@@ -164,9 +180,17 @@ export function usePersistenceCoordinator(options: PersistenceCoordinatorOptions
         return;
       }
 
+      const serialized = serializeState(state);
+      if (serialized === lastPersistedStateSerialized || serialized === pendingStateSerialized) {
+        return;
+      }
+
       cancelScheduledSync();
+      pendingStateSerialized = serialized;
       syncTimerHandle = setTimeout(() => {
-        persistSessionStateNow(state);
+        if (pendingStateSerialized !== null) {
+          persistSerializedSessionState(pendingStateSerialized);
+        }
         syncTimerHandle = null;
       }, debounceMs);
     },

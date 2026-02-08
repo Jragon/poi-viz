@@ -11,16 +11,19 @@ import {
 
 interface MemoryStorage extends PersistenceStorage {
   readRaw: (key: string) => string | null;
+  getSetCallCount: () => number;
 }
 
 function createMemoryStorage(initial: Record<string, string> = {}): MemoryStorage {
   const values = new Map<string, string>(Object.entries(initial));
+  let setCallCount = 0;
 
   return {
     getItem(key: string): string | null {
       return values.get(key) ?? null;
     },
     setItem(key: string, value: string): void {
+      setCallCount += 1;
       values.set(key, value);
     },
     removeItem(key: string): void {
@@ -28,6 +31,9 @@ function createMemoryStorage(initial: Record<string, string> = {}): MemoryStorag
     },
     readRaw(key: string): string | null {
       return values.get(key) ?? null;
+    },
+    getSetCallCount(): number {
+      return setCallCount;
     }
   };
 }
@@ -136,6 +142,26 @@ describe("persistence coordinator", () => {
 
     const hydrated = usePersistenceCoordinator({ storage }).resolveHydration(createDefaultState(), "https://jragon.github.io/poi-viz/");
     expect(hydrated.initialState.global.bpm).toBe(44);
+  });
+
+  it("skips persistence when only volatile transport fields change", () => {
+    const storage = createMemoryStorage();
+    const coordinator = usePersistenceCoordinator({ storage, debounceMs: 250 });
+
+    coordinator.enableSessionSync();
+
+    const baseline = createDefaultState();
+    coordinator.persistSessionStateNow(baseline);
+    expect(storage.getSetCallCount()).toBe(1);
+
+    const volatileOnlyChange = createDefaultState();
+    volatileOnlyChange.global.t = 3.5;
+    volatileOnlyChange.global.isPlaying = false;
+
+    coordinator.scheduleSessionStateSync(volatileOnlyChange);
+    vi.advanceTimersByTime(300);
+
+    expect(storage.getSetCallCount()).toBe(1);
   });
 
   it("builds share URLs without mutating the current editing URL", () => {

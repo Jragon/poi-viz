@@ -204,6 +204,21 @@ describe("App orchestration integration", () => {
     expect(new URL(window.location.href).searchParams.get("state")).toBeNull();
   });
 
+  it("persists durable state only (without playhead and playback flags)", async () => {
+    wrapper = mountApp();
+    await nextTick();
+
+    const serialized = window.localStorage.getItem(LOCAL_STORAGE_STATE_KEY);
+    expect(serialized).not.toBeNull();
+    if (!serialized) {
+      return;
+    }
+
+    const payload = JSON.parse(serialized) as { state: { global: Record<string, unknown> } };
+    expect(payload.state.global.t).toBeUndefined();
+    expect(payload.state.global.isPlaying).toBeUndefined();
+  });
+
   it("advances transport time only while playing and keeps both canvases synchronized", async () => {
     wrapper = mountApp();
     await nextTick();

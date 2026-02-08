@@ -12,17 +12,26 @@ import type { AppState, HandId, PhaseReference } from "@/types/state";
 
 export const STATE_QUERY_PARAM_KEY = "state";
 export const LOCAL_STORAGE_STATE_KEY = "poi-phase-visualiser-state";
-export const PERSISTED_STATE_SCHEMA_VERSION = 2;
+export const PERSISTED_STATE_SCHEMA_VERSION = 3;
 export const PERSISTENCE_DEBOUNCE_MS = 250;
+
+type DurableGlobalState = Pick<
+  AppState["global"],
+  "bpm" | "loopBeats" | "playSpeed" | "showTrails" | "trailBeats" | "trailSampleHz" | "showWaves" | "phaseReference"
+>;
+type DurableState = {
+  global: DurableGlobalState;
+  hands: AppState["hands"];
+};
 
 interface PersistedStatePayload {
   schemaVersion: number;
-  state: unknown;
+  state: DurableState;
 }
 
 const HAND_IDS: HandId[] = ["L", "R"];
-const GLOBAL_NUMBER_KEYS: GlobalNumberKey[] = ["bpm", "loopBeats", "playSpeed", "t", "trailBeats", "trailSampleHz"];
-const GLOBAL_BOOLEAN_KEYS: GlobalBooleanKey[] = ["isPlaying", "showTrails", "showWaves"];
+const DURABLE_GLOBAL_NUMBER_KEYS: GlobalNumberKey[] = ["bpm", "loopBeats", "playSpeed", "trailBeats", "trailSampleHz"];
+const DURABLE_GLOBAL_BOOLEAN_KEYS: GlobalBooleanKey[] = ["showTrails", "showWaves"];
 const GLOBAL_PHASE_REFERENCE_KEYS: GlobalPhaseReferenceKey[] = ["phaseReference"];
 const HAND_NUMBER_KEYS: HandNumberKey[] = ["armSpeed", "armPhase", "armRadius", "poiSpeed", "poiPhase", "poiRadius"];
 
@@ -38,10 +47,29 @@ function isPhaseReference(value: unknown): value is PhaseReference {
   return value === "right" || value === "down" || value === "left" || value === "up";
 }
 
+function projectDurableState(state: AppState): DurableState {
+  return {
+    global: {
+      bpm: state.global.bpm,
+      loopBeats: state.global.loopBeats,
+      playSpeed: state.global.playSpeed,
+      showTrails: state.global.showTrails,
+      trailBeats: state.global.trailBeats,
+      trailSampleHz: state.global.trailSampleHz,
+      showWaves: state.global.showWaves,
+      phaseReference: state.global.phaseReference
+    },
+    hands: {
+      L: { ...state.hands.L },
+      R: { ...state.hands.R }
+    }
+  };
+}
+
 function toPayload(state: AppState): PersistedStatePayload {
   return {
     schemaVersion: PERSISTED_STATE_SCHEMA_VERSION,
-    state
+    state: projectDurableState(state)
   };
 }
 
@@ -81,13 +109,13 @@ function mergeStateCandidateWithDefaults(candidate: unknown, defaults: AppState)
     merged = setGlobalPhaseReference(merged, key, maybeValue);
   }
 
-  for (const key of GLOBAL_NUMBER_KEYS) {
+  for (const key of DURABLE_GLOBAL_NUMBER_KEYS) {
     const maybeValue = globalRecord[key];
     if (isFiniteNumber(maybeValue)) {
       merged = setGlobalNumber(merged, key, maybeValue);
     }
   }
-  for (const key of GLOBAL_BOOLEAN_KEYS) {
+  for (const key of DURABLE_GLOBAL_BOOLEAN_KEYS) {
     const maybeValue = globalRecord[key];
     if (typeof maybeValue === "boolean") {
       merged = setGlobalBoolean(merged, key, maybeValue);
@@ -141,7 +169,8 @@ export function isPersistedStatePayloadCompatible(serialized: string | null): bo
 }
 
 /**
- * Serializes app state into versioned persistence payload JSON.
+ * Serializes durable app state into versioned persistence payload JSON.
+ * Transport-volatiles (`global.t`, `global.isPlaying`) are intentionally excluded.
  *
  * @param state App state to persist.
  * @returns JSON payload string safe for URL/localStorage usage.
@@ -151,7 +180,8 @@ export function serializeState(state: AppState): string {
 }
 
 /**
- * Parses serialized payload and merges valid fields with defaults.
+ * Parses serialized payload and merges valid durable fields with defaults.
+ * Transport-volatiles are always restored from `defaults`.
  *
  * @param serialized JSON payload from URL/localStorage.
  * @param defaults Default state used for schema fallback and clamps.

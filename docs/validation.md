@@ -57,12 +57,13 @@ The current persistence contract intentionally fails closed across schema breaks
 - startup clears incompatible local keys for:
   - `LOCAL_STORAGE_STATE_KEY`,
   - `PRESET_LIBRARY_STORAGE_KEY`.
+- persisted app state includes durable edit fields only; volatile transport fields (`global.t`, `global.isPlaying`) are not serialized and are restored from defaults on hydration.
 
 This keeps early-stage semantics simple and prevents mixed-reference persisted phase data after contract changes.
 
 ## Recommended Workflow For New Fixture Cases
 
-1. Add a new full `AppState` case entry in `fixtures/state-cases.json` with unique kebab-case `id`.
+1. Add a new fixture case entry in `fixtures/state-cases.json` with unique kebab-case `id` and a valid `global.phaseReference`; omitted fields hydrate from defaults.
 2. Regenerate fixtures with `npm run gen:fixtures`.
 3. Verify with `npm test`.
 4. Update docs where fixture validation expectations changed.

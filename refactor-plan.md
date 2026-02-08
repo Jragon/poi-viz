@@ -15,8 +15,9 @@ The plan prioritizes:
 
 - Engine math and core VTG classification/generation are deterministic and well-covered.
 - Runtime is currently feature-complete for single-state playback/editing and preset library workflows.
-- Fixture generation has already been moved to state-case inputs (`fixtures/state-cases.json`) plus implicit `default`.
-- Legacy preset transforms still exist in `src/state/presets.ts` and remain partial contract debt.
+- Fixture generation uses state-case inputs (`fixtures/state-cases.json`) plus implicit `default`.
+- Fixture state parsing now reuses shared persistence hydration semantics (no separate fixture schema parser).
+- Legacy preset transform contract (`src/state/presets.ts`) has been removed.
 
 ## Execution Rules
 
@@ -78,17 +79,17 @@ Eliminate `src/state/presets.ts` as a core state contract and remove preset-id A
 
 ### Goal
 
-Make fixture inputs explicit, auditable, and easy to extend manually with full-state JSON cases.
+Make fixture inputs explicit, auditable, and easy to extend manually from JSON cases.
 
 ### Scope
 
-- Add strict fixture-case validation tests:
+- Add fixture-case validation tests for:
   - duplicate ids,
   - invalid schema version,
   - invalid case id format,
-  - invalid/incomplete `AppState`.
-- Add optional JSON schema document for fixture case authoring.
-- Document authoring examples for manual fixture cases.
+  - invalid state payloads via shared persistence hydration.
+- Keep fixture parsing lean by reusing `deserializeState` semantics.
+- Document manual case authoring examples.
 
 ### File Targets
 
@@ -111,6 +112,10 @@ Make fixture inputs explicit, auditable, and easy to extend manually with full-s
 ### Goal
 
 Stop persisting and diffing volatile transport fields as if they were durable edit state.
+
+### Status
+
+Completed on 2026-02-08: persistence now serializes durable edit fields only; `global.t` and `global.isPlaying` are restored from defaults at hydration.
 
 ### Scope
 

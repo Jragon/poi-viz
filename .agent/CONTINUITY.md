@@ -293,3 +293,8 @@
 - 2026-02-08T12:33:35Z [CODE] Simplified fixture parsing by routing `src/engine/fixtureCases.ts` through `deserializeState` (persistence parser) with defaults-based merge/clamp semantics; removed bespoke full-AppState fixture validator logic and updated parser signature/callers.
 - 2026-02-08T12:33:35Z [CODE] Removed `fixtures/state-cases.schema.json` and updated fixture/docs references (`scripts/gen-fixtures.ts`, `README.md`, `docs/engine-architecture.md`, `docs/validation.md`, `src/engine/README.md`), plus fixture tests to assert lean partial-state behavior.
 - 2026-02-08T12:33:35Z [TOOL] Verified simplification with passing `npm run gen:fixtures`, `npm test` (120 passing), `npm run build`, and `npm run docs:all` (TypeDoc warnings only).
+- 2026-02-08T12:42:03Z [USER] Approved executing Phase 3 (durable-vs-volatile persistence split) immediately.
+- 2026-02-08T12:42:03Z [CODE] Implemented persistence schema v3 in `src/state/persistence.ts` with durable-state projection only; transport-volatiles (`global.t`, `global.isPlaying`) are excluded from serialization and restored from defaults on hydration.
+- 2026-02-08T12:42:03Z [CODE] Updated `src/composables/usePersistenceCoordinator.ts` to skip debounced writes when serialized durable state is unchanged, preventing playhead-only churn from transport RAF updates.
+- 2026-02-08T12:42:03Z [CODE] Expanded persistence/coordination/integration coverage (`tests/state/persistence.test.ts`, `tests/app/persistence-coordinator.test.ts`, `tests/ui/app.integration.test.ts`) and updated docs/plan (`README.md`, `docs/validation.md`, `refactor-plan.md`).
+- 2026-02-08T12:42:03Z [TOOL] Verified with passing `npm test` (124), `npm run build`, and `npm run docs:all` (TypeDoc warnings unchanged).

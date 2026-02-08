@@ -13,6 +13,21 @@ import {
 } from "@/state/persistence";
 
 describe("state persistence", () => {
+  it("serializes durable state only (excluding playhead and playback flags)", () => {
+    const state = createDefaultState();
+    state.global.t = 2.5;
+    state.global.isPlaying = false;
+    state.global.bpm = 42;
+
+    const serialized = serializeState(state);
+    const payload = JSON.parse(serialized) as { schemaVersion: number; state: { global: Record<string, unknown> } };
+
+    expect(payload.schemaVersion).toBe(PERSISTED_STATE_SCHEMA_VERSION);
+    expect(payload.state.global.bpm).toBe(42);
+    expect(payload.state.global.t).toBeUndefined();
+    expect(payload.state.global.isPlaying).toBeUndefined();
+  });
+
   it("round-trips full state through URL payload", () => {
     const state = createDefaultState();
     state.global.bpm = 42;
@@ -32,6 +47,31 @@ describe("state persistence", () => {
     expect(decoded?.global.phaseReference).toBe("up");
     expect(decoded?.hands.L.armPhase).toBeCloseTo(1.25, 10);
     expect(decoded?.hands.R.poiRadius).toBe(77);
+  });
+
+  it("restores volatile transport fields from defaults during hydration", () => {
+    const defaults = createDefaultState();
+    defaults.global.t = 11;
+    defaults.global.isPlaying = false;
+
+    const raw = JSON.stringify({
+      schemaVersion: PERSISTED_STATE_SCHEMA_VERSION,
+      state: {
+        global: {
+          phaseReference: "up",
+          t: 3,
+          isPlaying: true
+        },
+        hands: {}
+      }
+    });
+
+    const parsed = deserializeState(raw, defaults);
+
+    expect(parsed).not.toBeNull();
+    expect(parsed?.global.phaseReference).toBe("up");
+    expect(parsed?.global.t).toBe(11);
+    expect(parsed?.global.isPlaying).toBe(false);
   });
 
   it("prefers URL state over storage state when both exist", () => {
