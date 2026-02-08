@@ -38,6 +38,7 @@ At a high level:
 - renders pattern + waves from the same playhead beat,
 - centralizes persistence policy (URL-first hydration, schema compatibility purge, debounced local sync, share-link URL generation) in one coordinator service,
 - keeps root view composition thin by extracting app orchestration into `src/composables/useAppOrchestrator.ts`, which now composes focused controllers,
+- splits controls into focused panel components under `src/components/controls/` with shared numeric commit-on-blur utility (`src/composables/useNumericDrafts.ts`),
 - supports VTG descriptor generation/classification for canonical relationship states,
 - persists/share-links state and supports user preset import/export.
 
@@ -87,9 +88,10 @@ npm run docs:all
 - `src/engine/`: pure math, sampling, trails, fixtures
 - `src/vtg/`: VTG descriptor types, generator, classifier
 - `src/state/`: defaults, constants, units, actions, persistence, preset library
-- `src/composables/`: app-level orchestration units (`useTransportClock`, `usePersistenceCoordinator`, `useTransportController`, `useThemeController`, `useShareLinkController`, `usePresetLibraryController`, `useAppOrchestrator`)
+- `src/composables/`: app-level orchestration units (`useTransportClock`, `usePersistenceCoordinator`, `useTransportController`, `useThemeController`, `useShareLinkController`, `usePresetLibraryController`, `useAppOrchestrator`) plus shared UI utility (`useNumericDrafts`)
 - `src/render/`: Canvas drawing helpers
-- `src/components/`: Vue UI and panel composition
+- `src/components/`: Vue UI composition (`Controls.vue`, canvases, `VtgPanel.vue`)
+- `src/components/controls/`: focused controls panels (transport, global, hand, preset library, help)
 - `tests/`: regression coverage for engine/state/render/vtg contracts
 - `docs/`: human documentation
 - `docs/api/`: generated API reference

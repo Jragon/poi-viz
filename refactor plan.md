@@ -37,8 +37,8 @@ These are fixed unless Rory explicitly changes them:
 | E | Single Transport Clock | Completed (2026-02-08) | Exactly one RAF owner |
 | F | Persistence Centralization | Completed (2026-02-08) | Idempotent hydration + centralized policy |
 | G | Extract App Orchestration | Completed (2026-02-08) | `App.vue` becomes thin composition shell |
-| H | Split Controls | Pending | `Controls.vue` reduced and panelized |
-| I | Sequencer-Ready Gate | Pending | All checklist items satisfied |
+| H | Split Controls | Completed (2026-02-08) | `Controls.vue` reduced and panelized |
+| I | Sequencer-Ready Gate | Completed (2026-02-08) | All checklist items satisfied |
 
 ---
 
@@ -380,6 +380,28 @@ Reduce `Controls.vue` complexity and isolate domain logic from panel UI.
 - `Controls.vue` reduced significantly.
 - Shared input commit utility used across number fields.
 
+### Execution Notes
+- Completed on 2026-02-08.
+- Added shared numeric draft/commit utility:
+  - `src/composables/useNumericDrafts.ts`
+- Split controls into focused panel components:
+  - `src/components/controls/ControlsTransportPanel.vue`
+  - `src/components/controls/ControlsGlobalPanel.vue`
+  - `src/components/controls/ControlsHandPanel.vue`
+  - `src/components/controls/ControlsPresetLibraryPanel.vue`
+  - `src/components/controls/ControlsHelpPanel.vue`
+  - `src/components/controls/types.ts`
+- Refactored `src/components/Controls.vue` into a thin coordinator that composes panels, owns unit/show-advanced UI state, and forwards existing App event contracts.
+- Added panel emit-contract coverage:
+  - `tests/ui/controls-panels.integration.test.ts`
+- Existing integration suites remained green:
+  - `tests/ui/controls-input.integration.test.ts`
+  - `tests/ui/app.integration.test.ts`
+- Validation run:
+  - `npm test` (121 passing)
+  - `npm run build` (passing)
+  - `npm run docs:all` (TypeDoc warnings only)
+
 ### Risks
 - Parent/child event contract breakage.
 
@@ -394,16 +416,24 @@ Reduce `Controls.vue` complexity and isolate domain logic from panel UI.
 Verify architecture is clean enough to add VTG Phase 2 without reintroducing slop.
 
 ### Gate Checklist
-- [ ] One RAF owner.
-- [ ] No `state -> render` imports.
-- [ ] Single VTG mapping source.
-- [ ] Single conversion/wrap/clamp utility source.
-- [ ] View-only phase-reference semantics are explicit and tested.
-- [ ] Persistence centralized and hydration idempotent.
-- [ ] `App.vue` is a thin composition shell.
-- [ ] `Controls.vue` split and simplified.
-- [ ] Lean integration suite covers hydration/transport/controls/VTG apply.
-- [ ] Engine contracts and fixture regressions remain green.
+- [x] One RAF owner.
+- [x] No `state -> render` imports.
+- [x] Single VTG mapping source.
+- [x] Single conversion/wrap/clamp utility source.
+- [x] View-only phase-reference semantics are explicit and tested.
+- [x] Persistence centralized and hydration idempotent.
+- [x] `App.vue` is a thin composition shell.
+- [x] `Controls.vue` split and simplified.
+- [x] Lean integration suite covers hydration/transport/controls/VTG apply.
+- [x] Engine contracts and fixture regressions remain green.
+
+### Execution Notes
+- Completed on 2026-02-08 after Phase H closeout.
+- Verified checklist gates against current architecture and passing regression suites.
+- Final verification run:
+  - `npm test` (121 passing)
+  - `npm run build` (passing)
+  - `npm run docs:all` (TypeDoc warnings only)
 
 ---
 
@@ -422,3 +452,5 @@ Verify architecture is clean enough to add VTG Phase 2 without reintroducing slo
 - 2026-02-08: Phase G completed with App orchestration extracted into `useAppOrchestrator` and root shell simplification.
 - 2026-02-08: Stabilized phase-reference UX contract on `main` by keeping canonical state metadata-only, adding render-space orientation rotation in `PatternCanvas`, and pinning behavior with new integration coverage.
 - 2026-02-08: Fixed VTG grid/reference regression by making `generateVTGState` reference-independent (canonical-only), aligning cardinal descriptive helpers to active view reference, and adding integration coverage that reapplying identical VTG descriptors is invariant to phase-reference toggles.
+- 2026-02-08: Phase H completed by extracting controls into focused panel components and shared numeric draft/commit utility, with panel-level emit-contract tests added.
+- 2026-02-08: Phase I sequencer-ready gate completed with all checklist items satisfied and full verification green.
