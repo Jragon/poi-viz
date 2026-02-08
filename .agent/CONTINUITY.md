@@ -221,3 +221,8 @@
 - 2026-02-08T07:35:15Z [CODE] Updated `vitest.config.ts` with Vue plugin and `environmentMatchGlobs` so only `tests/ui/**/*.test.ts` runs in jsdom while existing suites remain node-based.
 - 2026-02-08T07:35:15Z [TOOL] Verified Phase A with passing `npm test` (89 tests) and `npm run build`.
 - 2026-02-08T07:35:15Z [CODE] Updated `refactor plan.md` to mark Phase A complete and logged execution notes/results.
+- 2026-02-08T07:39:44Z [CODE] Completed Refactor Phase B: unified VTG relation semantics in `src/vtg/types.ts` via `VTG_ELEMENT_RELATIONS` and updated `src/state/presets.ts` to derive element preset behavior from `getRelationForElement` instead of duplicated timing/direction flags.
+- 2026-02-08T07:39:44Z [CODE] Added shared phase utility module `src/state/phaseMath.ts` and reused it from `src/state/phaseReference.ts` and `src/vtg/classify.ts`, removing duplicated angle wrapping/distance logic.
+- 2026-02-08T07:39:44Z [CODE] Added Phase B regression coverage in `tests/state/phase-math.test.ts` and expanded `tests/state/presets.test.ts` with VTG alignment assertions.
+- 2026-02-08T07:39:44Z [TOOL] Verified Phase B with passing `npm test` (93 tests) and `npm run build`.
+- 2026-02-08T07:39:44Z [CODE] Updated `refactor plan.md` to mark Phase B complete with execution notes and validation results.

@@ -48,22 +48,24 @@ export const VTG_ELEMENTS: VTGElement[] = ["Earth", "Air", "Water", "Fire"];
 export const VTG_PHASE_BUCKETS: VTGPhaseDeg[] = [0, 90, 180, 270];
 
 /**
+ * Authoritative VTG relation mapping table.
+ * This is the single source of truth for element timing/direction semantics.
+ */
+export const VTG_ELEMENT_RELATIONS: Readonly<Record<VTGElement, VTGRelation>> = {
+  Earth: { timing: "same-time", direction: "same-direction" },
+  Air: { timing: "same-time", direction: "opposite-direction" },
+  Water: { timing: "split-time", direction: "same-direction" },
+  Fire: { timing: "split-time", direction: "opposite-direction" }
+};
+
+/**
  * Resolves timing + direction relation metadata for a VTG element label.
  *
  * @param element VTG element label.
  * @returns Timing and direction relation encoded by the element.
  */
 export function getRelationForElement(element: VTGElement): VTGRelation {
-  switch (element) {
-    case "Earth":
-      return { timing: "same-time", direction: "same-direction" };
-    case "Air":
-      return { timing: "same-time", direction: "opposite-direction" };
-    case "Water":
-      return { timing: "split-time", direction: "same-direction" };
-    case "Fire":
-      return { timing: "split-time", direction: "opposite-direction" };
-  }
+  return VTG_ELEMENT_RELATIONS[element];
 }
 
 /**
@@ -73,8 +75,11 @@ export function getRelationForElement(element: VTGElement): VTGRelation {
  * @returns VTG element label matching the relation.
  */
 export function getElementForRelation(relation: VTGRelation): VTGElement {
-  if (relation.timing === "same-time") {
-    return relation.direction === "same-direction" ? "Earth" : "Air";
+  for (const element of VTG_ELEMENTS) {
+    const candidate = VTG_ELEMENT_RELATIONS[element];
+    if (candidate.timing === relation.timing && candidate.direction === relation.direction) {
+      return element;
+    }
   }
-  return relation.direction === "same-direction" ? "Water" : "Fire";
+  throw new Error("No VTG element matches the provided relation.");
 }

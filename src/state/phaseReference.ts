@@ -1,5 +1,6 @@
-import { DEGREES_PER_TURN, degreesToRadians, radiansToDegrees } from "@/state/angleUnits";
-import { PI, TWO_PI } from "@/state/constants";
+import { degreesToRadians, radiansToDegrees } from "@/state/angleUnits";
+import { PI } from "@/state/constants";
+import { normalizeDegrees0ToTurn, normalizeRadians0ToTau } from "@/state/phaseMath";
 import type { PhaseReference } from "@/types/state";
 import type { VTGPhaseDeg } from "@/vtg/types";
 
@@ -57,13 +58,8 @@ export function referenceToCanonicalPhaseRadians(referencePhaseRadians: number, 
   return referencePhaseRadians + getPhaseReferenceOffsetRadians(phaseReference);
 }
 
-function normalizeDegrees(angleDeg: number): number {
-  const normalized = angleDeg % DEGREES_PER_TURN;
-  return normalized < 0 ? normalized + DEGREES_PER_TURN : normalized;
-}
-
 function normalizeQuarterTurnPhaseDeg(angleDeg: number): VTGPhaseDeg {
-  const normalized = normalizeDegrees(angleDeg);
+  const normalized = normalizeDegrees0ToTurn(angleDeg);
   if (normalized === 0 || normalized === 90 || normalized === 180 || normalized === 270) {
     return normalized;
   }
@@ -122,6 +118,5 @@ export function referencePhaseDegreesToCanonicalRadians(referencePhaseDegrees: n
  * @returns Wrapped canonical phase radians.
  */
 export function normalizeCanonicalPhaseRadians(phaseRadians: number): number {
-  const normalized = phaseRadians % TWO_PI;
-  return normalized < 0 ? normalized + TWO_PI : normalized;
+  return normalizeRadians0ToTau(phaseRadians);
 }

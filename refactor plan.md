@@ -31,7 +31,7 @@ These are fixed unless Rory explicitly changes them:
 | Phase | Name | Status | Gate |
 |---|---|---|---|
 | A | Safety Net Before Surgery | Completed (2026-02-08) | Integration tests added and stable |
-| B | Unify Competing Truths | Pending | Single mapping + shared math helpers |
+| B | Unify Competing Truths | Completed (2026-02-08) | Single mapping + shared math helpers |
 | C | Remove State -> Render Leak | Pending | Zero imports from `src/state` to `src/render` |
 | D | Split Phase Reference Semantics | Pending | View reference no longer mutates physical state implicitly |
 | E | Single Transport Clock | Pending | Exactly one RAF owner |
@@ -97,6 +97,22 @@ Remove duplicated mapping and duplicated conversion/wrapping logic.
 ### Acceptance Criteria
 - One mapping source only.
 - No duplicate wrap/bucket math implementations across modules.
+
+### Execution Notes
+- Completed on 2026-02-08.
+- Added shared phase math utilities in `src/state/phaseMath.ts`:
+  - `normalizeDegrees0ToTurn`
+  - `normalizeRadians0ToTau`
+  - `shortestAngularDistanceRadians`
+- Updated `src/state/phaseReference.ts` and `src/vtg/classify.ts` to reuse shared phase math helpers.
+- Consolidated VTG relation semantics to one source in `src/vtg/types.ts` via `VTG_ELEMENT_RELATIONS`.
+- Updated `src/state/presets.ts` to derive element preset behavior from VTG relations (`getRelationForElement`) instead of duplicate timing/direction flags.
+- Added/expanded tests:
+  - `tests/state/phase-math.test.ts`
+  - `tests/state/presets.test.ts` mapping-alignment coverage
+- Validation run:
+  - `npm test` (93 passing)
+  - `npm run build` (passing)
 
 ### Risks
 - Silent semantic drift if migration is partial.

@@ -8,20 +8,23 @@ import type {
   PresetDefinition
 } from "@/types/state";
 import { PETAL_COUNTS, SAME_TIME_PHASE_OFFSET, SPLIT_TIME_PHASE_OFFSET } from "@/state/constants";
+import { getRelationForElement, VTG_ELEMENTS, type VTGElement } from "@/vtg/types";
 
 interface ElementPresetContract {
   id: ElementPresetId;
   label: string;
-  sameTime: boolean;
-  sameDirection: boolean;
+  element: VTGElement;
 }
 
-const ELEMENT_PRESETS: ElementPresetContract[] = [
-  { id: "earth", label: "Earth", sameTime: true, sameDirection: true },
-  { id: "air", label: "Air", sameTime: true, sameDirection: false },
-  { id: "water", label: "Water", sameTime: false, sameDirection: true },
-  { id: "fire", label: "Fire", sameTime: false, sameDirection: false }
-];
+function toElementPresetId(element: VTGElement): ElementPresetId {
+  return element.toLowerCase() as ElementPresetId;
+}
+
+const ELEMENT_PRESETS: ElementPresetContract[] = VTG_ELEMENTS.map((element) => ({
+  id: toElementPresetId(element),
+  label: element,
+  element
+}));
 
 interface FlowerPresetContract {
   id: `${FlowerMode}-${FlowerPetalCount}`;
@@ -61,10 +64,11 @@ function getSignedValueWithMagnitude(source: number, magnitude: number): number 
 }
 
 function applyArmRelationPreset(hands: HandsState, preset: ElementPresetContract): HandsState {
+  const relation = getRelationForElement(preset.element);
   const rightArmSpeedMagnitude = Math.abs(hands.R.armSpeed);
   const leftArmSpeedWithRightDirection = getSignedValueWithMagnitude(hands.R.armSpeed, rightArmSpeedMagnitude);
-  const leftArmSpeed = preset.sameDirection ? leftArmSpeedWithRightDirection : -leftArmSpeedWithRightDirection;
-  const phaseOffset = preset.sameTime ? SAME_TIME_PHASE_OFFSET : SPLIT_TIME_PHASE_OFFSET;
+  const leftArmSpeed = relation.direction === "same-direction" ? leftArmSpeedWithRightDirection : -leftArmSpeedWithRightDirection;
+  const phaseOffset = relation.timing === "same-time" ? SAME_TIME_PHASE_OFFSET : SPLIT_TIME_PHASE_OFFSET;
 
   return {
     R: { ...hands.R },

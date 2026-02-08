@@ -1,4 +1,8 @@
-import { PI, TWO_PI } from "@/state/constants";
+import { PI } from "@/state/constants";
+import {
+  normalizeRadians0ToTau,
+  shortestAngularDistanceRadians as shortestWrappedAngularDistanceRadians
+} from "@/state/phaseMath";
 import type { AppState } from "@/types/state";
 import { getElementForRelation, type VTGDescriptor, type VTGDirection, type VTGElement, type VTGPhaseDeg, type VTGTiming } from "@/vtg/types";
 
@@ -77,28 +81,8 @@ const ELEMENT_CARDINAL_GEOMETRY: Record<VTGElement, CardinalGeometryDescription>
   }
 };
 
-/**
- * Normalizes an angle to the [0, 2π) range.
- *
- * @param angle Angle in radians.
- * @returns Wrapped angle in `[0, 2π)`.
- */
-export function normalizeAngleRadians(angle: number): number {
-  const normalized = angle % TWO_PI;
-  return normalized < ZERO ? normalized + TWO_PI : normalized;
-}
-
-/**
- * Smallest absolute wrapped angular distance between two angles.
- *
- * @param a First angle in radians.
- * @param b Second angle in radians.
- * @returns Absolute shortest wrapped distance in radians.
- */
-export function shortestAngularDistanceRadians(a: number, b: number): number {
-  const wrappedDelta = normalizeAngleRadians(a - b);
-  return Math.min(wrappedDelta, TWO_PI - wrappedDelta);
-}
+export const normalizeAngleRadians = normalizeRadians0ToTau;
+export const shortestAngularDistanceRadians = shortestWrappedAngularDistanceRadians;
 
 /**
  * Classifies a sign relationship as same-direction or opposite-direction.

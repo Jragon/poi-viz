@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import { createDefaultState } from "@/state/defaults";
 import { applyElementPreset, applyFlowerModePreset } from "@/state/presets";
 import { SAME_TIME_PHASE_OFFSET, SPLIT_TIME_PHASE_OFFSET } from "@/state/constants";
+import type { ElementPresetId } from "@/types/state";
+import { classifyArmElement } from "@/vtg/classify";
+import { VTG_ELEMENTS } from "@/vtg/types";
 
 describe("element presets", () => {
   it("earth sets same time, same direction", () => {
@@ -34,6 +37,16 @@ describe("element presets", () => {
 
     expect(next.hands.L.armPhase).toBeCloseTo(next.hands.R.armPhase + SPLIT_TIME_PHASE_OFFSET, 10);
     expect(Math.sign(next.hands.R.armSpeed)).toBe(-Math.sign(next.hands.L.armSpeed));
+  });
+
+  it("keeps element preset ids aligned with VTG element mapping", () => {
+    const state = createDefaultState();
+
+    for (const element of VTG_ELEMENTS) {
+      const presetId = element.toLowerCase() as ElementPresetId;
+      const next = applyElementPreset(state, presetId);
+      expect(classifyArmElement(next)).toBe(element);
+    }
   });
 });
 
