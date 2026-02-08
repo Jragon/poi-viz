@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "gen:fixtures": "tsx scripts/gen-fixtures.ts",
-    "lint": "eslint \"src/{engine,vtg,state}/**/*.ts\"",
+    "lint": "eslint \"src/{engine,vtg,state,render,composables}/**/*.{ts,tsx}\"",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:api": "typedoc",

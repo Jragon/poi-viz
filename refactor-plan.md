@@ -242,23 +242,67 @@ Remove full-loop recomputation on every cursor redraw.
 
 Prevent future cross-layer coupling regressions.
 
+### Status
+
+Completed on 2026-02-08: lint now enforces import boundaries for `engine`/`vtg`/`state`/`render`/`composables`; known leaks were removed (`useTransportController` no longer imports `render`, and shared quarter-turn bucket typing moved into `src/types/state.ts` so `state` no longer depends on `vtg`).
+
+### Why This Phase Exists
+
+The repo now has enough moving parts that accidental cross-layer imports will silently create long-term coupling debt. We already have at least one active leak (`src/composables/useTransportController.ts` importing `normalizeLoopBeat` from `src/render/math.ts`), so this phase must lock boundaries before sequencer work starts.
+
+### Boundary Contract (Target)
+
+| Source zone | Can import | Cannot import | Notes |
+| --- | --- | --- | --- |
+| `src/engine/**` | `src/engine/**`, `src/types/**`, selected `src/state/**` constants/helpers explicitly listed | `src/components/**`, `src/composables/**`, `src/render/**` | Keep math/runtime core UI-agnostic. |
+| `src/vtg/**` | `src/vtg/**`, `src/types/**`, pure math helpers from `src/state/**` | `src/components/**`, `src/composables/**`, `src/render/**` | VTG remains domain logic, not UI logic. |
+| `src/state/**` | `src/state/**`, `src/types/**` | `src/components/**`, `src/composables/**`, `src/render/**`, `src/vtg/**` | State must not depend on higher-level domains. |
+| `src/render/**` | `src/render/**`, `src/engine/**`, `src/types/**`, read-only theme/constants | `src/components/**`, `src/composables/**` | Render is pure projection; no orchestration concerns. |
+| `src/composables/**` | `src/composables/**`, `src/state/**`, `src/engine/**`, `src/vtg/**`, `src/types/**` | `src/components/**`, `src/render/**` | Composables orchestrate state/domain, not render math internals. |
+| `src/components/**`, `src/App.vue` | Any lower layer | n/a | UI edge may consume all lower layers. |
+
 ### Scope
 
-- Add ESLint import restrictions for architectural boundaries:
-  - `engine` cannot import from UI/composables/render.
-  - composables cannot depend on render utility modules for domain math.
-  - state utilities cannot depend on component modules.
-- Fix any violations discovered.
+- Define and document architectural import boundaries as lint-enforced policy.
+- Remove known violations before enabling hard-fail lint rules.
+- Expand lint coverage so boundary checks run on all relevant folders, not only `engine/vtg/state`.
+
+### Implementation Plan
+
+1. Baseline and classify current imports.
+   - Run one import scan for `src/{engine,vtg,state,render,composables,components}`.
+   - Record violations and intentional exceptions before changing rules.
+2. Remove immediate leaks.
+   - In `src/composables/useTransportController.ts`, import `normalizeLoopBeat` from `src/state/beatMath.ts` directly, not via `src/render/math.ts`.
+   - Remove `src/state/phaseReference.ts` dependency on `src/vtg/types.ts` (`VTGPhaseDeg`) by moving that quarter-turn bucket type to a shared location (`src/types/state.ts` or a new neutral shared type module).
+3. Add ESLint boundary rules with `no-restricted-imports` using per-folder `files` blocks in `eslint.config.mjs`.
+   - Keep rules explicit by folder and alias path (for example `@/components/*`, `@/render/*`).
+   - Add narrow allowlist exceptions only where architecturally justified (for example fixture integration utilities if needed).
+4. Expand lint command coverage.
+   - Update `package.json` `lint` script to include `src/{engine,vtg,state,render,composables}/**/*.{ts,tsx}` (and optionally component scripts if practical).
+   - Ensure CI/local checks fail on boundary violations.
+5. Lock with tests/docs.
+   - Add one lint-focused regression test or script assertion if needed.
+   - Update `README.md` and `docs/engine-architecture.md` (or equivalent architecture docs) with the enforced import policy.
 
 ### File Targets
 
 - `eslint.config.mjs`
-- `src/composables/useTransportController.ts` (remove render import coupling if still present)
-- boundary-touching modules surfaced by lint.
+- `package.json` (lint scope)
+- `src/composables/useTransportController.ts`
+- `src/state/phaseReference.ts`
+- `src/types/state.ts` (if shared type is moved here)
+- boundary-touching modules surfaced by lint baseline
+- `README.md`
+- `docs/engine-architecture.md` (or most relevant architecture page)
 
 ### Exit Criteria
 
-- Boundary violations fail lint automatically.
+- Lint fails automatically for cross-layer imports that violate the boundary contract.
+- `src/composables/useTransportController.ts` no longer imports from `src/render/**`.
+- `src/state/**` no longer imports from `src/vtg/**`.
+- `npm run lint`, `npm test`, `npm run build`, and `npm run docs:all` all pass.
+- Boundary policy is written down in docs and matches ESLint rules (no drift).
 
 ---
 

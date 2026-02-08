@@ -19,6 +19,9 @@ function getSystemPreferredTheme(): Theme {
 
 /**
  * Resolves the initial app theme from persisted storage, then system preference.
+ *
+ * @param storedTheme Raw stored theme value from browser storage.
+ * @returns Resolved app theme.
  */
 export function resolveInitialTheme(storedTheme: string | null): Theme {
   if (isTheme(storedTheme)) {
@@ -29,6 +32,9 @@ export function resolveInitialTheme(storedTheme: string | null): Theme {
 
 /**
  * Applies theme metadata to the document root so CSS and native form controls match.
+ *
+ * @param theme Theme to apply to the document root.
+ * @returns Nothing.
  */
 export function applyThemeToDocument(theme: Theme): void {
   if (typeof document === "undefined") {
@@ -40,6 +46,12 @@ export function applyThemeToDocument(theme: Theme): void {
   root.style.colorScheme = theme;
 }
 
+/**
+ * Returns the next theme in a two-theme toggle cycle.
+ *
+ * @param theme Current app theme.
+ * @returns Opposite theme.
+ */
 export function getNextTheme(theme: Theme): Theme {
   return theme === DARK_THEME ? LIGHT_THEME : DARK_THEME;
 }

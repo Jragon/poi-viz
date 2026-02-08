@@ -1,7 +1,7 @@
 import { useTransportClock } from "@/composables/useTransportClock";
 import { secondsToBeats } from "@/engine/math";
-import { normalizeLoopBeat } from "@/render/math";
 import { advancePlayhead as advancePlayheadByBeats, setGlobalBoolean, setScrubBeat, togglePlayback } from "@/state/actions";
+import { normalizeLoopBeat } from "@/state/beatMath";
 import type { AppState } from "@/types/state";
 import { computed, type ComputedRef, type Ref } from "vue";
 

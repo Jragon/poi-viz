@@ -1,8 +1,7 @@
 import { degreesToRadians, radiansToDegrees } from "@/state/angleUnits";
 import { PI } from "@/state/constants";
 import { normalizeDegrees0ToTurn, normalizeRadians0ToTau } from "@/state/phaseMath";
-import type { PhaseReference } from "@/types/state";
-import type { VTGPhaseDeg } from "@/vtg/types";
+import type { PhaseReference, QuarterTurnPhaseDeg } from "@/types/state";
 
 const QUARTER_TURN_DEGREES = 90;
 const HALF_TURN_DEGREES = 180;
@@ -19,7 +18,7 @@ const PHASE_REFERENCE_OFFSET_RADIANS: Record<PhaseReference, number> = {
   up: PI / 2
 };
 
-const PHASE_REFERENCE_OFFSET_DEGREES: Record<PhaseReference, VTGPhaseDeg> = {
+const PHASE_REFERENCE_OFFSET_DEGREES: Record<PhaseReference, QuarterTurnPhaseDeg> = {
   right: 0,
   down: THREE_QUARTER_TURN_DEGREES,
   left: HALF_TURN_DEGREES,
@@ -58,7 +57,7 @@ export function referenceToCanonicalPhaseRadians(referencePhaseRadians: number, 
   return referencePhaseRadians + getPhaseReferenceOffsetRadians(phaseReference);
 }
 
-function normalizeQuarterTurnPhaseDeg(angleDeg: number): VTGPhaseDeg {
+function normalizeQuarterTurnPhaseDeg(angleDeg: number): QuarterTurnPhaseDeg {
   const normalized = normalizeDegrees0ToTurn(angleDeg);
   if (normalized === 0 || normalized === 90 || normalized === 180 || normalized === 270) {
     return normalized;
@@ -73,7 +72,10 @@ function normalizeQuarterTurnPhaseDeg(angleDeg: number): VTGPhaseDeg {
  * @param phaseReference User-facing phase-zero reference.
  * @returns Reference-relative bucket (`0/90/180/270`).
  */
-export function canonicalPhaseBucketToReference(phaseDeg: VTGPhaseDeg, phaseReference: PhaseReference): VTGPhaseDeg {
+export function canonicalPhaseBucketToReference(
+  phaseDeg: QuarterTurnPhaseDeg,
+  phaseReference: PhaseReference
+): QuarterTurnPhaseDeg {
   return normalizeQuarterTurnPhaseDeg(phaseDeg - PHASE_REFERENCE_OFFSET_DEGREES[phaseReference]);
 }
 
@@ -84,7 +86,10 @@ export function canonicalPhaseBucketToReference(phaseDeg: VTGPhaseDeg, phaseRefe
  * @param phaseReference User-facing phase-zero reference.
  * @returns Canonical bucket (`right = 0`).
  */
-export function referencePhaseBucketToCanonical(phaseDeg: VTGPhaseDeg, phaseReference: PhaseReference): VTGPhaseDeg {
+export function referencePhaseBucketToCanonical(
+  phaseDeg: QuarterTurnPhaseDeg,
+  phaseReference: PhaseReference
+): QuarterTurnPhaseDeg {
   return normalizeQuarterTurnPhaseDeg(phaseDeg + PHASE_REFERENCE_OFFSET_DEGREES[phaseReference]);
 }
 

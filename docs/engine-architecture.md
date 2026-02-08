@@ -22,6 +22,18 @@ Engine modules are pure TypeScript and framework-agnostic.
 Public barrel:
 - `src/engine/engine.ts` re-exports the supported engine API.
 
+## Import Boundaries
+
+Layer boundaries are lint-enforced to keep engine math isolated from UI/runtime orchestration concerns.
+
+- `src/engine/**` cannot import `src/components/**`, `src/composables/**`, or `src/render/**`.
+- `src/vtg/**` cannot import `src/components/**`, `src/composables/**`, or `src/render/**`.
+- `src/state/**` cannot import `src/components/**`, `src/composables/**`, `src/render/**`, or `src/vtg/**`.
+- `src/render/**` cannot import `src/components/**` or `src/composables/**`.
+- `src/composables/**` cannot import `src/components/**` or `src/render/**`.
+
+Boundary rules are defined in `eslint.config.mjs` and executed through `npm run lint`.
+
 ## Data Flow
 
 1. Input contract is `EngineParams` from `src/engine/types.ts`.

@@ -315,3 +315,9 @@
 - 2026-02-08T13:01:09Z [CODE] Expanded VTG tests with phase-reference invariance assertions in `tests/vtg/classify.test.ts` and dedicated conversion-contract tests in `tests/vtg/types.test.ts`.
 - 2026-02-08T13:01:09Z [CODE] Updated VTG docs and plan tracking (`README.md`, `docs/index.md`, `docs/vtg-layer.md`, `refactor-plan.md`) to reflect authoritative-vs-descriptive separation and formal cycle semantics.
 - 2026-02-08T13:01:09Z [TOOL] Verified with passing `npm test` (130), `npm run build`, and `npm run docs:all` (TypeDoc warnings unchanged).
+- 2026-02-08T13:22:15Z [USER] Requested Phase 7 planning detail only (no implementation yet), specifically the final pre-sequencer phase.
+- 2026-02-08T13:22:15Z [CODE] Rewrote Phase 7 in `refactor-plan.md` into an execution-ready boundary-enforcement plan: explicit import-layer contract, concrete leak fixes (`useTransportController` render import and `state -> vtg` type dependency), ESLint rule rollout steps, lint-scope expansion, docs targets, and measurable exit criteria.
+- 2026-02-08T13:26:16Z [USER] Requested immediate Phase 7 implementation ("phase 77 implement then").
+- 2026-02-08T13:26:16Z [CODE] Implemented import-boundary enforcement: expanded lint scope to include `render`/`composables`, added per-layer `no-restricted-imports` rules in `eslint.config.mjs`, removed composable->render coupling in `src/composables/useTransportController.ts`, and moved quarter-turn phase bucket typing to `src/types/state.ts` so `src/state/phaseReference.ts` no longer imports from `src/vtg/**`.
+- 2026-02-08T13:26:16Z [CODE] Updated architecture docs and tracking (`README.md`, `docs/engine-architecture.md`, `refactor-plan.md`) to document lint-enforced layer boundaries and mark Phase 7 completed.
+- 2026-02-08T13:26:16Z [TOOL] Verified Phase 7 gates with passing `npm run lint`, `npm test` (130), `npm run build`, and `npm run docs:all` (TypeDoc warnings only; no errors).

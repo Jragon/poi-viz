@@ -1,4 +1,5 @@
 import { TWO_PI } from "@/state/constants";
+import type { QuarterTurnPhaseDeg } from "@/types/state";
 
 /**
  * Discrete VTG element labels used for both arm and poi-head relationships.
@@ -8,7 +9,7 @@ export type VTGElement = "Earth" | "Air" | "Water" | "Fire";
 /**
  * Discrete VTG phase buckets in degrees.
  */
-export type VTGPhaseDeg = 0 | 90 | 180 | 270;
+export type VTGPhaseDeg = QuarterTurnPhaseDeg;
 
 /**
  * Canonical right-arm angular speed used by VTG generator contracts (`1 arm cycle / beat`).

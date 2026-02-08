@@ -41,6 +41,7 @@ At a high level:
 - persists durable edit state only (transport-volatiles `global.t` and `global.isPlaying` are runtime-only and restored from defaults),
 - keeps preset-library and preset-file payloads durable-only under the same volatile-field policy,
 - keeps root view composition thin by extracting app orchestration into `src/composables/useAppOrchestrator.ts`, which now composes focused controllers,
+- enforces architectural import boundaries in lint (`engine`, `vtg`, `state`, `render`, `composables`) to block cross-layer coupling regressions,
 - splits controls into focused panel components under `src/components/controls/` with shared numeric commit-on-blur utility (`src/composables/useNumericDrafts.ts`),
 - supports VTG descriptor generation/classification for canonical relationship states,
 - persists/share-links state and supports user preset import/export.

@@ -47,6 +47,13 @@ function isPhaseReference(value: unknown): value is PhaseReference {
   return value === "right" || value === "down" || value === "left" || value === "up";
 }
 
+/**
+ * Projects full app state into durable persistence fields.
+ * Transport-volatiles (`global.t`, `global.isPlaying`) are intentionally omitted.
+ *
+ * @param state Canonical app state.
+ * @returns Durable persistence payload state.
+ */
 export function projectDurableState(state: AppState): PersistedDurableState {
   return {
     global: {

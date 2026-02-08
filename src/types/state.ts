@@ -10,6 +10,11 @@ export type HandId = "L" | "R";
 export type PhaseReference = "right" | "down" | "left" | "up";
 
 /**
+ * Discrete quarter-turn phase bucket in degrees.
+ */
+export type QuarterTurnPhaseDeg = 0 | 90 | 180 | 270;
+
+/**
  * Global runtime state.
  * Time-domain units are beats for loop/playhead fields.
  */
