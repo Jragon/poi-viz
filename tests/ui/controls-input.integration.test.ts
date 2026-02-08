@@ -2,6 +2,7 @@ import { mount, type VueWrapper } from "@vue/test-utils";
 import { defineComponent } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import Controls from "@/components/Controls.vue";
+import { setGlobalPhaseReference } from "@/state/actions";
 import { createDefaultState } from "@/state/defaults";
 import type { AppState } from "@/types/state";
 
@@ -45,6 +46,42 @@ function findNumberInputByLabel(wrapper: VueWrapper, labelText: string) {
   return input;
 }
 
+const ControlsHarness = defineComponent({
+  name: "ControlsHarness",
+  components: { Controls },
+  data() {
+    const state = createDefaultState();
+    state.hands.L.armPhase = Math.PI / 4;
+    return {
+      state
+    };
+  },
+  methods: {
+    onSetPhaseReference(nextValue: "right" | "down" | "left" | "up"): void {
+      this.state = setGlobalPhaseReference(this.state, "phaseReference", nextValue);
+    }
+  },
+  template: `
+    <Controls
+      :state="state"
+      :looped-playhead-beats="0"
+      :scrub-step="0.01"
+      :is-static-view="false"
+      :user-presets="[]"
+      :preset-library-status="''"
+      @set-phase-reference="onSetPhaseReference"
+    />
+  `
+});
+
+function findButtonByText(wrapper: VueWrapper, text: string) {
+  const button = wrapper.findAll("button").find((candidate) => candidate.text() === text);
+  if (!button) {
+    throw new Error(`Expected button "${text}"`);
+  }
+  return button;
+}
+
 describe("Controls numeric commit integration", () => {
   let wrapper: VueWrapper | null = null;
 
@@ -79,5 +116,24 @@ describe("Controls numeric commit integration", () => {
 
     const emitted = wrapper.emitted("set-global-number") ?? [];
     expect(emitted.some((args) => args[0] === "loopBeats" && args[1] === 6)).toBe(true);
+  });
+
+  it("keeps hand phase input display stable when global phase-reference changes", async () => {
+    wrapper = mount(ControlsHarness, {
+      global: {
+        stubs: {
+          VtgPanel: VtgPanelStub
+        }
+      }
+    });
+
+    const armPhaseInputBefore = findNumberInputByLabel(wrapper, "Arm Phase");
+    const beforeValue = armPhaseInputBefore.element.value;
+    expect(beforeValue).not.toBe("");
+
+    await findButtonByText(wrapper, "Up").trigger("click");
+
+    const armPhaseInputAfter = findNumberInputByLabel(wrapper, "Arm Phase");
+    expect(armPhaseInputAfter.element.value).toBe(beforeValue);
   });
 });

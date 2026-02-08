@@ -1,12 +1,8 @@
 <script setup lang="ts">
 import VtgPanel from "@/components/VtgPanel.vue";
-import type { AngleUnit } from "@/state/angleUnits";
+import { degreesToRadians, radiansToDegrees, type AngleUnit } from "@/state/angleUnits";
 import {
   PHASE_REFERENCE_OPTIONS,
-  canonicalPhaseRadiansToReferenceDegrees,
-  canonicalToReferencePhaseRadians,
-  referencePhaseDegreesToCanonicalRadians,
-  referenceToCanonicalPhaseRadians
 } from "@/state/phaseReference";
 import type { UserPresetSummary } from "@/state/presetLibrary";
 import {
@@ -292,9 +288,9 @@ function convertHandValueForDisplay(field: HandNumberFieldConfig, valueInState: 
     return speedFromRadiansPerBeat(valueInState, speedUnit.value);
   }
   if (phaseUnit.value === "radians") {
-    return canonicalToReferencePhaseRadians(valueInState, props.state.global.phaseReference);
+    return valueInState;
   }
-  return canonicalPhaseRadiansToReferenceDegrees(valueInState, props.state.global.phaseReference);
+  return radiansToDegrees(valueInState);
 }
 
 function convertHandValueForState(field: HandNumberFieldConfig, inputValue: number): number {
@@ -305,9 +301,9 @@ function convertHandValueForState(field: HandNumberFieldConfig, inputValue: numb
     return speedToRadiansPerBeat(inputValue, speedUnit.value);
   }
   if (phaseUnit.value === "radians") {
-    return referenceToCanonicalPhaseRadians(inputValue, props.state.global.phaseReference);
+    return inputValue;
   }
-  return referencePhaseDegreesToCanonicalRadians(inputValue, props.state.global.phaseReference);
+  return degreesToRadians(inputValue);
 }
 
 function getHandDisplayValue(handId: HandId, field: HandNumberFieldConfig): number {

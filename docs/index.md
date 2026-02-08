@@ -31,6 +31,7 @@ Primary modules:
 - `src/composables/useShareLinkController.ts` export `useShareLinkController`.
 - `src/composables/usePresetLibraryController.ts` export `usePresetLibraryController`.
 - `src/composables/useAppOrchestrator.ts` export `useAppOrchestrator`.
+- `src/render/viewTransform.ts` exports render-space rotation helpers for phase-reference orientation.
 
 Representative validating tests:
 - `tests/engine/invariants.test.ts`
@@ -40,6 +41,8 @@ Representative validating tests:
 - `tests/state/persistence.test.ts`
 - `tests/app/persistence-coordinator.test.ts`
 - `tests/ui/app-orchestrator.integration.test.ts`
+- `tests/ui/canvas-clock.integration.test.ts`
+- `tests/render/view-transform.test.ts`
 
 ## Reading Order
 

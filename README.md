@@ -20,6 +20,7 @@ Phase-reference note:
 - engine internals remain canonical (`right = 0`),
 - global phase-zero semantics are reference-relative (`right|down|left|up`, default `down`),
 - changing global phase-zero updates UI/interpretation semantics only (it does not mutate canonical arm/poi phases),
+- pattern viewport orientation is rotated in render-space from `global.phaseReference` so phase-zero changes are visible without mutating canonical channels,
 - this is a coordinate-reference setting, not a math-model fork.
 - VTG element mapping is relation-based: Earth=`same-time+same-direction`, Air=`same-time+opposite-direction`, Water=`split-time+same-direction`, Fire=`split-time+opposite-direction`.
 - VTG `phaseDeg` is a poi-head offset bucket relative to hand phase (used to rotate poi pattern modes like box/diamond without changing hand timing).

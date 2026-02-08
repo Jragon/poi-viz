@@ -43,6 +43,7 @@ The app applies a global reference transform at UI/VTG/state boundaries:
   - `φ_reference = φ_canonical - offset(reference)`
   - `φ_canonical = φ_reference + offset(reference)`
 - Changing `global.phaseReference` updates reference metadata only; canonical arm/poi phases are not mutated.
+- Pattern viewport orientation changes are applied as a render-space rotation derived from `global.phaseReference`.
 - Default offset is `down = 270°` (`3π/2`), so user-entered `0°` points down.
 
 This is a pure coordinate transform; it does not change oscillator equations or deterministic sampling behavior.

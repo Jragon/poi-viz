@@ -256,3 +256,11 @@
 - 2026-02-08T10:17:48Z [USER] Requested composable-standard consistency and asked why `transportClock.ts` and `persistenceCoordinator.ts` differed from other `use*` composables.
 - 2026-02-08T10:17:48Z [CODE] Standardized composable naming by renaming to `src/composables/useTransportClock.ts` and `src/composables/usePersistenceCoordinator.ts` and updating imports/usages/tests/docs to `use*` conventions.
 - 2026-02-08T10:17:48Z [TOOL] Verified naming-standardization changes with passing `npm test` (112 tests), `npm run build`, and `npm run docs:all` (TypeDoc warnings only).
+- 2026-02-08T11:15:04Z [TOOL] Compared `main` vs `fucked`: `fucked` adds typed provide/inject control contexts and panel extraction plus render-space phase-reference rotation (`src/components/PatternCanvas.vue`, `src/render/viewTransform.ts`); no branch diff in `src/state/actions.ts`, `src/state/phaseReference.ts`, or phase semantics tests.
+- 2026-02-08T11:15:04Z [CODE] Identified current hand-value changes on phase-zero toggles as UI display conversion behavior (phase fields rendered reference-relative), not canonical state mutation.
+- 2026-02-08T11:23:54Z [USER] Directed continuation from `main` without reintroducing provide/inject refactor and requested phase-reference behavior where global phase updates view only (no hand-value rewrites) with integration coverage.
+- 2026-02-08T11:23:54Z [CODE] Updated `src/components/Controls.vue` hand-phase conversions to be canonical-unit based (degrees/radians only), removing display coupling between hand phase fields and `global.phaseReference`.
+- 2026-02-08T11:23:54Z [CODE] Added render-space phase-reference orientation rotation in `src/components/PatternCanvas.vue` using new pure helpers in `src/render/viewTransform.ts`.
+- 2026-02-08T11:23:54Z [CODE] Added regression coverage in `tests/render/view-transform.test.ts`, `tests/ui/canvas-clock.integration.test.ts`, and `tests/ui/controls-input.integration.test.ts` for view rotation and stable hand-phase display under phase-reference toggles.
+- 2026-02-08T11:23:54Z [TOOL] Verified with passing `npm test` (116 tests), `npm run build`, and `npm run docs:all` (TypeDoc warnings unchanged).
+- 2026-02-08T11:23:54Z [CODE] Updated docs in `README.md`, `docs/math-model.md`, `docs/index.md`, and refreshed `refactor plan.md` change log.

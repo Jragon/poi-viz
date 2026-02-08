@@ -1,6 +1,6 @@
 # Refactor Plan (Pre-Sequencer Baseline)
 
-Last updated: 2026-02-08 (Phase G decomposition hardening complete)  
+Last updated: 2026-02-08 (Phase-reference render-view stabilization pass)  
 Owner: Rory + Codex  
 Mode: One phase at a time, no bundled mega-refactors
 
@@ -420,3 +420,4 @@ Verify architecture is clean enough to add VTG Phase 2 without reintroducing slo
 - 2026-02-08: Phase E completed with single transport clock ownership and canvas RAF removal.
 - 2026-02-08: Phase F completed with centralized persistence policy and idempotent hydration coverage.
 - 2026-02-08: Phase G completed with App orchestration extracted into `useAppOrchestrator` and root shell simplification.
+- 2026-02-08: Stabilized phase-reference UX contract on `main` by keeping canonical state metadata-only, adding render-space orientation rotation in `PatternCanvas`, and pinning behavior with new integration coverage.

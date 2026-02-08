@@ -3,6 +3,8 @@ import { advanceTrailSampler, createTrailSampler, getPositions, getTrailPoints, 
 import { renderPattern } from "@/render/patternRenderer";
 import { buildStaticTrailSeries } from "@/render/staticTrails";
 import type { TrailSeries } from "@/render/types";
+import { rotatePositions, rotateTrailSeries } from "@/render/viewTransform";
+import { getPhaseReferenceOffsetRadians } from "@/state/phaseReference";
 import type { Theme } from "@/state/theme";
 import type { AppState } from "@/types/state";
 import { onBeforeUnmount, onMounted, ref, watchEffect } from "vue";
@@ -18,6 +20,7 @@ const props = defineProps<PatternCanvasProps>();
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const EMPTY_TRAILS: TrailSeries = { L: [], R: [] };
+const VIEW_ROTATION_EPSILON = 1e-9;
 
 let resizeObserver: ResizeObserver | null = null;
 let trailSampler: TrailSamplerState | null = null;
@@ -108,12 +111,16 @@ function drawFrame(): void {
   }
 
   const shouldRenderTrails = props.state.global.showTrails || props.isStaticView;
-  const positions = getPositions(params, props.tBeats);
+  const viewRotationRadians = getPhaseReferenceOffsetRadians(props.state.global.phaseReference);
+  const shouldRotateView = Math.abs(viewRotationRadians) > VIEW_ROTATION_EPSILON;
+  const rawPositions = getPositions(params, props.tBeats);
+  const positions = shouldRotateView ? rotatePositions(rawPositions, viewRotationRadians) : rawPositions;
+  const renderTrails = shouldRenderTrails && shouldRotateView ? rotateTrailSeries(trails, viewRotationRadians) : trails;
 
   renderPattern(context, canvas.width, canvas.height, {
     hands: props.state.hands,
     positions,
-    trails: shouldRenderTrails ? trails : EMPTY_TRAILS,
+    trails: shouldRenderTrails ? renderTrails : EMPTY_TRAILS,
     showTrails: shouldRenderTrails
   }, props.theme);
 }

@@ -75,6 +75,55 @@ describe("Canvas timing ownership", () => {
     wrapper.unmount();
   });
 
+  it("PatternCanvas rotates rendered positions when phase-reference changes", async () => {
+    const stateRight = createDefaultState();
+    stateRight.global.phaseReference = "right";
+    stateRight.global.showTrails = false;
+
+    const wrapper = mount(PatternCanvas, {
+      props: {
+        state: stateRight,
+        tBeats: 0,
+        isStaticView: false,
+        theme: "dark"
+      }
+    });
+
+    await nextTick();
+
+    const rightCall = renderPatternMock.mock.calls.at(-1);
+    expect(rightCall).toBeTruthy();
+    const rightInput = rightCall?.[3];
+    expect(rightInput).toBeTruthy();
+    if (!rightInput) {
+      wrapper.unmount();
+      return;
+    }
+
+    const stateUp = createDefaultState();
+    stateUp.global.phaseReference = "up";
+    stateUp.global.showTrails = false;
+
+    await wrapper.setProps({ state: stateUp });
+    await nextTick();
+
+    const upCall = renderPatternMock.mock.calls.at(-1);
+    expect(upCall).toBeTruthy();
+    const upInput = upCall?.[3];
+    expect(upInput).toBeTruthy();
+    if (!upInput) {
+      wrapper.unmount();
+      return;
+    }
+
+    expect(upInput.positions.R.hand.x).toBeCloseTo(-rightInput.positions.R.hand.y, 10);
+    expect(upInput.positions.R.hand.y).toBeCloseTo(rightInput.positions.R.hand.x, 10);
+    expect(upInput.positions.R.head.x).toBeCloseTo(-rightInput.positions.R.head.y, 10);
+    expect(upInput.positions.R.head.y).toBeCloseTo(rightInput.positions.R.head.x, 10);
+
+    wrapper.unmount();
+  });
+
   it("WaveCanvas redraws from prop/state invalidation without owning RAF", async () => {
     const state = createDefaultState();
     state.global.showWaves = true;
