@@ -1,4 +1,4 @@
-import { createPersistenceCoordinator } from "@/composables/persistenceCoordinator";
+import { usePersistenceCoordinator } from "@/composables/usePersistenceCoordinator";
 import { usePresetLibraryController, type ExportPresetRequest } from "@/composables/usePresetLibraryController";
 import { useShareLinkController } from "@/composables/useShareLinkController";
 import { useThemeController } from "@/composables/useThemeController";
@@ -53,7 +53,7 @@ export interface AppOrchestrator {
 export function useAppOrchestrator(): AppOrchestrator {
   const state = reactive(createDefaultState());
   const isStaticView = ref(false);
-  const persistenceCoordinator = createPersistenceCoordinator();
+  const persistenceCoordinator = usePersistenceCoordinator();
 
   function commitState(nextState: AppState): void {
     state.global = nextState.global;

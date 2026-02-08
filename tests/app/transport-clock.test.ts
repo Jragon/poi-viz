@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createTransportClock } from "@/composables/transportClock";
+import { useTransportClock } from "@/composables/useTransportClock";
 
 let queuedRafCallbacks = new Map<number, FrameRequestCallback>();
 let nextRafId = 1;
@@ -35,7 +35,7 @@ function runAnimationFrame(frameTimeMs: number): void {
   }
 }
 
-describe("createTransportClock", () => {
+describe("useTransportClock", () => {
   beforeEach(() => {
     installMockRaf();
   });
@@ -46,7 +46,7 @@ describe("createTransportClock", () => {
 
   it("starts once, emits frame delta seconds, and stops cleanly", () => {
     const onTick = vi.fn();
-    const clock = createTransportClock(onTick);
+    const clock = useTransportClock(onTick);
 
     clock.start();
     clock.start();
@@ -72,7 +72,7 @@ describe("createTransportClock", () => {
 
   it("allows restart after stop with a reset frame baseline", () => {
     const onTick = vi.fn();
-    const clock = createTransportClock(onTick);
+    const clock = useTransportClock(onTick);
 
     clock.start();
     runAnimationFrame(500);

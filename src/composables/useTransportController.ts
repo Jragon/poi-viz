@@ -1,4 +1,4 @@
-import { createTransportClock } from "@/composables/transportClock";
+import { useTransportClock } from "@/composables/useTransportClock";
 import { secondsToBeats } from "@/engine/math";
 import { normalizeLoopBeat } from "@/render/math";
 import { setGlobalBoolean, setScrubBeat, togglePlayback } from "@/state/actions";
@@ -42,7 +42,7 @@ export function useTransportController(options: TransportControllerOptions): Tra
     state.global.t += beatsDelta;
   }
 
-  const transportClock = createTransportClock(advancePlayhead);
+  const transportClock = useTransportClock(advancePlayhead);
 
   return {
     loopedPlayheadBeats: computed(() => normalizeLoopBeat(state.global.t, state.global.loopBeats)),

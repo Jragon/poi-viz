@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createPersistenceCoordinator, type PersistenceStorage } from "@/composables/persistenceCoordinator";
+import { usePersistenceCoordinator, type PersistenceStorage } from "@/composables/usePersistenceCoordinator";
 import { createDefaultState } from "@/state/defaults";
 import { LOCAL_STORAGE_STATE_KEY, serializeState } from "@/state/persistence";
 import {
@@ -52,7 +52,7 @@ describe("persistence coordinator", () => {
     const storage = createMemoryStorage({
       [LOCAL_STORAGE_STATE_KEY]: serializeState(storageState)
     });
-    const coordinator = createPersistenceCoordinator({ storage });
+    const coordinator = usePersistenceCoordinator({ storage });
 
     const hydration = coordinator.resolveHydration(
       defaults,
@@ -70,7 +70,7 @@ describe("persistence coordinator", () => {
       [LOCAL_STORAGE_STATE_KEY]: JSON.stringify({ schemaVersion: 1, state: {} }),
       [PRESET_LIBRARY_STORAGE_KEY]: JSON.stringify({ schemaVersion: PRESET_LIBRARY_SCHEMA_VERSION - 1, presets: [] })
     });
-    const coordinator = createPersistenceCoordinator({ storage });
+    const coordinator = usePersistenceCoordinator({ storage });
 
     const hydration = coordinator.resolveHydration(defaults, "https://jragon.github.io/poi-viz/");
 
@@ -91,7 +91,7 @@ describe("persistence coordinator", () => {
     const preset = createUserPresetRecord("Baseline", initialState, now);
 
     const storage = createMemoryStorage();
-    const coordinator = createPersistenceCoordinator({ storage });
+    const coordinator = usePersistenceCoordinator({ storage });
 
     coordinator.persistSessionStateNow(initialState);
     coordinator.persistPresetLibraryNow([preset]);
@@ -109,7 +109,7 @@ describe("persistence coordinator", () => {
 
   it("debounces session-state sync and persists only the latest state", () => {
     const storage = createMemoryStorage();
-    const coordinator = createPersistenceCoordinator({ storage, debounceMs: 250 });
+    const coordinator = usePersistenceCoordinator({ storage, debounceMs: 250 });
 
     const first = createDefaultState();
     first.global.bpm = 20;
@@ -134,7 +134,7 @@ describe("persistence coordinator", () => {
       return;
     }
 
-    const hydrated = createPersistenceCoordinator({ storage }).resolveHydration(createDefaultState(), "https://jragon.github.io/poi-viz/");
+    const hydrated = usePersistenceCoordinator({ storage }).resolveHydration(createDefaultState(), "https://jragon.github.io/poi-viz/");
     expect(hydrated.initialState.global.bpm).toBe(44);
   });
 
@@ -142,7 +142,7 @@ describe("persistence coordinator", () => {
     const state = createDefaultState();
     state.global.bpm = 52;
 
-    const coordinator = createPersistenceCoordinator({ storage: createMemoryStorage() });
+    const coordinator = usePersistenceCoordinator({ storage: createMemoryStorage() });
     const currentHref = "https://jragon.github.io/poi-viz/?foo=bar";
     const shareUrl = coordinator.buildShareUrl(state, currentHref);
 

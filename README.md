@@ -86,7 +86,7 @@ npm run docs:all
 - `src/engine/`: pure math, sampling, trails, fixtures
 - `src/vtg/`: VTG descriptor types, generator, classifier
 - `src/state/`: defaults, constants, units, actions, persistence, preset library
-- `src/composables/`: app-level orchestration units (`transportClock`, `persistenceCoordinator`, `useTransportController`, `useThemeController`, `useShareLinkController`, `usePresetLibraryController`, `useAppOrchestrator`)
+- `src/composables/`: app-level orchestration units (`useTransportClock`, `usePersistenceCoordinator`, `useTransportController`, `useThemeController`, `useShareLinkController`, `usePresetLibraryController`, `useAppOrchestrator`)
 - `src/render/`: Canvas drawing helpers
 - `src/components/`: Vue UI and panel composition
 - `tests/`: regression coverage for engine/state/render/vtg contracts

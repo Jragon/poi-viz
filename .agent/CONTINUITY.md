@@ -253,3 +253,6 @@
 - 2026-02-08T09:08:42Z [CODE] Decomposed `src/composables/useAppOrchestrator.ts` into focused controllers (`useTransportController`, `useThemeController`, `useShareLinkController`, `usePresetLibraryController`) while preserving external App handler contracts.
 - 2026-02-08T09:08:42Z [CODE] Kept `useAppOrchestrator` as a composition facade and updated docs/plan to reflect controller-level ownership boundaries.
 - 2026-02-08T09:08:42Z [TOOL] Re-validated decomposition with passing `npm test` (112 tests), `npm run build`, and `npm run docs:all` (TypeDoc warnings only).
+- 2026-02-08T10:17:48Z [USER] Requested composable-standard consistency and asked why `transportClock.ts` and `persistenceCoordinator.ts` differed from other `use*` composables.
+- 2026-02-08T10:17:48Z [CODE] Standardized composable naming by renaming to `src/composables/useTransportClock.ts` and `src/composables/usePersistenceCoordinator.ts` and updating imports/usages/tests/docs to `use*` conventions.
+- 2026-02-08T10:17:48Z [TOOL] Verified naming-standardization changes with passing `npm test` (112 tests), `npm run build`, and `npm run docs:all` (TypeDoc warnings only).

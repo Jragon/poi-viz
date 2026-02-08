@@ -10,7 +10,7 @@ export interface TransportClock {
  * Creates a single RAF-backed transport clock.
  * The callback runs every animation frame and receives frame delta seconds.
  */
-export function createTransportClock(onTick: TransportTick): TransportClock {
+export function useTransportClock(onTick: TransportTick): TransportClock {
   let animationFrameId: number | null = null;
   let lastFrameTimeMs = 0;
   let running = false;

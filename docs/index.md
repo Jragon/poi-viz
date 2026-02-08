@@ -25,7 +25,7 @@ Primary modules:
 - `src/vtg/generate.ts` export `generateVTGState`.
 - `src/vtg/classify.ts` exports `classifyArmElement`, `classifyPoiElement`, `classifyPhaseBucket`.
 - `src/state/persistence.ts` exports `serializeState`, `deserializeState`, `resolveInitialState`.
-- `src/composables/persistenceCoordinator.ts` export `createPersistenceCoordinator`.
+- `src/composables/usePersistenceCoordinator.ts` export `usePersistenceCoordinator`.
 - `src/composables/useTransportController.ts` export `useTransportController`.
 - `src/composables/useThemeController.ts` export `useThemeController`.
 - `src/composables/useShareLinkController.ts` export `useShareLinkController`.

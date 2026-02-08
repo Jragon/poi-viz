@@ -125,7 +125,7 @@ function getCompatiblePresetLibraryStorageValue(storage: PersistenceStorage | nu
  * @param options Coordinator options.
  * @returns Coordinator API for hydration, storage sync, and share-url generation.
  */
-export function createPersistenceCoordinator(options: PersistenceCoordinatorOptions = {}): PersistenceCoordinator {
+export function usePersistenceCoordinator(options: PersistenceCoordinatorOptions = {}): PersistenceCoordinator {
   const storage = options.storage ?? resolveDefaultStorage();
   const debounceMs = options.debounceMs ?? PERSISTENCE_DEBOUNCE_MS;
 

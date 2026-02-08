@@ -344,6 +344,7 @@ Make `App.vue` a thin composition shell.
   - `src/composables/useShareLinkController.ts`
   - `src/composables/usePresetLibraryController.ts`
 - `useAppOrchestrator` now acts as a thin composition facade over the above controllers while preserving external App event contracts.
+- Naming standards follow composable conventions (`use*`) across orchestration modules, including `useTransportClock` and `usePersistenceCoordinator`.
 - Re-validated decomposition with unchanged behavior:
   - `npm test` (112 passing)
   - `npm run build` (passing)
