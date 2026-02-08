@@ -2,33 +2,21 @@
 import Controls from "@/components/Controls.vue";
 import PatternCanvas from "@/components/PatternCanvas.vue";
 import WaveCanvas from "@/components/WaveCanvas.vue";
+import { createPersistenceCoordinator } from "@/composables/persistenceCoordinator";
 import { createTransportClock } from "@/composables/transportClock";
 import { secondsToBeats } from "@/engine/math";
 import { normalizeLoopBeat } from "@/render/math";
-import {
-  buildStateUrl,
-  isPersistedStatePayloadCompatible,
-  LOCAL_STORAGE_STATE_KEY,
-  PERSISTENCE_DEBOUNCE_MS,
-  resolveInitialState,
-  serializeState,
-  stripStateQueryParam
-} from "@/state/persistence";
 import {
   createPresetFileName,
   createPresetId,
   createUserPresetRecord,
   createUserPresetSummary,
   deserializeUserPresetFile,
-  deserializeUserPresetLibrary,
   ensureUniquePresetId,
   getUserPreset,
-  isPresetLibraryPayloadCompatible,
-  PRESET_LIBRARY_STORAGE_KEY,
   removeUserPreset,
   sanitizePresetName,
   serializeUserPresetFile,
-  serializeUserPresetLibrary,
   upsertUserPreset,
   type UserPresetRecord
 } from "@/state/presetLibrary";
@@ -63,9 +51,7 @@ const COPY_LABEL_RESET_DELAY_MS = 1800;
 const PRESET_LIBRARY_STATUS_RESET_DELAY_MS = 2400;
 
 let copyLabelTimerId = 0;
-let persistenceTimerId = 0;
 let presetLibraryStatusTimerId = 0;
-let persistenceEnabled = false;
 
 const loopedPlayheadBeats = computed(() => normalizeLoopBeat(state.global.t, state.global.loopBeats));
 const scrubStep = computed(() => Math.max(state.global.loopBeats / SCRUB_DIVISIONS, MIN_SCRUB_STEP));
@@ -77,6 +63,7 @@ const userPresetRecords = ref<UserPresetRecord[]>([]);
 const userPresetSummaries = computed(() => userPresetRecords.value.map(createUserPresetSummary));
 const themeButtonLabel = computed(() => (theme.value === "dark" ? "Light Theme" : "Dark Theme"));
 const transportClock = createTransportClock(advancePlayhead);
+const persistenceCoordinator = createPersistenceCoordinator();
 
 interface ExportPresetRequest {
   presetId: string;
@@ -105,67 +92,12 @@ function setStorageValue(key: string, value: string): void {
   }
 }
 
-function removeStorageValue(key: string): void {
-  try {
-    window.localStorage.removeItem(key);
-  } catch {
-    // Ignore delete failures (private mode, disabled storage).
-  }
-}
-
-function getSessionStorageValue(): string | null {
-  return getStorageValue(LOCAL_STORAGE_STATE_KEY);
-}
-
-function getCompatibleSessionStorageValue(): string | null {
-  const raw = getSessionStorageValue();
-  if (!raw) {
-    return null;
-  }
-  if (!isPersistedStatePayloadCompatible(raw)) {
-    removeStorageValue(LOCAL_STORAGE_STATE_KEY);
-    return null;
-  }
-  return raw;
-}
-
-function persistSessionStateNow(): void {
-  setStorageValue(LOCAL_STORAGE_STATE_KEY, serializeState(state));
-}
-
-function getPresetLibraryStorageValue(): string | null {
-  return getStorageValue(PRESET_LIBRARY_STORAGE_KEY);
-}
-
-function getCompatiblePresetLibraryStorageValue(): string | null {
-  const raw = getPresetLibraryStorageValue();
-  if (!raw) {
-    return null;
-  }
-  if (!isPresetLibraryPayloadCompatible(raw)) {
-    removeStorageValue(PRESET_LIBRARY_STORAGE_KEY);
-    return null;
-  }
-  return raw;
-}
-
 function persistPresetLibraryNow(): void {
-  setStorageValue(PRESET_LIBRARY_STORAGE_KEY, serializeUserPresetLibrary(userPresetRecords.value));
+  persistenceCoordinator.persistPresetLibraryNow(userPresetRecords.value);
 }
 
 function schedulePersistenceSync(): void {
-  if (!persistenceEnabled) {
-    return;
-  }
-
-  if (persistenceTimerId !== 0) {
-    window.clearTimeout(persistenceTimerId);
-  }
-
-  persistenceTimerId = window.setTimeout(() => {
-    persistSessionStateNow();
-    persistenceTimerId = 0;
-  }, PERSISTENCE_DEBOUNCE_MS);
+  persistenceCoordinator.scheduleSessionStateSync(state);
 }
 
 function resetCopyLinkLabelSoon(): void {
@@ -262,8 +194,7 @@ function handleApplyVTG(descriptor: VTGDescriptor): void {
 }
 
 async function handleCopyLink(): Promise<void> {
-  const shareBaseUrl = stripStateQueryParam(window.location.href);
-  const shareUrl = buildStateUrl(state, shareBaseUrl);
+  const shareUrl = persistenceCoordinator.buildShareUrl(state, window.location.href);
   let copied = false;
 
   if (navigator.clipboard?.writeText) {
@@ -401,27 +332,25 @@ onMounted(() => {
   const defaults = createDefaultState();
   theme.value = resolveInitialTheme(getStorageValue(THEME_STORAGE_KEY));
   applyThemeToDocument(theme.value);
-  const initialState = resolveInitialState(defaults, window.location.href, getCompatibleSessionStorageValue());
-  commitState(initialState);
-  userPresetRecords.value = deserializeUserPresetLibrary(getCompatiblePresetLibraryStorageValue(), defaults);
+  const hydration = persistenceCoordinator.resolveHydration(defaults, window.location.href);
+  commitState(hydration.initialState);
+  userPresetRecords.value = hydration.userPresetRecords;
 
-  const cleanUrl = stripStateQueryParam(window.location.href);
+  const cleanUrl = hydration.cleanHref;
   if (cleanUrl !== window.location.href) {
     window.history.replaceState(null, "", cleanUrl);
   }
 
-  persistenceEnabled = true;
-  persistSessionStateNow();
+  persistenceCoordinator.enableSessionSync();
+  persistenceCoordinator.persistSessionStateNow(state);
   transportClock.start();
 });
 
 onBeforeUnmount(() => {
   transportClock.stop();
+  persistenceCoordinator.disableSessionSync();
   if (copyLabelTimerId !== 0) {
     window.clearTimeout(copyLabelTimerId);
-  }
-  if (persistenceTimerId !== 0) {
-    window.clearTimeout(persistenceTimerId);
   }
   if (presetLibraryStatusTimerId !== 0) {
     window.clearTimeout(presetLibraryStatusTimerId);

@@ -240,3 +240,8 @@
 - 2026-02-08T07:58:47Z [CODE] Removed independent RAF loops from `src/components/PatternCanvas.vue` and `src/components/WaveCanvas.vue`; both canvases now redraw via prop/state invalidation and resize events.
 - 2026-02-08T07:58:47Z [CODE] Added Phase E coverage in `tests/app/transport-clock.test.ts` and `tests/ui/canvas-clock.integration.test.ts`, and extended `tests/ui/app.integration.test.ts` with transport progression + cross-canvas sync assertions.
 - 2026-02-08T07:58:47Z [TOOL] Verified Phase E with passing `npm test` (103 tests), `npm run build`, and source scan confirming RAF usage exists only in `src/composables/transportClock.ts`.
+- 2026-02-08T08:04:22Z [CODE] Completed Refactor Phase F by adding `src/composables/persistenceCoordinator.ts` as the single owner of hydration precedence, schema compatibility purge, debounced session-state sync, and share-link URL generation.
+- 2026-02-08T08:04:22Z [CODE] Refactored `src/App.vue` to consume persistence coordinator APIs and removed direct state/preset storage key compatibility logic plus app-state debounce timer handling.
+- 2026-02-08T08:04:22Z [CODE] Added persistence centralization coverage in `tests/app/persistence-coordinator.test.ts` and extended `tests/ui/app.integration.test.ts` with share-link URL non-mutation assertions.
+- 2026-02-08T08:04:22Z [TOOL] Verified Phase F with passing `npm test` (109 tests) and `npm run build`.
+- 2026-02-08T08:05:14Z [TOOL] Re-validated post-Phase F docs/contracts with passing `npm run docs:all` (TypeDoc warnings only, build succeeded), plus prior passing `npm test` and `npm run build`.

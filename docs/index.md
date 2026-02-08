@@ -25,6 +25,7 @@ Primary modules:
 - `src/vtg/generate.ts` export `generateVTGState`.
 - `src/vtg/classify.ts` exports `classifyArmElement`, `classifyPoiElement`, `classifyPhaseBucket`.
 - `src/state/persistence.ts` exports `serializeState`, `deserializeState`, `resolveInitialState`.
+- `src/composables/persistenceCoordinator.ts` export `createPersistenceCoordinator`.
 
 Representative validating tests:
 - `tests/engine/invariants.test.ts`
@@ -32,6 +33,7 @@ Representative validating tests:
 - `tests/vtg/generate.test.ts`
 - `tests/vtg/classify.test.ts`
 - `tests/state/persistence.test.ts`
+- `tests/app/persistence-coordinator.test.ts`
 
 ## Reading Order
 

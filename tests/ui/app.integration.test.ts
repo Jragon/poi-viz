@@ -152,6 +152,14 @@ function runAnimationFrame(frameTimeMs: number): void {
   }
 }
 
+function findCopyLinkButton(wrapper: VueWrapper): ReturnType<VueWrapper["find"]> {
+  const button = wrapper.findAll("button").find((candidate) => candidate.text() === "Copy Link");
+  if (!button) {
+    throw new Error("Expected to find Copy Link button");
+  }
+  return button;
+}
+
 describe("App orchestration integration", () => {
   let wrapper: VueWrapper | null = null;
 
@@ -291,5 +299,31 @@ describe("App orchestration integration", () => {
     expect(latestState?.global.phaseReference).toBe("up");
     expect(latestState?.hands.L.armPhase).toBeCloseTo(initialLeftArmPhase, 10);
     expect(latestState?.hands.R.armPhase).toBeCloseTo(initialRightArmPhase, 10);
+  });
+
+  it("generates share links without mutating the current editing URL", async () => {
+    const writeText = vi.fn(async () => {});
+    Object.defineProperty(window.navigator, "clipboard", {
+      value: { writeText },
+      configurable: true
+    });
+
+    setLocationHref("http://localhost/?foo=bar");
+    wrapper = mountApp();
+    await nextTick();
+
+    const locationBeforeCopy = window.location.href;
+
+    await findCopyLinkButton(wrapper).trigger("click");
+    await nextTick();
+    await Promise.resolve();
+
+    expect(window.location.href).toBe(locationBeforeCopy);
+    expect(writeText).toHaveBeenCalledTimes(1);
+
+    const sharedUrl = writeText.mock.calls[0]?.[0];
+    expect(typeof sharedUrl).toBe("string");
+    expect(new URL(sharedUrl).searchParams.get("state")).not.toBeNull();
+    expect(new URL(sharedUrl).searchParams.get("foo")).toBe("bar");
   });
 });

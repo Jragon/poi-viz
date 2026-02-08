@@ -1,6 +1,6 @@
 # Refactor Plan (Pre-Sequencer Baseline)
 
-Last updated: 2026-02-08 (Phase E complete)  
+Last updated: 2026-02-08 (Phase F complete)  
 Owner: Rory + Codex  
 Mode: One phase at a time, no bundled mega-refactors
 
@@ -35,7 +35,7 @@ These are fixed unless Rory explicitly changes them:
 | C | Remove State -> Render Leak | Completed (2026-02-08) | Zero imports from `src/state` to `src/render` |
 | D | Split Phase Reference Semantics | Completed (2026-02-08) | View reference no longer mutates physical state implicitly |
 | E | Single Transport Clock | Completed (2026-02-08) | Exactly one RAF owner |
-| F | Persistence Centralization | Pending | Idempotent hydration + centralized policy |
+| F | Persistence Centralization | Completed (2026-02-08) | Idempotent hydration + centralized policy |
 | G | Extract App Orchestration | Pending | `App.vue` becomes thin composition shell |
 | H | Split Controls | Pending | `Controls.vue` reduced and panelized |
 | I | Sequencer-Ready Gate | Pending | All checklist items satisfied |
@@ -271,6 +271,28 @@ Centralize schema policy, hydration precedence, and sync behavior.
 - `App.vue` no longer directly manages storage key logic and compatibility checks.
 - Hydration policy is explicit and tested.
 
+### Execution Notes
+- Completed on 2026-02-08.
+- Added centralized persistence policy service in `src/composables/persistenceCoordinator.ts` for:
+  - URL-first hydration resolution
+  - incompatible local payload purge for app state and preset library
+  - debounced app-state local sync
+  - share-link URL generation from clean base URL
+- Refactored `src/App.vue` to consume the coordinator and removed direct ownership of:
+  - state/preset compatibility checks
+  - localStorage key-level read/write/purge policy
+  - app-state debounce timer logic
+  - share-link base URL stripping/build logic
+- Added/expanded tests:
+  - `tests/app/persistence-coordinator.test.ts`
+  - `tests/ui/app.integration.test.ts` share-link URL non-mutation assertion
+- Updated docs:
+  - `README.md`
+  - `docs/index.md`
+- Validation run:
+  - `npm test` (109 passing)
+  - `npm run build` (passing)
+
 ### Risks
 - Import/export edge-case regressions.
 
@@ -363,3 +385,4 @@ Verify architecture is clean enough to add VTG Phase 2 without reintroducing slo
 
 - 2026-02-08: Initial plan created from maintainability review, with all five Rory decisions locked.
 - 2026-02-08: Phase E completed with single transport clock ownership and canvas RAF removal.
+- 2026-02-08: Phase F completed with centralized persistence policy and idempotent hydration coverage.
