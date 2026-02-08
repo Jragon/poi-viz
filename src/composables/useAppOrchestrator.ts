@@ -55,9 +55,20 @@ export function useAppOrchestrator(): AppOrchestrator {
   const isStaticView = ref(false);
   const persistenceCoordinator = usePersistenceCoordinator();
 
+  function cloneAppState(nextState: AppState): AppState {
+    return {
+      global: { ...nextState.global },
+      hands: {
+        L: { ...nextState.hands.L },
+        R: { ...nextState.hands.R }
+      }
+    };
+  }
+
   function commitState(nextState: AppState): void {
-    state.global = nextState.global;
-    state.hands = nextState.hands;
+    const cloned = cloneAppState(nextState);
+    state.global = cloned.global;
+    state.hands = cloned.hands;
   }
 
   const transportController = useTransportController({

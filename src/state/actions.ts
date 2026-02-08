@@ -146,6 +146,20 @@ export function setScrubBeat(state: AppState, beatValue: number): AppState {
 }
 
 /**
+ * Advances playhead by a beat delta when playback is active.
+ *
+ * @param state Current app state.
+ * @param deltaBeats Beat delta to add before loop normalization.
+ * @returns New state with updated playhead, or original-equivalent clone when paused.
+ */
+export function advancePlayhead(state: AppState, deltaBeats: number): AppState {
+  if (!state.global.isPlaying) {
+    return cloneState(state);
+  }
+  return setGlobalNumber(state, "t", state.global.t + deltaBeats);
+}
+
+/**
  * Sets one numeric hand field with finite checks and radius clamping.
  *
  * @param state Current app state.

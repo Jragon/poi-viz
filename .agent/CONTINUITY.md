@@ -303,3 +303,9 @@
 - 2026-02-08T12:48:09Z [CODE] Exported persistence durable-state projection contracts from `src/state/persistence.ts` for reuse and enforced volatile-field restoration from defaults after durable merge to avoid indirect playhead normalization side-effects.
 - 2026-02-08T12:48:09Z [CODE] Added regression assertions in `tests/state/preset-library.test.ts` that preset-library and preset-file payloads omit `global.t`/`global.isPlaying` and hydrate those values from defaults.
 - 2026-02-08T12:48:09Z [TOOL] Verified with passing `npm test` (124), `npm run build`, and `npm run docs:all` (TypeDoc warnings unchanged).
+- 2026-02-08T12:54:30Z [USER] Requested moving to the next refactor phase after durable-persistence and preset-serialization cleanup.
+- 2026-02-08T12:54:30Z [CODE] Completed Phase 4 by removing in-place transport mutation: added pure `advancePlayhead` action in `src/state/actions.ts`, updated `src/composables/useTransportController.ts` to commit immutable playhead updates, and retained finite/paused frame guards.
+- 2026-02-08T12:54:30Z [CODE] Hardened snapshot isolation by cloning on orchestrator commits (`src/composables/useAppOrchestrator.ts`) so loaded/hydrated states do not share object references with preset records.
+- 2026-02-08T12:54:30Z [CODE] Added regression coverage for immutable transport + alias safety (`tests/state/actions.test.ts`, `tests/ui/app-orchestrator.integration.test.ts`) including load-preset -> run transport ticks -> reload-preset no-drift assertions.
+- 2026-02-08T12:54:30Z [CODE] Updated documentation/phase tracking (`README.md`, `refactor-plan.md`) to reflect immutable state-commit transport semantics and Phase 4 completion.
+- 2026-02-08T12:54:30Z [TOOL] Verified with passing `npm test` (126), `npm run build`, and `npm run docs:all` (TypeDoc warnings unchanged).

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  advancePlayhead,
   setGlobalBoolean,
   setGlobalNumber,
   setGlobalPhaseReference,
@@ -35,6 +36,21 @@ describe("state actions", () => {
     const next = setScrubBeat(state, 5.25);
     expect(next.global.t).toBeCloseTo(1.25, 10);
     expect(next.global.isPlaying).toBe(false);
+  });
+
+  it("advances playhead only while playing", () => {
+    const paused = createDefaultState();
+    paused.global.isPlaying = false;
+    paused.global.t = 1;
+    const pausedNext = advancePlayhead(paused, 0.5);
+    expect(pausedNext.global.t).toBe(1);
+
+    const playing = createDefaultState();
+    playing.global.isPlaying = true;
+    playing.global.loopBeats = 4;
+    playing.global.t = 3.75;
+    const playingNext = advancePlayhead(playing, 0.5);
+    expect(playingNext.global.t).toBeCloseTo(0.25, 10);
   });
 
   it("wraps negative global playhead values into loop range", () => {

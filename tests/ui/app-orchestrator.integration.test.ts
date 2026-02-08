@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAppOrchestrator, type AppOrchestrator } from "@/composables/useAppOrchestrator";
 
 let orchestrator: AppOrchestrator | null = null;
+let queuedRafCallbacks = new Map<number, FrameRequestCallback>();
+let nextRafId = 1;
 
 function setLocationHref(nextHref: string): void {
   const url = new URL(nextHref);
@@ -18,13 +20,44 @@ const OrchestratorHarness = defineComponent({
   }
 });
 
+function installMockRaf(): void {
+  queuedRafCallbacks = new Map<number, FrameRequestCallback>();
+  nextRafId = 1;
+
+  vi.stubGlobal(
+    "requestAnimationFrame",
+    vi.fn((callback: FrameRequestCallback): number => {
+      const rafId = nextRafId;
+      nextRafId += 1;
+      queuedRafCallbacks.set(rafId, callback);
+      return rafId;
+    })
+  );
+
+  vi.stubGlobal(
+    "cancelAnimationFrame",
+    vi.fn((rafId: number): void => {
+      queuedRafCallbacks.delete(rafId);
+    })
+  );
+}
+
+function runAnimationFrame(frameTimeMs: number): void {
+  const callbacks = Array.from(queuedRafCallbacks.values());
+  queuedRafCallbacks.clear();
+
+  for (const callback of callbacks) {
+    callback(frameTimeMs);
+  }
+}
+
 describe("useAppOrchestrator", () => {
   beforeEach(() => {
     orchestrator = null;
+    queuedRafCallbacks = new Map<number, FrameRequestCallback>();
     window.localStorage.clear();
     setLocationHref("http://localhost/");
-    vi.stubGlobal("requestAnimationFrame", vi.fn(() => 1));
-    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    installMockRaf();
   });
 
   afterEach(() => {
@@ -90,6 +123,41 @@ describe("useAppOrchestrator", () => {
 
     expect(orchestrator.state.global.bpm).toBe(34);
     expect(orchestrator.presetLibraryStatus.value).toContain("Loaded:");
+
+    wrapper.unmount();
+  });
+
+  it("does not mutate loaded preset snapshots from transport progression", async () => {
+    const wrapper = mount(OrchestratorHarness);
+    await nextTick();
+
+    expect(orchestrator).not.toBeNull();
+    if (!orchestrator) {
+      wrapper.unmount();
+      return;
+    }
+
+    orchestrator.state.global.t = 0;
+    orchestrator.handleSaveUserPreset("Transport Snapshot");
+    const savedPresetId = orchestrator.userPresetSummaries.value[0]?.id;
+    expect(savedPresetId).toBeTruthy();
+    if (!savedPresetId) {
+      wrapper.unmount();
+      return;
+    }
+
+    orchestrator.state.global.t = 2;
+    orchestrator.handleLoadUserPreset(savedPresetId);
+    expect(orchestrator.state.global.t).toBe(0);
+
+    runAnimationFrame(1000);
+    await nextTick();
+    runAnimationFrame(1100);
+    await nextTick();
+    expect(orchestrator.state.global.t).toBeGreaterThan(0);
+
+    orchestrator.handleLoadUserPreset(savedPresetId);
+    expect(orchestrator.state.global.t).toBe(0);
 
     wrapper.unmount();
   });

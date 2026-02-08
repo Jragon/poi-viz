@@ -1,7 +1,7 @@
 import { useTransportClock } from "@/composables/useTransportClock";
 import { secondsToBeats } from "@/engine/math";
 import { normalizeLoopBeat } from "@/render/math";
-import { setGlobalBoolean, setScrubBeat, togglePlayback } from "@/state/actions";
+import { advancePlayhead as advancePlayheadByBeats, setGlobalBoolean, setScrubBeat, togglePlayback } from "@/state/actions";
 import type { AppState } from "@/types/state";
 import { computed, type ComputedRef, type Ref } from "vue";
 
@@ -37,9 +37,11 @@ export function useTransportController(options: TransportControllerOptions): Tra
     if (!state.global.isPlaying) {
       return;
     }
-
+    if (!Number.isFinite(frameDeltaSeconds)) {
+      return;
+    }
     const beatsDelta = secondsToBeats(frameDeltaSeconds, state.global.bpm) * state.global.playSpeed;
-    state.global.t += beatsDelta;
+    commitState(advancePlayheadByBeats(state, beatsDelta));
   }
 
   const transportClock = useTransportClock(advancePlayhead);

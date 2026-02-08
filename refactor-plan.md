@@ -149,6 +149,10 @@ Completed on 2026-02-08: app-state persistence plus preset-library/preset-file s
 
 Remove shared-reference mutation hazards between stored snapshots and live runtime state.
 
+### Status
+
+Completed on 2026-02-08: transport progression moved to pure `state/actions` updates (no `state.global.t += ...` mutation), orchestrator commit path clones incoming snapshots, and regression tests pin load/save preset alias safety under runtime transport ticks.
+
 ### Scope
 
 - Ensure all state load paths clone/normalize state before commit.

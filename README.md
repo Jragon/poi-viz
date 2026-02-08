@@ -35,6 +35,7 @@ At a high level:
 - models each hand as an arm oscillator plus a relative poi oscillator,
 - computes positions in beat-space with pure engine math,
 - advances playhead time from one transport RAF owner (`App.vue`) and feeds that beat stream to all canvases,
+- applies transport progression via immutable state-action commits (no in-place mutation of canonical app state),
 - renders pattern + waves from the same playhead beat,
 - centralizes persistence policy (URL-first hydration, schema compatibility purge, debounced local sync, share-link URL generation) in one coordinator service,
 - persists durable edit state only (transport-volatiles `global.t` and `global.isPlaying` are runtime-only and restored from defaults),
