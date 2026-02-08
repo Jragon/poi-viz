@@ -27,8 +27,9 @@ Public barrel:
 3. `getPositions` computes `(hand, head, tether)` vectors from angles.
 4. `sampleLoop` uses fixed beat step from `sampleHzToStepBeats` (`src/engine/math.ts`) and includes both loop endpoints.
 5. Trail sampler advances independently of render FPS by stepping in beat-space.
-6. Static transport view uses deterministic loop sampling to render a full-loop still trail for pattern capture.
-7. Phase-reference transforms are applied outside engine equations (`src/state/phaseReference.ts`), so engine math stays canonical.
+6. A single transport RAF owner in `src/App.vue` advances beat time and passes `tBeats` into both canvas views.
+7. Static transport view uses deterministic loop sampling to render a full-loop still trail for pattern capture.
+8. Phase-reference transforms are applied outside engine equations (`src/state/phaseReference.ts`), so engine math stays canonical.
 
 ## Deterministic Sampling
 

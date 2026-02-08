@@ -12,7 +12,19 @@ interface ControlsStubProps {
   state: AppState;
 }
 
+interface PatternCanvasStubProps {
+  tBeats: number;
+}
+
+interface WaveCanvasStubProps {
+  tBeats: number;
+}
+
 let latestState: AppState | null = null;
+let latestPatternBeat = 0;
+let latestWaveBeat = 0;
+let queuedRafCallbacks = new Map<number, FrameRequestCallback>();
+let nextRafId = 1;
 
 const ControlsStub = defineComponent({
   name: "Controls",
@@ -62,11 +74,33 @@ const ControlsStub = defineComponent({
 
 const PatternCanvasStub = defineComponent({
   name: "PatternCanvas",
+  props: {
+    tBeats: {
+      type: Number,
+      required: true
+    }
+  },
+  setup(props: PatternCanvasStubProps) {
+    watchEffect(() => {
+      latestPatternBeat = props.tBeats;
+    });
+  },
   template: "<div />"
 });
 
 const WaveCanvasStub = defineComponent({
   name: "WaveCanvas",
+  props: {
+    tBeats: {
+      type: Number,
+      required: true
+    }
+  },
+  setup(props: WaveCanvasStubProps) {
+    watchEffect(() => {
+      latestWaveBeat = props.tBeats;
+    });
+  },
   template: "<div />"
 });
 
@@ -87,13 +121,45 @@ function mountApp(): VueWrapper {
   });
 }
 
+function installMockRaf(): void {
+  queuedRafCallbacks = new Map<number, FrameRequestCallback>();
+  nextRafId = 1;
+
+  vi.stubGlobal(
+    "requestAnimationFrame",
+    vi.fn((callback: FrameRequestCallback): number => {
+      const rafId = nextRafId;
+      nextRafId += 1;
+      queuedRafCallbacks.set(rafId, callback);
+      return rafId;
+    })
+  );
+
+  vi.stubGlobal(
+    "cancelAnimationFrame",
+    vi.fn((rafId: number): void => {
+      queuedRafCallbacks.delete(rafId);
+    })
+  );
+}
+
+function runAnimationFrame(frameTimeMs: number): void {
+  const callbacks = Array.from(queuedRafCallbacks.values());
+  queuedRafCallbacks.clear();
+
+  for (const callback of callbacks) {
+    callback(frameTimeMs);
+  }
+}
+
 describe("App orchestration integration", () => {
   let wrapper: VueWrapper | null = null;
 
   beforeEach(() => {
     latestState = null;
-    vi.stubGlobal("requestAnimationFrame", vi.fn(() => 1));
-    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    latestPatternBeat = 0;
+    latestWaveBeat = 0;
+    installMockRaf();
     window.localStorage.clear();
     setLocationHref("http://localhost/");
   });
@@ -123,6 +189,39 @@ describe("App orchestration integration", () => {
     expect(new URL(window.location.href).searchParams.get("state")).toBeNull();
   });
 
+  it("advances transport time only while playing and keeps both canvases synchronized", async () => {
+    wrapper = mountApp();
+    await nextTick();
+
+    expect(latestState).not.toBeNull();
+    if (!latestState) {
+      return;
+    }
+
+    const startingBeat = latestState.global.t;
+
+    runAnimationFrame(1000);
+    await nextTick();
+
+    runAnimationFrame(1100);
+    await nextTick();
+
+    const advancedBeat = latestState.global.t;
+    expect(advancedBeat).toBeGreaterThan(startingBeat);
+    expect(latestPatternBeat).toBeCloseTo(advancedBeat, 10);
+    expect(latestWaveBeat).toBeCloseTo(advancedBeat, 10);
+
+    await wrapper.get("[data-testid='toggle-playback']").trigger("click");
+    await nextTick();
+
+    runAnimationFrame(1200);
+    await nextTick();
+
+    expect(latestState.global.t).toBeCloseTo(advancedBeat, 10);
+    expect(latestPatternBeat).toBeCloseTo(advancedBeat, 10);
+    expect(latestWaveBeat).toBeCloseTo(advancedBeat, 10);
+  });
+
   it("enforces transport semantics for scrub, static-view playback lock, and toggle resume", async () => {
     wrapper = mountApp();
     await nextTick();
@@ -139,6 +238,11 @@ describe("App orchestration integration", () => {
     await wrapper.get("[data-testid='toggle-playback']").trigger("click");
     await nextTick();
     expect(latestState?.global.isPlaying).toBe(false);
+
+    const staticBeat = latestState?.global.t ?? 0;
+    runAnimationFrame(1300);
+    await nextTick();
+    expect(latestState?.global.t).toBeCloseTo(staticBeat, 10);
 
     await wrapper.get("[data-testid='static-off']").trigger("click");
     await nextTick();

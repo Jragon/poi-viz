@@ -33,7 +33,8 @@ Persistence break note:
 At a high level:
 - models each hand as an arm oscillator plus a relative poi oscillator,
 - computes positions in beat-space with pure engine math,
-- renders pattern + waves from the same playhead,
+- advances playhead time from one transport RAF owner (`App.vue`) and feeds that beat stream to all canvases,
+- renders pattern + waves from the same playhead beat,
 - supports VTG descriptor generation/classification for canonical relationship states,
 - persists/share-links state and supports user preset import/export.
 

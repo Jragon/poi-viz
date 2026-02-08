@@ -1,6 +1,6 @@
 # Refactor Plan (Pre-Sequencer Baseline)
 
-Last updated: 2026-02-08 (Phase D complete)  
+Last updated: 2026-02-08 (Phase E complete)  
 Owner: Rory + Codex  
 Mode: One phase at a time, no bundled mega-refactors
 
@@ -34,7 +34,7 @@ These are fixed unless Rory explicitly changes them:
 | B | Unify Competing Truths | Completed (2026-02-08) | Single mapping + shared math helpers |
 | C | Remove State -> Render Leak | Completed (2026-02-08) | Zero imports from `src/state` to `src/render` |
 | D | Split Phase Reference Semantics | Completed (2026-02-08) | View reference no longer mutates physical state implicitly |
-| E | Single Transport Clock | Pending | Exactly one RAF owner |
+| E | Single Transport Clock | Completed (2026-02-08) | Exactly one RAF owner |
 | F | Persistence Centralization | Pending | Idempotent hydration + centralized policy |
 | G | Extract App Orchestration | Pending | `App.vue` becomes thin composition shell |
 | H | Split Controls | Pending | `Controls.vue` reduced and panelized |
@@ -223,6 +223,24 @@ Replace multiple RAF loops with one authoritative transport clock.
 - Exactly one RAF owner in runtime architecture.
 - Visual behavior parity with current baseline.
 
+### Execution Notes
+- Completed on 2026-02-08.
+- Added single transport clock service in `src/composables/transportClock.ts` and rewired `src/App.vue` to use it as the only RAF owner.
+- Removed independent RAF loops from:
+  - `src/components/PatternCanvas.vue`
+  - `src/components/WaveCanvas.vue`
+- Canvas redraw is now invalidation-driven (prop/state updates + resize observer) instead of self-scheduled animation loops.
+- Added/expanded coverage:
+  - `tests/app/transport-clock.test.ts`
+  - `tests/ui/app.integration.test.ts` transport progression + cross-canvas sync assertions
+  - `tests/ui/canvas-clock.integration.test.ts` no-canvas-RAF ownership assertions
+- Updated docs:
+  - `README.md`
+  - `docs/engine-architecture.md`
+- Validation run:
+  - `npm test` (passing)
+  - `npm run build` (passing)
+
 ### Risks
 - Perceived smoothness/performance changes.
 
@@ -344,3 +362,4 @@ Verify architecture is clean enough to add VTG Phase 2 without reintroducing slo
 ## Change Log
 
 - 2026-02-08: Initial plan created from maintainability review, with all five Rory decisions locked.
+- 2026-02-08: Phase E completed with single transport clock ownership and canvas RAF removal.

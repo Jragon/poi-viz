@@ -236,3 +236,7 @@
 - 2026-02-08T07:50:19Z [CODE] Updated behavior docs in `README.md`, `docs/math-model.md`, and `docs/glossary.md` to remove implicit runtime arm-rotation claims and reflect metadata-only semantics.
 - 2026-02-08T07:50:19Z [TOOL] Verified Phase D with passing `npm test` (98 tests), `npm run build`, and `npm run docs:all` (TypeDoc warnings only).
 - 2026-02-08T07:50:19Z [CODE] Updated `refactor plan.md` to mark Phase D complete with execution notes and validation results.
+- 2026-02-08T07:58:47Z [CODE] Completed Refactor Phase E: added single RAF transport service (`src/composables/transportClock.ts`) and rewired `src/App.vue` to own transport timing through that service.
+- 2026-02-08T07:58:47Z [CODE] Removed independent RAF loops from `src/components/PatternCanvas.vue` and `src/components/WaveCanvas.vue`; both canvases now redraw via prop/state invalidation and resize events.
+- 2026-02-08T07:58:47Z [CODE] Added Phase E coverage in `tests/app/transport-clock.test.ts` and `tests/ui/canvas-clock.integration.test.ts`, and extended `tests/ui/app.integration.test.ts` with transport progression + cross-canvas sync assertions.
+- 2026-02-08T07:58:47Z [TOOL] Verified Phase E with passing `npm test` (103 tests), `npm run build`, and source scan confirming RAF usage exists only in `src/composables/transportClock.ts`.

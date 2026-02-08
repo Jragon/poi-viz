@@ -5,7 +5,7 @@ import { createWaveLanesFromSamples, renderWaves } from "@/render/waveRenderer";
 import { getWaveRenderPalette } from "@/render/theme";
 import type { Theme } from "@/state/theme";
 import type { AppState } from "@/types/state";
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { onBeforeUnmount, onMounted, ref, watchEffect } from "vue";
 
 interface WaveCanvasProps {
   state: AppState;
@@ -19,7 +19,6 @@ const canvasRef = ref<HTMLCanvasElement | null>(null);
 
 const WAVE_SAMPLE_HZ = DEFAULT_TRAIL_SAMPLE_HZ;
 
-let animationFrameId = 0;
 let resizeObserver: ResizeObserver | null = null;
 
 function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement): void {
@@ -59,7 +58,6 @@ function drawFrame(): void {
 
   if (!props.state.global.showWaves) {
     drawHiddenState(context, canvas.width, canvas.height);
-    animationFrameId = requestAnimationFrame(drawFrame);
     return;
   }
 
@@ -81,8 +79,6 @@ function drawFrame(): void {
     tBeats: props.tBeats,
     lanes
   }, props.theme);
-
-  animationFrameId = requestAnimationFrame(drawFrame);
 }
 
 onMounted(() => {
@@ -93,17 +89,24 @@ onMounted(() => {
 
   resizeObserver = new ResizeObserver(() => {
     resizeCanvasToDisplaySize(canvas);
+    drawFrame();
   });
   resizeObserver.observe(canvas);
 
-  animationFrameId = requestAnimationFrame(drawFrame);
+  drawFrame();
 });
 
 onBeforeUnmount(() => {
-  cancelAnimationFrame(animationFrameId);
   resizeObserver?.disconnect();
   resizeObserver = null;
 });
+
+watchEffect(
+  () => {
+    drawFrame();
+  },
+  { flush: "post" }
+);
 </script>
 
 <template>

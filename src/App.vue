@@ -2,6 +2,7 @@
 import Controls from "@/components/Controls.vue";
 import PatternCanvas from "@/components/PatternCanvas.vue";
 import WaveCanvas from "@/components/WaveCanvas.vue";
+import { createTransportClock } from "@/composables/transportClock";
 import { secondsToBeats } from "@/engine/math";
 import { normalizeLoopBeat } from "@/render/math";
 import {
@@ -61,8 +62,6 @@ const COPY_LINK_LABEL_ERROR = "Copy Failed";
 const COPY_LABEL_RESET_DELAY_MS = 1800;
 const PRESET_LIBRARY_STATUS_RESET_DELAY_MS = 2400;
 
-let animationFrameId = 0;
-let lastFrameTimeMs = 0;
 let copyLabelTimerId = 0;
 let persistenceTimerId = 0;
 let presetLibraryStatusTimerId = 0;
@@ -77,6 +76,7 @@ const presetLibraryStatus = ref("");
 const userPresetRecords = ref<UserPresetRecord[]>([]);
 const userPresetSummaries = computed(() => userPresetRecords.value.map(createUserPresetSummary));
 const themeButtonLabel = computed(() => (theme.value === "dark" ? "Light Theme" : "Dark Theme"));
+const transportClock = createTransportClock(advancePlayhead);
 
 interface ExportPresetRequest {
   presetId: string;
@@ -214,18 +214,6 @@ function advancePlayhead(frameDeltaSeconds: number): void {
 
   const beatsDelta = secondsToBeats(frameDeltaSeconds, state.global.bpm) * state.global.playSpeed;
   state.global.t += beatsDelta;
-}
-
-function animationLoop(frameTimeMs: number): void {
-  if (lastFrameTimeMs === 0) {
-    lastFrameTimeMs = frameTimeMs;
-  }
-
-  const frameDeltaSeconds = (frameTimeMs - lastFrameTimeMs) / 1000;
-  lastFrameTimeMs = frameTimeMs;
-
-  advancePlayhead(frameDeltaSeconds);
-  animationFrameId = requestAnimationFrame(animationLoop);
 }
 
 function handleTogglePlayback(): void {
@@ -424,11 +412,11 @@ onMounted(() => {
 
   persistenceEnabled = true;
   persistSessionStateNow();
-  animationFrameId = requestAnimationFrame(animationLoop);
+  transportClock.start();
 });
 
 onBeforeUnmount(() => {
-  cancelAnimationFrame(animationFrameId);
+  transportClock.stop();
   if (copyLabelTimerId !== 0) {
     window.clearTimeout(copyLabelTimerId);
   }

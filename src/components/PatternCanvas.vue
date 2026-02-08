@@ -5,7 +5,7 @@ import { buildStaticTrailSeries } from "@/render/staticTrails";
 import type { TrailSeries } from "@/render/types";
 import type { Theme } from "@/state/theme";
 import type { AppState } from "@/types/state";
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { onBeforeUnmount, onMounted, ref, watchEffect } from "vue";
 
 interface PatternCanvasProps {
   state: AppState;
@@ -19,7 +19,6 @@ const props = defineProps<PatternCanvasProps>();
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const EMPTY_TRAILS: TrailSeries = { L: [], R: [] };
 
-let animationFrameId = 0;
 let resizeObserver: ResizeObserver | null = null;
 let trailSampler: TrailSamplerState | null = null;
 let trailSamplerConfigKey = "";
@@ -117,8 +116,6 @@ function drawFrame(): void {
     trails: shouldRenderTrails ? trails : EMPTY_TRAILS,
     showTrails: shouldRenderTrails
   }, props.theme);
-
-  animationFrameId = requestAnimationFrame(drawFrame);
 }
 
 onMounted(() => {
@@ -129,17 +126,24 @@ onMounted(() => {
 
   resizeObserver = new ResizeObserver(() => {
     resizeCanvasToDisplaySize(canvas);
+    drawFrame();
   });
   resizeObserver.observe(canvas);
 
-  animationFrameId = requestAnimationFrame(drawFrame);
+  drawFrame();
 });
 
 onBeforeUnmount(() => {
-  cancelAnimationFrame(animationFrameId);
   resizeObserver?.disconnect();
   resizeObserver = null;
 });
+
+watchEffect(
+  () => {
+    drawFrame();
+  },
+  { flush: "post" }
+);
 </script>
 
 <template>
