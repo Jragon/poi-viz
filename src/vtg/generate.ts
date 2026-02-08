@@ -1,9 +1,15 @@
-import { PI, TWO_PI } from "@/state/constants";
+import { PI } from "@/state/constants";
 import type { AppState, HandState } from "@/types/state";
 import { classifyVTG } from "@/vtg/classify";
-import { getRelationForElement, type VTGDescriptor, type VTGPhaseDeg, type VTGTiming } from "@/vtg/types";
+import {
+  getRelationForElement,
+  poiCyclesPerArmCycleToHeadSpeedRadiansPerBeat,
+  VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT,
+  type VTGDescriptor,
+  type VTGPhaseDeg,
+  type VTGTiming
+} from "@/vtg/types";
 
-const CANONICAL_RIGHT_ARM_SPEED = TWO_PI;
 const ZERO_CYCLE_TOLERANCE = 1e-9;
 
 const RADIANS_PER_DEGREE = PI / 180;
@@ -59,7 +65,7 @@ function assertValidPoiCyclesPerArmCycle(poiCyclesPerArmCycle: number): void {
  * Converts signed head cycles-per-arm-cycle into radians-per-beat.
  */
 function getHeadSpeedRadiansPerBeat(poiCyclesPerArmCycle: number): number {
-  return poiCyclesPerArmCycle * CANONICAL_RIGHT_ARM_SPEED;
+  return poiCyclesPerArmCycleToHeadSpeedRadiansPerBeat(poiCyclesPerArmCycle);
 }
 
 /**
@@ -94,9 +100,12 @@ export function generateVTGState(descriptor: VTGDescriptor, baseState: AppState)
   const poiRelation = getRelationForElement(descriptor.poiElement);
   const armBaselinePhase = phaseBucketToOffsetRadians(0);
 
-  const rightArmSpeed = CANONICAL_RIGHT_ARM_SPEED;
+  const rightArmSpeed = VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT;
   const rightArmPhase = armBaselinePhase;
-  const leftArmSpeed = armRelation.direction === "same-direction" ? CANONICAL_RIGHT_ARM_SPEED : -CANONICAL_RIGHT_ARM_SPEED;
+  const leftArmSpeed =
+    armRelation.direction === "same-direction"
+      ? VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT
+      : -VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT;
   const leftArmPhase = rightArmPhase + timingToPhaseOffset(armRelation.timing);
 
   const rightHeadSpeed = getHeadSpeedRadiansPerBeat(descriptor.poiCyclesPerArmCycle);

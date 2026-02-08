@@ -1,9 +1,17 @@
 <script setup lang="ts">
-import { TWO_PI } from "@/state/constants";
 import { speedFromRadiansPerBeat, type SpeedUnit } from "@/state/speedUnits";
 import type { AppState } from "@/types/state";
 import { classifyVTG } from "@/vtg/classify";
-import { VTG_ELEMENTS, VTG_PHASE_BUCKETS, type VTGDescriptor, type VTGElement, type VTGPhaseDeg } from "@/vtg/types";
+import {
+  headSpeedRadiansPerBeatToPoiCyclesPerArmCycle,
+  poiCyclesPerArmCycleToHeadSpeedRadiansPerBeat,
+  VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT,
+  VTG_ELEMENTS,
+  VTG_PHASE_BUCKETS,
+  type VTGDescriptor,
+  type VTGElement,
+  type VTGPhaseDeg
+} from "@/vtg/types";
 import { computed, onMounted, ref, watch } from "vue";
 
 interface VtgPanelProps {
@@ -91,14 +99,14 @@ function formatSpeed(radiansPerBeat: number): string {
  * Right-head speed from signed poi cycles-per-arm-cycle.
  */
 function getRightHeadSpeed(): number {
-  return poiCyclesPerArmCycle.value * TWO_PI;
+  return poiCyclesPerArmCycleToHeadSpeedRadiansPerBeat(poiCyclesPerArmCycle.value);
 }
 
 /**
  * Right-relative speed solved from ω_rel = ω_head - ω_arm.
  */
 function getRightRelativeSpeed(): number {
-  return getRightHeadSpeed() - TWO_PI;
+  return getRightHeadSpeed() - VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT;
 }
 
 /**
@@ -202,7 +210,7 @@ function syncControlsFromState(): void {
 
   const rightHand = props.state.hands.R;
   const rightHeadSpeedRadiansPerBeat = rightHand.armSpeed + rightHand.poiSpeed;
-  const rightHeadCyclesPerBeat = rightHeadSpeedRadiansPerBeat / TWO_PI;
+  const rightHeadCyclesPerBeat = headSpeedRadiansPerBeatToPoiCyclesPerArmCycle(rightHeadSpeedRadiansPerBeat);
   setPoiCyclesPerArmCycle(rightHeadCyclesPerBeat);
 }
 
@@ -223,7 +231,7 @@ watch(currentVtgClassification, (classification) => {
 watch(
   () => props.state.hands.R.armSpeed + props.state.hands.R.poiSpeed,
   (rightHeadSpeedRadiansPerBeat) => {
-    const rightHeadCyclesPerBeat = rightHeadSpeedRadiansPerBeat / TWO_PI;
+    const rightHeadCyclesPerBeat = headSpeedRadiansPerBeatToPoiCyclesPerArmCycle(rightHeadSpeedRadiansPerBeat);
     setPoiCyclesPerArmCycle(rightHeadCyclesPerBeat);
   }
 );
@@ -336,7 +344,7 @@ watch(isExpanded, (nextValue) => {
       <div class="rounded border border-zinc-800 bg-zinc-900/40 p-3 text-xs text-zinc-400">
         <p>
           Derived (cycles/beat):
-          <span class="font-mono">ω_arm_R={{ formatSpeed(TWO_PI) }}</span>,
+          <span class="font-mono">ω_arm_R={{ formatSpeed(VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT) }}</span>,
           <span class="font-mono">ω_head_R={{ formatSpeed(getRightHeadSpeed()) }}</span>,
           <span class="font-mono">ω_rel_R={{ formatSpeed(getRightRelativeSpeed()) }}</span>
         </p>

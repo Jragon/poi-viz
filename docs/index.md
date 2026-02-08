@@ -24,6 +24,7 @@ Primary modules:
 - `src/engine/sampling.ts` export `sampleLoop`.
 - `src/vtg/generate.ts` export `generateVTGState`.
 - `src/vtg/classify.ts` exports `classifyArmElement`, `classifyPoiElement`, `classifyPhaseBucket`.
+- `src/vtg/descriptiveGeometry.ts` exports non-authoritative cardinal readout helpers.
 - `src/state/persistence.ts` exports `serializeState`, `deserializeState`, `resolveInitialState`.
 - `src/composables/usePersistenceCoordinator.ts` export `usePersistenceCoordinator`.
 - `src/composables/useTransportController.ts` export `useTransportController`.

@@ -309,3 +309,9 @@
 - 2026-02-08T12:54:30Z [CODE] Added regression coverage for immutable transport + alias safety (`tests/state/actions.test.ts`, `tests/ui/app-orchestrator.integration.test.ts`) including load-preset -> run transport ticks -> reload-preset no-drift assertions.
 - 2026-02-08T12:54:30Z [CODE] Updated documentation/phase tracking (`README.md`, `refactor-plan.md`) to reflect immutable state-commit transport semantics and Phase 4 completion.
 - 2026-02-08T12:54:30Z [TOOL] Verified with passing `npm test` (126), `npm run build`, and `npm run docs:all` (TypeDoc warnings unchanged).
+- 2026-02-08T13:01:09Z [USER] Requested starting Phase 5 after completing immutable-state commit protections.
+- 2026-02-08T13:01:09Z [CODE] Completed Phase 5 ownership split by moving non-authoritative cardinal readout logic from `src/vtg/classify.ts` into new `src/vtg/descriptiveGeometry.ts`; authoritative classifier now contains only relation-based arm/poi/phase classification.
+- 2026-02-08T13:01:09Z [CODE] Formalized signed `poiCyclesPerArmCycle` semantics in `src/vtg/types.ts` via canonical speed constant and explicit conversion helpers, and updated `src/vtg/generate.ts` plus `src/components/VtgPanel.vue` to consume shared conversions.
+- 2026-02-08T13:01:09Z [CODE] Expanded VTG tests with phase-reference invariance assertions in `tests/vtg/classify.test.ts` and dedicated conversion-contract tests in `tests/vtg/types.test.ts`.
+- 2026-02-08T13:01:09Z [CODE] Updated VTG docs and plan tracking (`README.md`, `docs/index.md`, `docs/vtg-layer.md`, `refactor-plan.md`) to reflect authoritative-vs-descriptive separation and formal cycle semantics.
+- 2026-02-08T13:01:09Z [TOOL] Verified with passing `npm test` (130), `npm run build`, and `npm run docs:all` (TypeDoc warnings unchanged).

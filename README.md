@@ -89,7 +89,7 @@ npm run docs:all
 ## Project Areas
 
 - `src/engine/`: pure math, sampling, trails, fixtures
-- `src/vtg/`: VTG descriptor types, generator, classifier
+- `src/vtg/`: VTG descriptor types, generator, authoritative classifier, descriptive geometry helpers
 - `src/state/`: defaults, constants, units, actions, persistence, preset library
 - `src/composables/`: app-level orchestration units (`useTransportClock`, `usePersistenceCoordinator`, `useTransportController`, `useThemeController`, `useShareLinkController`, `usePresetLibraryController`, `useAppOrchestrator`) plus shared UI utility (`useNumericDrafts`)
 - `src/render/`: Canvas drawing helpers

@@ -1,3 +1,5 @@
+import { TWO_PI } from "@/state/constants";
+
 /**
  * Discrete VTG element labels used for both arm and poi-head relationships.
  */
@@ -7,6 +9,11 @@ export type VTGElement = "Earth" | "Air" | "Water" | "Fire";
  * Discrete VTG phase buckets in degrees.
  */
 export type VTGPhaseDeg = 0 | 90 | 180 | 270;
+
+/**
+ * Canonical right-arm angular speed used by VTG generator contracts (`1 arm cycle / beat`).
+ */
+export const VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT = TWO_PI;
 
 /**
  * VTG descriptor used to generate one canonical state.
@@ -46,6 +53,30 @@ export const VTG_ELEMENTS: VTGElement[] = ["Earth", "Air", "Water", "Fire"];
  * Canonical VTG phase bucket iteration order for selector chips.
  */
 export const VTG_PHASE_BUCKETS: VTGPhaseDeg[] = [0, 90, 180, 270];
+
+/**
+ * Converts signed poi cycles-per-arm-cycle into world-frame head angular speed.
+ *
+ * Contract:
+ * - `+N` means `N` head cycles per canonical arm cycle.
+ * - `-N` means reversed-direction head motion with `N` cycles per canonical arm cycle.
+ *
+ * @param poiCyclesPerArmCycle Signed head cycles per canonical arm cycle.
+ * @returns Head angular speed in radians per beat.
+ */
+export function poiCyclesPerArmCycleToHeadSpeedRadiansPerBeat(poiCyclesPerArmCycle: number): number {
+  return poiCyclesPerArmCycle * VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT;
+}
+
+/**
+ * Converts world-frame head angular speed into signed poi cycles-per-arm-cycle.
+ *
+ * @param headSpeedRadiansPerBeat Head angular speed in radians per beat.
+ * @returns Signed head cycles per canonical arm cycle.
+ */
+export function headSpeedRadiansPerBeatToPoiCyclesPerArmCycle(headSpeedRadiansPerBeat: number): number {
+  return headSpeedRadiansPerBeat / VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT;
+}
 
 /**
  * Authoritative VTG relation mapping table.

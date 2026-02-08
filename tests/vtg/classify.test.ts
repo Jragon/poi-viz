@@ -3,12 +3,14 @@ import type { AppState } from "@/types/state";
 import {
   classifyArmElement,
   classifyPoiElement,
-  classifyVTG,
+  classifyVTG
+} from "@/vtg/classify";
+import {
   describeArmGeometryAtCardinals,
   describeElementGeometryAtCardinals,
   describePoiGeometryAtCardinals,
   type CardinalGeometryDescription
-} from "@/vtg/classify";
+} from "@/vtg/descriptiveGeometry";
 import { generateVTGState } from "@/vtg/generate";
 import { VTG_ELEMENTS, type VTGDescriptor, type VTGElement } from "@/vtg/types";
 import { describe, expect, it } from "vitest";
@@ -57,6 +59,34 @@ describe("VTG classification", () => {
     );
 
     expect(classifyVTG(generated).phaseDeg).toBe(90);
+  });
+
+  it("keeps full authoritative VTG classification invariant under global phase-reference toggles", () => {
+    const baseState = createDefaultState();
+    const generated = generateVTGState(
+      {
+        armElement: "Water",
+        poiElement: "Fire",
+        phaseDeg: 270,
+        poiCyclesPerArmCycle: -3
+      },
+      baseState
+    );
+    const baseline = classifyVTG(generated);
+
+    for (const phaseReference of ["right", "down", "left", "up"] as const) {
+      const withReference = {
+        global: {
+          ...generated.global,
+          phaseReference
+        },
+        hands: {
+          L: { ...generated.hands.L },
+          R: { ...generated.hands.R }
+        }
+      };
+      expect(classifyVTG(withReference)).toEqual(baseline);
+    }
   });
 
   it("keeps arm/poi element classification invariant under global rotation", () => {

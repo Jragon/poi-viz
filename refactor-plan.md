@@ -182,6 +182,10 @@ Completed on 2026-02-08: transport progression moved to pure `state/actions` upd
 
 Keep VTG authoritative semantics isolated from descriptive/view language.
 
+### Status
+
+Completed on 2026-02-08: descriptive cardinal helpers were moved out of `src/vtg/classify.ts` into `src/vtg/descriptiveGeometry.ts`, authoritative classifier/generator paths remain phase-reference-invariant, and signed `poiCyclesPerArmCycle` conversion semantics were formalized in `src/vtg/types.ts` with dedicated tests.
+
 ### Scope
 
 - Split descriptive cardinal helpers out of `src/vtg/classify.ts` into separate non-authoritative module.
