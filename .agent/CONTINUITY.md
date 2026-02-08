@@ -249,3 +249,7 @@
 - 2026-02-08T08:29:22Z [CODE] Moved App-level concerns (transport wiring, persistence delegation, theme toggle persistence, VTG apply dispatch, preset-library handlers, copy-link/status timer flows) out of component root logic and into the orchestrator composable.
 - 2026-02-08T08:29:22Z [CODE] Added orchestration module coverage in `tests/ui/app-orchestrator.integration.test.ts` and retained behavior parity under existing `tests/ui/app.integration.test.ts`.
 - 2026-02-08T08:29:22Z [TOOL] Verified Phase G with passing `npm test` (112 tests), `npm run build`, and `npm run docs:all` (TypeDoc warnings only).
+- 2026-02-08T09:08:42Z [USER] Challenged whether `useAppOrchestrator` was still a god-module and requested deeper modularization before Phase H.
+- 2026-02-08T09:08:42Z [CODE] Decomposed `src/composables/useAppOrchestrator.ts` into focused controllers (`useTransportController`, `useThemeController`, `useShareLinkController`, `usePresetLibraryController`) while preserving external App handler contracts.
+- 2026-02-08T09:08:42Z [CODE] Kept `useAppOrchestrator` as a composition facade and updated docs/plan to reflect controller-level ownership boundaries.
+- 2026-02-08T09:08:42Z [TOOL] Re-validated decomposition with passing `npm test` (112 tests), `npm run build`, and `npm run docs:all` (TypeDoc warnings only).

@@ -1,6 +1,6 @@
 # Refactor Plan (Pre-Sequencer Baseline)
 
-Last updated: 2026-02-08 (Phase G complete)  
+Last updated: 2026-02-08 (Phase G decomposition hardening complete)  
 Owner: Rory + Codex  
 Mode: One phase at a time, no bundled mega-refactors
 
@@ -335,6 +335,16 @@ Make `App.vue` a thin composition shell.
   - `README.md`
   - `docs/index.md`
 - Validation run:
+  - `npm test` (112 passing)
+  - `npm run build` (passing)
+  - `npm run docs:all` (TypeDoc warnings only)
+- Post-completion hardening on 2026-02-08 further decomposed `useAppOrchestrator` into focused controllers:
+  - `src/composables/useTransportController.ts`
+  - `src/composables/useThemeController.ts`
+  - `src/composables/useShareLinkController.ts`
+  - `src/composables/usePresetLibraryController.ts`
+- `useAppOrchestrator` now acts as a thin composition facade over the above controllers while preserving external App event contracts.
+- Re-validated decomposition with unchanged behavior:
   - `npm test` (112 passing)
   - `npm run build` (passing)
   - `npm run docs:all` (TypeDoc warnings only)
