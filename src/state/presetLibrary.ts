@@ -1,11 +1,17 @@
-import type { AppState } from "@/types/state";
-import { degreesToRadians, radiansToDegrees, type AngleUnit } from "@/state/angleUnits";
+import type { AppState, PhaseReference } from "@/types/state";
+import type { AngleUnit } from "@/state/angleUnits";
+import {
+  canonicalPhaseRadiansToReferenceDegrees,
+  canonicalToReferencePhaseRadians,
+  referencePhaseDegreesToCanonicalRadians,
+  referenceToCanonicalPhaseRadians
+} from "@/state/phaseReference";
 import { deserializeState, PERSISTED_STATE_SCHEMA_VERSION } from "@/state/persistence";
 import { speedFromRadiansPerBeat, speedToRadiansPerBeat, type SpeedUnit } from "@/state/speedUnits";
 
 export const PRESET_LIBRARY_STORAGE_KEY = "poi-phase-visualiser-preset-library";
-export const PRESET_LIBRARY_SCHEMA_VERSION = 1;
-export const PRESET_FILE_SCHEMA_VERSION = 2;
+export const PRESET_LIBRARY_SCHEMA_VERSION = 2;
+export const PRESET_FILE_SCHEMA_VERSION = 3;
 export const PRESET_NAME_MAX_LENGTH = 80;
 const DEFAULT_PRESET_NAME = "Untitled Preset";
 
@@ -41,6 +47,7 @@ interface UserPresetFilePayload {
 interface PresetFileUnits {
   speedUnit: SpeedUnit;
   phaseUnit: AngleUnit;
+  phaseReference: PhaseReference;
 }
 
 interface PresetFileState {
@@ -80,6 +87,10 @@ function isAngleUnit(value: unknown): value is AngleUnit {
   return value === "degrees" || value === "radians";
 }
 
+function isPhaseReference(value: unknown): value is PhaseReference {
+  return value === "right" || value === "down" || value === "left" || value === "up";
+}
+
 function cloneState(state: AppState): AppState {
   return {
     global: { ...state.global },
@@ -90,38 +101,40 @@ function cloneState(state: AppState): AppState {
   };
 }
 
-function convertPhaseFromInternalForExport(valueRadians: number, phaseUnit: AngleUnit): number {
+function convertPhaseFromInternalForExport(valueRadians: number, phaseUnit: AngleUnit, phaseReference: PhaseReference): number {
   if (phaseUnit === "radians") {
-    return valueRadians;
+    return canonicalToReferencePhaseRadians(valueRadians, phaseReference);
   }
-  return radiansToDegrees(valueRadians);
+  return canonicalPhaseRadiansToReferenceDegrees(valueRadians, phaseReference);
 }
 
-function convertPhaseFromExportToInternal(value: number, phaseUnit: AngleUnit): number {
+function convertPhaseFromExportToInternal(value: number, phaseUnit: AngleUnit, phaseReference: PhaseReference): number {
   if (phaseUnit === "radians") {
-    return value;
+    return referenceToCanonicalPhaseRadians(value, phaseReference);
   }
-  return degreesToRadians(value);
+  return referencePhaseDegreesToCanonicalRadians(value, phaseReference);
 }
 
 function convertStateForExport(state: AppState, options: PresetFileExportOptions): PresetFileState {
+  const phaseReference = state.global.phaseReference;
+
   return {
-    global: { ...state.global },
+    global: { ...state.global, phaseReference },
     hands: {
       L: {
         armSpeed: speedFromRadiansPerBeat(state.hands.L.armSpeed, options.speedUnit),
-        armPhase: convertPhaseFromInternalForExport(state.hands.L.armPhase, options.phaseUnit),
+        armPhase: convertPhaseFromInternalForExport(state.hands.L.armPhase, options.phaseUnit, phaseReference),
         armRadius: state.hands.L.armRadius,
         poiSpeed: speedFromRadiansPerBeat(state.hands.L.poiSpeed, options.speedUnit),
-        poiPhase: convertPhaseFromInternalForExport(state.hands.L.poiPhase, options.phaseUnit),
+        poiPhase: convertPhaseFromInternalForExport(state.hands.L.poiPhase, options.phaseUnit, phaseReference),
         poiRadius: state.hands.L.poiRadius
       },
       R: {
         armSpeed: speedFromRadiansPerBeat(state.hands.R.armSpeed, options.speedUnit),
-        armPhase: convertPhaseFromInternalForExport(state.hands.R.armPhase, options.phaseUnit),
+        armPhase: convertPhaseFromInternalForExport(state.hands.R.armPhase, options.phaseUnit, phaseReference),
         armRadius: state.hands.R.armRadius,
         poiSpeed: speedFromRadiansPerBeat(state.hands.R.poiSpeed, options.speedUnit),
-        poiPhase: convertPhaseFromInternalForExport(state.hands.R.poiPhase, options.phaseUnit),
+        poiPhase: convertPhaseFromInternalForExport(state.hands.R.poiPhase, options.phaseUnit, phaseReference),
         poiRadius: state.hands.R.poiRadius
       }
     }
@@ -156,7 +169,7 @@ function convertExportStateToInternal(candidate: unknown, units: PresetFileUnits
     if (typeof value !== "number" || !Number.isFinite(value)) {
       return null;
     }
-    return convertPhaseFromExportToInternal(value, units.phaseUnit);
+    return convertPhaseFromExportToInternal(value, units.phaseUnit, units.phaseReference);
   };
 
   const convertPlainNumber = (value: unknown): number | null => {
@@ -194,7 +207,8 @@ function convertExportStateToInternal(candidate: unknown, units: PresetFileUnits
       showTrails: typeof globalRecord.showTrails === "boolean" ? globalRecord.showTrails : null,
       trailBeats: convertPlainNumber(globalRecord.trailBeats),
       trailSampleHz: convertPlainNumber(globalRecord.trailSampleHz),
-      showWaves: typeof globalRecord.showWaves === "boolean" ? globalRecord.showWaves : null
+      showWaves: typeof globalRecord.showWaves === "boolean" ? globalRecord.showWaves : null,
+      phaseReference: units.phaseReference
     },
     hands: {
       L: mappedLeft,
@@ -423,11 +437,12 @@ function parsePresetCandidateV2(rawPreset: unknown, defaults: AppState): UserPre
 
   const speedUnit = isSpeedUnit(unitsRecord.speedUnit) ? unitsRecord.speedUnit : null;
   const phaseUnit = isAngleUnit(unitsRecord.phaseUnit) ? unitsRecord.phaseUnit : null;
-  if (!speedUnit || !phaseUnit) {
+  const phaseReference = isPhaseReference(unitsRecord.phaseReference) ? unitsRecord.phaseReference : null;
+  if (!speedUnit || !phaseUnit || !phaseReference) {
     return null;
   }
 
-  const convertedState = convertExportStateToInternal(rawPreset.state, { speedUnit, phaseUnit });
+  const convertedState = convertExportStateToInternal(rawPreset.state, { speedUnit, phaseUnit, phaseReference });
   if (!convertedState) {
     return null;
   }
@@ -490,6 +505,25 @@ export function deserializeUserPresetLibrary(serialized: string | null, defaults
 }
 
 /**
+ * Returns whether raw serialized preset-library payload is compatible with current schema.
+ *
+ * @param serialized Serialized preset-library payload from storage.
+ * @returns `true` when payload is parseable and schema version matches current.
+ */
+export function isPresetLibraryPayloadCompatible(serialized: string | null): boolean {
+  if (!serialized) {
+    return false;
+  }
+
+  try {
+    const raw = JSON.parse(serialized) as unknown;
+    return isRecord(raw) && raw.schemaVersion === PRESET_LIBRARY_SCHEMA_VERSION;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Serializes one preset into shareable JSON file payload with explicit units.
  *
  * @param record Preset record to export.
@@ -503,7 +537,8 @@ export function serializeUserPresetFile(record: UserPresetRecord, options: Prese
     savedAt: record.savedAt,
     units: {
       speedUnit: options.speedUnit,
-      phaseUnit: options.phaseUnit
+      phaseUnit: options.phaseUnit,
+      phaseReference: record.state.global.phaseReference
     },
     state: convertStateForExport(record.state, options)
   };
@@ -519,7 +554,7 @@ export function serializeUserPresetFile(record: UserPresetRecord, options: Prese
 }
 
 /**
- * Parses one preset JSON file payload (v1 legacy or v2 unit-aware schema).
+ * Parses one preset JSON file payload for the current schema only.
  *
  * @param serialized Raw JSON file content.
  * @param defaults Default app state for merge/clamp fallback.
@@ -533,9 +568,6 @@ export function deserializeUserPresetFile(serialized: string, defaults: AppState
     }
 
     const payloadWithSchema = payload as unknown as UserPresetFilePayload;
-    if (payloadWithSchema.schemaVersion === PRESET_LIBRARY_SCHEMA_VERSION) {
-      return parsePresetCandidate(payloadWithSchema.preset, defaults);
-    }
     if (payloadWithSchema.schemaVersion === PRESET_FILE_SCHEMA_VERSION) {
       return parsePresetCandidateV2(payloadWithSchema.preset, defaults);
     }

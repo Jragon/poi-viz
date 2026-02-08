@@ -1,6 +1,7 @@
 import { normalizeLoopBeat } from "@/render/math";
+import { getPhaseReferenceOffsetRadians } from "@/state/phaseReference";
 import { applyPresetById } from "@/state/presets";
-import type { AppState, GlobalState, HandId, HandState, PresetId } from "@/types/state";
+import type { AppState, GlobalState, HandId, HandState, PhaseReference, PresetId } from "@/types/state";
 
 export type GlobalNumberKey = {
   [Key in keyof GlobalState]: GlobalState[Key] extends number ? Key : never;
@@ -8,6 +9,10 @@ export type GlobalNumberKey = {
 
 export type GlobalBooleanKey = {
   [Key in keyof GlobalState]: GlobalState[Key] extends boolean ? Key : never;
+}[keyof GlobalState];
+
+export type GlobalPhaseReferenceKey = {
+  [Key in keyof GlobalState]: GlobalState[Key] extends PhaseReference ? Key : never;
 }[keyof GlobalState];
 
 export type HandNumberKey = keyof HandState;
@@ -103,6 +108,25 @@ export function setGlobalNumber(state: AppState, key: GlobalNumberKey, nextValue
 export function setGlobalBoolean(state: AppState, key: GlobalBooleanKey, nextValue: boolean): AppState {
   const cloned = cloneState(state);
   cloned.global[key] = nextValue;
+  return cloned;
+}
+
+/**
+ * Sets global phase-reference field.
+ *
+ * @param state Current app state.
+ * @param key Global phase-reference field to update.
+ * @param nextValue Next phase-reference value.
+ * @returns New state with phase-reference value applied.
+ */
+export function setGlobalPhaseReference(state: AppState, key: GlobalPhaseReferenceKey, nextValue: PhaseReference): AppState {
+  const cloned = cloneState(state);
+  const currentValue = cloned.global[key];
+  const phaseOffsetDelta = getPhaseReferenceOffsetRadians(nextValue) - getPhaseReferenceOffsetRadians(currentValue);
+
+  cloned.global[key] = nextValue;
+  cloned.hands.L.armPhase += phaseOffsetDelta;
+  cloned.hands.R.armPhase += phaseOffsetDelta;
   return cloned;
 }
 

@@ -35,7 +35,8 @@ Code references:
 
 ## Phase Buckets
 
-`classifyPhaseBucket` maps left-head absolute phase to one of `0/90/180/270` with ±5° tolerance.
+`classifyPhaseBucket` maps the right-head phase offset relative to right-arm phase to one of `0/90/180/270` with ±5° tolerance.
+This bucket is a relative poi offset and does not change when global phase-reference changes.
 
 - Bucket set: `src/vtg/types.ts` export `VTG_PHASE_BUCKETS`.
 - Tolerance logic: `src/vtg/classify.ts` exports `shortestAngularDistanceRadians`, `classifyPhaseBucket`.
@@ -45,11 +46,15 @@ Code references:
 `src/vtg/types.ts` export `getRelationForElement` defines:
 
 - Earth = same-time + same-direction
-- Air = split-time + opposite-direction
+- Air = same-time + opposite-direction
 - Water = split-time + same-direction
-- Fire = same-time + opposite-direction
+- Fire = split-time + opposite-direction
 
 Inverse mapping is `src/vtg/types.ts` export `getElementForRelation`.
+
+With default `phaseReference = down` and `phaseDeg = 0`, this produces the spinner-facing cardinal readouts:
+- Air: together at top/bottom, apart at sides.
+- Fire: together at sides, apart at top/bottom.
 
 ## Generator Mapping (Descriptor -> Engine Params)
 
@@ -61,18 +66,34 @@ Generator inputs:
 
 `generateVTGState` performs:
 
-1. Set canonical left arm baseline: `ω_arm_L = 2π`, `φ_arm_L = 0`.
-2. Resolve right arm relation from `armElement` to get `ω_arm_R` sign and `φ_arm_R` timing offset.
-3. Convert signed head cycles to head speed: `ω_head_L = poiCyclesPerArmCycle * 2π`.
-4. Resolve right head direction/timing from `poiElement`.
-5. Set left head orientation from `phaseDeg` bucket.
-6. Solve relative channels per hand:
+1. Set canonical right arm speed baseline: `ω_arm_R = 2π`.
+2. Resolve arm orientation baseline from global phase reference (reference-zero direction).
+3. Resolve left arm relation from `armElement` to get `ω_arm_L` sign and `φ_arm_L` timing offset.
+4. Convert signed head cycles to right-head speed: `ω_head_R = poiCyclesPerArmCycle * 2π`.
+5. Resolve left head direction/timing from `poiElement`.
+6. Apply `phaseDeg` as a poi-head offset relative to arms:
+   - `φ_head_R = φ_arm_R + phaseOffset(phaseDeg)`,
+   - `φ_head_L = φ_head_R + timingOffset(poiElement)`.
+7. Solve relative channels per hand:
    - `ω_rel = ω_head - ω_arm`
    - `φ_rel = φ_head - φ_arm`
-7. Validate by re-classifying with `classifyVTG`.
+8. Validate by re-classifying with `classifyVTG`.
 
 Code references:
-- `src/vtg/generate.ts` exports `generateVTGState` and helper `phaseBucketToRadians`.
+- `src/vtg/generate.ts` exports `generateVTGState`.
+- `src/state/phaseReference.ts` exports `referencePhaseBucketToCanonical`.
+
+## Invariants vs Reference-Relative Outputs
+
+Invariant (reference-independent):
+- `armElement` and `poiElement` classification (timing/direction only).
+
+Reference-relative:
+- arm orientation baseline chosen by global `phaseReference`.
+
+Reference-independent:
+- `phaseDeg` bucket output from `classifyVTG` (poi offset).
+- VTG phase chip semantics in `src/components/VtgPanel.vue`.
 
 ## Warning: Generator Wrapper, Not Sequencer
 

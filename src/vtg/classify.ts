@@ -47,7 +47,8 @@ const CARDINAL_PHASES: CardinalPhase[] = [
 
 /**
  * Non-authoritative geometric interpretation table used for docs/debug.
- * These patterns are descriptive VTG language aids, not classification rules.
+ * These patterns are descriptive VTG language aids under the default
+ * "phase zero = down" orientation, not classification rules.
  */
 const ELEMENT_CARDINAL_GEOMETRY: Record<VTGElement, CardinalGeometryDescription> = {
   Earth: {
@@ -221,18 +222,20 @@ export function classifyPoiElement(state: AppState): VTGElement {
 
 /**
  * Authoritative VTG phase bucket classifier.
- * Phase is an absolute-orientation bucket (0/90/180/270) and may change under global rotation.
+ * Phase bucket here is the right-head offset relative to right-arm phase, not absolute world orientation.
  *
  * @param state Full app state with hand angular params in radians/radians-per-beat.
  * @returns Phase bucket in degrees (`0`, `90`, `180`, or `270`).
  */
 export function classifyPhaseBucket(state: AppState): VTGPhaseDeg {
-  const leftHeadPhase = normalizeAngleRadians(getHeadPhaseRadians(state, LEFT_HAND_ID));
+  const rightHeadPhase = getHeadPhaseRadians(state, RIGHT_HAND_ID);
+  const rightArmPhase = state.hands.R.armPhase;
+  const phaseOffset = normalizeAngleRadians(rightHeadPhase - rightArmPhase);
   let best: PhaseBucketCandidate | null = null;
   let bestDistance = Number.POSITIVE_INFINITY;
 
   for (const candidate of PHASE_BUCKET_CANDIDATES) {
-    const distance = shortestAngularDistanceRadians(leftHeadPhase, candidate.phaseRadians);
+    const distance = shortestAngularDistanceRadians(phaseOffset, candidate.phaseRadians);
     if (distance < bestDistance) {
       best = candidate;
       bestDistance = distance;
@@ -248,7 +251,7 @@ export function classifyPhaseBucket(state: AppState): VTGPhaseDeg {
 
 /**
  * Full VTG classifier for the current state.
- * Element fields are relation-based; phaseDeg is orientation-based.
+ * Element fields are relation-based; `phaseDeg` is poi-head offset from right-arm phase.
  *
  * @param state Full app state with hand angular params in radians/radians-per-beat.
  * @returns VTG descriptor subset `{ armElement, poiElement, phaseDeg }`.
@@ -264,6 +267,7 @@ export function classifyVTG(state: AppState): Pick<VTGDescriptor, "armElement" |
 /**
  * Descriptive-only helper mapping element labels to together/apart cardinal language.
  * This is an interpretation aid for docs/debug and is NOT used for classification.
+ * It describes the default "phase zero = down" VTG orientation language.
  *
  * @param element VTG element label.
  * @returns Cardinal together/apart description table for the element.

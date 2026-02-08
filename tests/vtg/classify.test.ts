@@ -36,30 +36,6 @@ function rotateStateGlobally(state: AppState, deltaRadians: number): AppState {
   };
 }
 
-/**
- * Converts one of the test rotation offsets into a cardinal phase step in degrees.
- */
-function rotationStepDegrees(deltaRadians: number): 90 | 180 | 270 {
-  if (Math.abs(deltaRadians - Math.PI / 2) <= Number.EPSILON) {
-    return 90;
-  }
-  if (Math.abs(deltaRadians - Math.PI) <= Number.EPSILON) {
-    return 180;
-  }
-  return 270;
-}
-
-/**
- * Wraps phase degrees into VTG cardinal buckets.
- */
-function wrapPhaseDeg(phaseDeg: 0 | 90 | 180 | 270, deltaDeg: 90 | 180 | 270): 0 | 90 | 180 | 270 {
-  const normalized = (phaseDeg + deltaDeg) % 360;
-  if (normalized === 0 || normalized === 90 || normalized === 180 || normalized === 270) {
-    return normalized;
-  }
-  throw new Error("Unexpected phase bucket.");
-}
-
 const EXPECTED_CARDINAL_GEOMETRY: Record<VTGElement, CardinalGeometryDescription> = {
   Earth: { right: "together", up: "together", left: "together", down: "together" },
   Air: { right: "apart", up: "together", left: "apart", down: "together" },
@@ -68,6 +44,22 @@ const EXPECTED_CARDINAL_GEOMETRY: Record<VTGElement, CardinalGeometryDescription
 };
 
 describe("VTG classification", () => {
+  it("reports phase bucket as poi-head offset independent of global phase reference", () => {
+    const baseState = createDefaultState();
+    const generated = generateVTGState(
+      {
+        armElement: "Earth",
+        poiElement: "Earth",
+        phaseDeg: 90,
+        poiCyclesPerArmCycle: -3
+      },
+      baseState,
+      "down"
+    );
+
+    expect(classifyVTG(generated).phaseDeg).toBe(90);
+  });
+
   it("keeps arm/poi element classification invariant under global rotation", () => {
     const baseState = createDefaultState();
 
@@ -90,16 +82,14 @@ describe("VTG classification", () => {
             expect(classifyPoiElement(rotated)).toBe(initial.poiElement);
             expect(rotatedClassified.armElement).toBe(initial.armElement);
             expect(rotatedClassified.poiElement).toBe(initial.poiElement);
-
-            const expectedPhaseDeg = wrapPhaseDeg(initial.phaseDeg, rotationStepDegrees(deltaRadians));
-            expect(rotatedClassified.phaseDeg).toBe(expectedPhaseDeg);
+            expect(rotatedClassified.phaseDeg).toBe(initial.phaseDeg);
           }
         }
       }
     }
   });
 
-  it("matches the canonical together/apart cardinal descriptions for each element", () => {
+  it("matches together/apart cardinal descriptions for each element under phase-zero down interpretation", () => {
     const baseState = createDefaultState();
 
     for (const element of VTG_ELEMENTS) {
@@ -112,7 +102,8 @@ describe("VTG classification", () => {
           phaseDeg: 0,
           poiCyclesPerArmCycle: -3
         },
-        baseState
+        baseState,
+        "down"
       );
       expect(describeArmGeometryAtCardinals(armState)).toEqual(EXPECTED_CARDINAL_GEOMETRY[element]);
 
@@ -123,7 +114,8 @@ describe("VTG classification", () => {
           phaseDeg: 0,
           poiCyclesPerArmCycle: -3
         },
-        baseState
+        baseState,
+        "down"
       );
       expect(describePoiGeometryAtCardinals(poiState)).toEqual(EXPECTED_CARDINAL_GEOMETRY[element]);
     }

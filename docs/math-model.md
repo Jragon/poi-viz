@@ -25,11 +25,27 @@ Code references:
 - Angular speed: radians per beat.
 - Time: beats, not seconds.
 - Coordinates: `+x` right, `+y` up, positive rotation is counter-clockwise.
+- Canonical internal phase zero is `right`.
+- User-facing phase zero is configurable via `global.phaseReference` (`right|down|left|up`), default `down`.
 
 Code references:
 - `src/engine/types.ts` export `Vector2` and `EngineParams`.
 - `src/state/angleUnits.ts` exports `radiansToDegrees` and `degreesToRadians`.
+- `src/state/phaseReference.ts` exports canonical/reference phase conversion helpers.
 - `src/state/speedUnits.ts` exports `radiansPerBeatToCyclesPerBeat` and `speedToRadiansPerBeat`.
+
+## Global Phase Reference Transform
+
+The app applies a global rotation transform only at UI/VTG/state boundaries:
+
+- Canonical engine math keeps `right = 0`.
+- Reference-relative UI phase values use:
+  - `φ_reference = φ_canonical - offset(reference)`
+  - `φ_canonical = φ_reference + offset(reference)`
+- When `global.phaseReference` changes at runtime, arm phases are shifted by the reference-offset delta so the viewport orientation updates immediately while relative poi phase (`φ_rel`) is preserved.
+- Default offset is `down = 270°` (`3π/2`), so user-entered `0°` points down.
+
+This is a pure coordinate transform; it does not change oscillator equations or deterministic sampling behavior.
 
 ## Angle Wrapping Terminology
 

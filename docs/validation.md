@@ -45,6 +45,17 @@ When changing engine/VTG/state behavior:
    - `npm run lint`
    - `npm run build`
 
+## Persistence Break Policy
+
+The current persistence contract intentionally fails closed across schema breaks:
+
+- old state/preset payload schemas are rejected (no migration adapters),
+- startup clears incompatible local keys for:
+  - `LOCAL_STORAGE_STATE_KEY`,
+  - `PRESET_LIBRARY_STORAGE_KEY`.
+
+This keeps early-stage semantics simple and prevents mixed-reference persisted phase data after contract changes.
+
 ## Recommended Workflow For New Presets/Examples
 
 1. Add or adjust pure transforms in `src/state/presets.ts`.

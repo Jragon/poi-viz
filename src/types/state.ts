@@ -4,6 +4,12 @@
 export type HandId = "L" | "R";
 
 /**
+ * Global phase-zero reference used for user-facing phase semantics.
+ * Engine internals remain canonical (`right = 0`).
+ */
+export type PhaseReference = "right" | "down" | "left" | "up";
+
+/**
  * Global runtime state.
  * Time-domain units are beats for loop/playhead fields.
  */
@@ -44,6 +50,10 @@ export interface GlobalState {
    * Wave-panel visibility toggle.
    */
   showWaves: boolean;
+  /**
+   * User-facing phase-zero reference for controls/VTG orientation semantics.
+   */
+  phaseReference: PhaseReference;
 }
 
 /**

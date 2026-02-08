@@ -1,10 +1,11 @@
 import { PI, TWO_PI } from "@/state/constants";
+import { referencePhaseBucketToCanonical } from "@/state/phaseReference";
 import type { AppState, HandState } from "@/types/state";
+import type { PhaseReference } from "@/types/state";
 import { classifyVTG } from "@/vtg/classify";
 import { getRelationForElement, type VTGDescriptor, type VTGPhaseDeg, type VTGTiming } from "@/vtg/types";
 
-const CANONICAL_LEFT_ARM_SPEED = TWO_PI;
-const CANONICAL_LEFT_ARM_PHASE = 0;
+const CANONICAL_RIGHT_ARM_SPEED = TWO_PI;
 const ZERO_CYCLE_TOLERANCE = 1e-9;
 
 const RADIANS_PER_DEGREE = PI / 180;
@@ -33,7 +34,15 @@ function applyAngularOverrides(
 /**
  * Converts a VTG phase bucket from degrees into radians.
  */
-function phaseBucketToRadians(phaseDeg: VTGPhaseDeg): number {
+function phaseBucketToCanonicalRadians(phaseDeg: VTGPhaseDeg, phaseReference: PhaseReference): number {
+  const canonicalPhaseDeg = referencePhaseBucketToCanonical(phaseDeg, phaseReference);
+  return canonicalPhaseDeg * RADIANS_PER_DEGREE;
+}
+
+/**
+ * Converts a VTG phase bucket into a canonical relative phase offset in radians.
+ */
+function phaseBucketToOffsetRadians(phaseDeg: VTGPhaseDeg): number {
   return phaseDeg * RADIANS_PER_DEGREE;
 }
 
@@ -60,7 +69,7 @@ function assertValidPoiCyclesPerArmCycle(poiCyclesPerArmCycle: number): void {
  * Converts signed head cycles-per-arm-cycle into radians-per-beat.
  */
 function getHeadSpeedRadiansPerBeat(poiCyclesPerArmCycle: number): number {
-  return poiCyclesPerArmCycle * CANONICAL_LEFT_ARM_SPEED;
+  return poiCyclesPerArmCycle * CANONICAL_RIGHT_ARM_SPEED;
 }
 
 /**
@@ -86,30 +95,36 @@ function assertMatchesDescriptor(state: AppState, descriptor: VTGDescriptor): vo
  *
  * @param descriptor VTG discrete inputs (elements, phase bucket, signed head cycles).
  * @param baseState Source state used for non-angular fields.
+ * @param phaseReference User-facing phase-zero reference used for arm orientation baseline (`phaseDeg = 0` direction).
  * @returns New app state with angular fields solved from VTG descriptor constraints.
  */
-export function generateVTGState(descriptor: VTGDescriptor, baseState: AppState): AppState {
+export function generateVTGState(
+  descriptor: VTGDescriptor,
+  baseState: AppState,
+  phaseReference: PhaseReference = "right"
+): AppState {
   assertValidPoiCyclesPerArmCycle(descriptor.poiCyclesPerArmCycle);
 
   const armRelation = getRelationForElement(descriptor.armElement);
   const poiRelation = getRelationForElement(descriptor.poiElement);
+  const armBaselinePhase = phaseBucketToCanonicalRadians(0, phaseReference);
 
-  const leftArmSpeed = CANONICAL_LEFT_ARM_SPEED;
-  const leftArmPhase = CANONICAL_LEFT_ARM_PHASE;
-  const rightArmSpeed = armRelation.direction === "same-direction" ? CANONICAL_LEFT_ARM_SPEED : -CANONICAL_LEFT_ARM_SPEED;
-  const rightArmPhase = timingToPhaseOffset(armRelation.timing);
+  const rightArmSpeed = CANONICAL_RIGHT_ARM_SPEED;
+  const rightArmPhase = armBaselinePhase;
+  const leftArmSpeed = armRelation.direction === "same-direction" ? CANONICAL_RIGHT_ARM_SPEED : -CANONICAL_RIGHT_ARM_SPEED;
+  const leftArmPhase = rightArmPhase + timingToPhaseOffset(armRelation.timing);
 
-  const leftHeadSpeed = getHeadSpeedRadiansPerBeat(descriptor.poiCyclesPerArmCycle);
-  const rightHeadSpeed = poiRelation.direction === "same-direction" ? leftHeadSpeed : -leftHeadSpeed;
+  const rightHeadSpeed = getHeadSpeedRadiansPerBeat(descriptor.poiCyclesPerArmCycle);
+  const leftHeadSpeed = poiRelation.direction === "same-direction" ? rightHeadSpeed : -rightHeadSpeed;
 
-  // Phase bucket is treated as absolute orientation for the left head.
-  const leftHeadPhase = phaseBucketToRadians(descriptor.phaseDeg);
-  const rightHeadPhase = leftHeadPhase + timingToPhaseOffset(poiRelation.timing);
+  // Phase bucket rotates poi-head orientation relative to the hand baseline.
+  const rightHeadPhase = rightArmPhase + phaseBucketToOffsetRadians(descriptor.phaseDeg);
+  const leftHeadPhase = rightHeadPhase + timingToPhaseOffset(poiRelation.timing);
 
-  const leftRelativePoiSpeed = leftHeadSpeed - leftArmSpeed;
   const rightRelativePoiSpeed = rightHeadSpeed - rightArmSpeed;
-  const leftRelativePoiPhase = leftHeadPhase - leftArmPhase;
+  const leftRelativePoiSpeed = leftHeadSpeed - leftArmSpeed;
   const rightRelativePoiPhase = rightHeadPhase - rightArmPhase;
+  const leftRelativePoiPhase = leftHeadPhase - leftArmPhase;
 
   const nextState: AppState = {
     global: { ...baseState.global },

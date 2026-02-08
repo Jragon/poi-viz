@@ -8,7 +8,7 @@ describe("element presets", () => {
     const state = createDefaultState();
     const next = applyElementPreset(state, "earth");
 
-    expect(next.hands.R.armPhase).toBeCloseTo(next.hands.L.armPhase + SAME_TIME_PHASE_OFFSET, 10);
+    expect(next.hands.L.armPhase).toBeCloseTo(next.hands.R.armPhase + SAME_TIME_PHASE_OFFSET, 10);
     expect(Math.sign(next.hands.R.armSpeed)).toBe(Math.sign(next.hands.L.armSpeed));
   });
 
@@ -16,7 +16,7 @@ describe("element presets", () => {
     const state = createDefaultState();
     const next = applyElementPreset(state, "air");
 
-    expect(next.hands.R.armPhase).toBeCloseTo(next.hands.L.armPhase + SAME_TIME_PHASE_OFFSET, 10);
+    expect(next.hands.L.armPhase).toBeCloseTo(next.hands.R.armPhase + SAME_TIME_PHASE_OFFSET, 10);
     expect(Math.sign(next.hands.R.armSpeed)).toBe(-Math.sign(next.hands.L.armSpeed));
   });
 
@@ -24,7 +24,7 @@ describe("element presets", () => {
     const state = createDefaultState();
     const next = applyElementPreset(state, "water");
 
-    expect(next.hands.R.armPhase).toBeCloseTo(next.hands.L.armPhase + SPLIT_TIME_PHASE_OFFSET, 10);
+    expect(next.hands.L.armPhase).toBeCloseTo(next.hands.R.armPhase + SPLIT_TIME_PHASE_OFFSET, 10);
     expect(Math.sign(next.hands.R.armSpeed)).toBe(Math.sign(next.hands.L.armSpeed));
   });
 
@@ -32,7 +32,7 @@ describe("element presets", () => {
     const state = createDefaultState();
     const next = applyElementPreset(state, "fire");
 
-    expect(next.hands.R.armPhase).toBeCloseTo(next.hands.L.armPhase + SPLIT_TIME_PHASE_OFFSET, 10);
+    expect(next.hands.L.armPhase).toBeCloseTo(next.hands.R.armPhase + SPLIT_TIME_PHASE_OFFSET, 10);
     expect(Math.sign(next.hands.R.armSpeed)).toBe(-Math.sign(next.hands.L.armSpeed));
   });
 });
@@ -60,4 +60,3 @@ describe("flower presets", () => {
     expect(next.hands.R.poiPhase).toBe(0);
   });
 });
-

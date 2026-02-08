@@ -88,17 +88,17 @@ function formatSpeed(radiansPerBeat: number): string {
 }
 
 /**
- * Left-head speed from signed poi cycles-per-arm-cycle.
+ * Right-head speed from signed poi cycles-per-arm-cycle.
  */
-function getLeftHeadSpeed(): number {
+function getRightHeadSpeed(): number {
   return poiCyclesPerArmCycle.value * TWO_PI;
 }
 
 /**
- * Left-relative speed solved from ω_rel = ω_head - ω_arm.
+ * Right-relative speed solved from ω_rel = ω_head - ω_arm.
  */
-function getLeftRelativeSpeed(): number {
-  return getLeftHeadSpeed() - TWO_PI;
+function getRightRelativeSpeed(): number {
+  return getRightHeadSpeed() - TWO_PI;
 }
 
 /**
@@ -200,16 +200,33 @@ function syncControlsFromState(): void {
     vtgPhaseDeg.value = classification.phaseDeg;
   }
 
-  const leftHand = props.state.hands.L;
-  const leftHeadSpeedRadiansPerBeat = leftHand.armSpeed + leftHand.poiSpeed;
-  const leftHeadCyclesPerBeat = leftHeadSpeedRadiansPerBeat / TWO_PI;
-  setPoiCyclesPerArmCycle(leftHeadCyclesPerBeat);
+  const rightHand = props.state.hands.R;
+  const rightHeadSpeedRadiansPerBeat = rightHand.armSpeed + rightHand.poiSpeed;
+  const rightHeadCyclesPerBeat = rightHeadSpeedRadiansPerBeat / TWO_PI;
+  setPoiCyclesPerArmCycle(rightHeadCyclesPerBeat);
 }
 
 onMounted(() => {
   isExpanded.value = readVtgPanelExpanded();
   syncControlsFromState();
 });
+
+watch(currentVtgClassification, (classification) => {
+  if (!classification) {
+    return;
+  }
+  selectedArmElement.value = classification.armElement;
+  selectedPoiElement.value = classification.poiElement;
+  vtgPhaseDeg.value = classification.phaseDeg;
+});
+
+watch(
+  () => props.state.hands.R.armSpeed + props.state.hands.R.poiSpeed,
+  (rightHeadSpeedRadiansPerBeat) => {
+    const rightHeadCyclesPerBeat = rightHeadSpeedRadiansPerBeat / TWO_PI;
+    setPoiCyclesPerArmCycle(rightHeadCyclesPerBeat);
+  }
+);
 
 watch(isExpanded, (nextValue) => {
   writeVtgPanelExpanded(nextValue);
@@ -319,9 +336,9 @@ watch(isExpanded, (nextValue) => {
       <div class="rounded border border-zinc-800 bg-zinc-900/40 p-3 text-xs text-zinc-400">
         <p>
           Derived (cycles/beat):
-          <span class="font-mono">ω_arm_L={{ formatSpeed(TWO_PI) }}</span>,
-          <span class="font-mono">ω_head_L={{ formatSpeed(getLeftHeadSpeed()) }}</span>,
-          <span class="font-mono">ω_rel_L={{ formatSpeed(getLeftRelativeSpeed()) }}</span>
+          <span class="font-mono">ω_arm_R={{ formatSpeed(TWO_PI) }}</span>,
+          <span class="font-mono">ω_head_R={{ formatSpeed(getRightHeadSpeed()) }}</span>,
+          <span class="font-mono">ω_rel_R={{ formatSpeed(getRightRelativeSpeed()) }}</span>
         </p>
         <p class="mt-1">
           Current VTG state:
@@ -338,7 +355,7 @@ watch(isExpanded, (nextValue) => {
         <ul class="mt-2 list-disc space-y-1 pl-4 text-xs text-zinc-400">
           <li>Arms = timing + direction between hands.</li>
           <li>Poi = timing + direction between head motions (world frame).</li>
-          <li>Phase rotates the pattern orientation in 90° buckets.</li>
+          <li>Phase rotates poi-head offset in 90° buckets while keeping hand timing the same.</li>
           <li>
             Signed poi cycles/arm cycle sets head cycles directly.
             <span class="font-mono">+3</span> means 2-petal inspin and <span class="font-mono">-3</span> means 4-petal antispin.

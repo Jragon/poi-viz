@@ -7,6 +7,9 @@ import {
   deserializeUserPresetFile,
   deserializeUserPresetLibrary,
   ensureUniquePresetId,
+  isPresetLibraryPayloadCompatible,
+  PRESET_FILE_SCHEMA_VERSION,
+  PRESET_LIBRARY_SCHEMA_VERSION,
   serializeUserPresetFile,
   serializeUserPresetLibrary,
   upsertUserPreset
@@ -43,6 +46,8 @@ describe("preset library", () => {
 
   it("round-trips individual preset files", () => {
     const defaults = createDefaultState();
+    defaults.hands.L.armPhase = 0;
+    defaults.global.phaseReference = "down";
     const preset = createUserPresetRecord("Library Preset", defaults, new Date("2026-02-07T13:02:00.000Z"), "preset-lib");
     const filePayload = serializeUserPresetFile(preset, {
       speedUnit: "cycles",
@@ -50,13 +55,18 @@ describe("preset library", () => {
     });
     const parsedRaw = JSON.parse(filePayload) as {
       schemaVersion: number;
-      preset: { units: { speedUnit: string; phaseUnit: string }; state: { hands: { L: { armSpeed: number } } } };
+      preset: {
+        units: { speedUnit: string; phaseUnit: string; phaseReference: string };
+        state: { hands: { L: { armSpeed: number; armPhase: number } } };
+      };
     };
 
-    expect(parsedRaw.schemaVersion).toBe(2);
+    expect(parsedRaw.schemaVersion).toBe(PRESET_FILE_SCHEMA_VERSION);
     expect(parsedRaw.preset.units.speedUnit).toBe("cycles");
     expect(parsedRaw.preset.units.phaseUnit).toBe("degrees");
+    expect(parsedRaw.preset.units.phaseReference).toBe("down");
     expect(parsedRaw.preset.state.hands.L.armSpeed).toBeCloseTo(speedFromRadiansPerBeat(defaults.hands.L.armSpeed, "cycles"), 12);
+    expect(parsedRaw.preset.state.hands.L.armPhase).toBeCloseTo(-270, 10);
 
     const parsed = deserializeUserPresetFile(filePayload, defaults);
 
@@ -64,6 +74,8 @@ describe("preset library", () => {
     expect(parsed?.id).toBe("preset-lib");
     expect(parsed?.name).toBe("Library Preset");
     expect(parsed?.state.global.bpm).toBe(defaults.global.bpm);
+    expect(parsed?.state.global.phaseReference).toBe("down");
+    expect(parsed?.state.hands.L.armPhase).toBeCloseTo(defaults.hands.L.armPhase, 10);
   });
 
   it("creates safe export filenames", () => {
@@ -82,7 +94,7 @@ describe("preset library", () => {
     expect(merged[0]?.name).toBe("Preset Updated");
   });
 
-  it("imports legacy schema-version-1 preset files", () => {
+  it("rejects legacy preset file schemas under break policy", () => {
     const defaults = createDefaultState();
     const payload = JSON.stringify({
       schemaVersion: 1,
@@ -95,8 +107,19 @@ describe("preset library", () => {
     });
 
     const parsed = deserializeUserPresetFile(payload, defaults);
-    expect(parsed).not.toBeNull();
-    expect(parsed?.id).toBe("legacy-preset");
-    expect(parsed?.state.hands.L.armSpeed).toBeCloseTo(defaults.hands.L.armSpeed, 12);
+    expect(parsed).toBeNull();
+  });
+
+  it("reports preset-library payload compatibility for schema purging", () => {
+    const defaults = createDefaultState();
+    const preset = createUserPresetRecord("A", defaults, new Date("2026-02-07T13:00:00.000Z"), "preset-a");
+    const serialized = serializeUserPresetLibrary([preset]);
+    const legacySerialized = JSON.stringify({
+      schemaVersion: PRESET_LIBRARY_SCHEMA_VERSION - 1,
+      presets: [preset]
+    });
+
+    expect(isPresetLibraryPayloadCompatible(serialized)).toBe(true);
+    expect(isPresetLibraryPayloadCompatible(legacySerialized)).toBe(false);
   });
 });

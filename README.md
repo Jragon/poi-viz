@@ -8,12 +8,25 @@ The app gives you:
 - a pattern viewport (hands, tethers, heads, optional trails),
 - a synchronized waveform inspector,
 - interactive controls for timing, per-hand parameters, VTG generation, and preset library workflows,
+- configurable global phase-zero reference (`down` default),
 - light/dark theme switching from the title bar (persisted in browser storage),
 - a transport-level static view mode for full-loop still pattern captures,
 - deterministic sampling/fixtures so behavior is testable and reproducible.
 
 Trail behavior note:
 - backward scrubbing rebuilds a deterministic trailing window ending at the current playhead beat (it does not collapse to a single seed point).
+
+Phase-reference note:
+- engine internals remain canonical (`right = 0`),
+- global phase-zero semantics are reference-relative (`right|down|left|up`, default `down`),
+- changing global phase-zero rotates current arm orientation immediately while preserving relative poi phase,
+- this is a global rotation transform, not a math-model fork.
+- VTG element mapping is relation-based: Earth=`same-time+same-direction`, Air=`same-time+opposite-direction`, Water=`split-time+same-direction`, Fire=`split-time+opposite-direction`.
+- VTG `phaseDeg` is a poi-head offset bucket relative to hand phase (used to rotate poi pattern modes like box/diamond without changing hand timing).
+
+Persistence break note:
+- old saved state and preset-library payloads were intentionally invalidated (no migration adapters),
+- incompatible local storage keys are cleared on startup.
 
 ## What The App Does
 

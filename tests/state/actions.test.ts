@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { getPhaseReferenceOffsetRadians } from "@/state/phaseReference";
 import {
   applyPreset,
   setGlobalBoolean,
   setGlobalNumber,
+  setGlobalPhaseReference,
   setHandNumber,
   setScrubBeat,
   togglePlayback
@@ -46,6 +48,16 @@ describe("state actions", () => {
     expect(playing.global.isPlaying).toBe(!hidden.global.isPlaying);
   });
 
+  it("sets global phase reference explicitly", () => {
+    const state = createDefaultState();
+    const expectedDelta = getPhaseReferenceOffsetRadians("up") - getPhaseReferenceOffsetRadians(state.global.phaseReference);
+    const next = setGlobalPhaseReference(state, "phaseReference", "up");
+
+    expect(next.global.phaseReference).toBe("up");
+    expect(next.hands.L.armPhase).toBeCloseTo(state.hands.L.armPhase + expectedDelta, 10);
+    expect(next.hands.R.armPhase).toBeCloseTo(state.hands.R.armPhase + expectedDelta, 10);
+  });
+
   it("clamps hand radii to non-negative values", () => {
     const state = createDefaultState();
     const next = setHandNumber(state, "L", "armRadius", -100);
@@ -58,6 +70,6 @@ describe("state actions", () => {
     const next = applyPreset(state, "air");
 
     expect(Math.sign(next.hands.R.armSpeed)).toBe(-Math.sign(next.hands.L.armSpeed));
-    expect(next.hands.R.armPhase).toBeCloseTo(next.hands.L.armPhase, 10);
+    expect(next.hands.L.armPhase).toBeCloseTo(next.hands.R.armPhase + 0, 10);
   });
 });

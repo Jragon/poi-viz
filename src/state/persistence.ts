@@ -1,16 +1,18 @@
 import {
   setGlobalBoolean,
   setGlobalNumber,
+  setGlobalPhaseReference,
   setHandNumber,
   type GlobalBooleanKey,
   type GlobalNumberKey,
+  type GlobalPhaseReferenceKey,
   type HandNumberKey
 } from "@/state/actions";
-import type { AppState, HandId } from "@/types/state";
+import type { AppState, HandId, PhaseReference } from "@/types/state";
 
 export const STATE_QUERY_PARAM_KEY = "state";
 export const LOCAL_STORAGE_STATE_KEY = "poi-phase-visualiser-state";
-export const PERSISTED_STATE_SCHEMA_VERSION = 1;
+export const PERSISTED_STATE_SCHEMA_VERSION = 2;
 export const PERSISTENCE_DEBOUNCE_MS = 250;
 
 interface PersistedStatePayload {
@@ -21,6 +23,7 @@ interface PersistedStatePayload {
 const HAND_IDS: HandId[] = ["L", "R"];
 const GLOBAL_NUMBER_KEYS: GlobalNumberKey[] = ["bpm", "loopBeats", "playSpeed", "t", "trailBeats", "trailSampleHz"];
 const GLOBAL_BOOLEAN_KEYS: GlobalBooleanKey[] = ["isPlaying", "showTrails", "showWaves"];
+const GLOBAL_PHASE_REFERENCE_KEYS: GlobalPhaseReferenceKey[] = ["phaseReference"];
 const HAND_NUMBER_KEYS: HandNumberKey[] = ["armSpeed", "armPhase", "armRadius", "poiSpeed", "poiPhase", "poiRadius"];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -29,6 +32,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
+}
+
+function isPhaseReference(value: unknown): value is PhaseReference {
+  return value === "right" || value === "down" || value === "left" || value === "up";
 }
 
 function toPayload(state: AppState): PersistedStatePayload {
@@ -49,33 +56,41 @@ function extractCandidateState(payload: unknown): unknown | null {
   if (schemaVersion === PERSISTED_STATE_SCHEMA_VERSION && nestedState !== undefined) {
     return nestedState;
   }
-
-  // Backward-compatible fallback for payloads that were raw state objects.
-  return payload;
+  return null;
 }
 
-function mergeStateCandidateWithDefaults(candidate: unknown, defaults: AppState): AppState {
+function mergeStateCandidateWithDefaults(candidate: unknown, defaults: AppState): AppState | null {
   const stateRecord = isRecord(candidate) ? candidate : null;
   if (!stateRecord) {
-    return defaults;
+    return null;
   }
 
   let merged = defaults;
   const globalRecord = isRecord(stateRecord.global) ? stateRecord.global : null;
   const handsRecord = isRecord(stateRecord.hands) ? stateRecord.hands : null;
 
-  if (globalRecord) {
-    for (const key of GLOBAL_NUMBER_KEYS) {
-      const maybeValue = globalRecord[key];
-      if (isFiniteNumber(maybeValue)) {
-        merged = setGlobalNumber(merged, key, maybeValue);
-      }
+  if (!globalRecord) {
+    return null;
+  }
+
+  for (const key of GLOBAL_PHASE_REFERENCE_KEYS) {
+    const maybeValue = globalRecord[key];
+    if (!isPhaseReference(maybeValue)) {
+      return null;
     }
-    for (const key of GLOBAL_BOOLEAN_KEYS) {
-      const maybeValue = globalRecord[key];
-      if (typeof maybeValue === "boolean") {
-        merged = setGlobalBoolean(merged, key, maybeValue);
-      }
+    merged = setGlobalPhaseReference(merged, key, maybeValue);
+  }
+
+  for (const key of GLOBAL_NUMBER_KEYS) {
+    const maybeValue = globalRecord[key];
+    if (isFiniteNumber(maybeValue)) {
+      merged = setGlobalNumber(merged, key, maybeValue);
+    }
+  }
+  for (const key of GLOBAL_BOOLEAN_KEYS) {
+    const maybeValue = globalRecord[key];
+    if (typeof maybeValue === "boolean") {
+      merged = setGlobalBoolean(merged, key, maybeValue);
     }
   }
 
@@ -96,6 +111,33 @@ function mergeStateCandidateWithDefaults(candidate: unknown, defaults: AppState)
   }
 
   return merged;
+}
+
+function isPersistedStatePayload(payload: unknown): payload is PersistedStatePayload {
+  return (
+    isRecord(payload) &&
+    payload.schemaVersion === PERSISTED_STATE_SCHEMA_VERSION &&
+    Object.prototype.hasOwnProperty.call(payload, "state")
+  );
+}
+
+/**
+ * Returns whether raw serialized payload is compatible with the current persistence schema.
+ *
+ * @param serialized Serialized state payload from storage or URL.
+ * @returns `true` when payload is parseable and matches current schema.
+ */
+export function isPersistedStatePayloadCompatible(serialized: string | null): boolean {
+  if (!serialized) {
+    return false;
+  }
+
+  try {
+    const parsed = JSON.parse(serialized) as unknown;
+    return isPersistedStatePayload(parsed);
+  } catch {
+    return false;
+  }
 }
 
 /**

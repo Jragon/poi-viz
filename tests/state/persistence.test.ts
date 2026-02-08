@@ -3,6 +3,8 @@ import { createDefaultState } from "@/state/defaults";
 import {
   buildStateUrl,
   deserializeState,
+  isPersistedStatePayloadCompatible,
+  PERSISTED_STATE_SCHEMA_VERSION,
   readStateFromStorage,
   readStateFromUrl,
   resolveInitialState,
@@ -15,15 +17,19 @@ describe("state persistence", () => {
     const state = createDefaultState();
     state.global.bpm = 42;
     state.global.showWaves = false;
+    state.global.phaseReference = "up";
     state.hands.L.armPhase = 1.25;
     state.hands.R.poiRadius = 77;
 
     const url = buildStateUrl(state, "https://jragon.github.io/poi-viz/");
+    const serialized = new URL(url).searchParams.get("state");
     const decoded = readStateFromUrl(url, createDefaultState());
 
+    expect(isPersistedStatePayloadCompatible(serialized)).toBe(true);
     expect(decoded).not.toBeNull();
     expect(decoded?.global.bpm).toBe(42);
     expect(decoded?.global.showWaves).toBe(false);
+    expect(decoded?.global.phaseReference).toBe("up");
     expect(decoded?.hands.L.armPhase).toBeCloseTo(1.25, 10);
     expect(decoded?.hands.R.poiRadius).toBe(77);
   });
@@ -58,12 +64,13 @@ describe("state persistence", () => {
   it("sanitizes persisted numeric values through action clamps", () => {
     const defaults = createDefaultState();
     const raw = JSON.stringify({
-      schemaVersion: 1,
+      schemaVersion: PERSISTED_STATE_SCHEMA_VERSION,
       state: {
         global: {
           bpm: -5,
           loopBeats: -10,
           playSpeed: -3,
+          phaseReference: "down",
           trailBeats: -2,
           trailSampleHz: 0
         },
@@ -91,6 +98,32 @@ describe("state persistence", () => {
   it("returns null for invalid storage payload", () => {
     const parsed = readStateFromStorage("{ not-json", createDefaultState());
     expect(parsed).toBeNull();
+  });
+
+  it("rejects incompatible schema payloads under break policy", () => {
+    const defaults = createDefaultState();
+    const legacyPayload = JSON.stringify({
+      schemaVersion: PERSISTED_STATE_SCHEMA_VERSION - 1,
+      state: defaults
+    });
+
+    expect(deserializeState(legacyPayload, defaults)).toBeNull();
+    expect(isPersistedStatePayloadCompatible(legacyPayload)).toBe(false);
+  });
+
+  it("rejects payloads missing phase-reference metadata", () => {
+    const defaults = createDefaultState();
+    const missingPhaseReference = JSON.stringify({
+      schemaVersion: PERSISTED_STATE_SCHEMA_VERSION,
+      state: {
+        global: {
+          bpm: defaults.global.bpm
+        },
+        hands: defaults.hands
+      }
+    });
+
+    expect(deserializeState(missingPhaseReference, defaults)).toBeNull();
   });
 
   it("removes state query parameter from URL", () => {

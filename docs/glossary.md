@@ -28,9 +28,9 @@ Mapping authority:
 ## VTG Element Labels
 
 - Earth = same-time + same-direction
-- Air = split-time + opposite-direction
+- Air = same-time + opposite-direction
 - Water = split-time + same-direction
-- Fire = same-time + opposite-direction
+- Fire = split-time + opposite-direction
 
 Validation references:
 - `tests/vtg/generate.test.ts`
@@ -48,10 +48,26 @@ Related implementation:
 
 ## Phase Bucket
 
-`phaseDeg` is a discrete orientation bucket for left-head absolute phase:
+`phaseDeg` is a discrete poi-head offset bucket:
+- it is measured as right-head phase offset relative to right-arm phase,
+- it rotates poi orientation while arm timing/direction remains unchanged,
+- it is independent of `global.phaseReference`.
 - Allowed values: `0`, `90`, `180`, `270`.
 - Tolerance: ±5° around each bucket.
 
 Code references:
 - `src/vtg/types.ts` export `VTG_PHASE_BUCKETS`.
 - `src/vtg/classify.ts` export `classifyPhaseBucket`.
+
+## Phase Reference
+
+`phaseReference` is a global user-facing phase-zero setting:
+- `right` (canonical),
+- `down` (default),
+- `left`,
+- `up`.
+
+It is a global rotation transform between displayed phases and canonical internal phases:
+- does not change element timing/direction relations,
+- does not change engine equations,
+- does change how orientation buckets/phase controls are interpreted.

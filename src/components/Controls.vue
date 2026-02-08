@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import VtgPanel from "@/components/VtgPanel.vue";
-import { degreesToRadians, radiansToDegrees, type AngleUnit } from "@/state/angleUnits";
+import type { AngleUnit } from "@/state/angleUnits";
+import {
+  PHASE_REFERENCE_OPTIONS,
+  canonicalPhaseRadiansToReferenceDegrees,
+  canonicalToReferencePhaseRadians,
+  referencePhaseDegreesToCanonicalRadians,
+  referenceToCanonicalPhaseRadians
+} from "@/state/phaseReference";
 import type { UserPresetSummary } from "@/state/presetLibrary";
 import {
   classifyPoiSpinMode,
@@ -12,7 +19,7 @@ import {
   type SpeedUnit
 } from "@/state/speedUnits";
 import type { GlobalBooleanKey, GlobalNumberKey, HandNumberKey } from "@/state/actions";
-import type { AppState, HandId } from "@/types/state";
+import type { AppState, HandId, PhaseReference } from "@/types/state";
 import type { VTGDescriptor } from "@/vtg/types";
 import { ref } from "vue";
 
@@ -44,6 +51,7 @@ const emit = defineEmits<{
   (event: "set-scrub", value: number): void;
   (event: "set-global-number", key: GlobalNumberKey, value: number): void;
   (event: "set-global-boolean", key: GlobalBooleanKey, value: boolean): void;
+  (event: "set-phase-reference", value: PhaseReference): void;
   (event: "set-hand-number", handId: HandId, key: HandNumberKey, value: number): void;
   (event: "apply-vtg", descriptor: VTGDescriptor): void;
 }>();
@@ -64,6 +72,13 @@ const SPIN_MODE_LABELS: Record<PoiSpinMode, string> = {
   inspin: "inspin",
   antispin: "antispin",
   "static-spin": "static-spin"
+};
+
+const PHASE_REFERENCE_LABELS: Record<PhaseReference, string> = {
+  down: "Down",
+  right: "Right",
+  left: "Left",
+  up: "Up"
 };
 
 interface GlobalNumberFieldConfig {
@@ -277,9 +292,9 @@ function convertHandValueForDisplay(field: HandNumberFieldConfig, valueInState: 
     return speedFromRadiansPerBeat(valueInState, speedUnit.value);
   }
   if (phaseUnit.value === "radians") {
-    return valueInState;
+    return canonicalToReferencePhaseRadians(valueInState, props.state.global.phaseReference);
   }
-  return radiansToDegrees(valueInState);
+  return canonicalPhaseRadiansToReferenceDegrees(valueInState, props.state.global.phaseReference);
 }
 
 function convertHandValueForState(field: HandNumberFieldConfig, inputValue: number): number {
@@ -290,9 +305,9 @@ function convertHandValueForState(field: HandNumberFieldConfig, inputValue: numb
     return speedToRadiansPerBeat(inputValue, speedUnit.value);
   }
   if (phaseUnit.value === "radians") {
-    return inputValue;
+    return referenceToCanonicalPhaseRadians(inputValue, props.state.global.phaseReference);
   }
-  return degreesToRadians(inputValue);
+  return referencePhaseDegreesToCanonicalRadians(inputValue, props.state.global.phaseReference);
 }
 
 function getHandDisplayValue(handId: HandId, field: HandNumberFieldConfig): number {
@@ -430,6 +445,15 @@ function isSpeedUnit(nextUnit: SpeedUnit): boolean {
   return speedUnit.value === nextUnit;
 }
 
+function setPhaseReference(nextReference: PhaseReference): void {
+  emit("set-phase-reference", nextReference);
+  clearNumericDrafts();
+}
+
+function isPhaseReference(nextReference: PhaseReference): boolean {
+  return props.state.global.phaseReference === nextReference;
+}
+
 function onAdvancedToggle(event: Event): void {
   const target = event.target;
   if (!(target instanceof HTMLInputElement)) {
@@ -547,7 +571,7 @@ function formatSavedAt(isoString: string): string {
             </label>
           </div>
           <p class="mt-1 text-xs text-zinc-500">Engine math always uses radians internally. Unit selectors change UI input/display only.</p>
-          <div class="mt-3 grid gap-4 sm:grid-cols-2">
+          <div class="mt-3 grid gap-4 sm:grid-cols-3">
             <div>
               <p class="text-xs uppercase tracking-wide text-zinc-500">Phase Units</p>
               <div class="mt-2 flex gap-2">
@@ -566,6 +590,23 @@ function formatSavedAt(isoString: string): string {
                   @click="setPhaseUnit('radians')"
                 >
                   Radians
+                </button>
+              </div>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-wide text-zinc-500">Phase Zero</p>
+              <div class="mt-2 flex flex-wrap gap-2">
+                <button
+                  v-for="phaseReference in PHASE_REFERENCE_OPTIONS"
+                  :key="`phase-reference-${phaseReference}`"
+                  class="rounded border px-3 py-1.5 text-sm"
+                  :class="
+                    isPhaseReference(phaseReference) ? 'border-cyan-400 text-cyan-300' : 'border-zinc-700 text-zinc-300'
+                  "
+                  type="button"
+                  @click="setPhaseReference(phaseReference)"
+                >
+                  {{ PHASE_REFERENCE_LABELS[phaseReference] }}
                 </button>
               </div>
             </div>

@@ -1,10 +1,11 @@
 import { vectorMagnitude } from "@/engine/math";
 import { getPositions } from "@/engine/positions";
 import { createDefaultState } from "@/state/defaults";
+import { canonicalPhaseRadiansToReferenceDegrees } from "@/state/phaseReference";
 import type { HandId } from "@/types/state";
 import { classifyPhaseBucket, classifyVTG } from "@/vtg/classify";
 import { generateVTGState } from "@/vtg/generate";
-import { VTG_ELEMENTS, VTG_PHASE_BUCKETS, type VTGDescriptor } from "@/vtg/types";
+import { VTG_ELEMENTS, VTG_PHASE_BUCKETS, type VTGDescriptor, type VTGElement } from "@/vtg/types";
 import { describe, expect, it } from "vitest";
 import { DEFAULT_SAMPLE_BEATS, MATH_TOLERANCE, expectWithinTolerance } from "../engine/helpers";
 
@@ -14,19 +15,25 @@ const VTG_TEST_HEAD_CYCLES = [-3, -1, 1, 3];
 const WITHIN_TOLERANCE_DEGREES = 4.9;
 const OUTSIDE_TOLERANCE_DEGREES = 5.1;
 const RADIANS_PER_DEGREE = Math.PI / 180;
+const DEGREES_PER_TURN = 360;
+
+function normalizeDegrees(value: number): number {
+  const normalized = value % DEGREES_PER_TURN;
+  return normalized < 0 ? normalized + DEGREES_PER_TURN : normalized;
+}
 
 /**
- * Clones state while offsetting left relative poi phase for bucket tolerance tests.
+ * Clones state while offsetting right relative poi phase for bucket tolerance tests.
  */
-function withLeftPoiPhaseOffset(state: ReturnType<typeof createDefaultState>, phaseOffsetRadians: number) {
+function withRightPoiPhaseOffset(state: ReturnType<typeof createDefaultState>, phaseOffsetRadians: number) {
   return {
     global: { ...state.global },
     hands: {
-      L: {
-        ...state.hands.L,
-        poiPhase: state.hands.L.poiPhase + phaseOffsetRadians
-      },
-      R: { ...state.hands.R }
+      L: { ...state.hands.L },
+      R: {
+        ...state.hands.R,
+        poiPhase: state.hands.R.poiPhase + phaseOffsetRadians
+      }
     }
   };
 }
@@ -59,6 +66,54 @@ function assertGeneratedStateInvariants(state: ReturnType<typeof createDefaultSt
 }
 
 describe("VTG generator", () => {
+  it("anchors hand phases to phase-zero baseline for the active phase reference", () => {
+    const baseState = createDefaultState();
+    const expectedLeftArmByElement: Record<VTGElement, 0 | 180> = {
+      Earth: 0,
+      Air: 0,
+      Water: 180,
+      Fire: 180
+    };
+
+    for (const armElement of VTG_ELEMENTS) {
+      const generated = generateVTGState(
+        {
+          armElement,
+          poiElement: "Earth",
+          phaseDeg: 0,
+          poiCyclesPerArmCycle: 3
+        },
+        baseState,
+        "down"
+      );
+
+      const rightArmPhaseDeg = normalizeDegrees(canonicalPhaseRadiansToReferenceDegrees(generated.hands.R.armPhase, "down"));
+      const leftArmPhaseDeg = normalizeDegrees(canonicalPhaseRadiansToReferenceDegrees(generated.hands.L.armPhase, "down"));
+      expect(rightArmPhaseDeg).toBeCloseTo(0, 10);
+      expect(leftArmPhaseDeg).toBeCloseTo(expectedLeftArmByElement[armElement], 10);
+    }
+  });
+
+  it("round-trips descriptor classification across multiple phase references", () => {
+    const baseState = createDefaultState();
+    const phaseReferences = ["right", "down", "left", "up"] as const;
+    const descriptor: VTGDescriptor = {
+      armElement: "Air",
+      poiElement: "Water",
+      phaseDeg: 0,
+      poiCyclesPerArmCycle: -3
+    };
+
+    for (const phaseReference of phaseReferences) {
+      const generated = generateVTGState(descriptor, baseState, phaseReference);
+      const classified = classifyVTG(generated);
+
+      expect(classified.armElement).toBe(descriptor.armElement);
+      expect(classified.poiElement).toBe(descriptor.poiElement);
+      expect(classified.phaseDeg).toBe(descriptor.phaseDeg);
+    }
+  });
+
   it("generates states whose classified VTG buckets match descriptor expectations", () => {
     const baseState = createDefaultState();
 
@@ -127,16 +182,16 @@ describe("VTG generator", () => {
     };
     const generated = generateVTGState(descriptor, baseState);
 
-    const insidePositive = withLeftPoiPhaseOffset(generated, WITHIN_TOLERANCE_DEGREES * RADIANS_PER_DEGREE);
-    const insideNegative = withLeftPoiPhaseOffset(generated, -WITHIN_TOLERANCE_DEGREES * RADIANS_PER_DEGREE);
-    const outsidePositive = withLeftPoiPhaseOffset(generated, OUTSIDE_TOLERANCE_DEGREES * RADIANS_PER_DEGREE);
+    const insidePositive = withRightPoiPhaseOffset(generated, WITHIN_TOLERANCE_DEGREES * RADIANS_PER_DEGREE);
+    const insideNegative = withRightPoiPhaseOffset(generated, -WITHIN_TOLERANCE_DEGREES * RADIANS_PER_DEGREE);
+    const outsidePositive = withRightPoiPhaseOffset(generated, OUTSIDE_TOLERANCE_DEGREES * RADIANS_PER_DEGREE);
 
     expect(classifyPhaseBucket(insidePositive)).toBe(90);
     expect(classifyPhaseBucket(insideNegative)).toBe(90);
     expect(() => classifyPhaseBucket(outsidePositive)).toThrow();
   });
 
-  it("applies phase buckets as meaningful orientation changes", () => {
+  it("applies phase buckets as meaningful poi-head offset changes while hands stay fixed", () => {
     const baseState = createDefaultState();
     const baseDescriptor: VTGDescriptor = {
       armElement: "Earth",
@@ -152,8 +207,11 @@ describe("VTG generator", () => {
     const baseStateGenerated = generateVTGState(baseDescriptor, baseState);
     const rotatedStateGenerated = generateVTGState(rotatedDescriptor, baseState);
 
-    expect(baseStateGenerated.hands.L.poiPhase).not.toBe(rotatedStateGenerated.hands.L.poiPhase);
-    expect(baseStateGenerated.hands.R.poiPhase).not.toBe(rotatedStateGenerated.hands.R.poiPhase);
+    const baseRightHeadPhase = baseStateGenerated.hands.R.armPhase + baseStateGenerated.hands.R.poiPhase;
+    const rotatedRightHeadPhase = rotatedStateGenerated.hands.R.armPhase + rotatedStateGenerated.hands.R.poiPhase;
+
+    expect(baseStateGenerated.hands.R.armPhase).toBe(rotatedStateGenerated.hands.R.armPhase);
+    expect(baseRightHeadPhase).not.toBe(rotatedRightHeadPhase);
   });
 
   it("applies signed poi cycles-per-arm-cycle to head speed", () => {
@@ -172,8 +230,8 @@ describe("VTG generator", () => {
     const fastState = generateVTGState(fastDescriptor, baseState);
     const slowState = generateVTGState(slowDescriptor, baseState);
 
-    const fastHeadCycles = (fastState.hands.L.armSpeed + fastState.hands.L.poiSpeed) / (2 * Math.PI);
-    const slowHeadCycles = (slowState.hands.L.armSpeed + slowState.hands.L.poiSpeed) / (2 * Math.PI);
+    const fastHeadCycles = (fastState.hands.R.armSpeed + fastState.hands.R.poiSpeed) / (2 * Math.PI);
+    const slowHeadCycles = (slowState.hands.R.armSpeed + slowState.hands.R.poiSpeed) / (2 * Math.PI);
 
     expect(fastHeadCycles).toBeCloseTo(3, 10);
     expect(slowHeadCycles).toBeCloseTo(-1, 10);

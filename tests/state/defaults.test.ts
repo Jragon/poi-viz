@@ -3,6 +3,7 @@ import { createDefaultState } from "@/state/defaults";
 import {
   DEFAULT_ARM_RADIUS,
   DEFAULT_BPM,
+  DEFAULT_PHASE_REFERENCE,
   DEFAULT_LEFT_RELATIVE_POI_CYCLES_PER_BEAT,
   DEFAULT_LOOP_BEATS,
   DEFAULT_POI_RADIUS,
@@ -25,6 +26,7 @@ describe("createDefaultState", () => {
     expect(state.global.trailBeats).toBe(DEFAULT_TRAIL_BEATS);
     expect(state.global.trailSampleHz).toBe(DEFAULT_TRAIL_SAMPLE_HZ);
     expect(state.global.showWaves).toBe(true);
+    expect(state.global.phaseReference).toBe(DEFAULT_PHASE_REFERENCE);
   });
 
   it("matches per-hand defaults from spec", () => {

@@ -61,17 +61,17 @@ function getSignedValueWithMagnitude(source: number, magnitude: number): number 
 }
 
 function applyArmRelationPreset(hands: HandsState, preset: ElementPresetContract): HandsState {
-  const leftArmSpeedMagnitude = Math.abs(hands.L.armSpeed);
-  const rightArmSpeedWithLeftDirection = getSignedValueWithMagnitude(hands.L.armSpeed, leftArmSpeedMagnitude);
-  const rightArmSpeed = preset.sameDirection ? rightArmSpeedWithLeftDirection : -rightArmSpeedWithLeftDirection;
+  const rightArmSpeedMagnitude = Math.abs(hands.R.armSpeed);
+  const leftArmSpeedWithRightDirection = getSignedValueWithMagnitude(hands.R.armSpeed, rightArmSpeedMagnitude);
+  const leftArmSpeed = preset.sameDirection ? leftArmSpeedWithRightDirection : -leftArmSpeedWithRightDirection;
   const phaseOffset = preset.sameTime ? SAME_TIME_PHASE_OFFSET : SPLIT_TIME_PHASE_OFFSET;
 
   return {
-    L: { ...hands.L },
-    R: {
-      ...hands.R,
-      armSpeed: rightArmSpeed,
-      armPhase: hands.L.armPhase + phaseOffset
+    R: { ...hands.R },
+    L: {
+      ...hands.L,
+      armSpeed: leftArmSpeed,
+      armPhase: hands.R.armPhase + phaseOffset
     }
   };
 }

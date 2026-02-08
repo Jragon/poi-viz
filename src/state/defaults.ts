@@ -6,6 +6,7 @@ import {
   DEFAULT_LEFT_RELATIVE_POI_CYCLES_PER_BEAT,
   DEFAULT_BPM,
   DEFAULT_LOOP_BEATS,
+  DEFAULT_PHASE_REFERENCE,
   DEFAULT_PLAY_SPEED,
   DEFAULT_PLAYHEAD_BEATS,
   DEFAULT_POI_RADIUS,
@@ -70,7 +71,8 @@ export function createDefaultState(): AppState {
       showTrails: true,
       trailBeats: DEFAULT_TRAIL_BEATS,
       trailSampleHz: DEFAULT_TRAIL_SAMPLE_HZ,
-      showWaves: true
+      showWaves: true,
+      phaseReference: DEFAULT_PHASE_REFERENCE
     },
     hands: createDefaultHandsState()
   };

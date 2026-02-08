@@ -1,3 +1,5 @@
+import type { PhaseReference } from "@/types/state";
+
 export const PI = Math.PI;
 export const TWO_PI = PI * 2;
 
@@ -8,6 +10,7 @@ export const DEFAULT_PLAYHEAD_BEATS = 0;
 
 export const DEFAULT_TRAIL_BEATS = 4;
 export const DEFAULT_TRAIL_SAMPLE_HZ = 120;
+export const DEFAULT_PHASE_REFERENCE: PhaseReference = "down";
 
 export const DEFAULT_ARM_RADIUS = 120;
 export const DEFAULT_POI_RADIUS = 100;

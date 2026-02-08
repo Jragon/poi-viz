@@ -6,6 +6,7 @@ import { secondsToBeats } from "@/engine/math";
 import { normalizeLoopBeat } from "@/render/math";
 import {
   buildStateUrl,
+  isPersistedStatePayloadCompatible,
   LOCAL_STORAGE_STATE_KEY,
   PERSISTENCE_DEBOUNCE_MS,
   resolveInitialState,
@@ -21,6 +22,7 @@ import {
   deserializeUserPresetLibrary,
   ensureUniquePresetId,
   getUserPreset,
+  isPresetLibraryPayloadCompatible,
   PRESET_LIBRARY_STORAGE_KEY,
   removeUserPreset,
   sanitizePresetName,
@@ -34,6 +36,7 @@ import type { SpeedUnit } from "@/state/speedUnits";
 import {
   setGlobalBoolean,
   setGlobalNumber,
+  setGlobalPhaseReference,
   setHandNumber,
   setScrubBeat,
   togglePlayback,
@@ -43,7 +46,7 @@ import {
 } from "@/state/actions";
 import { createDefaultState } from "@/state/defaults";
 import { applyThemeToDocument, getNextTheme, resolveInitialTheme, THEME_STORAGE_KEY, type Theme } from "@/state/theme";
-import type { AppState, HandId } from "@/types/state";
+import type { AppState, HandId, PhaseReference } from "@/types/state";
 import { generateVTGState } from "@/vtg/generate";
 import type { VTGDescriptor } from "@/vtg/types";
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
@@ -102,8 +105,28 @@ function setStorageValue(key: string, value: string): void {
   }
 }
 
+function removeStorageValue(key: string): void {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Ignore delete failures (private mode, disabled storage).
+  }
+}
+
 function getSessionStorageValue(): string | null {
   return getStorageValue(LOCAL_STORAGE_STATE_KEY);
+}
+
+function getCompatibleSessionStorageValue(): string | null {
+  const raw = getSessionStorageValue();
+  if (!raw) {
+    return null;
+  }
+  if (!isPersistedStatePayloadCompatible(raw)) {
+    removeStorageValue(LOCAL_STORAGE_STATE_KEY);
+    return null;
+  }
+  return raw;
 }
 
 function persistSessionStateNow(): void {
@@ -112,6 +135,18 @@ function persistSessionStateNow(): void {
 
 function getPresetLibraryStorageValue(): string | null {
   return getStorageValue(PRESET_LIBRARY_STORAGE_KEY);
+}
+
+function getCompatiblePresetLibraryStorageValue(): string | null {
+  const raw = getPresetLibraryStorageValue();
+  if (!raw) {
+    return null;
+  }
+  if (!isPresetLibraryPayloadCompatible(raw)) {
+    removeStorageValue(PRESET_LIBRARY_STORAGE_KEY);
+    return null;
+  }
+  return raw;
 }
 
 function persistPresetLibraryNow(): void {
@@ -219,6 +254,10 @@ function handleSetGlobalBoolean(key: GlobalBooleanKey, value: boolean): void {
   commitState(setGlobalBoolean(state, key, value));
 }
 
+function handleSetPhaseReference(nextValue: PhaseReference): void {
+  commitState(setGlobalPhaseReference(state, "phaseReference", nextValue));
+}
+
 function handleSetHandNumber(handId: HandId, key: HandNumberKey, value: number): void {
   commitState(setHandNumber(state, handId, key, value));
 }
@@ -231,7 +270,7 @@ function handleToggleTheme(): void {
 }
 
 function handleApplyVTG(descriptor: VTGDescriptor): void {
-  commitState(generateVTGState(descriptor, state));
+  commitState(generateVTGState(descriptor, state, state.global.phaseReference));
 }
 
 async function handleCopyLink(): Promise<void> {
@@ -374,9 +413,9 @@ onMounted(() => {
   const defaults = createDefaultState();
   theme.value = resolveInitialTheme(getStorageValue(THEME_STORAGE_KEY));
   applyThemeToDocument(theme.value);
-  const initialState = resolveInitialState(defaults, window.location.href, getSessionStorageValue());
+  const initialState = resolveInitialState(defaults, window.location.href, getCompatibleSessionStorageValue());
   commitState(initialState);
-  userPresetRecords.value = deserializeUserPresetLibrary(getPresetLibraryStorageValue(), defaults);
+  userPresetRecords.value = deserializeUserPresetLibrary(getCompatiblePresetLibraryStorageValue(), defaults);
 
   const cleanUrl = stripStateQueryParam(window.location.href);
   if (cleanUrl !== window.location.href) {
@@ -459,6 +498,7 @@ onBeforeUnmount(() => {
         @set-scrub="handleSetScrub"
         @set-global-number="handleSetGlobalNumber"
         @set-global-boolean="handleSetGlobalBoolean"
+        @set-phase-reference="handleSetPhaseReference"
         @set-hand-number="handleSetHandNumber"
         @apply-vtg="handleApplyVTG"
         @save-user-preset="handleSaveUserPreset"
