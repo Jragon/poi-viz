@@ -289,3 +289,7 @@
 - 2026-02-08T12:24:47Z [TOOL] Regenerated fixtures to `default` + `water-x-earth` and verified green gates: `npm run gen:fixtures`, `npm test` (119 passing), `npm run build`, and `npm run docs:all` (TypeDoc warnings only, no errors).
 - 2026-02-08T12:25:58Z [CODE] Replaced unsafe cast in `src/engine/fixtureCases.ts` with explicit typed state construction helpers to satisfy strict TypeScript/TypeDoc checks while preserving fixture validation behavior.
 - 2026-02-08T12:25:58Z [TOOL] Re-validated after parser typing cleanup with passing `npm test` (119), `npm run docs:all`, and `npm run build`.
+- 2026-02-08T12:33:35Z [USER] Requested fixture pipeline simplification: remove fixture JSON schema file, reduce strict fixture parsing complexity, and reuse existing shared state parsing path.
+- 2026-02-08T12:33:35Z [CODE] Simplified fixture parsing by routing `src/engine/fixtureCases.ts` through `deserializeState` (persistence parser) with defaults-based merge/clamp semantics; removed bespoke full-AppState fixture validator logic and updated parser signature/callers.
+- 2026-02-08T12:33:35Z [CODE] Removed `fixtures/state-cases.schema.json` and updated fixture/docs references (`scripts/gen-fixtures.ts`, `README.md`, `docs/engine-architecture.md`, `docs/validation.md`, `src/engine/README.md`), plus fixture tests to assert lean partial-state behavior.
+- 2026-02-08T12:33:35Z [TOOL] Verified simplification with passing `npm run gen:fixtures`, `npm test` (120 passing), `npm run build`, and `npm run docs:all` (TypeDoc warnings only).

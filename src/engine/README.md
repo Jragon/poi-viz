@@ -77,7 +77,7 @@ Fixtures are golden numeric snapshots used for regression testing.
 
 - Generator: `scripts/gen-fixtures.ts`
 - Fixture case inputs: `fixtures/state-cases.json` (`default` state fixture is always included automatically)
-- Fixture case schema: `fixtures/state-cases.schema.json`
+- Fixture state parsing: shared `deserializeState` path in `src/state/persistence.ts`
 - Outputs: `fixtures/*.json` + `fixtures/manifest.json`
 - Sample source: `sampleLoop` over explicit fixture case states
 - Captured channel: head positions (`L` and `R`) per sampled beat

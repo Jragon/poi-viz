@@ -11,6 +11,7 @@ function createSerializedCases(cases: unknown[], schemaVersion = 1): string {
 
 describe("fixture case parsing", () => {
   it("parses valid full AppState cases", () => {
+    const defaults = createDefaultState();
     const state = createDefaultState();
     state.global.bpm = 14;
     state.hands.L.armSpeed = 3.5;
@@ -20,7 +21,8 @@ describe("fixture case parsing", () => {
           id: "slow-case",
           state
         }
-      ])
+      ]),
+      defaults
     );
 
     expect(parsed).toHaveLength(1);
@@ -30,48 +32,80 @@ describe("fixture case parsing", () => {
   });
 
   it("rejects schema mismatch", () => {
-    expect(() => parseFixtureCasesFile(createSerializedCases([], 99))).toThrow("schema mismatch");
+    expect(() => parseFixtureCasesFile(createSerializedCases([], 99), createDefaultState())).toThrow("schema mismatch");
   });
 
   it("rejects duplicate ids", () => {
+    const defaults = createDefaultState();
     const state = createDefaultState();
     expect(() =>
       parseFixtureCasesFile(
         createSerializedCases([
           { id: "dup-case", state },
           { id: "dup-case", state }
-        ])
+        ]),
+        defaults
       )
     ).toThrow('Duplicate fixture case id "dup-case"');
   });
 
   it("rejects invalid or reserved ids", () => {
+    const defaults = createDefaultState();
     const state = createDefaultState();
-    expect(() => parseFixtureCasesFile(createSerializedCases([{ id: "BadId", state }]))).toThrow("kebab-case");
-    expect(() => parseFixtureCasesFile(createSerializedCases([{ id: DEFAULT_FIXTURE_ID, state }]))).toThrow("reserved");
+    expect(() => parseFixtureCasesFile(createSerializedCases([{ id: "BadId", state }]), defaults)).toThrow("kebab-case");
+    expect(() => parseFixtureCasesFile(createSerializedCases([{ id: DEFAULT_FIXTURE_ID, state }]), defaults)).toThrow("reserved");
   });
 
-  it("rejects incomplete AppState payloads", () => {
-    const state = createDefaultState();
-    const invalidState = {
-      ...state,
-      global: {
-        ...state.global
-      }
-    } as Record<string, unknown>;
-    const invalidGlobal = invalidState.global as Record<string, unknown>;
-    delete invalidGlobal.bpm;
+  it("accepts partial state payloads and merges with defaults", () => {
+    const defaults = createDefaultState();
+    defaults.global.loopBeats = 9;
+    defaults.hands.R.poiRadius = 33;
+    const parsed = parseFixtureCasesFile(
+      createSerializedCases([
+        {
+          id: "partial-state",
+          state: {
+            global: {
+              phaseReference: "up",
+              bpm: 22
+            },
+            hands: {
+              L: {
+                armSpeed: 2
+              }
+            }
+          }
+        }
+      ]),
+      defaults
+    );
+
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0]?.state.global.phaseReference).toBe("up");
+    expect(parsed[0]?.state.global.bpm).toBe(22);
+    expect(parsed[0]?.state.global.loopBeats).toBe(9);
+    expect(parsed[0]?.state.hands.L.armSpeed).toBe(2);
+    expect(parsed[0]?.state.hands.R.poiRadius).toBe(33);
+  });
+
+  it("rejects payloads missing required phase-reference metadata", () => {
+    const defaults = createDefaultState();
 
     expect(() =>
       parseFixtureCasesFile(
         createSerializedCases([
           {
-            id: "missing-bpm",
-            state: invalidState
+            id: "missing-phase-reference",
+            state: {
+              global: {
+                bpm: 10
+              }
+            }
           }
-        ])
+        ]),
+        defaults
       )
-    ).toThrow("global.bpm");
+    ).toThrow("invalid state payload");
   });
 });
 

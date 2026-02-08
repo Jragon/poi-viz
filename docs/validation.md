@@ -31,7 +31,7 @@ Outputs:
 - `fixtures/*.json`
 - Manual input definitions:
   - `fixtures/state-cases.json` (`default` fixture case is always included by script).
-  - `fixtures/state-cases.schema.json` (authoring schema for `state-cases.json`).
+- Fixture state parsing is shared with app hydration (`src/state/persistence.ts`), so fixture cases follow the same merge/clamp behavior as persisted state.
 
 Fixture tests recompute samples from code and compare against committed files with defined tolerances.
 

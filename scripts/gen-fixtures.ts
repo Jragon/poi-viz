@@ -11,19 +11,18 @@ import { createDefaultState } from "../src/state/defaults";
 
 const MANIFEST_FILENAME = "manifest.json";
 const CASES_FILENAME = "state-cases.json";
-const CASES_SCHEMA_FILENAME = "state-cases.schema.json";
 
-async function readManualFixtureCases() {
+async function readManualFixtureCases(defaultState: ReturnType<typeof createDefaultState>) {
   const casesPath = resolve(process.cwd(), "fixtures", CASES_FILENAME);
   const serialized = await readFile(casesPath, "utf8");
-  return parseFixtureCasesFile(serialized);
+  return parseFixtureCasesFile(serialized, defaultState);
 }
 
 async function main(): Promise<void> {
   const fixturesDirectory = resolve(process.cwd(), "fixtures");
   const manifestPath = resolve(fixturesDirectory, MANIFEST_FILENAME);
   const defaultState = createDefaultState();
-  const manualCases = await readManualFixtureCases();
+  const manualCases = await readManualFixtureCases(defaultState);
   const fixtureCases = buildFixtureCaseSet(defaultState, manualCases);
   const fixtures = buildAllStateFixtures(fixtureCases);
   const manifest = buildFixtureManifest(fixtures);
@@ -33,7 +32,7 @@ async function main(): Promise<void> {
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
   await removeStaleFixtureFiles(
     fixturesDirectory,
-    new Set([CASES_FILENAME, CASES_SCHEMA_FILENAME, MANIFEST_FILENAME, ...fixtures.map((fixture) => getFixtureFilename(fixture.fixtureId))])
+    new Set([CASES_FILENAME, MANIFEST_FILENAME, ...fixtures.map((fixture) => getFixtureFilename(fixture.fixtureId))])
   );
 }
 
