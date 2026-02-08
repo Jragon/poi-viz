@@ -1,7 +1,6 @@
 import { vectorMagnitude } from "@/engine/math";
 import { getPositions } from "@/engine/positions";
 import { createDefaultState } from "@/state/defaults";
-import { canonicalPhaseRadiansToReferenceDegrees } from "@/state/phaseReference";
 import type { HandId } from "@/types/state";
 import { classifyPhaseBucket, classifyVTG } from "@/vtg/classify";
 import { generateVTGState } from "@/vtg/generate";
@@ -66,7 +65,7 @@ function assertGeneratedStateInvariants(state: ReturnType<typeof createDefaultSt
 }
 
 describe("VTG generator", () => {
-  it("anchors hand phases to phase-zero baseline for the active phase reference", () => {
+  it("anchors hand phases to canonical phase-zero baseline", () => {
     const baseState = createDefaultState();
     const expectedLeftArmByElement: Record<VTGElement, 0 | 180> = {
       Earth: 0,
@@ -83,34 +82,38 @@ describe("VTG generator", () => {
           phaseDeg: 0,
           poiCyclesPerArmCycle: 3
         },
-        baseState,
-        "down"
+        baseState
       );
 
-      const rightArmPhaseDeg = normalizeDegrees(canonicalPhaseRadiansToReferenceDegrees(generated.hands.R.armPhase, "down"));
-      const leftArmPhaseDeg = normalizeDegrees(canonicalPhaseRadiansToReferenceDegrees(generated.hands.L.armPhase, "down"));
+      const rightArmPhaseDeg = normalizeDegrees((generated.hands.R.armPhase / Math.PI) * 180);
+      const leftArmPhaseDeg = normalizeDegrees((generated.hands.L.armPhase / Math.PI) * 180);
       expect(rightArmPhaseDeg).toBeCloseTo(0, 10);
       expect(leftArmPhaseDeg).toBeCloseTo(expectedLeftArmByElement[armElement], 10);
     }
   });
 
-  it("round-trips descriptor classification across multiple phase references", () => {
-    const baseState = createDefaultState();
-    const phaseReferences = ["right", "down", "left", "up"] as const;
+  it("round-trips descriptor classification independently of global phase reference", () => {
     const descriptor: VTGDescriptor = {
       armElement: "Air",
       poiElement: "Water",
       phaseDeg: 0,
       poiCyclesPerArmCycle: -3
     };
+    const phaseReferences = ["right", "down", "left", "up"] as const;
+    const firstState = createDefaultState();
+    firstState.global.phaseReference = phaseReferences[0];
+    const firstGenerated = generateVTGState(descriptor, firstState);
 
     for (const phaseReference of phaseReferences) {
-      const generated = generateVTGState(descriptor, baseState, phaseReference);
+      const baseState = createDefaultState();
+      baseState.global.phaseReference = phaseReference;
+      const generated = generateVTGState(descriptor, baseState);
       const classified = classifyVTG(generated);
 
       expect(classified.armElement).toBe(descriptor.armElement);
       expect(classified.poiElement).toBe(descriptor.poiElement);
       expect(classified.phaseDeg).toBe(descriptor.phaseDeg);
+      expect(generated.hands).toEqual(firstGenerated.hands);
     }
   });
 

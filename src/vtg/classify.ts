@@ -3,6 +3,7 @@ import {
   normalizeRadians0ToTau,
   shortestAngularDistanceRadians as shortestWrappedAngularDistanceRadians
 } from "@/state/phaseMath";
+import { getPhaseReferenceOffsetRadians } from "@/state/phaseReference";
 import type { AppState } from "@/types/state";
 import { getElementForRelation, type VTGDescriptor, type VTGDirection, type VTGElement, type VTGPhaseDeg, type VTGTiming } from "@/vtg/types";
 
@@ -268,11 +269,12 @@ export function describeElementGeometryAtCardinals(element: VTGElement): Cardina
  * @returns Cardinal together/apart description derived from arm channels.
  */
 export function describeArmGeometryAtCardinals(state: AppState): CardinalGeometryDescription {
+  const referenceOffset = getPhaseReferenceOffsetRadians(state.global.phaseReference);
   return describeGeometryAtCardinals(
     state.hands.L.armSpeed,
-    state.hands.L.armPhase,
+    state.hands.L.armPhase + referenceOffset,
     state.hands.R.armSpeed,
-    state.hands.R.armPhase
+    state.hands.R.armPhase + referenceOffset
   );
 }
 
@@ -284,10 +286,11 @@ export function describeArmGeometryAtCardinals(state: AppState): CardinalGeometr
  * @returns Cardinal together/apart description derived from head channels.
  */
 export function describePoiGeometryAtCardinals(state: AppState): CardinalGeometryDescription {
+  const referenceOffset = getPhaseReferenceOffsetRadians(state.global.phaseReference);
   return describeGeometryAtCardinals(
     getHeadSpeedRadiansPerBeat(state, LEFT_HAND_ID),
-    getHeadPhaseRadians(state, LEFT_HAND_ID),
+    getHeadPhaseRadians(state, LEFT_HAND_ID) + referenceOffset,
     getHeadSpeedRadiansPerBeat(state, RIGHT_HAND_ID),
-    getHeadPhaseRadians(state, RIGHT_HAND_ID)
+    getHeadPhaseRadians(state, RIGHT_HAND_ID) + referenceOffset
   );
 }

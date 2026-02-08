@@ -421,3 +421,4 @@ Verify architecture is clean enough to add VTG Phase 2 without reintroducing slo
 - 2026-02-08: Phase F completed with centralized persistence policy and idempotent hydration coverage.
 - 2026-02-08: Phase G completed with App orchestration extracted into `useAppOrchestrator` and root shell simplification.
 - 2026-02-08: Stabilized phase-reference UX contract on `main` by keeping canonical state metadata-only, adding render-space orientation rotation in `PatternCanvas`, and pinning behavior with new integration coverage.
+- 2026-02-08: Fixed VTG grid/reference regression by making `generateVTGState` reference-independent (canonical-only), aligning cardinal descriptive helpers to active view reference, and adding integration coverage that reapplying identical VTG descriptors is invariant to phase-reference toggles.

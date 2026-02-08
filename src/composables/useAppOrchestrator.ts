@@ -96,7 +96,7 @@ export function useAppOrchestrator(): AppOrchestrator {
   }
 
   function handleApplyVTG(descriptor: VTGDescriptor): void {
-    commitState(generateVTGState(descriptor, state, state.global.phaseReference));
+    commitState(generateVTGState(descriptor, state));
   }
 
   watch(

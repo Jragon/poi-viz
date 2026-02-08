@@ -68,6 +68,13 @@ const ControlsStub = defineComponent({
       >
         apply-vtg
       </button>
+      <button
+        data-testid="apply-vtg-earth-earth"
+        type="button"
+        @click="$emit('apply-vtg', { armElement: 'Earth', poiElement: 'Earth', phaseDeg: 0, poiCyclesPerArmCycle: -3 })"
+      >
+        apply-vtg-earth-earth
+      </button>
     </div>
   `
 });
@@ -299,6 +306,34 @@ describe("App orchestration integration", () => {
     expect(latestState?.global.phaseReference).toBe("up");
     expect(latestState?.hands.L.armPhase).toBeCloseTo(initialLeftArmPhase, 10);
     expect(latestState?.hands.R.armPhase).toBeCloseTo(initialRightArmPhase, 10);
+  });
+
+  it("applies VTG descriptors independently of global phase-reference setting", async () => {
+    wrapper = mountApp();
+    await nextTick();
+
+    await wrapper.get("[data-testid='apply-vtg-earth-earth']").trigger("click");
+    await nextTick();
+
+    expect(latestState).not.toBeNull();
+    if (!latestState) {
+      return;
+    }
+
+    const baselineLeftArmPhase = latestState.hands.L.armPhase;
+    const baselineRightArmPhase = latestState.hands.R.armPhase;
+    const baselineLeftPoiPhase = latestState.hands.L.poiPhase;
+    const baselineRightPoiPhase = latestState.hands.R.poiPhase;
+
+    await wrapper.get("[data-testid='set-phase-reference-up']").trigger("click");
+    await nextTick();
+    await wrapper.get("[data-testid='apply-vtg-earth-earth']").trigger("click");
+    await nextTick();
+
+    expect(latestState.hands.L.armPhase).toBeCloseTo(baselineLeftArmPhase, 10);
+    expect(latestState.hands.R.armPhase).toBeCloseTo(baselineRightArmPhase, 10);
+    expect(latestState.hands.L.poiPhase).toBeCloseTo(baselineLeftPoiPhase, 10);
+    expect(latestState.hands.R.poiPhase).toBeCloseTo(baselineRightPoiPhase, 10);
   });
 
   it("generates share links without mutating the current editing URL", async () => {

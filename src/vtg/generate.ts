@@ -1,7 +1,5 @@
 import { PI, TWO_PI } from "@/state/constants";
-import { referencePhaseBucketToCanonical } from "@/state/phaseReference";
 import type { AppState, HandState } from "@/types/state";
-import type { PhaseReference } from "@/types/state";
 import { classifyVTG } from "@/vtg/classify";
 import { getRelationForElement, type VTGDescriptor, type VTGPhaseDeg, type VTGTiming } from "@/vtg/types";
 
@@ -29,14 +27,6 @@ function applyAngularOverrides(
     poiSpeed,
     poiPhase
   };
-}
-
-/**
- * Converts a VTG phase bucket from degrees into radians.
- */
-function phaseBucketToCanonicalRadians(phaseDeg: VTGPhaseDeg, phaseReference: PhaseReference): number {
-  const canonicalPhaseDeg = referencePhaseBucketToCanonical(phaseDeg, phaseReference);
-  return canonicalPhaseDeg * RADIANS_PER_DEGREE;
 }
 
 /**
@@ -95,19 +85,14 @@ function assertMatchesDescriptor(state: AppState, descriptor: VTGDescriptor): vo
  *
  * @param descriptor VTG discrete inputs (elements, phase bucket, signed head cycles).
  * @param baseState Source state used for non-angular fields.
- * @param phaseReference User-facing phase-zero reference used for arm orientation baseline (`phaseDeg = 0` direction).
  * @returns New app state with angular fields solved from VTG descriptor constraints.
  */
-export function generateVTGState(
-  descriptor: VTGDescriptor,
-  baseState: AppState,
-  phaseReference: PhaseReference = "right"
-): AppState {
+export function generateVTGState(descriptor: VTGDescriptor, baseState: AppState): AppState {
   assertValidPoiCyclesPerArmCycle(descriptor.poiCyclesPerArmCycle);
 
   const armRelation = getRelationForElement(descriptor.armElement);
   const poiRelation = getRelationForElement(descriptor.poiElement);
-  const armBaselinePhase = phaseBucketToCanonicalRadians(0, phaseReference);
+  const armBaselinePhase = phaseBucketToOffsetRadians(0);
 
   const rightArmSpeed = CANONICAL_RIGHT_ARM_SPEED;
   const rightArmPhase = armBaselinePhase;

@@ -67,7 +67,7 @@ Generator inputs:
 `generateVTGState` performs:
 
 1. Set canonical right arm speed baseline: `ω_arm_R = 2π`.
-2. Resolve arm orientation baseline from global phase reference (reference-zero direction).
+2. Resolve canonical arm orientation baseline at phase zero (`φ_arm_R = 0`, right-zero frame).
 3. Resolve left arm relation from `armElement` to get `ω_arm_L` sign and `φ_arm_L` timing offset.
 4. Convert signed head cycles to right-head speed: `ω_head_R = poiCyclesPerArmCycle * 2π`.
 5. Resolve left head direction/timing from `poiElement`.
@@ -81,15 +81,15 @@ Generator inputs:
 
 Code references:
 - `src/vtg/generate.ts` exports `generateVTGState`.
-- `src/state/phaseReference.ts` exports `referencePhaseBucketToCanonical`.
 
 ## Invariants vs Reference-Relative Outputs
 
 Invariant (reference-independent):
 - `armElement` and `poiElement` classification (timing/direction only).
+- VTG generator arm/poi phase expansion (canonical `right = 0` baseline).
 
 Reference-relative:
-- arm orientation baseline chosen by global `phaseReference`.
+- viewport orientation in `PatternCanvas` (render-space rotation from `global.phaseReference`).
 
 Reference-independent:
 - `phaseDeg` bucket output from `classifyVTG` (poi offset).
@@ -104,5 +104,5 @@ Engine motion remains continuous and is still defined by `src/engine/*`.
 ## Validated By
 
 - `tests/vtg/generate.test.ts` verifies descriptor round-trip classification, phase tolerance, signed cycle mapping, and invariants.
-- `tests/vtg/classify.test.ts` verifies arm/poi element rotation invariance and canonical cardinal descriptors.
+- `tests/vtg/classify.test.ts` verifies arm/poi element rotation invariance and reference-aligned cardinal descriptors.
 - `tests/engine/invariants.test.ts` verifies generated states still satisfy engine geometric invariants.

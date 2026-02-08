@@ -53,8 +53,7 @@ describe("VTG classification", () => {
         phaseDeg: 90,
         poiCyclesPerArmCycle: -3
       },
-      baseState,
-      "down"
+      baseState
     );
 
     expect(classifyVTG(generated).phaseDeg).toBe(90);
@@ -102,8 +101,7 @@ describe("VTG classification", () => {
           phaseDeg: 0,
           poiCyclesPerArmCycle: -3
         },
-        baseState,
-        "down"
+        baseState
       );
       expect(describeArmGeometryAtCardinals(armState)).toEqual(EXPECTED_CARDINAL_GEOMETRY[element]);
 
@@ -114,8 +112,7 @@ describe("VTG classification", () => {
           phaseDeg: 0,
           poiCyclesPerArmCycle: -3
         },
-        baseState,
-        "down"
+        baseState
       );
       expect(describePoiGeometryAtCardinals(poiState)).toEqual(EXPECTED_CARDINAL_GEOMETRY[element]);
     }

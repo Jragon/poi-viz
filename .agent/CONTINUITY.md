@@ -264,3 +264,10 @@
 - 2026-02-08T11:23:54Z [CODE] Added regression coverage in `tests/render/view-transform.test.ts`, `tests/ui/canvas-clock.integration.test.ts`, and `tests/ui/controls-input.integration.test.ts` for view rotation and stable hand-phase display under phase-reference toggles.
 - 2026-02-08T11:23:54Z [TOOL] Verified with passing `npm test` (116 tests), `npm run build`, and `npm run docs:all` (TypeDoc warnings unchanged).
 - 2026-02-08T11:23:54Z [CODE] Updated docs in `README.md`, `docs/math-model.md`, `docs/index.md`, and refreshed `refactor plan.md` change log.
+- 2026-02-08T11:35:19Z [USER] Confirmed VTG grid must stay phase-zero anchored (Earth `0,0`; Air `0,0` opposite-direction; Water `0,180`; Fire `0,180` opposite-direction) and requested implementation.
+- 2026-02-08T11:35:19Z [CODE] Removed global phase-reference coupling from VTG generation (`src/vtg/generate.ts`) so descriptor application is canonical/reference-independent; updated orchestrator call sites and VTG tests (`tests/vtg/generate.test.ts`, `tests/vtg/classify.test.ts`, `tests/ui/app.integration.test.ts`) to assert same descriptor output across phase-reference toggles.
+- 2026-02-08T11:35:19Z [CODE] Updated descriptive cardinal helpers in `src/vtg/classify.ts` to evaluate in the active view reference frame, keeping docs/debug together/apart readouts aligned with default `phaseReference=down`.
+- 2026-02-08T11:35:19Z [CODE] Updated VTG docs (`docs/vtg-layer.md`) to define single ownership: generator/classifier are canonical and phase-reference-invariant; render layer applies orientation.
+- 2026-02-08T11:35:19Z [TOOL] Verified post-fix with passing `npm test` (117 tests), `npm run build`, and `npm run docs:all` (TypeDoc warnings only).
+- 2026-02-08T11:37:09Z [CODE] Clarified VTG wording by renaming generator test language to canonical baseline semantics and updating docs text from canonical to reference-aligned cardinal descriptors.
+- 2026-02-08T11:37:09Z [TOOL] Re-verified checkpoint with passing `npm test` (117 tests), `npm run build`, and `npm run docs:all` (TypeDoc warnings only).
