@@ -8,7 +8,7 @@ The app gives you:
 - a pattern viewport (hands, tethers, heads, optional trails),
 - a synchronized waveform inspector,
 - interactive controls for timing, per-hand parameters, VTG generation, VTG sequence editing, and preset library workflows,
-- VTG Phase 2 sequence mode (beat-based, segment list editor, optional event snap, sequence-level start phase anchor, JSON export/import),
+- VTG sequence mode (beat-based, segment list editor, optional event snap, sequence-level start phase anchor, explicit per-segment arm direction, deterministic poi-direction constraint toggle, JSON export/import),
 - configurable global phase-zero reference (`down` default),
 - light/dark theme switching from the title bar (persisted in browser storage),
 - a transport-level static view mode for full-loop still pattern captures,
@@ -28,6 +28,8 @@ Phase-reference note:
 - VTG element mapping is relation-based: Earth=`same-time+same-direction`, Air=`same-time+opposite-direction`, Water=`split-time+same-direction`, Fire=`split-time+opposite-direction`.
 - VTG `phaseDeg` is a poi-head offset bucket relative to hand phase (used to rotate poi pattern modes like box/diamond without changing hand timing).
 - sequence mode uses root `startPhaseDeg` as the continuity anchor; segment descriptors no longer carry per-segment phase buckets.
+- sequence segment descriptors include `rightArmSign` (`1|-1`) for explicit arm-direction branch control.
+- sequence root `allowPoiDirectionFlip` defaults to `false`; authored poi-direction flips are blocked deterministically unless explicitly enabled.
 
 Persistence break note:
 - old saved state and preset-library payloads were intentionally invalidated (no migration adapters),
@@ -47,6 +49,8 @@ At a high level:
 - keeps root view composition thin by extracting app orchestration into `src/composables/useAppOrchestrator.ts`, which now composes focused controllers,
 - runs VTG sequencing as a piecewise selector (one active VTG segment at a time) while keeping engine math unchanged,
 - resolves sequence playback with continuity propagation (segment boundaries preserve non-loop pose continuity; loop seams reset to anchored start),
+- applies explicit right-arm branch control per segment and derives left-arm branch from VTG arm relation,
+- enforces deterministic poi-direction behavior across boundaries (block flips by default, allow via sequence toggle),
 - routes VTG Apply behavior by mode (`sequenceMode=false` applies to runtime state, `sequenceMode=true` edits selected sequence segment descriptor + sequence start-phase anchor),
 - keeps sequence import/export fail-closed by rejecting legacy schema/version payloads (no compatibility adapters),
 - enforces architectural import boundaries in lint (`engine`, `vtg`, `state`, `render`, `composables`) to block cross-layer coupling regressions,
@@ -100,7 +104,7 @@ npm run docs:all
 
 - `src/engine/`: pure math, sampling, trails, fixtures
 - `src/vtg/`: VTG descriptor types, generator, authoritative classifier, descriptive geometry helpers, and sequence domain logic
-- `src/composables/useVtgSequenceController.ts`: sequence-mode state owner (segment editing, start-phase anchoring, continuity render selection, export/import)
+- `src/composables/useVtgSequenceController.ts`: sequence-mode state owner (segment editing, right-arm branch control, continuity render selection, import/export)
 - `src/state/`: defaults, constants, units, actions, persistence, preset library
 - `src/composables/`: app-level orchestration units (`useTransportClock`, `usePersistenceCoordinator`, `useTransportController`, `useThemeController`, `useShareLinkController`, `usePresetLibraryController`, `useAppOrchestrator`) plus shared UI utility (`useNumericDrafts`)
 - `src/render/`: Canvas drawing helpers

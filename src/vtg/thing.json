@@ -3,6 +3,7 @@
   "loop": true,
   "snapSetting": "event",
   "startPhaseDeg": 180,
+  "allowPoiDirectionFlip": false,
   "segments": [
     {
       "id": "seg-1",
@@ -10,7 +11,8 @@
       "descriptor": {
         "armElement": "Earth",
         "poiElement": "Earth",
-        "poiHeadCyclesPerArmCycle": -3
+        "poiHeadCyclesPerArmCycle": -3,
+        "rightArmSign": 1
       }
     },
     {
@@ -19,7 +21,8 @@
       "descriptor": {
         "armElement": "Air",
         "poiElement": "Earth",
-        "poiHeadCyclesPerArmCycle": -3
+        "poiHeadCyclesPerArmCycle": 3,
+        "rightArmSign": -1
       }
     },
     {
@@ -28,7 +31,8 @@
       "descriptor": {
         "armElement": "Water",
         "poiElement": "Earth",
-        "poiHeadCyclesPerArmCycle": -3
+        "poiHeadCyclesPerArmCycle": 3,
+        "rightArmSign": -1
       }
     },
     {
@@ -37,7 +41,8 @@
       "descriptor": {
         "armElement": "Fire",
         "poiElement": "Earth",
-        "poiHeadCyclesPerArmCycle": -3
+        "poiHeadCyclesPerArmCycle": -3,
+        "rightArmSign": 1
       }
     }
   ]

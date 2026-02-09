@@ -3,8 +3,10 @@ import { afterEach, describe, expect, it } from "vitest";
 import ControlsGlobalPanel from "@/components/controls/ControlsGlobalPanel.vue";
 import ControlsHandPanel from "@/components/controls/ControlsHandPanel.vue";
 import ControlsPresetLibraryPanel from "@/components/controls/ControlsPresetLibraryPanel.vue";
+import ControlsSequencePanel from "@/components/controls/ControlsSequencePanel.vue";
 import ControlsTransportPanel from "@/components/controls/ControlsTransportPanel.vue";
 import { createDefaultState } from "@/state/defaults";
+import { createDefaultVTGSequence } from "@/vtg/sequence";
 
 function findNumberInputByLabel(wrapper: VueWrapper, labelText: string) {
   const labels = wrapper.findAll("label");
@@ -147,5 +149,66 @@ describe("Controls panel emit contracts", () => {
       [{ presetId: "abc", speedUnit: "cycles", phaseUnit: "degrees" }]
     ]);
     expect(wrapper.emitted("import-user-preset")).toEqual([[file]]);
+  });
+
+  it("sequence panel renders direction badges and emits right-arm sign updates", async () => {
+    const sequence = createDefaultVTGSequence();
+    sequence.segments = [
+      {
+        id: "seg-1",
+        durationBeats: 1,
+        descriptor: {
+          armElement: "Earth",
+          poiElement: "Earth",
+          poiHeadCyclesPerArmCycle: -3,
+          rightArmSign: 1
+        }
+      },
+      {
+        id: "seg-2",
+        durationBeats: 1,
+        descriptor: {
+          armElement: "Air",
+          poiElement: "Fire",
+          poiHeadCyclesPerArmCycle: -3,
+          rightArmSign: -1
+        }
+      }
+    ];
+    const firstSegment = sequence.segments[0];
+    const secondSegment = sequence.segments[1];
+    if (!firstSegment || !secondSegment) {
+      throw new Error("Expected seeded segments");
+    }
+
+    wrapper = mount(ControlsSequencePanel, {
+      props: {
+        sequenceMode: true,
+        sequence,
+        segmentViews: [
+          {
+            ...firstSegment,
+            armDirectionBadges: { L: 1, R: 1 },
+            poiDirectionFlipBlocked: false
+          },
+          {
+            ...secondSegment,
+            armDirectionBadges: { L: 1, R: -1 },
+            poiDirectionFlipBlocked: true
+          }
+        ],
+        activeDirectionBadges: { L: 1, R: -1 },
+        selectedSegmentId: "seg-2",
+        sequenceStatus: ""
+      }
+    });
+
+    expect(wrapper.text()).toContain("Active Direction");
+    expect(wrapper.text()).toContain("L:+");
+    expect(wrapper.text()).toContain("R:-");
+    expect(wrapper.text()).toContain("poi flip blocked");
+
+    await findButtonByText(wrapper, "R:+").trigger("click");
+    expect(wrapper.emitted("set-selected-right-arm-sign")).toEqual([[1]]);
   });
 });

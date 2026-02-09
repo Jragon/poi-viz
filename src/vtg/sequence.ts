@@ -2,7 +2,6 @@ import { normalizeLoopBeat } from "@/state/beatMath";
 import { PI } from "@/state/constants";
 import {
   getRelationForElement,
-  poiHeadCyclesPerArmCycleToHeadSpeedRadiansPerBeat,
   VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT,
   type VTGDescriptor,
   type VTGElement,
@@ -11,10 +10,13 @@ import {
 
 export const VTG_SEQUENCE_DEFAULT_NAME = "Untitled Sequence";
 export const VTG_SEQUENCE_DEFAULT_LOOP = true;
+export const VTG_SEQUENCE_DEFAULT_ALLOW_POI_DIRECTION_FLIP = false;
 export const VTG_SEQUENCE_DEFAULT_START_PHASE_DEG: VTGPhaseDeg = 0;
 export const VTG_SEQUENCE_DEFAULT_DURATION_BEATS = 1;
 export const VTG_SEQUENCE_MIN_DURATION_BEATS = 1e-6;
 export const VTG_SEQUENCE_DEFAULT_SNAP_SETTING = "event" as const;
+export const VTG_SEQUENCE_DEFAULT_POI_HEAD_CYCLES_PER_ARM_CYCLE = -3;
+export const VTG_SEQUENCE_DEFAULT_RIGHT_ARM_SIGN: VTGArmSign = 1;
 
 const CARDINAL_EVENT_PHASE_SPAN_RADIANS = PI / 2;
 const SNAP_ALIGNMENT_TOLERANCE = 1e-9;
@@ -25,11 +27,13 @@ const RIGHT_HEAD_ANCHOR_OFFSET_RADIANS = 0;
 const SEGMENT_ID_PREFIX = "seg";
 
 export type VTGSequenceSnapSetting = "event" | "none";
+export type VTGArmSign = 1 | -1;
 
 export interface VTGSequenceDescriptor {
   armElement: VTGElement;
   poiElement: VTGElement;
   poiHeadCyclesPerArmCycle: number;
+  rightArmSign: VTGArmSign;
 }
 
 export interface VTGSequenceSegment {
@@ -43,6 +47,7 @@ export interface VTGSequence {
   loop: boolean;
   snapSetting: VTGSequenceSnapSetting;
   startPhaseDeg: VTGPhaseDeg;
+  allowPoiDirectionFlip: boolean;
   segments: VTGSequenceSegment[];
 }
 
@@ -78,13 +83,27 @@ export interface VTGSequenceChannelAngles {
   leftHeadRadians: number;
 }
 
+export interface VTGSequenceDirectionBadges {
+  L: VTGArmSign;
+  R: VTGArmSign;
+}
+
+export interface VTGSequencePoiDirectionViolation {
+  previousSegmentId: string;
+  segmentId: string;
+  previousRightHeadSign: VTGArmSign;
+  authoredRightHeadSign: VTGArmSign;
+}
+
 export interface VTGSequenceContinuitySegment {
   segmentIndex: number;
   segmentId: string;
   durationBeats: number;
   descriptor: VTGSequenceDescriptor;
+  authoredDescriptor: VTGSequenceDescriptor;
   speedProfile: VTGSequenceSpeedProfile;
   startAngles: VTGSequenceChannelAngles;
+  poiDirectionFlipBlocked: boolean;
 }
 
 export interface VTGSequenceContinuity {
@@ -93,6 +112,7 @@ export interface VTGSequenceContinuity {
   totalBeats: number;
   segments: VTGSequenceContinuitySegment[];
   anchoredStartAngles: VTGSequenceChannelAngles | null;
+  authoredPoiDirectionViolations: VTGSequencePoiDirectionViolation[];
 }
 
 export interface VTGSequenceContinuityResolution extends VTGSequencePlayheadResolution {
@@ -102,6 +122,12 @@ export interface VTGSequenceContinuityResolution extends VTGSequencePlayheadReso
 export interface VTGSequenceDeserializeResult {
   sequence: VTGSequence | null;
   error: string | null;
+}
+
+interface PoiDirectionResolution {
+  descriptor: VTGSequenceDescriptor;
+  speedProfile: VTGSequenceSpeedProfile;
+  flipBlocked: boolean;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -132,6 +158,10 @@ function isSnapSetting(value: unknown): value is VTGSequenceSnapSetting {
   return value === "event" || value === "none";
 }
 
+function isVTGArmSign(value: unknown): value is VTGArmSign {
+  return value === 1 || value === -1;
+}
+
 function sanitizeSequenceName(name: unknown): string {
   if (!isString(name)) {
     return VTG_SEQUENCE_DEFAULT_NAME;
@@ -147,19 +177,23 @@ function sanitizeSegmentId(value: unknown, index: number): string {
   return `${SEGMENT_ID_PREFIX}-${index + 1}`;
 }
 
+function sanitizePoiHeadCyclesPerArmCycle(value: unknown): number {
+  if (!isFiniteNumber(value) || Math.abs(value) <= SNAP_ALIGNMENT_TOLERANCE) {
+    return VTG_SEQUENCE_DEFAULT_POI_HEAD_CYCLES_PER_ARM_CYCLE;
+  }
+  return value;
+}
+
 function sanitizeDescriptor(value: unknown): VTGSequenceDescriptor {
   const candidate = isRecord(value) ? value : {};
   const armElement = isVTGElement(candidate.armElement) ? candidate.armElement : "Earth";
   const poiElement = isVTGElement(candidate.poiElement) ? candidate.poiElement : "Earth";
-  const poiHeadCyclesPerArmCycle =
-    isFiniteNumber(candidate.poiHeadCyclesPerArmCycle) && Math.abs(candidate.poiHeadCyclesPerArmCycle) > SNAP_ALIGNMENT_TOLERANCE
-      ? candidate.poiHeadCyclesPerArmCycle
-      : -3;
 
   return {
     armElement,
     poiElement,
-    poiHeadCyclesPerArmCycle
+    poiHeadCyclesPerArmCycle: sanitizePoiHeadCyclesPerArmCycle(candidate.poiHeadCyclesPerArmCycle),
+    rightArmSign: isVTGArmSign(candidate.rightArmSign) ? candidate.rightArmSign : VTG_SEQUENCE_DEFAULT_RIGHT_ARM_SIGN
   };
 }
 
@@ -199,7 +233,8 @@ function cloneDescriptor(descriptor: VTGSequenceDescriptor): VTGSequenceDescript
   return {
     armElement: descriptor.armElement,
     poiElement: descriptor.poiElement,
-    poiHeadCyclesPerArmCycle: descriptor.poiHeadCyclesPerArmCycle
+    poiHeadCyclesPerArmCycle: descriptor.poiHeadCyclesPerArmCycle,
+    rightArmSign: descriptor.rightArmSign
   };
 }
 
@@ -238,6 +273,14 @@ function advanceAnglesByDuration(
   };
 }
 
+function signFromDirection(value: number): VTGArmSign {
+  return value < 0 ? -1 : 1;
+}
+
+function invertSign(sign: VTGArmSign): VTGArmSign {
+  return sign === 1 ? -1 : 1;
+}
+
 /**
  * Creates a deterministic default VTG sequence value.
  *
@@ -249,6 +292,7 @@ export function createDefaultVTGSequence(): VTGSequence {
     loop: VTG_SEQUENCE_DEFAULT_LOOP,
     snapSetting: VTG_SEQUENCE_DEFAULT_SNAP_SETTING,
     startPhaseDeg: VTG_SEQUENCE_DEFAULT_START_PHASE_DEG,
+    allowPoiDirectionFlip: VTG_SEQUENCE_DEFAULT_ALLOW_POI_DIRECTION_FLIP,
     segments: []
   };
 }
@@ -267,6 +311,9 @@ export function sanitizeVTGSequence(input: unknown): VTGSequence {
     loop: isBoolean(candidate.loop) ? candidate.loop : VTG_SEQUENCE_DEFAULT_LOOP,
     snapSetting: isSnapSetting(candidate.snapSetting) ? candidate.snapSetting : VTG_SEQUENCE_DEFAULT_SNAP_SETTING,
     startPhaseDeg: isVTGPhaseDeg(candidate.startPhaseDeg) ? candidate.startPhaseDeg : VTG_SEQUENCE_DEFAULT_START_PHASE_DEG,
+    allowPoiDirectionFlip: isBoolean(candidate.allowPoiDirectionFlip)
+      ? candidate.allowPoiDirectionFlip
+      : VTG_SEQUENCE_DEFAULT_ALLOW_POI_DIRECTION_FLIP,
     segments: sanitizeSegments(candidate.segments)
   };
 }
@@ -306,6 +353,10 @@ export function validateVTGSequence(sequence: VTGSequence): VTGSequenceValidatio
       errors.push(`Segment ${segment.id} duration must be > ${VTG_SEQUENCE_MIN_DURATION_BEATS}.`);
     }
 
+    if (!isVTGArmSign(segment.descriptor.rightArmSign)) {
+      errors.push(`Segment ${segment.id} descriptor.rightArmSign must be 1 or -1.`);
+    }
+
     const headCycles = segment.descriptor.poiHeadCyclesPerArmCycle;
     if (!Number.isFinite(headCycles) || Math.abs(headCycles) <= SNAP_ALIGNMENT_TOLERANCE) {
       errors.push(`Segment ${segment.id} descriptor.poiHeadCyclesPerArmCycle must be finite and non-zero.`);
@@ -340,7 +391,9 @@ export function toVTGDescriptor(descriptor: VTGSequenceDescriptor, phaseDeg: VTG
  * @param armSpeedRadiansPerBeat Arm angular speed in radians per beat.
  * @returns Beat interval between consecutive arm-phase cardinal events.
  */
-export function getArmPhaseEventSpacingBeats(armSpeedRadiansPerBeat = VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT): number {
+export function getArmPhaseEventSpacingBeats(
+  armSpeedRadiansPerBeat = VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT
+): number {
   const absSpeed = Math.abs(armSpeedRadiansPerBeat);
   if (absSpeed <= SNAP_ALIGNMENT_TOLERANCE) {
     return VTG_SEQUENCE_DEFAULT_DURATION_BEATS;
@@ -355,7 +408,10 @@ export function getArmPhaseEventSpacingBeats(armSpeedRadiansPerBeat = VTG_CANONI
  * @param armSpeedRadiansPerBeat Arm angular speed in radians per beat.
  * @returns Duration snapped to nearest positive arm-phase event multiple.
  */
-export function snapDurationToArmPhaseEvents(durationBeats: number, armSpeedRadiansPerBeat = VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT): number {
+export function snapDurationToArmPhaseEvents(
+  durationBeats: number,
+  armSpeedRadiansPerBeat = VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT
+): number {
   const spacing = getArmPhaseEventSpacingBeats(armSpeedRadiansPerBeat);
   const snappedSteps = Math.max(1, Math.round(durationBeats / spacing));
   return snappedSteps * spacing;
@@ -373,6 +429,7 @@ export function normalizeSequenceEventSnap(sequence: VTGSequence): VTGSequence {
     loop: sequence.loop,
     snapSetting: sequence.snapSetting,
     startPhaseDeg: sequence.startPhaseDeg,
+    allowPoiDirectionFlip: sequence.allowPoiDirectionFlip,
     segments: sequence.segments.map((segment) => ({
       id: segment.id,
       durationBeats: sequence.snapSetting === "event" ? snapDurationToArmPhaseEvents(segment.durationBeats) : segment.durationBeats,
@@ -453,13 +510,29 @@ export function resolveSequencePlayheadBeats(sequence: VTGSequence, playheadBeat
 }
 
 /**
+ * Derives deterministic arm direction badges from one descriptor.
+ *
+ * @param descriptor Segment descriptor.
+ * @returns Left/right arm direction signs.
+ */
+export function deriveSequenceArmDirectionBadges(descriptor: VTGSequenceDescriptor): VTGSequenceDirectionBadges {
+  const armRelation = getRelationForElement(descriptor.armElement);
+  const leftArmSign = armRelation.direction === "same-direction" ? descriptor.rightArmSign : invertSign(descriptor.rightArmSign);
+
+  return {
+    L: leftArmSign,
+    R: descriptor.rightArmSign
+  };
+}
+
+/**
  * Derives one segment's speed profile from relation descriptors.
  *
  * Contract:
- * - right arm speed is canonical (`+2π` rad/beat),
- * - left arm direction comes from `armElement`,
- * - right head speed comes from signed `poiHeadCyclesPerArmCycle`,
- * - left head direction comes from `poiElement`.
+ * - right arm speed sign is explicit via `rightArmSign`,
+ * - left arm direction comes from `armElement` relation,
+ * - right head speed comes from signed `poiHeadCyclesPerArmCycle * rightArmSpeed`,
+ * - left head direction comes from `poiElement` relation.
  *
  * @param descriptor Sequence segment descriptor.
  * @returns Deterministic speed profile for both arm/head channels.
@@ -467,12 +540,12 @@ export function resolveSequencePlayheadBeats(sequence: VTGSequence, playheadBeat
 export function deriveSequenceSegmentSpeedProfile(descriptor: VTGSequenceDescriptor): VTGSequenceSpeedProfile {
   const armRelation = getRelationForElement(descriptor.armElement);
   const poiRelation = getRelationForElement(descriptor.poiElement);
-
-  const rightArmSpeed = VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT;
-  const leftArmSpeed = armRelation.direction === "same-direction"
-    ? VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT
-    : -VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT;
-  const rightHeadSpeed = poiHeadCyclesPerArmCycleToHeadSpeedRadiansPerBeat(descriptor.poiHeadCyclesPerArmCycle);
+  const rightArmSpeed = descriptor.rightArmSign * VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT;
+  const leftArmSpeed =
+    armRelation.direction === "same-direction"
+      ? rightArmSpeed
+      : -rightArmSpeed;
+  const rightHeadSpeed = descriptor.poiHeadCyclesPerArmCycle * rightArmSpeed;
   const leftHeadSpeed = poiRelation.direction === "same-direction" ? rightHeadSpeed : -rightHeadSpeed;
 
   return {
@@ -480,6 +553,81 @@ export function deriveSequenceSegmentSpeedProfile(descriptor: VTGSequenceDescrip
     leftArmSpeedRadiansPerBeat: leftArmSpeed,
     rightHeadSpeedRadiansPerBeat: rightHeadSpeed,
     leftHeadSpeedRadiansPerBeat: leftHeadSpeed
+  };
+}
+
+/**
+ * Detects authored right-head direction flips across adjacent segments when flips are disallowed.
+ *
+ * @param sequence Sequence candidate.
+ * @returns Ordered list of violations.
+ */
+export function detectPoiDirectionViolations(sequence: VTGSequence): VTGSequencePoiDirectionViolation[] {
+  if (sequence.allowPoiDirectionFlip) {
+    return [];
+  }
+
+  const normalized = normalizeSequenceEventSnap(sequence);
+  const violations: VTGSequencePoiDirectionViolation[] = [];
+  let previousSegmentId: string | null = null;
+  let previousRightHeadSign: VTGArmSign | null = null;
+
+  for (const segment of normalized.segments) {
+    const speedProfile = deriveSequenceSegmentSpeedProfile(segment.descriptor);
+    const authoredRightHeadSign = signFromDirection(speedProfile.rightHeadSpeedRadiansPerBeat);
+
+    if (
+      previousSegmentId &&
+      previousRightHeadSign !== null &&
+      authoredRightHeadSign !== previousRightHeadSign
+    ) {
+      violations.push({
+        previousSegmentId,
+        segmentId: segment.id,
+        previousRightHeadSign,
+        authoredRightHeadSign
+      });
+    }
+
+    previousSegmentId = segment.id;
+    previousRightHeadSign = authoredRightHeadSign;
+  }
+
+  return violations;
+}
+
+function resolvePoiDirectionConstraint(
+  descriptor: VTGSequenceDescriptor,
+  previousRightHeadSign: VTGArmSign | null,
+  allowPoiDirectionFlip: boolean
+): PoiDirectionResolution {
+  const authoredProfile = deriveSequenceSegmentSpeedProfile(descriptor);
+  if (allowPoiDirectionFlip || previousRightHeadSign === null) {
+    return {
+      descriptor: cloneDescriptor(descriptor),
+      speedProfile: authoredProfile,
+      flipBlocked: false
+    };
+  }
+
+  const authoredRightHeadSign = signFromDirection(authoredProfile.rightHeadSpeedRadiansPerBeat);
+  if (authoredRightHeadSign === previousRightHeadSign) {
+    return {
+      descriptor: cloneDescriptor(descriptor),
+      speedProfile: authoredProfile,
+      flipBlocked: false
+    };
+  }
+
+  const constrainedDescriptor: VTGSequenceDescriptor = {
+    ...cloneDescriptor(descriptor),
+    poiHeadCyclesPerArmCycle: -descriptor.poiHeadCyclesPerArmCycle
+  };
+
+  return {
+    descriptor: constrainedDescriptor,
+    speedProfile: deriveSequenceSegmentSpeedProfile(constrainedDescriptor),
+    flipBlocked: true
   };
 }
 
@@ -510,6 +658,8 @@ function createAnchoredStartAngles(sequence: VTGSequence): VTGSequenceChannelAng
  * - segment N>0 starts exactly at segment N-1 end pose,
  * - segment switches update speed profile only (no boundary pose jump),
  * - loop seam wraps to anchored start because playhead wraps in beat-space.
+ * - when `allowPoiDirectionFlip=false`, right-head authored sign flips are blocked by
+ *   deterministic per-segment fallback (`poiHeadCyclesPerArmCycle *= -1`) in runtime resolution.
  *
  * @param sequence Sequence candidate.
  * @returns Normalized sequence plus per-segment propagated start angles and speeds.
@@ -518,6 +668,7 @@ export function resolveSequenceContinuity(sequence: VTGSequence): VTGSequenceCon
   const effectiveSequence = normalizeSequenceEventSnap(sequence);
   const boundaries = computeSequenceBoundariesBeats(effectiveSequence);
   const anchoredStartAngles = createAnchoredStartAngles(effectiveSequence);
+  const authoredPoiDirectionViolations = detectPoiDirectionViolations(effectiveSequence);
 
   if (!anchoredStartAngles) {
     return {
@@ -525,12 +676,14 @@ export function resolveSequenceContinuity(sequence: VTGSequence): VTGSequenceCon
       boundaries,
       totalBeats: boundaries.totalBeats,
       segments: [],
-      anchoredStartAngles: null
+      anchoredStartAngles: null,
+      authoredPoiDirectionViolations
     };
   }
 
   const continuitySegments: VTGSequenceContinuitySegment[] = [];
   let currentStart = anchoredStartAngles;
+  let previousRightHeadSign: VTGArmSign | null = null;
 
   for (let index = 0; index < effectiveSequence.segments.length; index += 1) {
     const segment = effectiveSequence.segments[index];
@@ -538,22 +691,30 @@ export function resolveSequenceContinuity(sequence: VTGSequence): VTGSequenceCon
       continue;
     }
 
-    const speedProfile = deriveSequenceSegmentSpeedProfile(segment.descriptor);
+    const resolved = resolvePoiDirectionConstraint(
+      segment.descriptor,
+      previousRightHeadSign,
+      effectiveSequence.allowPoiDirectionFlip
+    );
+
     continuitySegments.push({
       segmentIndex: index,
       segmentId: segment.id,
       durationBeats: segment.durationBeats,
-      descriptor: cloneDescriptor(segment.descriptor),
-      speedProfile,
+      descriptor: cloneDescriptor(resolved.descriptor),
+      authoredDescriptor: cloneDescriptor(segment.descriptor),
+      speedProfile: resolved.speedProfile,
       startAngles: {
         rightArmRadians: currentStart.rightArmRadians,
         leftArmRadians: currentStart.leftArmRadians,
         rightHeadRadians: currentStart.rightHeadRadians,
         leftHeadRadians: currentStart.leftHeadRadians
-      }
+      },
+      poiDirectionFlipBlocked: resolved.flipBlocked
     });
 
-    currentStart = advanceAnglesByDuration(currentStart, speedProfile, segment.durationBeats);
+    previousRightHeadSign = signFromDirection(resolved.speedProfile.rightHeadSpeedRadiansPerBeat);
+    currentStart = advanceAnglesByDuration(currentStart, resolved.speedProfile, segment.durationBeats);
   }
 
   return {
@@ -566,7 +727,8 @@ export function resolveSequenceContinuity(sequence: VTGSequence): VTGSequenceCon
       leftArmRadians: anchoredStartAngles.leftArmRadians,
       rightHeadRadians: anchoredStartAngles.rightHeadRadians,
       leftHeadRadians: anchoredStartAngles.leftHeadRadians
-    }
+    },
+    authoredPoiDirectionViolations
   };
 }
 
@@ -607,6 +769,7 @@ export function serializeVTGSequence(sequence: VTGSequence): string {
     loop: sequence.loop,
     snapSetting: sequence.snapSetting,
     startPhaseDeg: sequence.startPhaseDeg,
+    allowPoiDirectionFlip: sequence.allowPoiDirectionFlip,
     segments: sequence.segments.map((segment) => cloneSegment(segment))
   });
 }

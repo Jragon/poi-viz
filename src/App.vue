@@ -21,6 +21,7 @@ const {
   sequence,
   sequenceStatus,
   sequenceSegments,
+  sequenceActiveDirectionBadges,
   selectedSequenceSegmentId,
   selectedSequenceDescriptor,
   themeButtonLabel,
@@ -36,10 +37,12 @@ const {
   handleSetSequenceName,
   handleSetSequenceLoop,
   handleSetSnapSetting,
+  handleSetSequenceAllowPoiDirectionFlip,
   handleSetSequenceStartPhaseDeg,
   handleAddSequenceSegment,
   handleSelectSequenceSegment,
   handleSetSelectedSequenceDurationBeats,
+  handleSetSelectedSequenceRightArmSign,
   handleMoveSelectedSequenceSegment,
   handleDeleteSelectedSequenceSegment,
   handleDuplicateSelectedSequenceSegment,
@@ -117,6 +120,7 @@ const {
         :sequence-mode="sequenceMode"
         :sequence="sequence"
         :sequence-segments="sequenceSegments"
+        :sequence-active-direction-badges="sequenceActiveDirectionBadges"
         :selected-sequence-segment-id="selectedSequenceSegmentId"
         :sequence-status="sequenceStatus"
         :selected-sequence-descriptor="selectedSequenceDescriptor"
@@ -132,10 +136,12 @@ const {
         @set-sequence-name="handleSetSequenceName"
         @set-sequence-loop="handleSetSequenceLoop"
         @set-snap-setting="handleSetSnapSetting"
+        @set-sequence-allow-poi-direction-flip="handleSetSequenceAllowPoiDirectionFlip"
         @set-sequence-start-phase-deg="handleSetSequenceStartPhaseDeg"
         @add-segment="handleAddSequenceSegment"
         @select-segment="handleSelectSequenceSegment"
         @set-selected-duration-beats="handleSetSelectedSequenceDurationBeats"
+        @set-selected-right-arm-sign="handleSetSelectedSequenceRightArmSign"
         @move-selected-segment="handleMoveSelectedSequenceSegment"
         @delete-selected-segment="handleDeleteSelectedSequenceSegment"
         @duplicate-selected-segment="handleDuplicateSelectedSequenceSegment"

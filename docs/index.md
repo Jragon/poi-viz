@@ -25,7 +25,7 @@ Primary modules:
 - `src/vtg/generate.ts` export `generateVTGState`.
 - `src/vtg/classify.ts` exports `classifyArmElement`, `classifyPoiElement`, `classifyPhaseBucket`.
 - `src/vtg/descriptiveGeometry.ts` exports non-authoritative cardinal readout helpers.
-- `src/vtg/sequence.ts` exports VTG sequence sanitize/validate helpers, beat-boundary/playhead resolution, snap helpers, continuity resolver contracts, and import/export contracts.
+- `src/vtg/sequence.ts` exports VTG sequence sanitize/validate helpers, beat-boundary/playhead resolution, snap helpers, explicit arm-branch + poi-direction constraint contracts, continuity resolver contracts, and import/export contracts.
 - `src/state/persistence.ts` exports `serializeState`, `deserializeState`, `resolveInitialState`.
 - `src/composables/usePersistenceCoordinator.ts` export `usePersistenceCoordinator`.
 - `src/composables/useTransportController.ts` export `useTransportController`.
@@ -58,6 +58,6 @@ Representative validating tests:
 1. `math-model.md` for equations, units, and invariants.
 2. `engine-architecture.md` for module seams and deterministic sampling.
 3. `vtg-layer.md` for VTG relation language and generator mapping.
-4. `vtg-sequencer.md` for sequence mental model, mode routing, segment editing flow, and JSON sharing contract.
+4. `vtg-sequencer.md` for sequence mental model, direction branch/constraint semantics, mode routing, segment editing flow, and JSON sharing contract.
 5. `validation.md` for fixtures, regressions, and safe change workflow.
 6. `glossary.md` for symbol-level terminology.

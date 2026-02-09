@@ -17,7 +17,7 @@ import { createDefaultState } from "@/state/defaults";
 import type { UserPresetSummary } from "@/state/presetLibrary";
 import type { Theme } from "@/state/theme";
 import type { AppState, HandId, PhaseReference } from "@/types/state";
-import type { VTGSequence, VTGSequenceSnapSetting } from "@/vtg/sequence";
+import type { VTGArmSign, VTGSequence, VTGSequenceSnapSetting } from "@/vtg/sequence";
 import { generateVTGState } from "@/vtg/generate";
 import type { VTGDescriptor, VTGPhaseDeg } from "@/vtg/types";
 import { onBeforeUnmount, onMounted, reactive, ref, watch, type ComputedRef, type Ref } from "vue";
@@ -45,6 +45,7 @@ export interface AppOrchestrator {
       descriptor: VTGSequence["segments"][number]["descriptor"];
     }>
   >;
+  sequenceActiveDirectionBadges: ComputedRef<{ L: VTGArmSign; R: VTGArmSign } | null>;
   selectedSequenceSegmentId: Ref<string | null>;
   selectedSequenceDescriptor: ComputedRef<VTGDescriptor | null>;
   themeButtonLabel: ComputedRef<string>;
@@ -61,10 +62,12 @@ export interface AppOrchestrator {
   handleSetSequenceName: (name: string) => void;
   handleSetSequenceLoop: (loop: boolean) => void;
   handleSetSnapSetting: (snapSetting: VTGSequenceSnapSetting) => void;
+  handleSetSequenceAllowPoiDirectionFlip: (allowPoiDirectionFlip: boolean) => void;
   handleSetSequenceStartPhaseDeg: (startPhaseDeg: VTGPhaseDeg) => void;
   handleAddSequenceSegment: () => void;
   handleSelectSequenceSegment: (segmentId: string) => void;
   handleSetSelectedSequenceDurationBeats: (durationBeats: number) => void;
+  handleSetSelectedSequenceRightArmSign: (rightArmSign: VTGArmSign) => void;
   handleMoveSelectedSequenceSegment: (direction: "up" | "down") => void;
   handleDeleteSelectedSequenceSegment: () => void;
   handleDuplicateSelectedSequenceSegment: () => void;
@@ -207,6 +210,7 @@ export function useAppOrchestrator(): AppOrchestrator {
     sequence: sequenceController.sequence,
     sequenceStatus: sequenceController.sequenceStatus,
     sequenceSegments: sequenceController.segmentViews,
+    sequenceActiveDirectionBadges: sequenceController.activeDirectionBadges,
     selectedSequenceSegmentId: sequenceController.selectedSegmentId,
     selectedSequenceDescriptor: sequenceController.selectedSegmentDescriptorForVtgPanel,
     themeButtonLabel: themeController.themeButtonLabel,
@@ -223,10 +227,12 @@ export function useAppOrchestrator(): AppOrchestrator {
     handleSetSequenceName: sequenceController.handleSetSequenceName,
     handleSetSequenceLoop: sequenceController.handleSetSequenceLoop,
     handleSetSnapSetting: sequenceController.handleSetSnapSetting,
+    handleSetSequenceAllowPoiDirectionFlip: sequenceController.handleSetAllowPoiDirectionFlip,
     handleSetSequenceStartPhaseDeg: sequenceController.handleSetSequenceStartPhaseDeg,
     handleAddSequenceSegment: () => sequenceController.handleAddSegmentFromCurrentState(state),
     handleSelectSequenceSegment: sequenceController.handleSelectSegment,
     handleSetSelectedSequenceDurationBeats: sequenceController.handleSetSelectedDurationBeats,
+    handleSetSelectedSequenceRightArmSign: sequenceController.handleSetSelectedRightArmSign,
     handleMoveSelectedSequenceSegment: sequenceController.handleMoveSelectedSegment,
     handleDeleteSelectedSequenceSegment: sequenceController.handleDeleteSelectedSegment,
     handleDuplicateSelectedSequenceSegment: sequenceController.handleDuplicateSelectedSegment,

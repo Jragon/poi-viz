@@ -10,6 +10,19 @@ import { classifyVTG } from "@/vtg/classify";
 
 interface ControlsStubProps {
   state: AppState;
+  sequenceSegments?: Array<{
+    id: string;
+    durationBeats: number;
+    descriptor: {
+      armElement: string;
+      poiElement: string;
+      poiHeadCyclesPerArmCycle: number;
+      rightArmSign: 1 | -1;
+    };
+    armDirectionBadges: { L: 1 | -1; R: 1 | -1 };
+    poiDirectionFlipBlocked: boolean;
+  }>;
+  sequenceActiveDirectionBadges?: { L: 1 | -1; R: 1 | -1 } | null;
 }
 
 interface PatternCanvasStubProps {
@@ -27,6 +40,8 @@ let latestPatternBeat = 0;
 let latestPatternState: AppState | null = null;
 let latestWaveBeat = 0;
 let latestPatternTrailResetEpoch = 0;
+let latestSequenceSegments: ControlsStubProps["sequenceSegments"] = [];
+let latestSequenceActiveDirectionBadges: ControlsStubProps["sequenceActiveDirectionBadges"] = null;
 let queuedRafCallbacks = new Map<number, FrameRequestCallback>();
 let nextRafId = 1;
 
@@ -36,6 +51,16 @@ const ControlsStub = defineComponent({
     state: {
       type: Object as () => AppState,
       required: true
+    },
+    sequenceSegments: {
+      type: Array as () => ControlsStubProps["sequenceSegments"],
+      required: false,
+      default: () => []
+    },
+    sequenceActiveDirectionBadges: {
+      type: Object as () => ControlsStubProps["sequenceActiveDirectionBadges"],
+      required: false,
+      default: null
     }
   },
   emits: [
@@ -56,10 +81,12 @@ const ControlsStub = defineComponent({
     "set-sequence-name",
     "set-sequence-loop",
     "set-snap-setting",
+    "set-sequence-allow-poi-direction-flip",
     "set-sequence-start-phase-deg",
     "add-segment",
     "select-segment",
     "set-selected-duration-beats",
+    "set-selected-right-arm-sign",
     "move-selected-segment",
     "delete-selected-segment",
     "duplicate-selected-segment",
@@ -69,6 +96,8 @@ const ControlsStub = defineComponent({
   setup(props: ControlsStubProps) {
     watchEffect(() => {
       latestState = props.state;
+      latestSequenceSegments = props.sequenceSegments ?? [];
+      latestSequenceActiveDirectionBadges = props.sequenceActiveDirectionBadges ?? null;
     });
   },
   template: `
@@ -93,12 +122,23 @@ const ControlsStub = defineComponent({
       >
         apply-vtg-earth-earth
       </button>
+      <button
+        data-testid="apply-vtg-earth-earth-positive"
+        type="button"
+        @click="$emit('apply-vtg', { armElement: 'Earth', poiElement: 'Earth', phaseDeg: 0, poiHeadCyclesPerArmCycle: 3 })"
+      >
+        apply-vtg-earth-earth-positive
+      </button>
       <button data-testid="sequence-mode-on" type="button" @click="$emit('set-sequence-mode', true)">sequence-on</button>
       <button data-testid="sequence-mode-off" type="button" @click="$emit('set-sequence-mode', false)">sequence-off</button>
       <button data-testid="sequence-start-phase-180" type="button" @click="$emit('set-sequence-start-phase-deg', 180)">sequence-start-phase-180</button>
       <button data-testid="sequence-add" type="button" @click="$emit('add-segment')">sequence-add</button>
       <button data-testid="sequence-select-1" type="button" @click="$emit('select-segment', 'seg-1')">sequence-select-1</button>
       <button data-testid="sequence-select-2" type="button" @click="$emit('select-segment', 'seg-2')">sequence-select-2</button>
+      <button data-testid="sequence-right-arm-negative" type="button" @click="$emit('set-selected-right-arm-sign', -1)">sequence-right-arm-negative</button>
+      <button data-testid="sequence-right-arm-positive" type="button" @click="$emit('set-selected-right-arm-sign', 1)">sequence-right-arm-positive</button>
+      <button data-testid="sequence-allow-poi-direction-flip-on" type="button" @click="$emit('set-sequence-allow-poi-direction-flip', true)">sequence-allow-poi-direction-flip-on</button>
+      <button data-testid="sequence-allow-poi-direction-flip-off" type="button" @click="$emit('set-sequence-allow-poi-direction-flip', false)">sequence-allow-poi-direction-flip-off</button>
     </div>
   `
 });
@@ -211,6 +251,8 @@ describe("App orchestration integration", () => {
     latestPatternState = null;
     latestWaveBeat = 0;
     latestPatternTrailResetEpoch = 0;
+    latestSequenceSegments = [];
+    latestSequenceActiveDirectionBadges = null;
     installMockRaf();
     window.localStorage.clear();
     setLocationHref("http://localhost/");
@@ -381,6 +423,79 @@ describe("App orchestration integration", () => {
     expect(latestPatternState.hands.R.poiSpeed).toBeCloseTo(-4 * TWO_PI, 10);
     expect(latestPatternState.hands.L.poiSpeed).toBeCloseTo(-2 * TWO_PI, 10);
     expect(latestPatternBeat).toBeCloseTo(0.25, 10);
+  });
+
+  it("updates resolved motion and badges when selected segment rightArmSign changes", async () => {
+    wrapper = mountApp();
+    await nextTick();
+
+    await wrapper.get("[data-testid='sequence-mode-on']").trigger("click");
+    await nextTick();
+    await wrapper.get("[data-testid='sequence-select-1']").trigger("click");
+    await nextTick();
+    await wrapper.get("[data-testid='apply-vtg-earth-earth']").trigger("click");
+    await nextTick();
+
+    await wrapper.get("[data-testid='scrub-0-25']").trigger("click");
+    await nextTick();
+
+    expect(latestPatternState).not.toBeNull();
+    if (!latestPatternState) {
+      return;
+    }
+    expect(latestPatternState.hands.R.armSpeed).toBeCloseTo(TWO_PI, 10);
+    expect(latestPatternState.hands.L.armSpeed).toBeCloseTo(TWO_PI, 10);
+    expect(latestSequenceActiveDirectionBadges).toEqual({ L: 1, R: 1 });
+
+    await wrapper.get("[data-testid='sequence-right-arm-negative']").trigger("click");
+    await nextTick();
+
+    await wrapper.get("[data-testid='scrub-0-25']").trigger("click");
+    await nextTick();
+
+    expect(latestPatternState.hands.R.armSpeed).toBeCloseTo(-TWO_PI, 10);
+    expect(latestPatternState.hands.L.armSpeed).toBeCloseTo(-TWO_PI, 10);
+    expect(latestSequenceActiveDirectionBadges).toEqual({ L: -1, R: -1 });
+    expect(latestSequenceSegments[0]?.descriptor.rightArmSign).toBe(-1);
+  });
+
+  it("blocks poi direction flips by default and allows them when enabled", async () => {
+    wrapper = mountApp();
+    await nextTick();
+
+    await wrapper.get("[data-testid='sequence-mode-on']").trigger("click");
+    await nextTick();
+
+    await wrapper.get("[data-testid='sequence-select-1']").trigger("click");
+    await nextTick();
+    await wrapper.get("[data-testid='apply-vtg-earth-earth']").trigger("click");
+    await nextTick();
+
+    await wrapper.get("[data-testid='sequence-add']").trigger("click");
+    await nextTick();
+    await wrapper.get("[data-testid='sequence-select-2']").trigger("click");
+    await nextTick();
+    await wrapper.get("[data-testid='apply-vtg-earth-earth-positive']").trigger("click");
+    await nextTick();
+
+    await wrapper.get("[data-testid='scrub-1-25']").trigger("click");
+    await nextTick();
+
+    expect(latestPatternState).not.toBeNull();
+    if (!latestPatternState) {
+      return;
+    }
+
+    const blockedHeadSpeed = latestPatternState.hands.R.armSpeed + latestPatternState.hands.R.poiSpeed;
+    expect(blockedHeadSpeed).toBeLessThan(0);
+
+    await wrapper.get("[data-testid='sequence-allow-poi-direction-flip-on']").trigger("click");
+    await nextTick();
+    await wrapper.get("[data-testid='scrub-1-25']").trigger("click");
+    await nextTick();
+
+    const allowedHeadSpeed = latestPatternState.hands.R.armSpeed + latestPatternState.hands.R.poiSpeed;
+    expect(allowedHeadSpeed).toBeGreaterThan(0);
   });
 
   it("increments trail reset epoch on sequence loop seam wrap", async () => {

@@ -1,12 +1,24 @@
 <script setup lang="ts">
-import { type VTGSequence, type VTGSequenceSegment, type VTGSequenceSnapSetting } from "@/vtg/sequence";
+import {
+  type VTGArmSign,
+  type VTGSequence,
+  type VTGSequenceDirectionBadges,
+  type VTGSequenceSegment,
+  type VTGSequenceSnapSetting
+} from "@/vtg/sequence";
 import type { VTGPhaseDeg } from "@/vtg/types";
 import { computed, ref, watch } from "vue";
+
+interface SequencePanelSegment extends VTGSequenceSegment {
+  armDirectionBadges: VTGSequenceDirectionBadges;
+  poiDirectionFlipBlocked: boolean;
+}
 
 interface ControlsSequencePanelProps {
   sequenceMode: boolean;
   sequence: VTGSequence;
-  segmentViews: VTGSequenceSegment[];
+  segmentViews: SequencePanelSegment[];
+  activeDirectionBadges: VTGSequenceDirectionBadges | null;
   selectedSegmentId: string | null;
   sequenceStatus: string;
 }
@@ -18,10 +30,12 @@ const emit = defineEmits<{
   (event: "set-sequence-name", name: string): void;
   (event: "set-sequence-loop", loop: boolean): void;
   (event: "set-snap-setting", snapSetting: VTGSequenceSnapSetting): void;
+  (event: "set-sequence-allow-poi-direction-flip", allowPoiDirectionFlip: boolean): void;
   (event: "set-sequence-start-phase-deg", startPhaseDeg: VTGPhaseDeg): void;
   (event: "add-segment"): void;
   (event: "select-segment", segmentId: string): void;
   (event: "set-selected-duration-beats", durationBeats: number): void;
+  (event: "set-selected-right-arm-sign", rightArmSign: VTGArmSign): void;
   (event: "move-selected-segment", direction: "up" | "down"): void;
   (event: "delete-selected-segment"): void;
   (event: "duplicate-selected-segment"): void;
@@ -34,10 +48,15 @@ const sequenceNameDraft = ref("");
 const selectedSegment = computed(() => props.segmentViews.find((segment) => segment.id === props.selectedSegmentId) ?? null);
 
 const START_PHASE_OPTIONS: VTGPhaseDeg[] = [0, 90, 180, 270];
+const RIGHT_ARM_SIGN_OPTIONS: VTGArmSign[] = [1, -1];
 
 function parseFiniteNumber(value: string): number | null {
   const parsed = Number.parseFloat(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatSignLabel(sign: VTGArmSign): string {
+  return sign > 0 ? "+" : "-";
 }
 
 function onModeToggle(event: Event): void {
@@ -69,6 +88,14 @@ function onLoopToggle(event: Event): void {
   emit("set-sequence-loop", target.checked);
 }
 
+function onAllowPoiDirectionFlipToggle(event: Event): void {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement)) {
+    return;
+  }
+  emit("set-sequence-allow-poi-direction-flip", target.checked);
+}
+
 function onSnapSettingChange(nextSetting: VTGSequenceSnapSetting): void {
   emit("set-snap-setting", nextSetting);
 }
@@ -88,6 +115,10 @@ function onDurationInput(event: Event): void {
     return;
   }
   emit("set-selected-duration-beats", parsed);
+}
+
+function onRightArmSignSelect(rightArmSign: VTGArmSign): void {
+  emit("set-selected-right-arm-sign", rightArmSign);
 }
 
 function openImportPicker(): void {
@@ -169,6 +200,15 @@ watch(
             <input class="accent-cyan-400" type="checkbox" :checked="props.sequence.loop" @change="onLoopToggle" />
             Loop Sequence
           </label>
+          <label class="flex items-center gap-2 text-sm text-zinc-300">
+            <input
+              class="accent-cyan-400"
+              type="checkbox"
+              :checked="props.sequence.allowPoiDirectionFlip"
+              @change="onAllowPoiDirectionFlipToggle"
+            />
+            Allow Poi Direction Flip
+          </label>
 
           <div class="flex flex-wrap items-center gap-2">
             <span class="uppercase">Snap</span>
@@ -208,6 +248,12 @@ watch(
 
       <p v-if="props.sequenceStatus" class="text-xs text-cyan-300">{{ props.sequenceStatus }}</p>
 
+      <div v-if="props.activeDirectionBadges" class="rounded border border-zinc-800 bg-zinc-900/40 p-2 text-xs text-zinc-300">
+        <span class="uppercase text-zinc-500">Active Direction</span>
+        <span class="ml-2 rounded border border-zinc-700 px-2 py-0.5">L:{{ formatSignLabel(props.activeDirectionBadges.L) }}</span>
+        <span class="ml-2 rounded border border-zinc-700 px-2 py-0.5">R:{{ formatSignLabel(props.activeDirectionBadges.R) }}</span>
+      </div>
+
       <div v-if="props.segmentViews.length === 0" class="rounded border border-zinc-800 bg-zinc-900/40 p-3 text-xs text-zinc-500">
         No segments yet. Add one from the current VTG selection.
       </div>
@@ -229,6 +275,15 @@ watch(
               {{ index + 1 }}. {{ segment.descriptor.armElement }} × {{ segment.descriptor.poiElement }}
             </button>
             <span class="text-xs text-zinc-500">{{ segment.durationBeats.toFixed(3) }} beats</span>
+            <span class="rounded border border-zinc-700 px-2 py-0.5 text-xs text-zinc-300">
+              L:{{ formatSignLabel(segment.armDirectionBadges.L) }}
+            </span>
+            <span class="rounded border border-zinc-700 px-2 py-0.5 text-xs text-zinc-300">
+              R:{{ formatSignLabel(segment.armDirectionBadges.R) }}
+            </span>
+            <span v-if="segment.poiDirectionFlipBlocked" class="rounded border border-amber-700 px-2 py-0.5 text-xs text-amber-300">
+              poi flip blocked
+            </span>
           </div>
         </div>
       </div>
@@ -247,6 +302,21 @@ watch(
               @input="onDurationInput"
             />
           </label>
+          <div class="flex flex-col gap-1 text-xs text-zinc-500">
+            <span class="uppercase">Right Arm Direction</span>
+            <div class="flex gap-1">
+              <button
+                v-for="sign in RIGHT_ARM_SIGN_OPTIONS"
+                :key="sign"
+                class="rounded border px-2.5 py-1"
+                :class="selectedSegment.descriptor.rightArmSign === sign ? 'border-cyan-400 text-cyan-300' : 'border-zinc-700 text-zinc-300'"
+                type="button"
+                @click="onRightArmSignSelect(sign)"
+              >
+                R:{{ formatSignLabel(sign) }}
+              </button>
+            </div>
+          </div>
           <button
             class="rounded border border-zinc-700 px-2.5 py-1.5 text-xs hover:border-zinc-500"
             type="button"
@@ -277,7 +347,7 @@ watch(
           </button>
         </div>
         <p class="mt-2 text-xs text-zinc-500">
-          Edit arm/poi relation and signed poi cycles for the selected segment from the VTG grid panel above.
+          Edit arm/poi relation and signed poi cycles in VTG panel. Use R:+/- to set segment arm direction branch explicitly.
         </p>
       </div>
     </div>

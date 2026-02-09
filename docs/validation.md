@@ -2,12 +2,12 @@
 
 ## Validation Stack
 
-The repository uses three executable validation layers:
+The repository uses executable validation layers:
 
 1. Invariant tests for geometry and special cases.
 2. Deterministic sampling/trail regression tests.
 3. Golden fixtures generated from explicit state cases and compared in CI.
-4. VTG sequence-domain validation for sanitize/validate contracts, beat mapping, snap normalization, and continuity propagation semantics.
+4. VTG sequence-domain tests for schema sanitize/validate contracts, beat mapping, snap normalization, direction constraints, and continuity propagation.
 
 Primary references:
 - `tests/engine/invariants.test.ts`
@@ -17,7 +17,7 @@ Primary references:
 - `tests/engine/fixtures.test.ts`
 - `tests/vtg/sequence.test.ts`
 - `tests/ui/pattern-trails.integration.test.ts`
-- `tests/ui/app.integration.test.ts` (sequence mode playback/mode-switch integration coverage)
+- `tests/ui/app.integration.test.ts`
 
 ## How Fixtures Are Generated
 
@@ -55,17 +55,21 @@ When changing engine/VTG/state behavior:
 
 For sequencer-specific changes, include at minimum:
 - `tests/vtg/sequence.test.ts` updates for pure sequencing contracts,
-- app-level integration assertions when sequence mode routing or render selection changes.
+- app-level integration assertions when sequence-mode routing or render selection changes,
+- trail continuity assertions when seam/boundary behavior changes.
 
 Sequencer tests currently assert:
-- schema sanitize/validate behavior for defaults, IDs, duration constraints, and descriptor constraints,
+- schema sanitize/validate behavior for root fields and segment descriptor constraints,
 - deterministic boundary computation and playhead-to-segment/local-beat mapping,
 - snap behavior (`event` vs `none`) derived from arm-phase event spacing,
 - continuity propagation across segment boundaries without non-loop pose jumps,
 - loop seam reset to anchored start pose,
+- explicit `rightArmSign` branch behavior,
+- poi-direction flip enforcement when `allowPoiDirectionFlip=false` and allow-path behavior when true,
 - deterministic continuity resolution for identical inputs,
 - legacy-sequence payload rejection (no compatibility adapter path),
-- mode routing in app integration (`apply-vtg` edits selected segment in sequence mode and runtime state outside sequence mode).
+- mode routing in app integration (`apply-vtg` edits selected segment in sequence mode and runtime state outside sequence mode),
+- direction badge and right-arm-sign edit integration,
 - trail continuity behavior in sequence mode (no reset at segment boundaries; reset on loop seam wrap).
 
 ## Persistence Break Policy

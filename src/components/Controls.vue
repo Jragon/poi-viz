@@ -12,7 +12,13 @@ import type { GlobalBooleanKey, GlobalNumberKey, HandNumberKey } from "@/state/a
 import type { UserPresetSummary } from "@/state/presetLibrary";
 import type { SpeedUnit } from "@/state/speedUnits";
 import type { AppState, HandId, PhaseReference } from "@/types/state";
-import { createDefaultVTGSequence, type VTGSequence, type VTGSequenceSnapSetting } from "@/vtg/sequence";
+import {
+  createDefaultVTGSequence,
+  type VTGArmSign,
+  type VTGSequence,
+  type VTGSequenceDirectionBadges,
+  type VTGSequenceSnapSetting
+} from "@/vtg/sequence";
 import type { VTGDescriptor, VTGPhaseDeg } from "@/vtg/types";
 import { computed, ref } from "vue";
 
@@ -30,7 +36,10 @@ interface ControlsProps {
     id: string;
     durationBeats: number;
     descriptor: VTGSequence["segments"][number]["descriptor"];
+    armDirectionBadges: VTGSequenceDirectionBadges;
+    poiDirectionFlipBlocked: boolean;
   }>;
+  sequenceActiveDirectionBadges?: VTGSequenceDirectionBadges | null;
   selectedSequenceSegmentId?: string | null;
   sequenceStatus?: string;
   selectedSequenceDescriptor?: VTGDescriptor | null;
@@ -50,10 +59,12 @@ const emit = defineEmits<{
   (event: "set-sequence-name", name: string): void;
   (event: "set-sequence-loop", loop: boolean): void;
   (event: "set-snap-setting", snapSetting: VTGSequenceSnapSetting): void;
+  (event: "set-sequence-allow-poi-direction-flip", allowPoiDirectionFlip: boolean): void;
   (event: "set-sequence-start-phase-deg", startPhaseDeg: VTGPhaseDeg): void;
   (event: "add-segment"): void;
   (event: "select-segment", segmentId: string): void;
   (event: "set-selected-duration-beats", durationBeats: number): void;
+  (event: "set-selected-right-arm-sign", rightArmSign: VTGArmSign): void;
   (event: "move-selected-segment", direction: "up" | "down"): void;
   (event: "delete-selected-segment"): void;
   (event: "duplicate-selected-segment"): void;
@@ -77,6 +88,7 @@ const defaultSequence = createDefaultVTGSequence();
 const sequenceModeValue = computed(() => props.sequenceMode ?? false);
 const sequenceValue = computed(() => props.sequence ?? defaultSequence);
 const sequenceSegmentsValue = computed(() => props.sequenceSegments ?? []);
+const sequenceActiveDirectionBadgesValue = computed(() => props.sequenceActiveDirectionBadges ?? null);
 const selectedSequenceSegmentIdValue = computed(() => props.selectedSequenceSegmentId ?? null);
 const sequenceStatusValue = computed(() => props.sequenceStatus ?? "");
 const selectedSequenceDescriptorValue = computed(() => props.selectedSequenceDescriptor ?? null);
@@ -161,15 +173,20 @@ function onSetHandNumber(handId: HandId, key: HandNumberKey, value: number): voi
       @set-sequence-name="(name) => emit('set-sequence-name', name)"
       @set-sequence-loop="(loop) => emit('set-sequence-loop', loop)"
       @set-snap-setting="(snapSetting) => emit('set-snap-setting', snapSetting)"
+      @set-sequence-allow-poi-direction-flip="
+        (allowPoiDirectionFlip) => emit('set-sequence-allow-poi-direction-flip', allowPoiDirectionFlip)
+      "
       @set-sequence-start-phase-deg="(startPhaseDeg) => emit('set-sequence-start-phase-deg', startPhaseDeg)"
       @add-segment="emit('add-segment')"
       @select-segment="(segmentId) => emit('select-segment', segmentId)"
       @set-selected-duration-beats="(durationBeats) => emit('set-selected-duration-beats', durationBeats)"
+      @set-selected-right-arm-sign="(rightArmSign) => emit('set-selected-right-arm-sign', rightArmSign)"
       @move-selected-segment="(direction) => emit('move-selected-segment', direction)"
       @delete-selected-segment="emit('delete-selected-segment')"
       @duplicate-selected-segment="emit('duplicate-selected-segment')"
       @export-sequence="emit('export-sequence')"
       @import-sequence="(file) => emit('import-sequence', file)"
+      :active-direction-badges="sequenceActiveDirectionBadgesValue"
     />
 
     <div class="mt-4 grid gap-4 xl:grid-cols-2">

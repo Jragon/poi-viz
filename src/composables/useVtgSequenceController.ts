@@ -4,6 +4,7 @@ import { classifyVTG } from "@/vtg/classify";
 import {
   computeSequenceBoundariesBeats,
   createDefaultVTGSequence,
+  deriveSequenceArmDirectionBadges,
   deserializeVTGSequence,
   normalizeSequenceEventSnap,
   resolveSequenceContinuity,
@@ -12,13 +13,17 @@ import {
   serializeVTGSequence,
   snapDurationToArmPhaseEvents,
   toVTGDescriptor,
+  VTG_SEQUENCE_DEFAULT_POI_HEAD_CYCLES_PER_ARM_CYCLE,
+  VTG_SEQUENCE_DEFAULT_RIGHT_ARM_SIGN,
+  type VTGArmSign,
   type VTGSequence,
   type VTGSequenceDescriptor,
+  type VTGSequenceDirectionBadges,
   type VTGSequenceSegment,
   type VTGSequenceSnapSetting
 } from "@/vtg/sequence";
 import {
-  headSpeedRadiansPerBeatToPoiHeadCyclesPerArmCycle,
+  VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT,
   type VTGDescriptor,
   type VTGPhaseDeg
 } from "@/vtg/types";
@@ -30,13 +35,19 @@ const SEQUENCE_FILE_EXTENSION = ".json";
 const SEQUENCE_FILE_FALLBACK_NAME = "vtg-sequence";
 const SEQUENCE_ID_PREFIX = "seg";
 const MIN_LOOP_BEATS = 0.25;
+const RIGHT_ARM_SIGN_EPSILON = 1e-9;
+
+type SequenceDirectionSign = VTGArmSign;
 
 interface SequenceSnapshotFromState {
   descriptor: VTGSequenceDescriptor;
   startPhaseDeg: VTGPhaseDeg;
 }
 
-export interface SequenceSegmentView extends VTGSequenceSegment {}
+export interface SequenceSegmentView extends VTGSequenceSegment {
+  armDirectionBadges: VTGSequenceDirectionBadges;
+  poiDirectionFlipBlocked: boolean;
+}
 
 export interface VtgSequenceController {
   sequenceMode: Ref<boolean>;
@@ -45,6 +56,7 @@ export interface VtgSequenceController {
   selectedSegmentId: Ref<string | null>;
   selectedSegmentDescriptorForVtgPanel: ComputedRef<VTGDescriptor | null>;
   segmentViews: ComputedRef<SequenceSegmentView[]>;
+  activeDirectionBadges: ComputedRef<VTGSequenceDirectionBadges | null>;
   renderState: ComputedRef<AppState>;
   renderBeat: ComputedRef<number>;
   transportLoopBeats: ComputedRef<number>;
@@ -54,11 +66,13 @@ export interface VtgSequenceController {
   handleSetSequenceName: (name: string) => void;
   handleSetSequenceLoop: (loop: boolean) => void;
   handleSetSnapSetting: (snapSetting: VTGSequenceSnapSetting) => void;
+  handleSetAllowPoiDirectionFlip: (allowPoiDirectionFlip: boolean) => void;
   handleSetSequenceStartPhaseDeg: (startPhaseDeg: VTGPhaseDeg) => void;
   handleSelectSegment: (segmentId: string) => void;
   handleAddSegmentFromCurrentState: (state: AppState) => void;
   handleReplaceSelectedDescriptor: (descriptor: VTGDescriptor) => void;
   handleSetSelectedDurationBeats: (durationBeats: number) => void;
+  handleSetSelectedRightArmSign: (rightArmSign: VTGArmSign) => void;
   handleMoveSelectedSegment: (direction: "up" | "down") => void;
   handleDeleteSelectedSegment: () => void;
   handleDuplicateSelectedSegment: () => void;
@@ -93,18 +107,36 @@ function createSequenceFileName(name: string): string {
   return `${baseName}${SEQUENCE_FILE_EXTENSION}`;
 }
 
+function resolveRightArmSign(speedRadiansPerBeat: number): VTGArmSign {
+  return speedRadiansPerBeat < -RIGHT_ARM_SIGN_EPSILON ? -1 : 1;
+}
+
+function resolvePoiHeadCyclesPerArmCycle(rightHeadSpeedRadiansPerBeat: number, rightArmSign: VTGArmSign): number {
+  const signedReferenceSpeed = rightArmSign * VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT;
+  if (Math.abs(signedReferenceSpeed) <= RIGHT_ARM_SIGN_EPSILON) {
+    return VTG_SEQUENCE_DEFAULT_POI_HEAD_CYCLES_PER_ARM_CYCLE;
+  }
+
+  const cycles = rightHeadSpeedRadiansPerBeat / signedReferenceSpeed;
+  if (!Number.isFinite(cycles) || Math.abs(cycles) <= RIGHT_ARM_SIGN_EPSILON) {
+    return VTG_SEQUENCE_DEFAULT_POI_HEAD_CYCLES_PER_ARM_CYCLE;
+  }
+
+  return cycles;
+}
+
 function createSnapshotFromState(state: AppState): SequenceSnapshotFromState {
   try {
     const classification = classifyVTG(state);
-    const rightHeadCyclesPerArmCycle = headSpeedRadiansPerBeatToPoiHeadCyclesPerArmCycle(
-      state.hands.R.armSpeed + state.hands.R.poiSpeed
-    );
+    const rightArmSign = resolveRightArmSign(state.hands.R.armSpeed);
+    const rightHeadSpeedRadiansPerBeat = state.hands.R.armSpeed + state.hands.R.poiSpeed;
 
     return {
       descriptor: {
         armElement: classification.armElement,
         poiElement: classification.poiElement,
-        poiHeadCyclesPerArmCycle: rightHeadCyclesPerArmCycle
+        poiHeadCyclesPerArmCycle: resolvePoiHeadCyclesPerArmCycle(rightHeadSpeedRadiansPerBeat, rightArmSign),
+        rightArmSign
       },
       startPhaseDeg: classification.phaseDeg
     };
@@ -113,18 +145,20 @@ function createSnapshotFromState(state: AppState): SequenceSnapshotFromState {
       descriptor: {
         armElement: "Earth",
         poiElement: "Earth",
-        poiHeadCyclesPerArmCycle: -3
+        poiHeadCyclesPerArmCycle: VTG_SEQUENCE_DEFAULT_POI_HEAD_CYCLES_PER_ARM_CYCLE,
+        rightArmSign: VTG_SEQUENCE_DEFAULT_RIGHT_ARM_SIGN
       },
       startPhaseDeg: 0
     };
   }
 }
 
-function toSequenceDescriptor(descriptor: VTGDescriptor): VTGSequenceDescriptor {
+function toSequenceDescriptor(descriptor: VTGDescriptor, rightArmSign: VTGArmSign): VTGSequenceDescriptor {
   return {
     armElement: descriptor.armElement,
     poiElement: descriptor.poiElement,
-    poiHeadCyclesPerArmCycle: descriptor.poiHeadCyclesPerArmCycle
+    poiHeadCyclesPerArmCycle: descriptor.poiHeadCyclesPerArmCycle,
+    rightArmSign
   };
 }
 
@@ -141,7 +175,8 @@ function cloneSequenceWithSegments(sequence: VTGSequence, segments: VTGSequenceS
       descriptor: {
         armElement: segment.descriptor.armElement,
         poiElement: segment.descriptor.poiElement,
-        poiHeadCyclesPerArmCycle: segment.descriptor.poiHeadCyclesPerArmCycle
+        poiHeadCyclesPerArmCycle: segment.descriptor.poiHeadCyclesPerArmCycle,
+        rightArmSign: segment.descriptor.rightArmSign
       }
     }))
   };
@@ -185,6 +220,10 @@ function applyAngularOverrides(
     poiSpeed,
     poiPhase
   };
+}
+
+function directionFromSpeed(speedRadiansPerBeat: number): SequenceDirectionSign {
+  return speedRadiansPerBeat < 0 ? -1 : 1;
 }
 
 /**
@@ -267,10 +306,34 @@ export function useVtgSequenceController(state: AppState, absolutePlayheadBeats:
   });
 
   const segmentViews = computed((): SequenceSegmentView[] => {
-    return effectiveSequence.value.segments.map((segment) => ({
-      ...segment,
-      descriptor: { ...segment.descriptor }
-    }));
+    return effectiveSequence.value.segments.map((segment, index) => {
+      const continuitySegment = continuity.value.segments[index];
+      const armDirectionBadges = continuitySegment
+        ? {
+            L: directionFromSpeed(continuitySegment.speedProfile.leftArmSpeedRadiansPerBeat),
+            R: directionFromSpeed(continuitySegment.speedProfile.rightArmSpeedRadiansPerBeat)
+          }
+        : deriveSequenceArmDirectionBadges(segment.descriptor);
+
+      return {
+        ...segment,
+        descriptor: { ...segment.descriptor },
+        armDirectionBadges,
+        poiDirectionFlipBlocked: continuitySegment?.poiDirectionFlipBlocked ?? false
+      };
+    });
+  });
+
+  const activeDirectionBadges = computed<VTGSequenceDirectionBadges | null>(() => {
+    const resolution = activeResolution.value;
+    if (!resolution) {
+      return null;
+    }
+
+    return {
+      L: directionFromSpeed(resolution.segment.speedProfile.leftArmSpeedRadiansPerBeat),
+      R: directionFromSpeed(resolution.segment.speedProfile.rightArmSpeedRadiansPerBeat)
+    };
   });
 
   const selectedSegmentDescriptorForVtgPanel = computed(() => {
@@ -296,8 +359,7 @@ export function useVtgSequenceController(state: AppState, absolutePlayheadBeats:
 
     const { speedProfile, startAngles } = resolution.segment;
     const segmentStartBeat = continuity.value.boundaries.startsBeats[resolution.segmentIndex] ?? 0;
-    const boundaries = computeSequenceBoundariesBeats(effectiveSequence.value);
-    const loopBeats = Math.max(boundaries.totalBeats, MIN_LOOP_BEATS);
+    const loopBeats = Math.max(continuity.value.totalBeats, MIN_LOOP_BEATS);
 
     const rightArmPhase = startAngles.rightArmRadians - speedProfile.rightArmSpeedRadiansPerBeat * segmentStartBeat;
     const leftArmPhase = startAngles.leftArmRadians - speedProfile.leftArmSpeedRadiansPerBeat * segmentStartBeat;
@@ -373,6 +435,7 @@ export function useVtgSequenceController(state: AppState, absolutePlayheadBeats:
     selectedSegmentId,
     selectedSegmentDescriptorForVtgPanel,
     segmentViews,
+    activeDirectionBadges,
     renderState,
     renderBeat,
     transportLoopBeats,
@@ -412,6 +475,12 @@ export function useVtgSequenceController(state: AppState, absolutePlayheadBeats:
         snapSetting
       });
     },
+    handleSetAllowPoiDirectionFlip(allowPoiDirectionFlip: boolean): void {
+      commitSequence({
+        ...sequence.value,
+        allowPoiDirectionFlip
+      });
+    },
     handleSetSequenceStartPhaseDeg(startPhaseDeg: VTGPhaseDeg): void {
       commitSequence({
         ...sequence.value,
@@ -438,7 +507,7 @@ export function useVtgSequenceController(state: AppState, absolutePlayheadBeats:
 
       nextSegments[selectedIndex] = {
         ...selected,
-        descriptor: toSequenceDescriptor(descriptor)
+        descriptor: toSequenceDescriptor(descriptor, selected.descriptor.rightArmSign)
       };
 
       commitSequence({
@@ -461,6 +530,28 @@ export function useVtgSequenceController(state: AppState, absolutePlayheadBeats:
       nextSegments[selectedIndex] = {
         ...selected,
         durationBeats: normalizeDurationForSnap(durationBeats, sequence.value.snapSetting)
+      };
+
+      commitSequence(cloneSequenceWithSegments(sequence.value, nextSegments));
+    },
+    handleSetSelectedRightArmSign(rightArmSign: VTGArmSign): void {
+      const selectedIndex = findSegmentIndexById(sequence.value.segments, selectedSegmentId.value);
+      if (selectedIndex < 0) {
+        return;
+      }
+
+      const nextSegments = [...sequence.value.segments];
+      const selected = nextSegments[selectedIndex];
+      if (!selected) {
+        return;
+      }
+
+      nextSegments[selectedIndex] = {
+        ...selected,
+        descriptor: {
+          ...selected.descriptor,
+          rightArmSign
+        }
       };
 
       commitSequence(cloneSequenceWithSegments(sequence.value, nextSegments));
@@ -516,7 +607,8 @@ export function useVtgSequenceController(state: AppState, absolutePlayheadBeats:
         descriptor: {
           armElement: selected.descriptor.armElement,
           poiElement: selected.descriptor.poiElement,
-          poiHeadCyclesPerArmCycle: selected.descriptor.poiHeadCyclesPerArmCycle
+          poiHeadCyclesPerArmCycle: selected.descriptor.poiHeadCyclesPerArmCycle,
+          rightArmSign: selected.descriptor.rightArmSign
         }
       };
 

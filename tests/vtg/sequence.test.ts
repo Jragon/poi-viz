@@ -2,7 +2,9 @@ import continuityScenario from "@/vtg/thing.json";
 import {
   computeSequenceBoundariesBeats,
   createDefaultVTGSequence,
+  deriveSequenceSegmentSpeedProfile,
   deserializeVTGSequence,
+  detectPoiDirectionViolations,
   getArmPhaseEventSpacingBeats,
   normalizeSequenceEventSnap,
   resolveSequenceContinuity,
@@ -25,6 +27,7 @@ function createTwoSegmentSequence(): VTGSequence {
     loop: true,
     snapSetting: "none",
     startPhaseDeg: 90,
+    allowPoiDirectionFlip: false,
     segments: [
       {
         id: "seg-a",
@@ -32,7 +35,8 @@ function createTwoSegmentSequence(): VTGSequence {
         descriptor: {
           armElement: "Earth",
           poiElement: "Earth",
-          poiHeadCyclesPerArmCycle: -3
+          poiHeadCyclesPerArmCycle: -3,
+          rightArmSign: 1
         }
       },
       {
@@ -41,7 +45,8 @@ function createTwoSegmentSequence(): VTGSequence {
         descriptor: {
           armElement: "Air",
           poiElement: "Water",
-          poiHeadCyclesPerArmCycle: -1
+          poiHeadCyclesPerArmCycle: -1,
+          rightArmSign: 1
         }
       }
     ]
@@ -59,6 +64,7 @@ describe("VTG sequence domain", () => {
       loop: "bad",
       snapSetting: "bad",
       startPhaseDeg: 42,
+      allowPoiDirectionFlip: "bad",
       segments: [
         {
           id: "",
@@ -66,7 +72,8 @@ describe("VTG sequence domain", () => {
           descriptor: {
             armElement: "bad",
             poiElement: "bad",
-            poiHeadCyclesPerArmCycle: 0
+            poiHeadCyclesPerArmCycle: 0,
+            rightArmSign: 0
           }
         }
       ]
@@ -76,16 +83,18 @@ describe("VTG sequence domain", () => {
     expect(sanitized.loop).toBe(true);
     expect(sanitized.snapSetting).toBe("event");
     expect(sanitized.startPhaseDeg).toBe(0);
+    expect(sanitized.allowPoiDirectionFlip).toBe(false);
     expect(sanitized.segments[0]?.id).toBe("seg-1");
     expect(sanitized.segments[0]?.durationBeats).toBe(VTG_SEQUENCE_MIN_DURATION_BEATS);
     expect(sanitized.segments[0]?.descriptor).toEqual({
       armElement: "Earth",
       poiElement: "Earth",
-      poiHeadCyclesPerArmCycle: -3
+      poiHeadCyclesPerArmCycle: -3,
+      rightArmSign: 1
     });
   });
 
-  it("validates duplicate ids, phase bucket, and descriptor constraints", () => {
+  it("validates duplicate ids, phase bucket, arm sign, and descriptor constraints", () => {
     const invalid = createDefaultVTGSequence();
     invalid.startPhaseDeg = 45 as 0;
     invalid.segments = [
@@ -95,7 +104,8 @@ describe("VTG sequence domain", () => {
         descriptor: {
           armElement: "Earth",
           poiElement: "Earth",
-          poiHeadCyclesPerArmCycle: -3
+          poiHeadCyclesPerArmCycle: -3,
+          rightArmSign: 1
         }
       },
       {
@@ -104,7 +114,8 @@ describe("VTG sequence domain", () => {
         descriptor: {
           armElement: "Earth",
           poiElement: "Earth",
-          poiHeadCyclesPerArmCycle: 0
+          poiHeadCyclesPerArmCycle: 0,
+          rightArmSign: 0 as 1
         }
       }
     ];
@@ -115,6 +126,7 @@ describe("VTG sequence domain", () => {
     expect(result.errors.some((error) => error.includes("unique"))).toBe(true);
     expect(result.errors.some((error) => error.includes("duration"))).toBe(true);
     expect(result.errors.some((error) => error.includes("non-zero"))).toBe(true);
+    expect(result.errors.some((error) => error.includes("rightArmSign"))).toBe(true);
   });
 
   it("computes segment boundaries and deterministic playhead mapping", () => {
@@ -181,6 +193,7 @@ describe("VTG sequence domain", () => {
       loop: false,
       snapSetting: "none",
       startPhaseDeg: 180,
+      allowPoiDirectionFlip: false,
       segments: [
         {
           id: "seg-1",
@@ -188,7 +201,8 @@ describe("VTG sequence domain", () => {
           descriptor: {
             armElement: "Earth",
             poiElement: "Earth",
-            poiHeadCyclesPerArmCycle: -3
+            poiHeadCyclesPerArmCycle: -3,
+            rightArmSign: 1
           }
         },
         {
@@ -197,7 +211,8 @@ describe("VTG sequence domain", () => {
           descriptor: {
             armElement: "Air",
             poiElement: "Fire",
-            poiHeadCyclesPerArmCycle: -1
+            poiHeadCyclesPerArmCycle: -1,
+            rightArmSign: -1
           }
         }
       ]
@@ -260,6 +275,7 @@ describe("VTG sequence domain", () => {
       loop: true,
       snapSetting: "none",
       startPhaseDeg: 0,
+      allowPoiDirectionFlip: false,
       segments: [
         {
           id: "seg-1",
@@ -267,7 +283,8 @@ describe("VTG sequence domain", () => {
           descriptor: {
             armElement: "Earth",
             poiElement: "Earth",
-            poiHeadCyclesPerArmCycle: -3
+            poiHeadCyclesPerArmCycle: -3,
+            rightArmSign: 1
           }
         },
         {
@@ -276,21 +293,20 @@ describe("VTG sequence domain", () => {
           descriptor: {
             armElement: "Air",
             poiElement: "Fire",
-            poiHeadCyclesPerArmCycle: -2
+            poiHeadCyclesPerArmCycle: 2,
+            rightArmSign: -1
           }
         }
       ]
     };
 
     const continuity = resolveSequenceContinuity(sequence);
-    const first = continuity.segments[0];
     const last = continuity.segments[1];
     const anchored = continuity.anchoredStartAngles;
 
-    expect(first).toBeDefined();
     expect(last).toBeDefined();
     expect(anchored).toBeDefined();
-    if (!first || !last || !anchored) {
+    if (!last || !anchored) {
       return;
     }
 
@@ -312,6 +328,93 @@ describe("VTG sequence domain", () => {
     expect(atLoopSeam.segment.startAngles.leftArmRadians).toBeCloseTo(anchored.leftArmRadians, 10);
     expect(atLoopSeam.segment.startAngles.rightHeadRadians).toBeCloseTo(anchored.rightHeadRadians, 10);
     expect(atLoopSeam.segment.startAngles.leftHeadRadians).toBeCloseTo(anchored.leftHeadRadians, 10);
+  });
+
+  it("uses rightArmSign to branch arm-direction profiles deterministically", () => {
+    const positive = deriveSequenceSegmentSpeedProfile({
+      armElement: "Earth",
+      poiElement: "Earth",
+      poiHeadCyclesPerArmCycle: -3,
+      rightArmSign: 1
+    });
+    const negative = deriveSequenceSegmentSpeedProfile({
+      armElement: "Earth",
+      poiElement: "Earth",
+      poiHeadCyclesPerArmCycle: -3,
+      rightArmSign: -1
+    });
+
+    expect(positive.rightArmSpeedRadiansPerBeat).toBeGreaterThan(0);
+    expect(positive.leftArmSpeedRadiansPerBeat).toBeGreaterThan(0);
+    expect(negative.rightArmSpeedRadiansPerBeat).toBeLessThan(0);
+    expect(negative.leftArmSpeedRadiansPerBeat).toBeLessThan(0);
+    expect(Math.sign(positive.rightHeadSpeedRadiansPerBeat)).toBe(-Math.sign(negative.rightHeadSpeedRadiansPerBeat));
+  });
+
+  it("enforces no poi direction flips when allowPoiDirectionFlip is false", () => {
+    const sequence: VTGSequence = {
+      name: "No Poi Flip",
+      loop: true,
+      snapSetting: "none",
+      startPhaseDeg: 0,
+      allowPoiDirectionFlip: false,
+      segments: [
+        {
+          id: "seg-1",
+          durationBeats: 1,
+          descriptor: {
+            armElement: "Earth",
+            poiElement: "Earth",
+            poiHeadCyclesPerArmCycle: -3,
+            rightArmSign: 1
+          }
+        },
+        {
+          id: "seg-2",
+          durationBeats: 1,
+          descriptor: {
+            armElement: "Earth",
+            poiElement: "Earth",
+            poiHeadCyclesPerArmCycle: 3,
+            rightArmSign: 1
+          }
+        }
+      ]
+    };
+
+    const violations = detectPoiDirectionViolations(sequence);
+    expect(violations).toHaveLength(1);
+    expect(violations[0]?.segmentId).toBe("seg-2");
+
+    const continuity = resolveSequenceContinuity(sequence);
+    const second = continuity.segments[1];
+    expect(second?.poiDirectionFlipBlocked).toBe(true);
+    expect(second?.authoredDescriptor.poiHeadCyclesPerArmCycle).toBe(3);
+    expect(second?.descriptor.poiHeadCyclesPerArmCycle).toBe(-3);
+
+    const firstHeadSign = Math.sign(continuity.segments[0]?.speedProfile.rightHeadSpeedRadiansPerBeat ?? 0);
+    const secondHeadSign = Math.sign(second?.speedProfile.rightHeadSpeedRadiansPerBeat ?? 0);
+    expect(firstHeadSign).toBe(secondHeadSign);
+  });
+
+  it("allows authored poi direction flips when allowPoiDirectionFlip is true", () => {
+    const sequence = createTwoSegmentSequence();
+    sequence.allowPoiDirectionFlip = true;
+    sequence.segments[1] = {
+      ...sequence.segments[1],
+      descriptor: {
+        ...sequence.segments[1].descriptor,
+        poiHeadCyclesPerArmCycle: 3
+      }
+    };
+
+    expect(detectPoiDirectionViolations(sequence)).toEqual([]);
+
+    const continuity = resolveSequenceContinuity(sequence);
+    const second = continuity.segments[1];
+
+    expect(second?.poiDirectionFlipBlocked).toBe(false);
+    expect(second?.descriptor.poiHeadCyclesPerArmCycle).toBe(3);
   });
 
   it("resolves continuity deterministically for identical inputs", () => {

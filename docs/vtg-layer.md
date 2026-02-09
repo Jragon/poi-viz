@@ -9,11 +9,11 @@ Primary code:
 - `src/vtg/generate.ts` exports `generateVTGState` (descriptor -> canonical angular state).
 - `src/vtg/classify.ts` exports authoritative relation-based classifiers.
 - `src/vtg/descriptiveGeometry.ts` exports non-authoritative together/apart language helpers.
-- `src/vtg/sequence.ts` exports Phase 2 sequence contracts, snap helpers, and continuity resolver logic.
+- `src/vtg/sequence.ts` exports sequencer schema, snap helpers, direction constraints, and continuity resolver logic.
 
-## Descriptor Contract
+## Single-Pattern Descriptor Contract
 
-`VTGDescriptor` now uses:
+`VTGDescriptor` (used by generator panel) uses:
 - `armElement`
 - `poiElement`
 - `phaseDeg`
@@ -49,25 +49,27 @@ Reference (`global.phaseReference`) does not change classifier outputs.
 
 Engine math is unchanged; VTG only selects angular parameters.
 
-## Phase 2 Sequencer (VTG-only)
+## Sequencer Descriptor Contract
 
-Phase 2 adds a beat-based piecewise VTG sequencer in `src/vtg/sequence.ts`.
-This layer remains VTG-only: no generalized morph/interpolation math is introduced.
+The sequencer (`src/vtg/sequence.ts`) uses a segment descriptor that removes per-segment phase and adds explicit arm branch:
+- `armElement`
+- `poiElement`
+- `poiHeadCyclesPerArmCycle`
+- `rightArmSign` (`1 | -1`)
 
-Sequencer details are documented in `docs/vtg-sequencer.md`:
-- current sequence shape (no schema/version envelope),
-- root `startPhaseDeg` anchor semantics,
-- beat-space playhead resolution,
-- event snap semantics,
-- continuity propagation (no per-segment pose restarts),
-- UI/orchestrator render routing.
+At sequence root:
+- `startPhaseDeg` anchors segment-1 start pose,
+- `allowPoiDirectionFlip` controls authored poi-direction sign flipping across boundaries.
+
+When flips are disallowed, runtime resolution deterministically blocks authored flips by inverting segment `poiHeadCyclesPerArmCycle` in resolved playback state.
 
 ## Invariants vs Reference-Relative Outputs
 
 Invariant (reference-independent):
 - arm/poi element classification,
 - phase bucket classification,
-- descriptor-to-state generation contract.
+- descriptor-to-state generation contract,
+- sequencer boundary continuity propagation from segment start/end angles.
 
 Reference-relative:
 - render orientation in `PatternCanvas` from `global.phaseReference`.
