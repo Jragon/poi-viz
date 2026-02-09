@@ -25,6 +25,7 @@ Primary modules:
 - `src/vtg/generate.ts` export `generateVTGState`.
 - `src/vtg/classify.ts` exports `classifyArmElement`, `classifyPoiElement`, `classifyPhaseBucket`.
 - `src/vtg/descriptiveGeometry.ts` exports non-authoritative cardinal readout helpers.
+- `src/vtg/sequence.ts` exports VTG sequence sanitize/validate helpers, beat-boundary/playhead resolution, snap helpers, continuity resolver contracts, and import/export contracts.
 - `src/state/persistence.ts` exports `serializeState`, `deserializeState`, `resolveInitialState`.
 - `src/composables/usePersistenceCoordinator.ts` export `usePersistenceCoordinator`.
 - `src/composables/useTransportController.ts` export `useTransportController`.
@@ -32,6 +33,7 @@ Primary modules:
 - `src/composables/useShareLinkController.ts` export `useShareLinkController`.
 - `src/composables/usePresetLibraryController.ts` export `usePresetLibraryController`.
 - `src/composables/useAppOrchestrator.ts` export `useAppOrchestrator`.
+- `src/composables/useVtgSequenceController.ts` exports `useVtgSequenceController`.
 - `src/composables/useNumericDrafts.ts` export `useNumericDrafts`.
 - `src/render/viewTransform.ts` exports render-space rotation helpers for phase-reference orientation.
 - `src/components/controls/*.vue` own controls panel UI contracts.
@@ -41,9 +43,11 @@ Representative validating tests:
 - `tests/engine/sampling.test.ts`
 - `tests/vtg/generate.test.ts`
 - `tests/vtg/classify.test.ts`
+- `tests/vtg/sequence.test.ts`
 - `tests/state/persistence.test.ts`
 - `tests/app/persistence-coordinator.test.ts`
 - `tests/ui/app-orchestrator.integration.test.ts`
+- `tests/ui/app.integration.test.ts`
 - `tests/ui/canvas-clock.integration.test.ts`
 - `tests/ui/controls-input.integration.test.ts`
 - `tests/ui/controls-panels.integration.test.ts`
@@ -54,5 +58,6 @@ Representative validating tests:
 1. `math-model.md` for equations, units, and invariants.
 2. `engine-architecture.md` for module seams and deterministic sampling.
 3. `vtg-layer.md` for VTG relation language and generator mapping.
-4. `validation.md` for fixtures, regressions, and safe change workflow.
-5. `glossary.md` for symbol-level terminology.
+4. `vtg-sequencer.md` for sequence mental model, mode routing, segment editing flow, and JSON sharing contract.
+5. `validation.md` for fixtures, regressions, and safe change workflow.
+6. `glossary.md` for symbol-level terminology.

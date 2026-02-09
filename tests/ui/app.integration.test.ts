@@ -54,7 +54,7 @@ const ControlsStub = defineComponent({
     "set-sequence-name",
     "set-sequence-loop",
     "set-snap-setting",
-    "set-guidance-mode",
+    "set-sequence-start-phase-deg",
     "add-segment",
     "select-segment",
     "set-selected-duration-beats",
@@ -93,6 +93,7 @@ const ControlsStub = defineComponent({
       </button>
       <button data-testid="sequence-mode-on" type="button" @click="$emit('set-sequence-mode', true)">sequence-on</button>
       <button data-testid="sequence-mode-off" type="button" @click="$emit('set-sequence-mode', false)">sequence-off</button>
+      <button data-testid="sequence-start-phase-180" type="button" @click="$emit('set-sequence-start-phase-deg', 180)">sequence-start-phase-180</button>
       <button data-testid="sequence-add" type="button" @click="$emit('add-segment')">sequence-add</button>
       <button data-testid="sequence-select-1" type="button" @click="$emit('select-segment', 'seg-1')">sequence-select-1</button>
       <button data-testid="sequence-select-2" type="button" @click="$emit('select-segment', 'seg-2')">sequence-select-2</button>
@@ -356,23 +357,40 @@ describe("App orchestration integration", () => {
     if (!latestPatternState) {
       return;
     }
-    expect(classifyVTG(latestPatternState)).toEqual({
-      armElement: "Earth",
-      poiElement: "Earth",
-      phaseDeg: 0
-    });
+    expect(latestPatternState.hands.R.armSpeed).toBeCloseTo(TWO_PI, 10);
+    expect(latestPatternState.hands.L.armSpeed).toBeCloseTo(TWO_PI, 10);
+    expect(latestPatternState.hands.R.poiSpeed).toBeCloseTo(-4 * TWO_PI, 10);
+    expect(latestPatternState.hands.L.poiSpeed).toBeCloseTo(-4 * TWO_PI, 10);
     expect(latestPatternBeat).toBeCloseTo(0.25, 10);
 
     await wrapper.get("[data-testid='sequence-select-1']").trigger("click");
     await nextTick();
     await wrapper.get("[data-testid='scrub-0-25']").trigger("click");
     await nextTick();
-    expect(classifyVTG(latestPatternState)).toEqual({
-      armElement: "Air",
-      poiElement: "Water",
-      phaseDeg: 90
-    });
+    expect(latestPatternState.hands.R.armSpeed).toBeCloseTo(TWO_PI, 10);
+    expect(latestPatternState.hands.L.armSpeed).toBeCloseTo(-TWO_PI, 10);
+    expect(latestPatternState.hands.R.poiSpeed).toBeCloseTo(-4 * TWO_PI, 10);
+    expect(latestPatternState.hands.L.poiSpeed).toBeCloseTo(-2 * TWO_PI, 10);
     expect(latestPatternBeat).toBeCloseTo(0.25, 10);
+  });
+
+  it("applies sequence-level start phase anchor to continuity start pose", async () => {
+    wrapper = mountApp();
+    await nextTick();
+
+    await wrapper.get("[data-testid='sequence-mode-on']").trigger("click");
+    await nextTick();
+    await wrapper.get("[data-testid='sequence-start-phase-180']").trigger("click");
+    await nextTick();
+    await wrapper.get("[data-testid='scrub-0-25']").trigger("click");
+    await nextTick();
+
+    expect(latestPatternState).not.toBeNull();
+    if (!latestPatternState) {
+      return;
+    }
+
+    expect(latestPatternState.hands.R.armPhase).toBeCloseTo(Math.PI, 10);
   });
 
   it("switches VTG apply target between sequence editing and runtime state by mode", async () => {

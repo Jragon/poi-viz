@@ -7,7 +7,7 @@ The repository uses three executable validation layers:
 1. Invariant tests for geometry and special cases.
 2. Deterministic sampling/trail regression tests.
 3. Golden fixtures generated from explicit state cases and compared in CI.
-4. VTG sequence-domain validation for schema, beat mapping, snap normalization, and guidance classification.
+4. VTG sequence-domain validation for sanitize/validate contracts, beat mapping, snap normalization, and continuity propagation semantics.
 
 Primary references:
 - `tests/engine/invariants.test.ts`
@@ -55,6 +55,16 @@ When changing engine/VTG/state behavior:
 For sequencer-specific changes, include at minimum:
 - `tests/vtg/sequence.test.ts` updates for pure sequencing contracts,
 - app-level integration assertions when sequence mode routing or render selection changes.
+
+Sequencer tests currently assert:
+- schema sanitize/validate behavior for defaults, IDs, duration constraints, and descriptor constraints,
+- deterministic boundary computation and playhead-to-segment/local-beat mapping,
+- snap behavior (`event` vs `none`) derived from arm-phase event spacing,
+- continuity propagation across segment boundaries without non-loop pose jumps,
+- loop seam reset to anchored start pose,
+- deterministic continuity resolution for identical inputs,
+- legacy-sequence payload rejection (no compatibility adapter path),
+- mode routing in app integration (`apply-vtg` edits selected segment in sequence mode and runtime state outside sequence mode).
 
 ## Persistence Break Policy
 

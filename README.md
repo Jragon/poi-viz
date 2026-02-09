@@ -8,7 +8,7 @@ The app gives you:
 - a pattern viewport (hands, tethers, heads, optional trails),
 - a synchronized waveform inspector,
 - interactive controls for timing, per-hand parameters, VTG generation, VTG sequence editing, and preset library workflows,
-- VTG Phase 2 sequence mode (beat-based, segment list editor, optional event snap, transition guidance, JSON export/import),
+- VTG Phase 2 sequence mode (beat-based, segment list editor, optional event snap, sequence-level start phase anchor, JSON export/import),
 - configurable global phase-zero reference (`down` default),
 - light/dark theme switching from the title bar (persisted in browser storage),
 - a transport-level static view mode for full-loop still pattern captures,
@@ -16,6 +16,7 @@ The app gives you:
 
 Trail behavior note:
 - backward scrubbing rebuilds a deterministic trailing window ending at the current playhead beat (it does not collapse to a single seed point).
+- live trails persist across VTG/pattern descriptor changes; history is not cleared unless trail sampling settings change.
 
 Phase-reference note:
 - engine internals remain canonical (`right = 0`),
@@ -25,6 +26,7 @@ Phase-reference note:
 - this is a coordinate-reference setting, not a math-model fork.
 - VTG element mapping is relation-based: Earth=`same-time+same-direction`, Air=`same-time+opposite-direction`, Water=`split-time+same-direction`, Fire=`split-time+opposite-direction`.
 - VTG `phaseDeg` is a poi-head offset bucket relative to hand phase (used to rotate poi pattern modes like box/diamond without changing hand timing).
+- sequence mode uses root `startPhaseDeg` as the continuity anchor; segment descriptors no longer carry per-segment phase buckets.
 
 Persistence break note:
 - old saved state and preset-library payloads were intentionally invalidated (no migration adapters),
@@ -43,6 +45,9 @@ At a high level:
 - keeps preset-library and preset-file payloads durable-only under the same volatile-field policy,
 - keeps root view composition thin by extracting app orchestration into `src/composables/useAppOrchestrator.ts`, which now composes focused controllers,
 - runs VTG sequencing as a piecewise selector (one active VTG segment at a time) while keeping engine math unchanged,
+- resolves sequence playback with continuity propagation (segment boundaries preserve non-loop pose continuity; loop seams reset to anchored start),
+- routes VTG Apply behavior by mode (`sequenceMode=false` applies to runtime state, `sequenceMode=true` edits selected sequence segment descriptor + sequence start-phase anchor),
+- keeps sequence import/export fail-closed by rejecting legacy schema/version payloads (no compatibility adapters),
 - enforces architectural import boundaries in lint (`engine`, `vtg`, `state`, `render`, `composables`) to block cross-layer coupling regressions,
 - splits controls into focused panel components under `src/components/controls/` with shared numeric commit-on-blur utility (`src/composables/useNumericDrafts.ts`),
 - supports VTG descriptor generation/classification for canonical relationship states,
@@ -56,6 +61,7 @@ Start here for implementation details:
 - Math model and invariants: `docs/math-model.md`
 - Engine modules and deterministic sampling flow: `docs/engine-architecture.md`
 - VTG generation/classification contracts: `docs/vtg-layer.md`
+- VTG sequencer purpose, schema, UI flow, and playback semantics: `docs/vtg-sequencer.md`
 - Validation workflow, fixtures, and safe change process: `docs/validation.md`
 - Terminology and symbols: `docs/glossary.md`
 - Documentation conventions for contributors: `docs/style.md`
@@ -93,6 +99,7 @@ npm run docs:all
 
 - `src/engine/`: pure math, sampling, trails, fixtures
 - `src/vtg/`: VTG descriptor types, generator, authoritative classifier, descriptive geometry helpers, and sequence domain logic
+- `src/composables/useVtgSequenceController.ts`: sequence-mode state owner (segment editing, start-phase anchoring, continuity render selection, export/import)
 - `src/state/`: defaults, constants, units, actions, persistence, preset library
 - `src/composables/`: app-level orchestration units (`useTransportClock`, `usePersistenceCoordinator`, `useTransportController`, `useThemeController`, `useShareLinkController`, `usePresetLibraryController`, `useAppOrchestrator`) plus shared UI utility (`useNumericDrafts`)
 - `src/render/`: Canvas drawing helpers

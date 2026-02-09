@@ -17,9 +17,9 @@ import { createDefaultState } from "@/state/defaults";
 import type { UserPresetSummary } from "@/state/presetLibrary";
 import type { Theme } from "@/state/theme";
 import type { AppState, HandId, PhaseReference } from "@/types/state";
-import type { VTGSequence, VTGSequenceGuidanceMode, VTGSequenceSnapSetting } from "@/vtg/sequence";
+import type { VTGSequence, VTGSequenceSnapSetting } from "@/vtg/sequence";
 import { generateVTGState } from "@/vtg/generate";
-import type { VTGDescriptor } from "@/vtg/types";
+import type { VTGDescriptor, VTGPhaseDeg } from "@/vtg/types";
 import { onBeforeUnmount, onMounted, reactive, ref, watch, type ComputedRef, type Ref } from "vue";
 
 export interface AppOrchestrator {
@@ -42,13 +42,6 @@ export interface AppOrchestrator {
       id: string;
       durationBeats: number;
       descriptor: VTGSequence["segments"][number]["descriptor"];
-      guidance: {
-        segmentId: string;
-        nextSegmentId: string | null;
-        classification: "canonical" | "non-canonical";
-        severity: "ok" | "warning" | "error" | "none";
-        message: string;
-      };
     }>
   >;
   selectedSequenceSegmentId: Ref<string | null>;
@@ -67,7 +60,7 @@ export interface AppOrchestrator {
   handleSetSequenceName: (name: string) => void;
   handleSetSequenceLoop: (loop: boolean) => void;
   handleSetSnapSetting: (snapSetting: VTGSequenceSnapSetting) => void;
-  handleSetGuidanceMode: (mode: VTGSequenceGuidanceMode) => void;
+  handleSetSequenceStartPhaseDeg: (startPhaseDeg: VTGPhaseDeg) => void;
   handleAddSequenceSegment: () => void;
   handleSelectSequenceSegment: (segmentId: string) => void;
   handleSetSelectedSequenceDurationBeats: (durationBeats: number) => void;
@@ -228,7 +221,7 @@ export function useAppOrchestrator(): AppOrchestrator {
     handleSetSequenceName: sequenceController.handleSetSequenceName,
     handleSetSequenceLoop: sequenceController.handleSetSequenceLoop,
     handleSetSnapSetting: sequenceController.handleSetSnapSetting,
-    handleSetGuidanceMode: sequenceController.handleSetGuidanceMode,
+    handleSetSequenceStartPhaseDeg: sequenceController.handleSetSequenceStartPhaseDeg,
     handleAddSequenceSegment: () => sequenceController.handleAddSegmentFromCurrentState(state),
     handleSelectSequenceSegment: sequenceController.handleSelectSegment,
     handleSetSelectedSequenceDurationBeats: sequenceController.handleSetSelectedDurationBeats,

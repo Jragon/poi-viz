@@ -18,7 +18,7 @@ const commitHash = getCommitHash();
 export default defineConfig({
   base: "/poi-viz/docs/",
   title: "Poi Visualiser Docs",
-  description: "Executable documentation for engine math, VTG generation, and deterministic validation.",
+  description: "Executable documentation for engine math, VTG generation, VTG sequencing, and deterministic validation.",
   lastUpdated: true,
   themeConfig: {
     nav: [
@@ -33,6 +33,7 @@ export default defineConfig({
           { text: "Math Model", link: "/math-model" },
           { text: "Engine Architecture", link: "/engine-architecture" },
           { text: "VTG Layer", link: "/vtg-layer" },
+          { text: "VTG Sequencer", link: "/vtg-sequencer" },
           { text: "Validation", link: "/validation" }
         ]
       },

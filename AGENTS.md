@@ -1,96 +1,66 @@
-# AGENTS
+# AGENTS.md — Poi Visualizer
 
-## Scope (REQUIRED)
 
-Focus only on this Vue single-page app:
+## Non-Negotiable Rules
 
-- `src/` (application code)
-- `tests/` (unit tests)
-- `fixtures/` (numeric fixtures)
-- `scripts/` (fixture generation and tooling)
+### 1. Single source of truth
+- Engine math lives in `src/engine/`
+- VTG relations live in `src/vtg/`
+- Units, wrapping, and clamping must come from one shared utility
+- UI must not re-derive domain math
 
-Ignore backend, API server, containers, and Python/Django workflows unless explicitly requested.
+If you detect multiple competing truths, stop and propose a unification plan.
 
-## Frontend Architecture Map
+---
 
-Current high-level structure:
+### 2. Engine invariants must not break
+- Math must remain deterministic
+- Tests and fixtures define correctness
+- Do not change engine behaviour without updating or adding tests
 
-- `src/main.ts`: Vue bootstrap entrypoint.
-- `src/App.vue`: root SPA shell and composition point.
-- `src/types/state.ts`: canonical TypeScript state contracts.
-- `src/state/constants.ts`: shared constants and derived numeric defaults.
-- `src/state/defaults.ts`: deterministic default state construction.
-- `src/state/presets.ts`: pure preset transforms (elements + flowers).
-- `tests/state/*.test.ts`: Vitest coverage for defaults/preset behavior.
+If unsure whether behaviour changes, stop and ask.
 
-When adding engine/rendering features, keep engine math and Canvas rendering separated.
+---
 
-## Engineering Rules (REQUIRED)
+### 3. Layer boundaries are strict
+- `engine` must not import UI, render, or persistence
+- `state` must not import render utilities
+- `render` must not own timing or policy
+- UI must not become the owner of domain logic
 
-- Use TypeScript everywhere.
-- Keep math pure and deterministic.
-- No magic numbers; derive constants from named values.
-- Prefer small, testable functions over large monoliths.
-- Use Canvas 2D only (no SVG, no WebGL).
-- Write tests alongside engine/state changes.
+If a change crosses layers, explain why before proceeding.
 
-## Math And State Contract
+---
 
-- Use typed state as the single source of truth (`AppState` and related types).
-- Prefer immutable state updates for preset and transform logic.
-- Keep computational logic framework-agnostic and side-effect free.
-- Treat BPM as UI timing input; keep math in deterministic beat-based units.
+### 4. Small, explainable changes only
+- One concept per commit
+- Prefer deletion and simplification
+- Do not “clean up” unrelated code opportunistically
 
-## Run And Verify
+If a task requires a large refactor, stop and propose a plan instead of acting.
 
-Use Node-based project commands from repo root:
+---
 
-- Dev server: `npm run dev`
-- Tests: `npm test`
-- Build: `npm run build`
-- Regenerate fixtures: `npm run gen:fixtures`
+### 5. Ask before acting when:
+- Refactoring `App.vue` orchestration
+- Changing timing / RAF / transport ownership
+- Changing persistence or hydration order
+- Introducing new abstractions (sequencer, transitions, 3D planes)
 
-Verification expectations for code changes:
+---
 
-- Run `npm test` for logic/state/engine updates.
-- Run `npm run build` for SPA/runtime-impacting changes.
-- If fixture-sensitive math changes, regenerate fixtures and update tests together.
+## Documentation & Tests (Principle, not process)
+- Code, tests, and docs must agree
+- Every non-obvious behaviour must be pinned by tests or explained in docs
+- Prefer tests over prose when possible
 
-## Project Documentation (REQUIRED)
+Do not generate documentation that is not grounded in code or tests.
 
-- Keep `/Users/rory/code/poi/README.md` as a concise project overview and navigation entrypoint.
-- Keep detailed technical documentation in `/Users/rory/code/poi/docs/` up to date with implementation changes.
-- When behavior, math, state flow, VTG semantics, or validation changes:
-  - update the relevant pages in `/Users/rory/code/poi/docs/`,
-  - update `/Users/rory/code/poi/README.md` links/overview if scope or navigation changes.
-- When exported APIs change in `src/engine/**`, `src/vtg/**`, or `src/state/**`, regenerate TypeDoc output and commit updated files in `/Users/rory/code/poi/docs/api/`.
-- Do not leave documentation drift: code, tests, and docs must be updated in the same change.
+---
 
-## CONTINUITY.md (REQUIRED)
-
-Maintain a single continuity file for this workspace at:
-
-- `/Users/rory/code/poi/.agent/CONTINUITY.md`
-
-Rules:
-
-- Read it at the start of non-trivial tasks.
-- Update it when there is meaningful change in plans, decisions, progress, discoveries, or outcomes.
-- Keep entries factual and compact (no raw logs).
-- Each entry must include:
-  - ISO timestamp,
-  - provenance tag: `[USER]`, `[CODE]`, `[TOOL]`, or `[ASSUMPTION]`,
-  - `UNCONFIRMED` for unknowns instead of guessing.
-
-## Definition Of Done
-
+## Definition of Done
 A task is done when:
-
-- requested behavior is implemented,
-- relevant tests are added/updated and passing,
-- build passes when app code changed,
-- `/Users/rory/code/poi/README.md` is updated when project overview/scope/navigation changes,
-- `/Users/rory/code/poi/docs/` is updated for behavior/math/state/VTG/validation changes,
-- `npm run docs:all` succeeds when API/docs-affecting code changes were made,
-- `/Users/rory/code/poi/.agent/CONTINUITY.md` is updated when task state materially changed,
-- follow-ups are called out when intentionally out of scope.
+- Behaviour matches the request
+- Relevant tests pass
+- Changes can be explained clearly in plain English
+- No new competing truths were introduced

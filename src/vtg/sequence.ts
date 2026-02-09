@@ -1,39 +1,34 @@
 import { normalizeLoopBeat } from "@/state/beatMath";
 import { PI } from "@/state/constants";
 import {
+  getRelationForElement,
+  poiHeadCyclesPerArmCycleToHeadSpeedRadiansPerBeat,
   VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT,
   type VTGDescriptor,
   type VTGElement,
   type VTGPhaseDeg
 } from "@/vtg/types";
 
-export const VTG_SEQUENCE_SCHEMA = "poi-vtg-sequence";
-export const VTG_SEQUENCE_SCHEMA_VERSION = 1;
-
 export const VTG_SEQUENCE_DEFAULT_NAME = "Untitled Sequence";
 export const VTG_SEQUENCE_DEFAULT_LOOP = true;
+export const VTG_SEQUENCE_DEFAULT_START_PHASE_DEG: VTGPhaseDeg = 0;
 export const VTG_SEQUENCE_DEFAULT_DURATION_BEATS = 1;
 export const VTG_SEQUENCE_MIN_DURATION_BEATS = 1e-6;
 export const VTG_SEQUENCE_DEFAULT_SNAP_SETTING = "event" as const;
-export const VTG_SEQUENCE_DEFAULT_GUIDANCE_MODE = "strict" as const;
 
 const CARDINAL_EVENT_PHASE_SPAN_RADIANS = PI / 2;
 const SNAP_ALIGNMENT_TOLERANCE = 1e-9;
-const TRANSITION_ALIGNMENT_TOLERANCE = 1e-6;
+const PHASE_DEGREES_TO_RADIANS = PI / 180;
+const SAME_TIME_PHASE_OFFSET_RADIANS = 0;
+const SPLIT_TIME_PHASE_OFFSET_RADIANS = PI;
+const RIGHT_HEAD_ANCHOR_OFFSET_RADIANS = 0;
 const SEGMENT_ID_PREFIX = "seg";
 
-export type VTGSequenceGuidanceMode = "strict" | "soft" | "freeform";
-
 export type VTGSequenceSnapSetting = "event" | "none";
-
-export type VTGTransitionClassification = "canonical" | "non-canonical";
-
-export type VTGTransitionGuidanceSeverity = "ok" | "warning" | "error" | "none";
 
 export interface VTGSequenceDescriptor {
   armElement: VTGElement;
   poiElement: VTGElement;
-  phaseDeg: VTGPhaseDeg;
   poiHeadCyclesPerArmCycle: number;
 }
 
@@ -44,12 +39,10 @@ export interface VTGSequenceSegment {
 }
 
 export interface VTGSequence {
-  schema: typeof VTG_SEQUENCE_SCHEMA;
-  version: typeof VTG_SEQUENCE_SCHEMA_VERSION;
   name: string;
   loop: boolean;
   snapSetting: VTGSequenceSnapSetting;
-  guidanceMode: VTGSequenceGuidanceMode;
+  startPhaseDeg: VTGPhaseDeg;
   segments: VTGSequenceSegment[];
 }
 
@@ -71,12 +64,39 @@ export interface VTGSequencePlayheadResolution {
   totalBeats: number;
 }
 
-export interface VTGSequenceTransitionGuidance {
+export interface VTGSequenceSpeedProfile {
+  rightArmSpeedRadiansPerBeat: number;
+  leftArmSpeedRadiansPerBeat: number;
+  rightHeadSpeedRadiansPerBeat: number;
+  leftHeadSpeedRadiansPerBeat: number;
+}
+
+export interface VTGSequenceChannelAngles {
+  rightArmRadians: number;
+  leftArmRadians: number;
+  rightHeadRadians: number;
+  leftHeadRadians: number;
+}
+
+export interface VTGSequenceContinuitySegment {
+  segmentIndex: number;
   segmentId: string;
-  nextSegmentId: string | null;
-  classification: VTGTransitionClassification;
-  severity: VTGTransitionGuidanceSeverity;
-  message: string;
+  durationBeats: number;
+  descriptor: VTGSequenceDescriptor;
+  speedProfile: VTGSequenceSpeedProfile;
+  startAngles: VTGSequenceChannelAngles;
+}
+
+export interface VTGSequenceContinuity {
+  sequence: VTGSequence;
+  boundaries: VTGSequenceBoundaries;
+  totalBeats: number;
+  segments: VTGSequenceContinuitySegment[];
+  anchoredStartAngles: VTGSequenceChannelAngles | null;
+}
+
+export interface VTGSequenceContinuityResolution extends VTGSequencePlayheadResolution {
+  segment: VTGSequenceContinuitySegment;
 }
 
 export interface VTGSequenceDeserializeResult {
@@ -108,10 +128,6 @@ function isVTGPhaseDeg(value: unknown): value is VTGPhaseDeg {
   return value === 0 || value === 90 || value === 180 || value === 270;
 }
 
-function isGuidanceMode(value: unknown): value is VTGSequenceGuidanceMode {
-  return value === "strict" || value === "soft" || value === "freeform";
-}
-
 function isSnapSetting(value: unknown): value is VTGSequenceSnapSetting {
   return value === "event" || value === "none";
 }
@@ -135,7 +151,6 @@ function sanitizeDescriptor(value: unknown): VTGSequenceDescriptor {
   const candidate = isRecord(value) ? value : {};
   const armElement = isVTGElement(candidate.armElement) ? candidate.armElement : "Earth";
   const poiElement = isVTGElement(candidate.poiElement) ? candidate.poiElement : "Earth";
-  const phaseDeg = isVTGPhaseDeg(candidate.phaseDeg) ? candidate.phaseDeg : 0;
   const poiHeadCyclesPerArmCycle =
     isFiniteNumber(candidate.poiHeadCyclesPerArmCycle) && Math.abs(candidate.poiHeadCyclesPerArmCycle) > SNAP_ALIGNMENT_TOLERANCE
       ? candidate.poiHeadCyclesPerArmCycle
@@ -144,7 +159,6 @@ function sanitizeDescriptor(value: unknown): VTGSequenceDescriptor {
   return {
     armElement,
     poiElement,
-    phaseDeg,
     poiHeadCyclesPerArmCycle
   };
 }
@@ -181,39 +195,78 @@ function sanitizeSegments(value: unknown): VTGSequenceSegment[] {
   });
 }
 
+function cloneDescriptor(descriptor: VTGSequenceDescriptor): VTGSequenceDescriptor {
+  return {
+    armElement: descriptor.armElement,
+    poiElement: descriptor.poiElement,
+    poiHeadCyclesPerArmCycle: descriptor.poiHeadCyclesPerArmCycle
+  };
+}
+
+function cloneSegment(segment: VTGSequenceSegment): VTGSequenceSegment {
+  return {
+    id: segment.id,
+    durationBeats: segment.durationBeats,
+    descriptor: cloneDescriptor(segment.descriptor)
+  };
+}
+
+function timingOffsetForElement(element: VTGElement): number {
+  return getRelationForElement(element).timing === "split-time"
+    ? SPLIT_TIME_PHASE_OFFSET_RADIANS
+    : SAME_TIME_PHASE_OFFSET_RADIANS;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+function phaseDegToRadians(phaseDeg: VTGPhaseDeg): number {
+  return phaseDeg * PHASE_DEGREES_TO_RADIANS;
+}
+
+function advanceAnglesByDuration(
+  startAngles: VTGSequenceChannelAngles,
+  speedProfile: VTGSequenceSpeedProfile,
+  durationBeats: number
+): VTGSequenceChannelAngles {
+  return {
+    rightArmRadians: startAngles.rightArmRadians + speedProfile.rightArmSpeedRadiansPerBeat * durationBeats,
+    leftArmRadians: startAngles.leftArmRadians + speedProfile.leftArmSpeedRadiansPerBeat * durationBeats,
+    rightHeadRadians: startAngles.rightHeadRadians + speedProfile.rightHeadSpeedRadiansPerBeat * durationBeats,
+    leftHeadRadians: startAngles.leftHeadRadians + speedProfile.leftHeadSpeedRadiansPerBeat * durationBeats
+  };
+}
+
 /**
  * Creates a deterministic default VTG sequence value.
  *
- * @returns Default empty sequence with current schema/version metadata.
+ * @returns Default empty sequence shape.
  */
 export function createDefaultVTGSequence(): VTGSequence {
   return {
-    schema: VTG_SEQUENCE_SCHEMA,
-    version: VTG_SEQUENCE_SCHEMA_VERSION,
     name: VTG_SEQUENCE_DEFAULT_NAME,
     loop: VTG_SEQUENCE_DEFAULT_LOOP,
     snapSetting: VTG_SEQUENCE_DEFAULT_SNAP_SETTING,
-    guidanceMode: VTG_SEQUENCE_DEFAULT_GUIDANCE_MODE,
+    startPhaseDeg: VTG_SEQUENCE_DEFAULT_START_PHASE_DEG,
     segments: []
   };
 }
 
 /**
- * Sanitizes unknown input into a valid sequence object with schema defaults.
+ * Sanitizes unknown input into a valid sequence object with defaults.
  *
  * @param input Unknown candidate value.
- * @returns Sanitized sequence object guaranteed to match current schema shape.
+ * @returns Sanitized sequence object.
  */
 export function sanitizeVTGSequence(input: unknown): VTGSequence {
   const candidate = isRecord(input) ? input : {};
 
   return {
-    schema: VTG_SEQUENCE_SCHEMA,
-    version: VTG_SEQUENCE_SCHEMA_VERSION,
     name: sanitizeSequenceName(candidate.name),
     loop: isBoolean(candidate.loop) ? candidate.loop : VTG_SEQUENCE_DEFAULT_LOOP,
     snapSetting: isSnapSetting(candidate.snapSetting) ? candidate.snapSetting : VTG_SEQUENCE_DEFAULT_SNAP_SETTING,
-    guidanceMode: isGuidanceMode(candidate.guidanceMode) ? candidate.guidanceMode : VTG_SEQUENCE_DEFAULT_GUIDANCE_MODE,
+    startPhaseDeg: isVTGPhaseDeg(candidate.startPhaseDeg) ? candidate.startPhaseDeg : VTG_SEQUENCE_DEFAULT_START_PHASE_DEG,
     segments: sanitizeSegments(candidate.segments)
   };
 }
@@ -227,14 +280,11 @@ export function sanitizeVTGSequence(input: unknown): VTGSequence {
 export function validateVTGSequence(sequence: VTGSequence): VTGSequenceValidationResult {
   const errors: string[] = [];
 
-  if (sequence.schema !== VTG_SEQUENCE_SCHEMA) {
-    errors.push(`Unsupported sequence schema: ${sequence.schema}`);
-  }
-  if (sequence.version !== VTG_SEQUENCE_SCHEMA_VERSION) {
-    errors.push(`Unsupported sequence version: ${sequence.version}`);
-  }
   if (sequence.name.trim().length === 0) {
     errors.push("Sequence name must be non-empty.");
+  }
+  if (!isVTGPhaseDeg(sequence.startPhaseDeg)) {
+    errors.push(`Unsupported startPhaseDeg: ${String(sequence.startPhaseDeg)}`);
   }
 
   const seenIds = new Set<string>();
@@ -269,16 +319,17 @@ export function validateVTGSequence(sequence: VTGSequence): VTGSequenceValidatio
 }
 
 /**
- * Maps sequence descriptor shape to VTG generator descriptor shape.
+ * Maps sequence descriptor shape to VTG panel descriptor shape using one phase bucket.
  *
  * @param descriptor Sequence descriptor input.
- * @returns VTG descriptor compatible with `generateVTGState`.
+ * @param phaseDeg Phase bucket to expose in VTG panel.
+ * @returns VTG descriptor compatible with `VtgPanel` apply event contract.
  */
-export function toVTGDescriptor(descriptor: VTGSequenceDescriptor): VTGDescriptor {
+export function toVTGDescriptor(descriptor: VTGSequenceDescriptor, phaseDeg: VTGPhaseDeg): VTGDescriptor {
   return {
     armElement: descriptor.armElement,
     poiElement: descriptor.poiElement,
-    phaseDeg: descriptor.phaseDeg,
+    phaseDeg,
     poiHeadCyclesPerArmCycle: descriptor.poiHeadCyclesPerArmCycle
   };
 }
@@ -311,28 +362,21 @@ export function snapDurationToArmPhaseEvents(durationBeats: number, armSpeedRadi
 }
 
 /**
- * Applies optional event snap normalization to segment durations.
+ * Applies optional event-snap normalization to segment durations.
  *
  * @param sequence Sequence candidate.
  * @returns Sequence clone with duration snapping applied when snap is enabled.
  */
 export function normalizeSequenceEventSnap(sequence: VTGSequence): VTGSequence {
-  if (sequence.snapSetting !== "event") {
-    return {
-      ...sequence,
-      segments: sequence.segments.map((segment) => ({
-        ...segment,
-        descriptor: { ...segment.descriptor }
-      }))
-    };
-  }
-
   return {
-    ...sequence,
+    name: sequence.name,
+    loop: sequence.loop,
+    snapSetting: sequence.snapSetting,
+    startPhaseDeg: sequence.startPhaseDeg,
     segments: sequence.segments.map((segment) => ({
-      ...segment,
-      durationBeats: snapDurationToArmPhaseEvents(segment.durationBeats),
-      descriptor: { ...segment.descriptor }
+      id: segment.id,
+      durationBeats: sequence.snapSetting === "event" ? snapDurationToArmPhaseEvents(segment.durationBeats) : segment.durationBeats,
+      descriptor: cloneDescriptor(segment.descriptor)
     }))
   };
 }
@@ -356,10 +400,6 @@ export function computeSequenceBoundariesBeats(sequence: VTGSequence): VTGSequen
     startsBeats,
     totalBeats: cursor
   };
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max);
 }
 
 /**
@@ -400,7 +440,6 @@ export function resolveSequencePlayheadBeats(sequence: VTGSequence, playheadBeat
     }
 
     const localBeat = isLastSegment ? Math.min(sequenceBeat - start, segment.durationBeats) : sequenceBeat - start;
-
     return {
       sequenceBeat,
       segmentIndex: index,
@@ -413,38 +452,85 @@ export function resolveSequencePlayheadBeats(sequence: VTGSequence, playheadBeat
   return null;
 }
 
-function isCanonicalDuration(durationBeats: number): boolean {
-  const spacing = getArmPhaseEventSpacingBeats();
-  const steps = durationBeats / spacing;
-  return Math.abs(steps - Math.round(steps)) <= TRANSITION_ALIGNMENT_TOLERANCE;
+/**
+ * Derives one segment's speed profile from relation descriptors.
+ *
+ * Contract:
+ * - right arm speed is canonical (`+2π` rad/beat),
+ * - left arm direction comes from `armElement`,
+ * - right head speed comes from signed `poiHeadCyclesPerArmCycle`,
+ * - left head direction comes from `poiElement`.
+ *
+ * @param descriptor Sequence segment descriptor.
+ * @returns Deterministic speed profile for both arm/head channels.
+ */
+export function deriveSequenceSegmentSpeedProfile(descriptor: VTGSequenceDescriptor): VTGSequenceSpeedProfile {
+  const armRelation = getRelationForElement(descriptor.armElement);
+  const poiRelation = getRelationForElement(descriptor.poiElement);
+
+  const rightArmSpeed = VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT;
+  const leftArmSpeed = armRelation.direction === "same-direction"
+    ? VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT
+    : -VTG_CANONICAL_ARM_SPEED_RADIANS_PER_BEAT;
+  const rightHeadSpeed = poiHeadCyclesPerArmCycleToHeadSpeedRadiansPerBeat(descriptor.poiHeadCyclesPerArmCycle);
+  const leftHeadSpeed = poiRelation.direction === "same-direction" ? rightHeadSpeed : -rightHeadSpeed;
+
+  return {
+    rightArmSpeedRadiansPerBeat: rightArmSpeed,
+    leftArmSpeedRadiansPerBeat: leftArmSpeed,
+    rightHeadSpeedRadiansPerBeat: rightHeadSpeed,
+    leftHeadSpeedRadiansPerBeat: leftHeadSpeed
+  };
 }
 
-function toGuidanceSeverity(mode: VTGSequenceGuidanceMode, classification: VTGTransitionClassification): VTGTransitionGuidanceSeverity {
-  if (classification === "canonical") {
-    return "ok";
+function createAnchoredStartAngles(sequence: VTGSequence): VTGSequenceChannelAngles | null {
+  const first = sequence.segments[0];
+  if (!first) {
+    return null;
   }
-  if (mode === "strict") {
-    return "error";
-  }
-  if (mode === "soft") {
-    return "warning";
-  }
-  return "none";
+
+  const rightArmStart = phaseDegToRadians(sequence.startPhaseDeg);
+  const leftArmStart = rightArmStart + timingOffsetForElement(first.descriptor.armElement);
+  const rightHeadStart = rightArmStart + RIGHT_HEAD_ANCHOR_OFFSET_RADIANS;
+  const leftHeadStart = rightHeadStart + timingOffsetForElement(first.descriptor.poiElement);
+
+  return {
+    rightArmRadians: rightArmStart,
+    leftArmRadians: leftArmStart,
+    rightHeadRadians: rightHeadStart,
+    leftHeadRadians: leftHeadStart
+  };
 }
 
 /**
- * Classifies each segment-end transition as canonical or non-canonical.
+ * Resolves sequence continuity starts by propagating channel angles across segment boundaries.
+ *
+ * Propagation contract:
+ * - segment 0 starts from `startPhaseDeg` + first-segment timing relations,
+ * - segment N>0 starts exactly at segment N-1 end pose,
+ * - segment switches update speed profile only (no boundary pose jump),
+ * - loop seam wraps to anchored start because playhead wraps in beat-space.
  *
  * @param sequence Sequence candidate.
- * @returns Ordered transition guidance records for each segment boundary.
+ * @returns Normalized sequence plus per-segment propagated start angles and speeds.
  */
-export function classifySequenceTransitionGuidance(sequence: VTGSequence): VTGSequenceTransitionGuidance[] {
-  if (sequence.segments.length === 0) {
-    return [];
+export function resolveSequenceContinuity(sequence: VTGSequence): VTGSequenceContinuity {
+  const effectiveSequence = normalizeSequenceEventSnap(sequence);
+  const boundaries = computeSequenceBoundariesBeats(effectiveSequence);
+  const anchoredStartAngles = createAnchoredStartAngles(effectiveSequence);
+
+  if (!anchoredStartAngles) {
+    return {
+      sequence: effectiveSequence,
+      boundaries,
+      totalBeats: boundaries.totalBeats,
+      segments: [],
+      anchoredStartAngles: null
+    };
   }
 
-  const effectiveSequence = normalizeSequenceEventSnap(sequence);
-  const guidance: VTGSequenceTransitionGuidance[] = [];
+  const continuitySegments: VTGSequenceContinuitySegment[] = [];
+  let currentStart = anchoredStartAngles;
 
   for (let index = 0; index < effectiveSequence.segments.length; index += 1) {
     const segment = effectiveSequence.segments[index];
@@ -452,73 +538,83 @@ export function classifySequenceTransitionGuidance(sequence: VTGSequence): VTGSe
       continue;
     }
 
-    const nextIndex = index + 1;
-    const hasNext = nextIndex < effectiveSequence.segments.length;
-    const loopsToFirst = effectiveSequence.loop && effectiveSequence.segments.length > 1;
-    const nextSegment = hasNext
-      ? effectiveSequence.segments[nextIndex]
-      : loopsToFirst
-      ? effectiveSequence.segments[0]
-      : null;
-
-    if (!nextSegment) {
-      guidance.push({
-        segmentId: segment.id,
-        nextSegmentId: null,
-        classification: "canonical",
-        severity: "ok",
-        message: "Sequence end."
-      });
-      continue;
-    }
-
-    const classification: VTGTransitionClassification = isCanonicalDuration(segment.durationBeats) ? "canonical" : "non-canonical";
-    const severity = toGuidanceSeverity(effectiveSequence.guidanceMode, classification);
-
-    guidance.push({
+    const speedProfile = deriveSequenceSegmentSpeedProfile(segment.descriptor);
+    continuitySegments.push({
+      segmentIndex: index,
       segmentId: segment.id,
-      nextSegmentId: nextSegment.id,
-      classification,
-      severity,
-      message:
-        classification === "canonical"
-          ? "Aligned to arm-phase cardinal events."
-          : "Off-cardinal boundary. Consider snapping to nearest arm-phase event."
+      durationBeats: segment.durationBeats,
+      descriptor: cloneDescriptor(segment.descriptor),
+      speedProfile,
+      startAngles: {
+        rightArmRadians: currentStart.rightArmRadians,
+        leftArmRadians: currentStart.leftArmRadians,
+        rightHeadRadians: currentStart.rightHeadRadians,
+        leftHeadRadians: currentStart.leftHeadRadians
+      }
     });
+
+    currentStart = advanceAnglesByDuration(currentStart, speedProfile, segment.durationBeats);
   }
 
-  return guidance;
+  return {
+    sequence: effectiveSequence,
+    boundaries,
+    totalBeats: boundaries.totalBeats,
+    segments: continuitySegments,
+    anchoredStartAngles: {
+      rightArmRadians: anchoredStartAngles.rightArmRadians,
+      leftArmRadians: anchoredStartAngles.leftArmRadians,
+      rightHeadRadians: anchoredStartAngles.rightHeadRadians,
+      leftHeadRadians: anchoredStartAngles.leftHeadRadians
+    }
+  };
 }
 
 /**
- * Serializes sequence with schema metadata for export.
+ * Resolves active segment continuity data at a global beat.
+ *
+ * @param sequence Sequence candidate.
+ * @param playheadBeat Global playhead beat.
+ * @returns Active continuity resolution with local beat, or `null` when unresolved.
+ */
+export function resolveSequenceContinuityAtBeat(sequence: VTGSequence, playheadBeat: number): VTGSequenceContinuityResolution | null {
+  const continuity = resolveSequenceContinuity(sequence);
+  const playhead = resolveSequencePlayheadBeats(continuity.sequence, playheadBeat);
+  if (!playhead) {
+    return null;
+  }
+
+  const segment = continuity.segments[playhead.segmentIndex];
+  if (!segment) {
+    return null;
+  }
+
+  return {
+    ...playhead,
+    segment
+  };
+}
+
+/**
+ * Serializes sequence payload for export.
  *
  * @param sequence Sequence candidate.
  * @returns JSON payload string.
  */
 export function serializeVTGSequence(sequence: VTGSequence): string {
   return JSON.stringify({
-    schema: VTG_SEQUENCE_SCHEMA,
-    version: VTG_SEQUENCE_SCHEMA_VERSION,
     name: sequence.name,
     loop: sequence.loop,
     snapSetting: sequence.snapSetting,
-    guidanceMode: sequence.guidanceMode,
-    segments: sequence.segments.map((segment) => ({
-      id: segment.id,
-      durationBeats: segment.durationBeats,
-      descriptor: {
-        armElement: segment.descriptor.armElement,
-        poiElement: segment.descriptor.poiElement,
-        phaseDeg: segment.descriptor.phaseDeg,
-        poiHeadCyclesPerArmCycle: segment.descriptor.poiHeadCyclesPerArmCycle
-      }
-    }))
+    startPhaseDeg: sequence.startPhaseDeg,
+    segments: sequence.segments.map((segment) => cloneSegment(segment))
   });
 }
 
 /**
- * Parses and validates sequence JSON. Unknown schema/version are rejected.
+ * Parses and validates sequence JSON with the current no-version schema.
+ *
+ * Note: legacy schema/version payloads are intentionally rejected.
  *
  * @param serialized Raw JSON string.
  * @returns Parsed sequence or descriptive error.
@@ -533,23 +629,15 @@ export function deserializeVTGSequence(serialized: string): VTGSequenceDeseriali
       };
     }
 
-    if (parsed.schema !== VTG_SEQUENCE_SCHEMA) {
+    if ("schema" in parsed || "version" in parsed || "guidanceMode" in parsed) {
       return {
         sequence: null,
-        error: `Unsupported sequence schema: ${String(parsed.schema)}`
-      };
-    }
-
-    if (parsed.version !== VTG_SEQUENCE_SCHEMA_VERSION) {
-      return {
-        sequence: null,
-        error: `Unsupported sequence version: ${String(parsed.version)}`
+        error: "Legacy sequence payload is unsupported."
       };
     }
 
     const sequence = sanitizeVTGSequence(parsed);
     const validation = validateVTGSequence(sequence);
-
     if (!validation.isValid) {
       return {
         sequence: null,

@@ -1,21 +1,12 @@
 <script setup lang="ts">
-import {
-  type VTGSequence,
-  type VTGSequenceGuidanceMode,
-  type VTGSequenceSnapSetting,
-  type VTGSequenceTransitionGuidance,
-  type VTGSequenceSegment
-} from "@/vtg/sequence";
+import { type VTGSequence, type VTGSequenceSegment, type VTGSequenceSnapSetting } from "@/vtg/sequence";
+import type { VTGPhaseDeg } from "@/vtg/types";
 import { computed, ref, watch } from "vue";
-
-interface SegmentView extends VTGSequenceSegment {
-  guidance: VTGSequenceTransitionGuidance;
-}
 
 interface ControlsSequencePanelProps {
   sequenceMode: boolean;
   sequence: VTGSequence;
-  segmentViews: SegmentView[];
+  segmentViews: VTGSequenceSegment[];
   selectedSegmentId: string | null;
   sequenceStatus: string;
 }
@@ -27,7 +18,7 @@ const emit = defineEmits<{
   (event: "set-sequence-name", name: string): void;
   (event: "set-sequence-loop", loop: boolean): void;
   (event: "set-snap-setting", snapSetting: VTGSequenceSnapSetting): void;
-  (event: "set-guidance-mode", mode: VTGSequenceGuidanceMode): void;
+  (event: "set-sequence-start-phase-deg", startPhaseDeg: VTGPhaseDeg): void;
   (event: "add-segment"): void;
   (event: "select-segment", segmentId: string): void;
   (event: "set-selected-duration-beats", durationBeats: number): void;
@@ -40,8 +31,9 @@ const emit = defineEmits<{
 
 const importInputRef = ref<HTMLInputElement | null>(null);
 const sequenceNameDraft = ref("");
-
 const selectedSegment = computed(() => props.segmentViews.find((segment) => segment.id === props.selectedSegmentId) ?? null);
+
+const START_PHASE_OPTIONS: VTGPhaseDeg[] = [0, 90, 180, 270];
 
 function parseFiniteNumber(value: string): number | null {
   const parsed = Number.parseFloat(value);
@@ -81,8 +73,8 @@ function onSnapSettingChange(nextSetting: VTGSequenceSnapSetting): void {
   emit("set-snap-setting", nextSetting);
 }
 
-function onGuidanceModeChange(nextMode: VTGSequenceGuidanceMode): void {
-  emit("set-guidance-mode", nextMode);
+function onStartPhaseChange(nextPhaseDeg: VTGPhaseDeg): void {
+  emit("set-sequence-start-phase-deg", nextPhaseDeg);
 }
 
 function onDurationInput(event: Event): void {
@@ -115,19 +107,6 @@ function onImportFileChange(event: Event): void {
 
   emit("import-sequence", file);
   target.value = "";
-}
-
-function guidanceClass(guidance: VTGSequenceTransitionGuidance): string {
-  if (guidance.severity === "error") {
-    return "border-rose-500/40 text-rose-300";
-  }
-  if (guidance.severity === "warning") {
-    return "border-amber-500/40 text-amber-300";
-  }
-  if (guidance.severity === "ok") {
-    return "border-emerald-500/40 text-emerald-300";
-  }
-  return "border-zinc-700 text-zinc-400";
 }
 
 watch(
@@ -212,30 +191,16 @@ watch(
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
-            <span class="uppercase">Guidance</span>
+            <span class="uppercase">Start Phase</span>
             <button
+              v-for="phase in START_PHASE_OPTIONS"
+              :key="phase"
               class="rounded border px-2.5 py-1 text-xs"
-              :class="props.sequence.guidanceMode === 'strict' ? 'border-cyan-400 text-cyan-300' : 'border-zinc-700 text-zinc-300'"
+              :class="props.sequence.startPhaseDeg === phase ? 'border-cyan-400 text-cyan-300' : 'border-zinc-700 text-zinc-300'"
               type="button"
-              @click="onGuidanceModeChange('strict')"
+              @click="onStartPhaseChange(phase)"
             >
-              Strict
-            </button>
-            <button
-              class="rounded border px-2.5 py-1 text-xs"
-              :class="props.sequence.guidanceMode === 'soft' ? 'border-cyan-400 text-cyan-300' : 'border-zinc-700 text-zinc-300'"
-              type="button"
-              @click="onGuidanceModeChange('soft')"
-            >
-              Soft
-            </button>
-            <button
-              class="rounded border px-2.5 py-1 text-xs"
-              :class="props.sequence.guidanceMode === 'freeform' ? 'border-cyan-400 text-cyan-300' : 'border-zinc-700 text-zinc-300'"
-              type="button"
-              @click="onGuidanceModeChange('freeform')"
-            >
-              Freeform
+              {{ phase }}°
             </button>
           </div>
         </div>
@@ -261,14 +226,10 @@ watch(
               type="button"
               @click="emit('select-segment', segment.id)"
             >
-              {{ index + 1 }}. {{ segment.descriptor.armElement }} × {{ segment.descriptor.poiElement }} @ {{ segment.descriptor.phaseDeg }}°
+              {{ index + 1 }}. {{ segment.descriptor.armElement }} × {{ segment.descriptor.poiElement }}
             </button>
-            <span class="rounded border px-2 py-0.5 text-[11px]" :class="guidanceClass(segment.guidance)">
-              {{ segment.guidance.classification }}
-            </span>
             <span class="text-xs text-zinc-500">{{ segment.durationBeats.toFixed(3) }} beats</span>
           </div>
-          <p class="mt-1 text-[11px] text-zinc-500">{{ segment.guidance.message }}</p>
         </div>
       </div>
 
@@ -316,7 +277,7 @@ watch(
           </button>
         </div>
         <p class="mt-2 text-xs text-zinc-500">
-          Edit descriptor values for the selected segment from the VTG grid panel above. Sequence mode routes VTG edits into this segment.
+          Edit arm/poi relation and signed poi cycles for the selected segment from the VTG grid panel above.
         </p>
       </div>
     </div>

@@ -35,7 +35,7 @@ const {
   handleSetSequenceName,
   handleSetSequenceLoop,
   handleSetSnapSetting,
-  handleSetGuidanceMode,
+  handleSetSequenceStartPhaseDeg,
   handleAddSequenceSegment,
   handleSelectSequenceSegment,
   handleSetSelectedSequenceDurationBeats,
@@ -125,7 +125,7 @@ const {
         @set-sequence-name="handleSetSequenceName"
         @set-sequence-loop="handleSetSequenceLoop"
         @set-snap-setting="handleSetSnapSetting"
-        @set-guidance-mode="handleSetGuidanceMode"
+        @set-sequence-start-phase-deg="handleSetSequenceStartPhaseDeg"
         @add-segment="handleAddSequenceSegment"
         @select-segment="handleSelectSequenceSegment"
         @set-selected-duration-beats="handleSetSelectedSequenceDurationBeats"

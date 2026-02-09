@@ -9,7 +9,7 @@ Primary code:
 - `src/vtg/generate.ts` exports `generateVTGState` (descriptor -> canonical angular state).
 - `src/vtg/classify.ts` exports authoritative relation-based classifiers.
 - `src/vtg/descriptiveGeometry.ts` exports non-authoritative together/apart language helpers.
-- `src/vtg/sequence.ts` exports Phase 2 sequence schema and pure sequencing logic.
+- `src/vtg/sequence.ts` exports Phase 2 sequence contracts, snap helpers, and continuity resolver logic.
 
 ## Descriptor Contract
 
@@ -52,34 +52,15 @@ Engine math is unchanged; VTG only selects angular parameters.
 ## Phase 2 Sequencer (VTG-only)
 
 Phase 2 adds a beat-based piecewise VTG sequencer in `src/vtg/sequence.ts`.
+This layer remains VTG-only: no generalized morph/interpolation math is introduced.
 
-Schema contract (`VTGSequence`):
-- metadata: `schema`, `version`,
-- sequence fields: `name`, `loop`, `snapSetting`, `guidanceMode`,
-- ordered `segments[]`, each with stable `id`, `durationBeats`, and VTG descriptor.
-
-Pure logic surface:
-- sanitize/validate: `sanitizeVTGSequence`, `validateVTGSequence`,
-- beat boundaries: `computeSequenceBoundariesBeats`,
-- playhead resolution: `resolveSequencePlayheadBeats` (global beat -> segment index + local beat),
-- optional event snap: `normalizeSequenceEventSnap`, `snapDurationToArmPhaseEvents`,
-- guidance classification: `classifySequenceTransitionGuidance`.
-
-### Event Snap Semantics
-
-Event alignment is defined in arm-phase/cardinal space:
-- event spacing in beats is derived from arm angular speed (`π/2` phase span),
-- no global hardcoded `0.25 beat` assumption in logic,
-- with canonical VTG arm speed (`2π`), spacing evaluates to `0.25` beats.
-
-### Guidance Modes
-
-Supported modes:
-- `strict`: non-canonical transitions are severity `error`,
-- `soft`: non-canonical transitions are severity `warning`,
-- `freeform`: non-canonical transitions remain classified but severity is `none`.
-
-Classification minimum is canonical vs non-canonical, based on arm-phase event alignment at segment boundaries.
+Sequencer details are documented in `docs/vtg-sequencer.md`:
+- current sequence shape (no schema/version envelope),
+- root `startPhaseDeg` anchor semantics,
+- beat-space playhead resolution,
+- event snap semantics,
+- continuity propagation (no per-segment pose restarts),
+- UI/orchestrator render routing.
 
 ## Invariants vs Reference-Relative Outputs
 

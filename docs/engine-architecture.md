@@ -41,10 +41,11 @@ Boundary rules are defined in `eslint.config.mjs` and executed through `npm run 
 3. `getPositions` computes `(hand, head, tether)` vectors from angles.
 4. `sampleLoop` uses fixed beat step from `sampleHzToStepBeats` (`src/engine/math.ts`) and includes both loop endpoints.
 5. Trail sampler advances independently of render FPS by stepping in beat-space.
+   Live trail history is preserved across pattern-parameter changes; sampler reset is keyed to trail sampling config (`bpm`, `trailBeats`, `trailSampleHz`) rather than hand geometry/phase values.
 6. A single transport RAF owner in `src/App.vue` advances beat time and passes `tBeats` into both canvas views.
 7. Static transport view uses deterministic loop sampling to render a full-loop still trail for pattern capture.
 8. Phase-reference transforms are applied outside engine equations (`src/state/phaseReference.ts`), so engine math stays canonical.
-9. VTG Phase 2 sequencing is outside engine math: sequencer logic selects one active VTG descriptor at a time and feeds generated state into existing engine/render paths.
+9. VTG Phase 2 sequencing is outside engine math: sequencer logic resolves one active segment at a time with propagated continuity starts and feeds resulting angular channels into existing engine/render paths.
 
 ## Sequencer Boundary
 
@@ -52,7 +53,7 @@ Sequence playback does not change `src/engine/**` equations, sampling, or geomet
 
 - Sequencing domain lives in `src/vtg/sequence.ts` and orchestrator/composable wiring.
 - Engine still consumes ordinary `EngineParams` and beat time.
-- In sequence mode, the app supplies engine params generated from the active VTG segment descriptor; engine behavior is otherwise identical.
+- In sequence mode, the app supplies engine params from active segment continuity resolution (segment speed profile + propagated start angles); engine behavior is otherwise identical.
 
 ## Deterministic Sampling
 

@@ -39,11 +39,15 @@ function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement): void {
   }
 }
 
-function getTrailSamplerConfigKey(): string {
+function getLiveTrailSamplerConfigKey(): string {
+  const { global } = props.state;
+  return [global.bpm, global.trailBeats, global.trailSampleHz].join("|");
+}
+
+function getPatternSamplingConfigKey(): string {
   const { global, hands } = props.state;
   return [
     global.bpm,
-    global.trailBeats,
     global.trailSampleHz,
     hands.L.armSpeed,
     hands.L.armPhase,
@@ -61,7 +65,7 @@ function getTrailSamplerConfigKey(): string {
 }
 
 function getStaticTrailConfigKey(): string {
-  return [getTrailSamplerConfigKey(), props.state.global.loopBeats, props.tBeats].join("|");
+  return [getPatternSamplingConfigKey(), props.state.global.loopBeats, props.tBeats].join("|");
 }
 
 function drawFrame(): void {
@@ -91,7 +95,7 @@ function drawFrame(): void {
     }
     trails = staticTrails;
   } else {
-    const nextConfigKey = getTrailSamplerConfigKey();
+    const nextConfigKey = getLiveTrailSamplerConfigKey();
     if (!trailSampler || trailSamplerConfigKey !== nextConfigKey) {
       trailSampler = createTrailSampler(
         {

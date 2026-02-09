@@ -12,8 +12,8 @@ import type { GlobalBooleanKey, GlobalNumberKey, HandNumberKey } from "@/state/a
 import type { UserPresetSummary } from "@/state/presetLibrary";
 import type { SpeedUnit } from "@/state/speedUnits";
 import type { AppState, HandId, PhaseReference } from "@/types/state";
-import { createDefaultVTGSequence, type VTGSequence, type VTGSequenceGuidanceMode, type VTGSequenceSnapSetting } from "@/vtg/sequence";
-import type { VTGDescriptor } from "@/vtg/types";
+import { createDefaultVTGSequence, type VTGSequence, type VTGSequenceSnapSetting } from "@/vtg/sequence";
+import type { VTGDescriptor, VTGPhaseDeg } from "@/vtg/types";
 import { computed, ref } from "vue";
 
 interface ControlsProps {
@@ -30,13 +30,6 @@ interface ControlsProps {
     id: string;
     durationBeats: number;
     descriptor: VTGSequence["segments"][number]["descriptor"];
-    guidance: {
-      segmentId: string;
-      nextSegmentId: string | null;
-      classification: "canonical" | "non-canonical";
-      severity: "ok" | "warning" | "error" | "none";
-      message: string;
-    };
   }>;
   selectedSequenceSegmentId?: string | null;
   sequenceStatus?: string;
@@ -57,7 +50,7 @@ const emit = defineEmits<{
   (event: "set-sequence-name", name: string): void;
   (event: "set-sequence-loop", loop: boolean): void;
   (event: "set-snap-setting", snapSetting: VTGSequenceSnapSetting): void;
-  (event: "set-guidance-mode", mode: VTGSequenceGuidanceMode): void;
+  (event: "set-sequence-start-phase-deg", startPhaseDeg: VTGPhaseDeg): void;
   (event: "add-segment"): void;
   (event: "select-segment", segmentId: string): void;
   (event: "set-selected-duration-beats", durationBeats: number): void;
@@ -168,7 +161,7 @@ function onSetHandNumber(handId: HandId, key: HandNumberKey, value: number): voi
       @set-sequence-name="(name) => emit('set-sequence-name', name)"
       @set-sequence-loop="(loop) => emit('set-sequence-loop', loop)"
       @set-snap-setting="(snapSetting) => emit('set-snap-setting', snapSetting)"
-      @set-guidance-mode="(mode) => emit('set-guidance-mode', mode)"
+      @set-sequence-start-phase-deg="(startPhaseDeg) => emit('set-sequence-start-phase-deg', startPhaseDeg)"
       @add-segment="emit('add-segment')"
       @select-segment="(segmentId) => emit('select-segment', segmentId)"
       @set-selected-duration-beats="(durationBeats) => emit('set-selected-duration-beats', durationBeats)"

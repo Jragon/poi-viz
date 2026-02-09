@@ -1,13 +1,12 @@
 import { normalizeLoopBeat } from "@/state/beatMath";
-import type { AppState } from "@/types/state";
+import type { AppState, HandState } from "@/types/state";
 import { classifyVTG } from "@/vtg/classify";
-import { generateVTGState } from "@/vtg/generate";
 import {
-  classifySequenceTransitionGuidance,
   computeSequenceBoundariesBeats,
   createDefaultVTGSequence,
   deserializeVTGSequence,
   normalizeSequenceEventSnap,
+  resolveSequenceContinuity,
   resolveSequencePlayheadBeats,
   sanitizeVTGSequence,
   serializeVTGSequence,
@@ -15,15 +14,12 @@ import {
   toVTGDescriptor,
   type VTGSequence,
   type VTGSequenceDescriptor,
-  type VTGSequenceGuidanceMode,
   type VTGSequenceSegment,
-  type VTGSequenceSnapSetting,
-  type VTGSequenceTransitionGuidance
+  type VTGSequenceSnapSetting
 } from "@/vtg/sequence";
 import {
   headSpeedRadiansPerBeatToPoiHeadCyclesPerArmCycle,
   type VTGDescriptor,
-  type VTGElement,
   type VTGPhaseDeg
 } from "@/vtg/types";
 import { computed, ref, type ComputedRef, type Ref } from "vue";
@@ -35,9 +31,12 @@ const SEQUENCE_FILE_FALLBACK_NAME = "vtg-sequence";
 const SEQUENCE_ID_PREFIX = "seg";
 const MIN_LOOP_BEATS = 0.25;
 
-export interface SequenceSegmentView extends VTGSequenceSegment {
-  guidance: VTGSequenceTransitionGuidance;
+interface SequenceSnapshotFromState {
+  descriptor: VTGSequenceDescriptor;
+  startPhaseDeg: VTGPhaseDeg;
 }
+
+export interface SequenceSegmentView extends VTGSequenceSegment {}
 
 export interface VtgSequenceController {
   sequenceMode: Ref<boolean>;
@@ -54,7 +53,7 @@ export interface VtgSequenceController {
   handleSetSequenceName: (name: string) => void;
   handleSetSequenceLoop: (loop: boolean) => void;
   handleSetSnapSetting: (snapSetting: VTGSequenceSnapSetting) => void;
-  handleSetGuidanceMode: (mode: VTGSequenceGuidanceMode) => void;
+  handleSetSequenceStartPhaseDeg: (startPhaseDeg: VTGPhaseDeg) => void;
   handleSelectSegment: (segmentId: string) => void;
   handleAddSegmentFromCurrentState: (state: AppState) => void;
   handleReplaceSelectedDescriptor: (descriptor: VTGDescriptor) => void;
@@ -93,7 +92,7 @@ function createSequenceFileName(name: string): string {
   return `${baseName}${SEQUENCE_FILE_EXTENSION}`;
 }
 
-function createDescriptorFromState(state: AppState): VTGSequenceDescriptor {
+function createSnapshotFromState(state: AppState): SequenceSnapshotFromState {
   try {
     const classification = classifyVTG(state);
     const rightHeadCyclesPerArmCycle = headSpeedRadiansPerBeatToPoiHeadCyclesPerArmCycle(
@@ -101,17 +100,21 @@ function createDescriptorFromState(state: AppState): VTGSequenceDescriptor {
     );
 
     return {
-      armElement: classification.armElement,
-      poiElement: classification.poiElement,
-      phaseDeg: classification.phaseDeg,
-      poiHeadCyclesPerArmCycle: rightHeadCyclesPerArmCycle
+      descriptor: {
+        armElement: classification.armElement,
+        poiElement: classification.poiElement,
+        poiHeadCyclesPerArmCycle: rightHeadCyclesPerArmCycle
+      },
+      startPhaseDeg: classification.phaseDeg
     };
   } catch {
     return {
-      armElement: "Earth",
-      poiElement: "Earth",
-      phaseDeg: 0,
-      poiHeadCyclesPerArmCycle: -3
+      descriptor: {
+        armElement: "Earth",
+        poiElement: "Earth",
+        poiHeadCyclesPerArmCycle: -3
+      },
+      startPhaseDeg: 0
     };
   }
 }
@@ -120,7 +123,6 @@ function toSequenceDescriptor(descriptor: VTGDescriptor): VTGSequenceDescriptor 
   return {
     armElement: descriptor.armElement,
     poiElement: descriptor.poiElement,
-    phaseDeg: descriptor.phaseDeg,
     poiHeadCyclesPerArmCycle: descriptor.poiHeadCyclesPerArmCycle
   };
 }
@@ -138,7 +140,6 @@ function cloneSequenceWithSegments(sequence: VTGSequence, segments: VTGSequenceS
       descriptor: {
         armElement: segment.descriptor.armElement,
         poiElement: segment.descriptor.poiElement,
-        phaseDeg: segment.descriptor.phaseDeg,
         poiHeadCyclesPerArmCycle: segment.descriptor.poiHeadCyclesPerArmCycle
       }
     }))
@@ -169,8 +170,24 @@ function createSegmentFromDescriptor(
   };
 }
 
+function applyAngularOverrides(
+  hand: HandState,
+  armSpeed: number,
+  armPhase: number,
+  poiSpeed: number,
+  poiPhase: number
+): HandState {
+  return {
+    ...hand,
+    armSpeed,
+    armPhase,
+    poiSpeed,
+    poiPhase
+  };
+}
+
 /**
- * Owns sequence-mode state, list editing, import/export, and render selection.
+ * Owns sequence-mode state, list editing, import/export, and continuity-based render selection.
  */
 export function useVtgSequenceController(state: AppState, absolutePlayheadBeats: Ref<number>): VtgSequenceController {
   const sequenceMode = ref(false);
@@ -215,9 +232,7 @@ export function useVtgSequenceController(state: AppState, absolutePlayheadBeats:
     );
     const nextSegments = [...sequence.value.segments, nextSegment];
 
-    commitSequence(
-      cloneSequenceWithSegments(sequence.value, nextSegments)
-    );
+    commitSequence(cloneSequenceWithSegments(sequence.value, nextSegments));
 
     if (selectAdded) {
       selectedSegmentId.value = nextId;
@@ -225,35 +240,33 @@ export function useVtgSequenceController(state: AppState, absolutePlayheadBeats:
   }
 
   const effectiveSequence = computed(() => normalizeSequenceEventSnap(sequence.value));
+  const continuity = computed(() => resolveSequenceContinuity(effectiveSequence.value));
 
   const activeResolution = computed(() => {
     if (!sequenceMode.value) {
       return null;
     }
-    return resolveSequencePlayheadBeats(effectiveSequence.value, absolutePlayheadBeats.value);
-  });
 
-  const transitionGuidanceBySegmentId = computed(() => {
-    const guidance = classifySequenceTransitionGuidance(effectiveSequence.value);
-    const map = new Map<string, VTGSequenceTransitionGuidance>();
-    for (const entry of guidance) {
-      map.set(entry.segmentId, entry);
+    const playhead = resolveSequencePlayheadBeats(continuity.value.sequence, absolutePlayheadBeats.value);
+    if (!playhead) {
+      return null;
     }
-    return map;
+
+    const segment = continuity.value.segments[playhead.segmentIndex];
+    if (!segment) {
+      return null;
+    }
+
+    return {
+      ...playhead,
+      segment
+    };
   });
 
   const segmentViews = computed((): SequenceSegmentView[] => {
     return effectiveSequence.value.segments.map((segment) => ({
       ...segment,
-      descriptor: { ...segment.descriptor },
-      guidance:
-        transitionGuidanceBySegmentId.value.get(segment.id) ?? {
-          segmentId: segment.id,
-          nextSegmentId: null,
-          classification: "canonical",
-          severity: "ok",
-          message: "Sequence end."
-        }
+      descriptor: { ...segment.descriptor }
     }));
   });
 
@@ -265,7 +278,7 @@ export function useVtgSequenceController(state: AppState, absolutePlayheadBeats:
     if (!selected) {
       return null;
     }
-    return toVTGDescriptor(selected.descriptor);
+    return toVTGDescriptor(selected.descriptor, effectiveSequence.value.startPhaseDeg);
   });
 
   const renderState = computed(() => {
@@ -278,23 +291,30 @@ export function useVtgSequenceController(state: AppState, absolutePlayheadBeats:
       return state;
     }
 
-    const segment = effectiveSequence.value.segments[resolution.segmentIndex];
-    if (!segment) {
-      return state;
-    }
-
-    const generated = generateVTGState(toVTGDescriptor(segment.descriptor), state);
+    const { speedProfile, startAngles } = resolution.segment;
     const boundaries = computeSequenceBoundariesBeats(effectiveSequence.value);
     const loopBeats = Math.max(boundaries.totalBeats, MIN_LOOP_BEATS);
 
     return {
       global: {
-        ...generated.global,
+        ...state.global,
         loopBeats
       },
       hands: {
-        L: { ...generated.hands.L },
-        R: { ...generated.hands.R }
+        L: applyAngularOverrides(
+          state.hands.L,
+          speedProfile.leftArmSpeedRadiansPerBeat,
+          startAngles.leftArmRadians,
+          speedProfile.leftHeadSpeedRadiansPerBeat - speedProfile.leftArmSpeedRadiansPerBeat,
+          startAngles.leftHeadRadians - startAngles.leftArmRadians
+        ),
+        R: applyAngularOverrides(
+          state.hands.R,
+          speedProfile.rightArmSpeedRadiansPerBeat,
+          startAngles.rightArmRadians,
+          speedProfile.rightHeadSpeedRadiansPerBeat - speedProfile.rightArmSpeedRadiansPerBeat,
+          startAngles.rightHeadRadians - startAngles.rightArmRadians
+        )
       }
     };
   });
@@ -310,7 +330,7 @@ export function useVtgSequenceController(state: AppState, absolutePlayheadBeats:
     if (!sequenceMode.value) {
       return state.global.loopBeats;
     }
-    return Math.max(computeSequenceBoundariesBeats(effectiveSequence.value).totalBeats, MIN_LOOP_BEATS);
+    return Math.max(continuity.value.totalBeats, MIN_LOOP_BEATS);
   });
 
   const transportPlayheadBeats = computed(() => {
@@ -338,7 +358,12 @@ export function useVtgSequenceController(state: AppState, absolutePlayheadBeats:
       }
 
       if (sequence.value.segments.length === 0) {
-        addSegment(createDescriptorFromState(currentState), true);
+        const snapshot = createSnapshotFromState(currentState);
+        commitSequence({
+          ...sequence.value,
+          startPhaseDeg: snapshot.startPhaseDeg
+        });
+        addSegment(snapshot.descriptor, true);
         setSequenceStatus("Sequence mode enabled");
       }
     },
@@ -360,17 +385,17 @@ export function useVtgSequenceController(state: AppState, absolutePlayheadBeats:
         snapSetting
       });
     },
-    handleSetGuidanceMode(mode: VTGSequenceGuidanceMode): void {
+    handleSetSequenceStartPhaseDeg(startPhaseDeg: VTGPhaseDeg): void {
       commitSequence({
         ...sequence.value,
-        guidanceMode: mode
+        startPhaseDeg
       });
     },
     handleSelectSegment(segmentId: string): void {
       selectedSegmentId.value = segmentId;
     },
     handleAddSegmentFromCurrentState(currentState: AppState): void {
-      addSegment(createDescriptorFromState(currentState), true);
+      addSegment(createSnapshotFromState(currentState).descriptor, true);
     },
     handleReplaceSelectedDescriptor(descriptor: VTGDescriptor): void {
       const selectedIndex = findSegmentIndexById(sequence.value.segments, selectedSegmentId.value);
@@ -389,7 +414,10 @@ export function useVtgSequenceController(state: AppState, absolutePlayheadBeats:
         descriptor: toSequenceDescriptor(descriptor)
       };
 
-      commitSequence(cloneSequenceWithSegments(sequence.value, nextSegments));
+      commitSequence({
+        ...cloneSequenceWithSegments(sequence.value, nextSegments),
+        startPhaseDeg: descriptor.phaseDeg
+      });
     },
     handleSetSelectedDurationBeats(durationBeats: number): void {
       const selectedIndex = findSegmentIndexById(sequence.value.segments, selectedSegmentId.value);
@@ -461,7 +489,6 @@ export function useVtgSequenceController(state: AppState, absolutePlayheadBeats:
         descriptor: {
           armElement: selected.descriptor.armElement,
           poiElement: selected.descriptor.poiElement,
-          phaseDeg: selected.descriptor.phaseDeg,
           poiHeadCyclesPerArmCycle: selected.descriptor.poiHeadCyclesPerArmCycle
         }
       };
