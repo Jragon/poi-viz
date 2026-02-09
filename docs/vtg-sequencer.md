@@ -100,8 +100,9 @@ Mode routing:
 
 In sequence mode:
 - render state channels use propagated segment start angles + segment speed profile,
-- render beat is the local segment beat,
+- render beat is sequence-global beat (wrapped/clamped by sequence loop policy),
 - transport loop beats follow sequence total beats (with minimum transport floor).
+- trail history remains continuous across segment boundaries; trail reset epoch increments only on loop seam wrap.
 
 ## UI Behavior
 

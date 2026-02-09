@@ -15,6 +15,7 @@ interface ControlsStubProps {
 interface PatternCanvasStubProps {
   state: AppState;
   tBeats: number;
+  trailResetEpoch?: number;
 }
 
 interface WaveCanvasStubProps {
@@ -25,6 +26,7 @@ let latestState: AppState | null = null;
 let latestPatternBeat = 0;
 let latestPatternState: AppState | null = null;
 let latestWaveBeat = 0;
+let latestPatternTrailResetEpoch = 0;
 let queuedRafCallbacks = new Map<number, FrameRequestCallback>();
 let nextRafId = 1;
 
@@ -111,12 +113,18 @@ const PatternCanvasStub = defineComponent({
     tBeats: {
       type: Number,
       required: true
+    },
+    trailResetEpoch: {
+      type: Number,
+      required: false,
+      default: 0
     }
   },
   setup(props: PatternCanvasStubProps) {
     watchEffect(() => {
       latestPatternState = props.state;
       latestPatternBeat = props.tBeats;
+      latestPatternTrailResetEpoch = props.trailResetEpoch ?? 0;
     });
   },
   template: "<div />"
@@ -202,6 +210,7 @@ describe("App orchestration integration", () => {
     latestPatternBeat = 0;
     latestPatternState = null;
     latestWaveBeat = 0;
+    latestPatternTrailResetEpoch = 0;
     installMockRaf();
     window.localStorage.clear();
     setLocationHref("http://localhost/");
@@ -331,7 +340,7 @@ describe("App orchestration integration", () => {
     expect(rightHeadCyclesPerBeat).toBeCloseTo(-3, 10);
   });
 
-  it("renders active sequence segment state and local beat in sequence mode", async () => {
+  it("renders active sequence segment state on sequence-global beat in sequence mode", async () => {
     wrapper = mountApp();
     await nextTick();
 
@@ -361,7 +370,7 @@ describe("App orchestration integration", () => {
     expect(latestPatternState.hands.L.armSpeed).toBeCloseTo(TWO_PI, 10);
     expect(latestPatternState.hands.R.poiSpeed).toBeCloseTo(-4 * TWO_PI, 10);
     expect(latestPatternState.hands.L.poiSpeed).toBeCloseTo(-4 * TWO_PI, 10);
-    expect(latestPatternBeat).toBeCloseTo(0.25, 10);
+    expect(latestPatternBeat).toBeCloseTo(1.25, 10);
 
     await wrapper.get("[data-testid='sequence-select-1']").trigger("click");
     await nextTick();
@@ -372,6 +381,31 @@ describe("App orchestration integration", () => {
     expect(latestPatternState.hands.R.poiSpeed).toBeCloseTo(-4 * TWO_PI, 10);
     expect(latestPatternState.hands.L.poiSpeed).toBeCloseTo(-2 * TWO_PI, 10);
     expect(latestPatternBeat).toBeCloseTo(0.25, 10);
+  });
+
+  it("increments trail reset epoch on sequence loop seam wrap", async () => {
+    wrapper = mountApp();
+    await nextTick();
+
+    await wrapper.get("[data-testid='sequence-mode-on']").trigger("click");
+    await nextTick();
+    await wrapper.get("[data-testid='sequence-add']").trigger("click");
+    await nextTick();
+
+    await wrapper.get("[data-testid='scrub-1-25']").trigger("click");
+    await nextTick();
+    const epochBeforeWrap = latestPatternTrailResetEpoch;
+
+    await wrapper.get("[data-testid='toggle-playback']").trigger("click");
+    await nextTick();
+    expect(latestState?.global.isPlaying).toBe(true);
+
+    runAnimationFrame(2000);
+    await nextTick();
+    runAnimationFrame(38000);
+    await nextTick();
+
+    expect(latestPatternTrailResetEpoch).toBeGreaterThan(epochBeforeWrap);
   });
 
   it("applies sequence-level start phase anchor to continuity start pose", async () => {

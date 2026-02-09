@@ -12,6 +12,7 @@ import { onBeforeUnmount, onMounted, ref, watchEffect } from "vue";
 interface PatternCanvasProps {
   state: AppState;
   tBeats: number;
+  trailResetEpoch?: number;
   isStaticView: boolean;
   theme: Theme;
 }
@@ -41,7 +42,7 @@ function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement): void {
 
 function getLiveTrailSamplerConfigKey(): string {
   const { global } = props.state;
-  return [global.bpm, global.trailBeats, global.trailSampleHz].join("|");
+  return [global.bpm, global.trailBeats, global.trailSampleHz, props.trailResetEpoch ?? 0].join("|");
 }
 
 function getPatternSamplingConfigKey(): string {

@@ -86,6 +86,7 @@ describe("PatternCanvas trail persistence", () => {
       props: {
         state,
         tBeats: 0,
+        trailResetEpoch: 0,
         isStaticView: false,
         theme: "dark"
       }
@@ -99,7 +100,8 @@ describe("PatternCanvas trail persistence", () => {
 
     await wrapper.setProps({
       state: changedPattern,
-      tBeats: 0.1
+      tBeats: 0.1,
+      trailResetEpoch: 0
     });
     await nextTick();
 
@@ -116,6 +118,7 @@ describe("PatternCanvas trail persistence", () => {
       props: {
         state,
         tBeats: 0,
+        trailResetEpoch: 0,
         isStaticView: false,
         theme: "dark"
       }
@@ -129,7 +132,39 @@ describe("PatternCanvas trail persistence", () => {
 
     await wrapper.setProps({
       state: changedTrailConfig,
-      tBeats: 0.1
+      tBeats: 0.1,
+      trailResetEpoch: 0
+    });
+    await nextTick();
+
+    expect(createTrailSamplerMock).toHaveBeenCalledTimes(2);
+
+    wrapper.unmount();
+  });
+
+  it("recreates live trail sampler when sequence loop seam reset epoch increments", async () => {
+    const state = createDefaultState();
+
+    const wrapper = mount(PatternCanvas, {
+      props: {
+        state,
+        tBeats: 0.9,
+        trailResetEpoch: 0,
+        isStaticView: false,
+        theme: "dark"
+      }
+    });
+
+    await nextTick();
+    expect(createTrailSamplerMock).toHaveBeenCalledTimes(1);
+
+    const nextState = cloneState(state);
+    nextState.hands.L.armSpeed = nextState.hands.L.armSpeed * -1;
+
+    await wrapper.setProps({
+      state: nextState,
+      tBeats: 0.05,
+      trailResetEpoch: 1
     });
     await nextTick();
 

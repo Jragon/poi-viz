@@ -16,6 +16,7 @@ Primary references:
 - `tests/engine/trails.test.ts`
 - `tests/engine/fixtures.test.ts`
 - `tests/vtg/sequence.test.ts`
+- `tests/ui/pattern-trails.integration.test.ts`
 - `tests/ui/app.integration.test.ts` (sequence mode playback/mode-switch integration coverage)
 
 ## How Fixtures Are Generated
@@ -65,6 +66,7 @@ Sequencer tests currently assert:
 - deterministic continuity resolution for identical inputs,
 - legacy-sequence payload rejection (no compatibility adapter path),
 - mode routing in app integration (`apply-vtg` edits selected segment in sequence mode and runtime state outside sequence mode).
+- trail continuity behavior in sequence mode (no reset at segment boundaries; reset on loop seam wrap).
 
 ## Persistence Break Policy
 

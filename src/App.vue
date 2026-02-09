@@ -10,6 +10,7 @@ const {
   visualTBeats,
   loopedPlayheadBeats,
   transportLoopBeats,
+  trailResetEpoch,
   scrubStep,
   copyLinkLabel,
   theme,
@@ -85,7 +86,13 @@ const {
       >
         <h2 class="mb-2 px-2 text-xs font-medium uppercase tracking-wide text-zinc-400">Pattern Viewport</h2>
         <div class="min-h-0 flex-1">
-          <PatternCanvas :state="visualState" :t-beats="visualTBeats" :is-static-view="isStaticView" :theme="theme" />
+          <PatternCanvas
+            :state="visualState"
+            :t-beats="visualTBeats"
+            :trail-reset-epoch="trailResetEpoch"
+            :is-static-view="isStaticView"
+            :theme="theme"
+          />
         </div>
       </article>
 

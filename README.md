@@ -17,6 +17,7 @@ The app gives you:
 Trail behavior note:
 - backward scrubbing rebuilds a deterministic trailing window ending at the current playhead beat (it does not collapse to a single seed point).
 - live trails persist across VTG/pattern descriptor changes; history is not cleared unless trail sampling settings change.
+- in sequence mode, trails stay continuous across segment switches and reset only at loop seam wrap.
 
 Phase-reference note:
 - engine internals remain canonical (`right = 0`),

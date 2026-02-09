@@ -22,7 +22,7 @@ import {
   type VTGDescriptor,
   type VTGPhaseDeg
 } from "@/vtg/types";
-import { computed, ref, type ComputedRef, type Ref } from "vue";
+import { computed, ref, watch, type ComputedRef, type Ref } from "vue";
 
 const SEQUENCE_STATUS_RESET_DELAY_MS = 2400;
 const SEQUENCE_DEFAULT_SEGMENT_DURATION_BEATS = 1;
@@ -49,6 +49,7 @@ export interface VtgSequenceController {
   renderBeat: ComputedRef<number>;
   transportLoopBeats: ComputedRef<number>;
   transportPlayheadBeats: ComputedRef<number>;
+  trailResetEpoch: Ref<number>;
   handleSetSequenceMode: (enabled: boolean, state: AppState) => void;
   handleSetSequenceName: (name: string) => void;
   handleSetSequenceLoop: (loop: boolean) => void;
@@ -194,8 +195,10 @@ export function useVtgSequenceController(state: AppState, absolutePlayheadBeats:
   const sequence = ref<VTGSequence>(createDefaultVTGSequence());
   const sequenceStatus = ref("");
   const selectedSegmentId = ref<string | null>(null);
+  const trailResetEpoch = ref(0);
   let segmentSequenceNumber = 1;
   let sequenceStatusTimerId = 0;
+  let lastLoopCycle = 0;
 
   function setSequenceStatus(message: string): void {
     sequenceStatus.value = message;
@@ -292,8 +295,14 @@ export function useVtgSequenceController(state: AppState, absolutePlayheadBeats:
     }
 
     const { speedProfile, startAngles } = resolution.segment;
+    const segmentStartBeat = continuity.value.boundaries.startsBeats[resolution.segmentIndex] ?? 0;
     const boundaries = computeSequenceBoundariesBeats(effectiveSequence.value);
     const loopBeats = Math.max(boundaries.totalBeats, MIN_LOOP_BEATS);
+
+    const rightArmPhase = startAngles.rightArmRadians - speedProfile.rightArmSpeedRadiansPerBeat * segmentStartBeat;
+    const leftArmPhase = startAngles.leftArmRadians - speedProfile.leftArmSpeedRadiansPerBeat * segmentStartBeat;
+    const rightHeadPhase = startAngles.rightHeadRadians - speedProfile.rightHeadSpeedRadiansPerBeat * segmentStartBeat;
+    const leftHeadPhase = startAngles.leftHeadRadians - speedProfile.leftHeadSpeedRadiansPerBeat * segmentStartBeat;
 
     return {
       global: {
@@ -304,16 +313,16 @@ export function useVtgSequenceController(state: AppState, absolutePlayheadBeats:
         L: applyAngularOverrides(
           state.hands.L,
           speedProfile.leftArmSpeedRadiansPerBeat,
-          startAngles.leftArmRadians,
+          leftArmPhase,
           speedProfile.leftHeadSpeedRadiansPerBeat - speedProfile.leftArmSpeedRadiansPerBeat,
-          startAngles.leftHeadRadians - startAngles.leftArmRadians
+          leftHeadPhase - leftArmPhase
         ),
         R: applyAngularOverrides(
           state.hands.R,
           speedProfile.rightArmSpeedRadiansPerBeat,
-          startAngles.rightArmRadians,
+          rightArmPhase,
           speedProfile.rightHeadSpeedRadiansPerBeat - speedProfile.rightArmSpeedRadiansPerBeat,
-          startAngles.rightHeadRadians - startAngles.rightArmRadians
+          rightHeadPhase - rightArmPhase
         )
       }
     };
@@ -323,7 +332,7 @@ export function useVtgSequenceController(state: AppState, absolutePlayheadBeats:
     if (!sequenceMode.value) {
       return state.global.t;
     }
-    return activeResolution.value?.localBeat ?? 0;
+    return activeResolution.value?.sequenceBeat ?? 0;
   });
 
   const transportLoopBeats = computed(() => {
@@ -340,6 +349,23 @@ export function useVtgSequenceController(state: AppState, absolutePlayheadBeats:
     return activeResolution.value?.sequenceBeat ?? 0;
   });
 
+  watch(
+    [absolutePlayheadBeats, () => continuity.value.totalBeats, sequenceMode, () => sequence.value.loop, () => state.global.isPlaying],
+    ([absoluteBeat, totalBeats, isSequenceMode, isLooping, isPlaying]) => {
+      if (totalBeats <= 0) {
+        lastLoopCycle = 0;
+        return;
+      }
+
+      const nextLoopCycle = Math.floor(Math.max(absoluteBeat, 0) / totalBeats);
+      if (isSequenceMode && isLooping && isPlaying && nextLoopCycle > lastLoopCycle) {
+        trailResetEpoch.value += nextLoopCycle - lastLoopCycle;
+      }
+      lastLoopCycle = nextLoopCycle;
+    },
+    { immediate: true }
+  );
+
   return {
     sequenceMode,
     sequence,
@@ -351,6 +377,7 @@ export function useVtgSequenceController(state: AppState, absolutePlayheadBeats:
     renderBeat,
     transportLoopBeats,
     transportPlayheadBeats,
+    trailResetEpoch,
     handleSetSequenceMode(enabled: boolean, currentState: AppState): void {
       sequenceMode.value = enabled;
       if (!enabled) {

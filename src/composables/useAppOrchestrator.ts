@@ -28,6 +28,7 @@ export interface AppOrchestrator {
   visualTBeats: ComputedRef<number>;
   loopedPlayheadBeats: ComputedRef<number>;
   transportLoopBeats: ComputedRef<number>;
+  trailResetEpoch: Ref<number>;
   scrubStep: ComputedRef<number>;
   copyLinkLabel: Ref<string>;
   theme: Ref<Theme>;
@@ -195,6 +196,7 @@ export function useAppOrchestrator(): AppOrchestrator {
     visualTBeats: sequenceController.renderBeat,
     loopedPlayheadBeats: sequenceController.transportPlayheadBeats,
     transportLoopBeats: sequenceController.transportLoopBeats,
+    trailResetEpoch: sequenceController.trailResetEpoch,
     scrubStep: transportController.scrubStep,
     copyLinkLabel: shareLinkController.copyLinkLabel,
     theme: themeController.theme,
