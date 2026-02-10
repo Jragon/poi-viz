@@ -216,6 +216,10 @@ Completed on 2026-02-08: descriptive cardinal helpers were moved out of `src/vtg
 
 Remove full-loop recomputation on every cursor redraw.
 
+### Status
+
+Completed on 2026-02-08: WaveCanvas now caches loop samples keyed by stable inputs (hands/bpm/loopBeats/sample rate) and only rebuilds lanes when the sample signature or theme changes, so playhead-only updates reuse cached samples.
+
 ### Scope
 
 - Add wave sample/lane cache keyed by stable input signature (`hands`, `bpm`, `loopBeats`, sample rate, theme if needed).

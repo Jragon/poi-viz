@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { sampleLoop } from "@/engine/sampling";
+import type { LoopSample } from "@/engine/types";
 import { DEFAULT_TRAIL_SAMPLE_HZ } from "@/state/constants";
 import { createWaveLanesFromSamples, renderWaves } from "@/render/waveRenderer";
 import { getWaveRenderPalette } from "@/render/theme";
+import type { WaveLane } from "@/render/types";
 import type { Theme } from "@/state/theme";
 import type { AppState } from "@/types/state";
 import { onBeforeUnmount, onMounted, ref, watchEffect } from "vue";
@@ -20,6 +22,32 @@ const canvasRef = ref<HTMLCanvasElement | null>(null);
 const WAVE_SAMPLE_HZ = DEFAULT_TRAIL_SAMPLE_HZ;
 
 let resizeObserver: ResizeObserver | null = null;
+let cachedSampleSignature: string | null = null;
+let cachedSamples: LoopSample[] = [];
+let cachedLaneSignature: string | null = null;
+let cachedLanes: WaveLane[] = [];
+
+function buildWaveSampleSignature(state: AppState, loopBeats: number, sampleHz: number): string {
+  const left = state.hands.L;
+  const right = state.hands.R;
+  return [
+    sampleHz,
+    state.global.bpm,
+    loopBeats,
+    left.armSpeed,
+    left.armPhase,
+    left.armRadius,
+    left.poiSpeed,
+    left.poiPhase,
+    left.poiRadius,
+    right.armSpeed,
+    right.armPhase,
+    right.armRadius,
+    right.poiSpeed,
+    right.poiPhase,
+    right.poiRadius
+  ].join("|");
+}
 
 function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement): void {
   const devicePixelRatio = window.devicePixelRatio || 1;
@@ -62,22 +90,31 @@ function drawFrame(): void {
   }
 
   const loopBeats = Math.max(props.state.global.loopBeats, 0.25);
+  const sampleSignature = buildWaveSampleSignature(props.state, loopBeats, WAVE_SAMPLE_HZ);
 
-  const samples = sampleLoop(
-    {
-      bpm: props.state.global.bpm,
-      hands: props.state.hands
-    },
-    WAVE_SAMPLE_HZ,
-    loopBeats,
-    0
-  );
-  const lanes = createWaveLanesFromSamples(samples, props.theme);
+  if (sampleSignature !== cachedSampleSignature) {
+    cachedSampleSignature = sampleSignature;
+    cachedSamples = sampleLoop(
+      {
+        bpm: props.state.global.bpm,
+        hands: props.state.hands
+      },
+      WAVE_SAMPLE_HZ,
+      loopBeats,
+      0
+    );
+  }
+
+  const laneSignature = `${sampleSignature}|${props.theme}`;
+  if (laneSignature !== cachedLaneSignature) {
+    cachedLaneSignature = laneSignature;
+    cachedLanes = createWaveLanesFromSamples(cachedSamples, props.theme);
+  }
 
   renderWaves(context, canvas.width, canvas.height, {
     loopBeats,
     tBeats: props.tBeats,
-    lanes
+    lanes: cachedLanes
   }, props.theme);
 }
 

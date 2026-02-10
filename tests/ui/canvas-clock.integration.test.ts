@@ -9,8 +9,16 @@ const { renderPatternMock, createWaveLanesFromSamplesMock, renderWavesMock } = v
   renderWavesMock: vi.fn()
 }));
 
+const { sampleLoopMock } = vi.hoisted(() => ({
+  sampleLoopMock: vi.fn(() => [])
+}));
+
 vi.mock("@/render/patternRenderer", () => ({
   renderPattern: renderPatternMock
+}));
+
+vi.mock("@/engine/sampling", () => ({
+  sampleLoop: sampleLoopMock
 }));
 
 vi.mock("@/render/waveRenderer", () => ({
@@ -36,6 +44,7 @@ describe("Canvas timing ownership", () => {
     renderPatternMock.mockClear();
     createWaveLanesFromSamplesMock.mockClear();
     renderWavesMock.mockClear();
+    sampleLoopMock.mockClear();
 
     vi.stubGlobal("ResizeObserver", ResizeObserverStub);
     vi.stubGlobal("requestAnimationFrame", vi.fn(() => 1));
@@ -139,6 +148,7 @@ describe("Canvas timing ownership", () => {
     await nextTick();
 
     expect(createWaveLanesFromSamplesMock).toHaveBeenCalled();
+    expect(sampleLoopMock).toHaveBeenCalledTimes(1);
     expect(renderWavesMock).toHaveBeenCalled();
     expect(requestAnimationFrame).not.toHaveBeenCalled();
 
@@ -147,6 +157,7 @@ describe("Canvas timing ownership", () => {
     await nextTick();
 
     expect(renderWavesMock.mock.calls.length).toBeGreaterThan(callsBeforeUpdate);
+    expect(sampleLoopMock).toHaveBeenCalledTimes(1);
     expect(requestAnimationFrame).not.toHaveBeenCalled();
 
     wrapper.unmount();
