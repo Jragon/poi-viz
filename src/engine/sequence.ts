@@ -1,0 +1,101 @@
+import { evalSegment } from "@/engine/engine";
+import type { RelativeRigPose, SegmentPlacement, SequenceSpec, TimeUnit } from "@/engine/types";
+
+export type SequenceValidationErrorCode =
+  | "EMPTY_SEQUENCE"
+  | "INVALID_DURATION_UNITS"
+  | "NON_POSITIVE_DURATION";
+
+export type SequenceValidationError = {
+  code: SequenceValidationErrorCode;
+  index?: number;
+};
+export type SequenceValidationResult =
+  | { ok: true }
+  | { ok: false; errors: SequenceValidationError[] };
+
+export type PreparedPlacement = SegmentPlacement & {
+  startUnit: TimeUnit;
+  endUnit: TimeUnit;
+};
+
+export type PreparedSequence = {
+  placements: PreparedPlacement[];
+  totalDuration: TimeUnit;
+};
+
+export type PrepareSequenceResult =
+  | { ok: true; prepared: PreparedSequence }
+  | { ok: false; errors: SequenceValidationError[] };
+
+export type EvalPreparedAtResult =
+  | { ok: true; pose: RelativeRigPose; segmentIndex: number; tLocal: TimeUnit }
+  | { ok: false; reason: "INVALID_TIME" | "OUT_OF_RANGE" | "IDK" };
+
+export function validateSequence(sequence: SequenceSpec): SequenceValidationResult {
+  const errors: SequenceValidationError[] = [];
+  if (sequence.segments.length === 0) {
+    errors.push({ code: "EMPTY_SEQUENCE" });
+  }
+
+  sequence.segments.forEach((placement, index) => {
+    const duration = placement.durationUnits;
+
+    if (!Number.isFinite(duration)) {
+      errors.push({ code: "INVALID_DURATION_UNITS", index });
+      return;
+    }
+
+    if (duration <= 0) {
+      errors.push({ code: "NON_POSITIVE_DURATION", index });
+    }
+  });
+
+  return errors.length > 0 ? { ok: false, errors } : { ok: true };
+}
+
+export function prepareSequence(sequence: SequenceSpec): PrepareSequenceResult {
+  const validateResult = validateSequence(sequence);
+  if (!validateResult.ok) return validateResult;
+
+  const placements: PreparedPlacement[] = [];
+  let cursor: TimeUnit = 0;
+  for (const placement of sequence.segments) {
+    const startUnit = cursor;
+    const endUnit = startUnit + placement.durationUnits;
+
+    placements.push({
+      ...placement,
+      startUnit,
+      endUnit
+    });
+    cursor = endUnit;
+  }
+
+  return {
+    ok: true,
+    prepared: {
+      placements,
+      totalDuration: cursor
+    }
+  };
+}
+
+export function evalPreparedSequenceAt(
+  sequence: PreparedSequence,
+  tGlobal: TimeUnit
+): EvalPreparedAtResult {
+  if (!Number.isFinite(tGlobal)) return { ok: false, reason: "INVALID_TIME" };
+  if (!(0 <= tGlobal && tGlobal < sequence.totalDuration))
+    return { ok: false, reason: "OUT_OF_RANGE" };
+
+  for (const [index, placement] of sequence.placements.entries()) {
+    if (!(placement.startUnit <= tGlobal && tGlobal < placement.endUnit)) continue;
+    const tLocal = tGlobal - placement.startUnit;
+    const pose = evalSegment(placement.segment, tLocal);
+
+    return { ok: true, pose, tLocal, segmentIndex: index };
+  }
+
+  throw new Error("Invariant VIOLATED!!: no placement found for in-range tGlobal");
+}

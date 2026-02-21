@@ -16,6 +16,6 @@
     "skipLibCheck": true,
     "types": ["node", "vitest/globals"]
   },
-  "include": ["src", "test", "examples"],
+  "include": ["src", "test", "experiments"],
   "exclude": ["dist", "node_modules"]
 }

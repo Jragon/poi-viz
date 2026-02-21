@@ -44,10 +44,9 @@ export interface Segment {
 
 export interface SegmentPlacement {
   segment: Segment;
-  startUnit: TimeUnit;
   durationUnits: TimeUnit;
-  startPoseOverride?: Partial<RelativeRigPose>;
 }
+
 export interface SequenceSpec {
   segments: SegmentPlacement[];
 }
