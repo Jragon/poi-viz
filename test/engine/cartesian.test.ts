@@ -8,7 +8,7 @@ function expectVecClose(actual: Vec2, expected: Vec2, digits = 12) {
   expect(actual.y).toBeCloseTo(expected.y, digits);
 }
 
-describe("evalDriver", () => {
+describe("toCartesianRigPose", () => {
   it("evaluates relative rig pointing right", () => {
     const relPose: RelativeRigPose = {
       handPose: { phaseAbs: 0, radius: 1 },

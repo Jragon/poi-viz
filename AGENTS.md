@@ -49,6 +49,7 @@ Build a poi simulation engine that is deterministic, testable, and easy to reaso
 - No silent fixups.
 - Boundary behavior must be explicit.
 - Keep docs and source aligned; flag drift immediately.
+- Refactors must avoid compatibility layers (no alias APIs, no deprecation shims); prefer hard renames and update all call sites in one pass.
 
 ## Proposal Template (Use for meaningful changes)
 

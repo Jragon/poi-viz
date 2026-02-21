@@ -1,4 +1,4 @@
-import { Driver, RelativeNodePose, TimeUnit } from "./types";
+import type { Driver, RelativeNodePose, TimeUnit } from "@/engine/types";
 
 export function evalDriver(
   driver: Driver,

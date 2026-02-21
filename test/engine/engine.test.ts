@@ -2,7 +2,7 @@ import { evalSegment } from "@/engine/engine";
 import type { Segment } from "@/engine/types";
 import { describe, expect, it } from "vitest";
 
-describe("evalDriver", () => {
+describe("evalSegment", () => {
   it("evaluates circle driver deterministically at time t", () => {
     const segment: Segment = {
       hand: {

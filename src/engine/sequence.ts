@@ -15,13 +15,13 @@ export type SequenceValidationResult =
   | { ok: false; errors: SequenceValidationError[] };
 
 export type PreparedPlacement = SegmentPlacement & {
-  startUnit: TimeUnit;
-  endUnit: TimeUnit;
+  readonly startUnit: TimeUnit;
+  readonly endUnit: TimeUnit;
 };
 
 export type PreparedSequence = {
-  placements: PreparedPlacement[];
-  totalDuration: TimeUnit;
+  readonly placements: readonly PreparedPlacement[];
+  readonly totalDuration: TimeUnit;
 };
 
 export type PrepareSequenceResult =
@@ -30,7 +30,7 @@ export type PrepareSequenceResult =
 
 export type EvalPreparedAtResult =
   | { ok: true; pose: RelativeRigPose; segmentIndex: number; tLocal: TimeUnit }
-  | { ok: false; reason: "INVALID_TIME" | "OUT_OF_RANGE" | "IDK" };
+  | { ok: false; reason: "INVALID_TIME" | "OUT_OF_RANGE" };
 
 export function validateSequence(sequence: SequenceSpec): SequenceValidationResult {
   const errors: SequenceValidationError[] = [];
@@ -97,5 +97,12 @@ export function evalPreparedSequenceAt(
     return { ok: true, pose, tLocal, segmentIndex: index };
   }
 
-  throw new Error("Invariant VIOLATED!!: no placement found for in-range tGlobal");
+  throw new Error("Invariant violated: no placement found for in-range global time");
+}
+
+export function samplePreparedSequence(
+  sequence: PreparedSequence,
+  times: readonly TimeUnit[]
+): EvalPreparedAtResult[] {
+  return times.map((t) => evalPreparedSequenceAt(sequence, t));
 }

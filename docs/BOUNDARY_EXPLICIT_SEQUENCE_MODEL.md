@@ -2,142 +2,102 @@
 
 ## Goal
 
-Build a deterministic poi simulation engine that evaluates rig pose from time in abstract units, with sequence composition on top.
+Provide deterministic sequence evaluation over global time with explicit boundary behavior and no silent fixups.
 
 ## Scope (Part 1)
 
 - 2D plane only
 - Rig: `body -> hand -> head`
-- Relative angular motion supported
-- Hand path driver starts with circle
-- No auto-fixing transitions
-- Sequence continuity not enforced initially (segments may jump)
+- Absolute world phase per node
+- Sequence timing is contiguous by order (no explicit segment start times in authored spec)
+- Boundary mode is `jump` only
 
 ## Core Terms
 
-### Rig Pose
+### Segment
 
-State of all rig nodes at a time:
+Reusable motion law for one interval:
 
-- body position (fixed origin in Part 1)
-- hand state (position / phase / radius as defined by hand path driver)
-- head relative phase + radius
-- derived head world position / absolute angle
+- hand start pose + hand driver
+- head start pose + head driver
 
-### Segment Template
+### SequenceSpec
 
-Reusable motion definition (no absolute start time):
+Ordered list of placements:
 
-- start pose (or start phase state)
-- node drivers + params
-- no placement timing baked in
+- each placement has `segment`
+- each placement has `durationUnits`
 
-### Segment Placement
+There is no authored `startUnit` in `SequenceSpec`.
 
-Sequence-level placement of a segment template:
+### PreparedSequence
 
-- `startUnit`
-- `durationUnits`
-- optional overrides (for example, start phase override)
+Validated + derived runtime representation:
 
-### Sequence
+- `placements[]` with derived `startUnit` / `endUnit`
+- `totalDuration`
 
-Ordered set of segment placements evaluated over global time units.
+`PreparedSequence` is created once via `prepareSequence` and evaluated many times.
 
-### Boundary Mode
-
-Part 1:
-
-- `jump` only (no continuity guarantee)
-
-Future:
-
-- `position_continuous`
-- `velocity_continuous`
-
-### HandPathDriver
-
-Function that computes hand path state from start state + local time.
-
-## Data Shape (Suggested)
+## Current Data Shape (Source-Accurate)
 
 ```ts
-type Units = number;
-type Angle = number;
-
-type Vec2 = { x: number; y: number };
-
-type RigStartPose = {
-  handPhase: Angle;
-  handRadius: number;
-  headRelPhase: Angle;
-  headRadius: number;
-};
-
-type HandPathCircleParams = {
-  omega: number; // phase rate per unit
-};
-
-type HandPathDriverKind = "circle"; // extend later
-
-type SegmentTemplate = {
-  id: string;
-  startPose: RigStartPose;
-  handPath: {
-    kind: HandPathDriverKind;
-    params: HandPathCircleParams;
-  };
-  headOmegaRel: number;
-};
+type TimeUnit = number;
 
 type SegmentPlacement = {
-  segmentId: string;
-  startUnit: Units;
-  durationUnits: Units;
-  startPoseOverride?: Partial<RigStartPose>;
+  segment: Segment;
+  durationUnits: TimeUnit;
 };
 
 type SequenceSpec = {
   segments: SegmentPlacement[];
-  boundaryMode: "jump";
+};
+
+type PreparedPlacement = SegmentPlacement & {
+  readonly startUnit: TimeUnit;
+  readonly endUnit: TimeUnit;
+};
+
+type PreparedSequence = {
+  readonly placements: readonly PreparedPlacement[];
+  readonly totalDuration: TimeUnit;
 };
 ```
 
-## Function Set (Part 1)
+## Public Sequence API (Part 1)
 
-- `evaluateHandPathCircle(startPose, params, tLocal) -> { handPhase, handRadius, handPos }`
-- `evaluateRigPose(template, resolvedStartPose, tLocal) -> Pose2D`
-- `evaluateSegmentAt(placement, template, tGlobal) -> Pose2D`
-- `evaluateSequenceAt(sequence, templates, tGlobal) -> Pose2D`
-- `sampleSequence(sequence, templates, times[]) -> TraceRow[]`
-- `resolvePlacementStartPose(placement, template) -> RigStartPose`
-- `validateTemplate(template) -> errors[]`
-- `validateSequence(sequence, templates) -> errors[]`
+- `validateSequence(sequence) -> { ok: true } | { ok: false; errors[] }`
+- `prepareSequence(sequence) -> { ok: true; prepared } | { ok: false; errors[] }`
+- `evalPreparedSequenceAt(prepared, tGlobal) -> EvalPreparedAtResult`
+- `samplePreparedSequence(prepared, times[]) -> EvalPreparedAtResult[]`
 
-Useful utility:
+`EvalPreparedAtResult` is structured:
 
-- `endPoseOfPlacement(...)` (for future continuity checks)
+- success: `{ ok: true, pose, segmentIndex, tLocal }`
+- miss/error: `{ ok: false, reason: "INVALID_TIME" | "OUT_OF_RANGE" }`
+
+## Boundary Semantics
+
+- Global domain for a prepared sequence is `[0, totalDuration)`.
+- Segment intervals are half-open: `[startUnit, endUnit)`.
+- Exact segment boundary selects the next segment.
+- Exact final boundary (`tGlobal === totalDuration`) is `OUT_OF_RANGE`.
+- No clamping, wrapping, or implicit correction.
 
 ## Determinism Rules
 
-- Evaluation is direct (`state + t -> pose`), not incremental stepping.
-- No integration drift dependence on frame/sample rate.
-- Same templates + placements + time => identical output.
+- Sequence evaluation is direct (`prepared + tGlobal -> result`), not incremental stepping.
+- Same inputs produce identical outputs.
+- Validation failures are explicit; runtime misses are explicit.
 
-## Continuity Strategy
+## Current Validation Rules
 
-- Part 1: no continuity solving (`jump`)
-- Part 2: enforce boundary by endpoint constraint:
-  - require `endPose(prev) == startPose(next)` within epsilon
-- Part 3: optional solve helpers (phase/rate fit), explicit and deterministic
+- Sequence cannot be empty.
+- Each `durationUnits` must be finite.
+- Each `durationUnits` must be strictly positive.
 
-## Segment Identity Clarification
+## Future Extension Direction
 
-Same pattern with different start phase should not require duplicating logic.
-
-Use:
-
-- `SegmentTemplate` = motion law
-- `SegmentPlacement` = timing + start-pose override
-
-This keeps pattern reuse high and avoids combinatorial duplication.
+- Keep contiguous timing as Part 1 base model.
+- If sparse timing is needed later, add a new explicit model/type instead of mutating current semantics.
+- Keep boundary modes explicit (`jump` now; continuity modes later).

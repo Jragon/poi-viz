@@ -1,5 +1,5 @@
-import { evalDriver } from "./drivers";
-import { RelativeRigPose, Segment, TimeUnit } from "./types";
+import { evalDriver } from "@/engine/drivers";
+import type { RelativeRigPose, Segment, TimeUnit } from "@/engine/types";
 
 export function evalSegment(segment: Segment, tLocal: TimeUnit): RelativeRigPose {
   return {

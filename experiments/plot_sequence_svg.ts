@@ -1,4 +1,4 @@
-import { evalPreparedSequenceAt, prepareSequence } from "@/engine/sequence";
+import { evalPreparedSequenceAt, prepareSequence, samplePreparedSequence } from "@/engine/sequence";
 import { mkdir, writeFile } from "node:fs/promises";
 import { toCartesianRigPose } from "../src/engine/cartesian";
 import { PI } from "../src/engine/constants";
@@ -62,9 +62,10 @@ async function main() {
   const handPath: Vec2[] = [];
   const headPath: Vec2[] = [];
 
-  for (const t of times) {
-    const res = evalPreparedSequenceAt(prepared, t);
+  const samples = samplePreparedSequence(prepared, times);
+  for (const [index, res] of samples.entries()) {
     if (!res.ok) {
+      const t = times[index];
       throw new Error(`Sequence evaluation failed at t=${t.toFixed(6)} (${res.reason})`);
     }
 
