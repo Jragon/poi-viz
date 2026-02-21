@@ -1,16 +1,13 @@
 import { resolve } from "node:path";
+import tailwindcss from "@tailwindcss/vite";
+import vue from "@vitejs/plugin-vue";
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  build: {
-    lib: {
-      entry: resolve(__dirname, "src/index.ts"),
-      formats: ["es"],
-      fileName: () => "index.js"
-    },
-    outDir: "dist",
-    emptyOutDir: true,
-    minify: false,
-    target: "es2022"
+  plugins: [vue(), tailwindcss()],
+  resolve: {
+    alias: {
+      "@": resolve(__dirname, "src")
+    }
   }
 });
