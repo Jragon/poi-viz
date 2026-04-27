@@ -119,3 +119,10 @@ export function evalPreparedMultiRigSequenceAt(
 
   return { ok: true, poses };
 }
+
+export function samplePreparedMultiRigSequence(
+  sequence: PreparedMultiRigSequence,
+  times: readonly TimeUnit[]
+): EvalMultiRigAtResult[] {
+  return times.map((t) => evalPreparedMultiRigSequenceAt(sequence, t));
+}
