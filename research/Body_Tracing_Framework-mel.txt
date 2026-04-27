@@ -1,0 +1,892 @@
+BODY
+TRACING
+FRAMEWORK
+by Ivan “Mel” Gorbunov
+
+2026
+
+This article organizes reels, weaves, windmills, crossers, waist wraps, and meltdowns into a single
+framework based on position and timing, using an extensive system of schemes and beat graphs. The
+Body Tracing Framework is designed for poi, but will also be useful for many other flow arts props.
+
+Published online
+Russian original: May 2024 • English version: Apr 2026
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 1
+
+Introduction
+At this point, the number of poi tricks has grown so large that it is impossible for one person to learn
+them all. With limited resources, every poi spinner increasingly faces the challenge of finding the
+most effective learning program.
+Each trick provides us with a certain skill of varying value. Learning some opens the door to multiple
+variations, while others pave the way for entire categories with dozens of families and hundreds of
+tricks. To acquire the maximum amount of skill in the shortest time, it is essential to understand
+which moves are the most valuable. Classification helps us with this understanding.
+Modern poi classification is somewhat spontaneous, consisting of separate groups of tricks and
+families that are connected only conditionally. To systematize knowledge, we attempt to find links
+between the tricks we know. However, new families and even entire categories emerge every year,
+overturning our previous understanding. To build a clear structure, one would need to see all the
+“pieces” at once, which is simply impossible.
+In this work, I would like to demonstrate an alternative approach. Instead of searching for
+connections between the tricks we already know, I will attempt to present a unified principle of
+constructing all moves, to see the system as a whole, including not only the moves we know but also
+those yet to be discovered.
+This work is based on the fairly widespread hypothesis that any trick can be viewed as a combination
+of simpler elements, and at the most fundamental level, all tricks consist of a limited number of the
+same conditionally indivisible “building blocks.” This work is dedicated to what these “building
+blocks” might be and how they are assembled into moves.
+Attempting to create such a deep classification for all poi would be too ambitious of a task, so I have
+focused my research on the narrow scope of one specific direction—body tracing in a wall plane
+configuration of planes—and only one main method of poi manipulation: spinning, without
+pendulums, rolls, or tosses. As you will see, even this is enough to once again convince us of the
+endless possibilities that poi offers.
+Due to the complexity and depth of the research, this work will be more interesting to advanced poi
+spinners to identify areas for growth, and to experienced instructors for creating the most balanced
+body tracing training programs.
+This work was written independently of any research by other authors. However, I cannot fail to
+mention a video by Leo Icaza, which I watched shortly before publishing this document. In it, the
+author presents the same idea that became the foundation of my research. I express my respect for
+my colleague and am genuinely glad that I was able not only to reach the same conclusions but also
+to develop them into something more.
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 2
+
+Research Area
+All body tracing moves can be divided into several body zones where they are performed: the torso,
+head, arms, and legs (Fig. 1). This research focuses only on the central torso zone, which includes all
+areas below and above the shoulders (including behind the back) and the trajectories between them.
+By distinguishing the area above the head into a separate zone, the torso zone forms a fully
+symmetrical cross shape. Therefore, I will refer to it as the “body cross” in the following sections.
+
+Fig. 1. Body zoning in body tracing
+
+Systematization Principle
+All moves consist of a limited set of unique parts, like building blocks, from which we can construct
+anything. Based on this, we can describe only these fundamental “proto-elements” and the
+principles of combining them into basic combinations. This allows any complex move to be viewed as
+a combination of previously described components.
+In the system I propose, all poi trajectories within the body cross zone can be divided into uniform
+segments of trajectories connecting the front and back planes—reels (Fig. 2). In other words, any
+move within the body cross can be represented as combinations of reels in different positions. This
+term is not highly specific, so let’s break it down from the basics.
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 3
+
+Fig. 2. Reel trajectory
+
+A reel is a cyclical movement in a wall plane configuration where the poi continuously moves back
+and forth between the front and back planes, making one rotation in each plane, and from the poi
+spinner’s perspective, drawing a figure resembling an infinity symbol. Put simply, a reel can be
+described as a single-poi weave.
+The simplest combination of two reels, one with each hand, is a two-beat weave. It’s important to
+note that when combining two reels, we can obtain combinations with different directions and
+timings. This means that in this work, a two-beat weave is not necessarily a same-direction move, as
+is traditionally classified.
+In addition to two-beat weaves, there are three-beat, five-beat, and even seven-beat weaves.
+However, following the proposed logic, any of these can be viewed as combinations of two-beat
+weaves and empty rotations without changing planes. Therefore, in this work, we will focus only on
+two-beat weaves as the most fundamental form within the family of weaves.
+In summary, all moves within the body cross zone can be represented as combinations consisting of a
+single proto-element performed with a single poi—the reel in various positions and directions. The
+simplest combination of two reels is the two-beat weave. Now, let’s dive deeper into analyzing reels
+and explore the different positions in which we can perform them.
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 4
+
+Reels
+Positioning of Reels
+Introduction to Graphic Positioning Diagrams
+In the body cross, there are only 4 areas where you can perform reels: two above the shoulders and
+two below the shoulders. In these 4 areas, each hand can occupy 6 unique positions (Fig. 3):
+High native — above its own shoulder
+Low native — below its own shoulder
+High non-native — above the opposite
+shoulder
+Low non-native — below the opposite
+shoulder
+High back — behind the head
+Low back — behind the back
+Any other positions for weaves within the
+body cross zone can be considered simply
+alternative forms of the ones listed above. For
+example, the positions under the armpit and
+at the hip are in the same area, and the
+difference between them doesn’t affect the
+principle of the move—only its visual form.
+To further explore the variety of combinations
+of these reel positions for both hands, we will
+convert our analysis into a graphical notation
+
+Fig. 3. Variations of hand positions in the body cross and
+their notations in the graphical positioning system
+
+system—positioning diagrams.
+We will depict the body cross zone as a cross, with the arms’ positions marked between its arms,
+using three symbols to indicate position:
+
+⭘ — same side
+╋ — opposite side in front of the body
+━ — opposite side behind the back/head
+Thus, the notation for all possible positions of the right hand will look as shown in the diagram
+(Fig. 3). All possible positions for the left hand are recorded in the same way, but mirrored from left
+to right.
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 5
+
+This notation system allows us to distinguish between the left and right hand without color
+differentiation. However, for easier perception in this research, we will mark the left hand in blue and
+the right hand in pink.
+
+Two-Handed Positions
+Knowing all the possible positions of each hand, we can create a matrix of positioning options for
+both hands by placing the positions of the right hand horizontally and the left hand vertically,
+grouping similar combinations together (Fig. 4). It becomes clear that all the groups along the
+diagonal from the top left corner are completely symmetrical, while the other groups have
+asymmetrical positions with mirrored “twins” on the other side of the diagonal. These paired groups
+are highlighted in the same color on the diagram.
+
+Fig. 4. Positioning matrix of reels
+
+As a result, we obtain 36 possible positions where reels can be performed. Each group in this
+diagram represents a small “family” of simple reel combinations. Let’s try listing them, analyzing, and
+giving names to the unnamed ones.
+We can immediately identify a primary trend in the division of hand positions—those where the
+hands are on the same side of the body (left or right) and those where they are on different sides. As
+we will see later, there is a fundamental difference in how these positions function, so we will initially
+divide them into classic weaves, performed on the same side, and mills, performed on opposite
+sides.
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 6
+
+Let’s look at each group in more detail (Fig. 5):
+
+Fig. 5. Summary table of reels
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 7
+
+MILLS:
+Common Mills — classic mills above and below the shoulders, as well as mixed types.
+Crossers — the crosser, which in this system is considered a mill with hands on non-native sides.
+The familiar crosser is closest to the mixed type.
+Back crossers — a crosser behind the back, behind the head, or a mixed type combining both
+positions.
+D-crossers (double-sided crosser) — a two-sided crosser where one hand is behind the back,
+and the other is in front.
+WEAVES:
+Weave — a weave above/below the shoulders and mixed types.
+Back weave — weaves behind the back, behind the head, and their mixed forms.
+Thus, we have identified all the possible hand positions where reels can be performed within the
+body cross. Next, we will explore how these combinations can work in terms of timing and the poi
+directions relative to each other.
+
+Timing of Reels
+Introduction to the Beat Graph Method
+To study different timing types, I propose the beat graph method, which requires separate
+exploration. Understanding how we can describe all timing types in any complex move will be
+facilitated by analyzing the fundamental types of poi timing. By simply spinning two poi in a static
+hand position, we can achieve different combinations by changing two parameters: the poi directions
+and their timing relative to each other. Changing the poi directions allows us to have either
+same-direction rotation or opposite rotation. Timing works more specifically. As both poi spin, we
+can shift the cycle of one of them in time, resulting in different timing types. The determining factor
+in the number of timing types is the step by which the cycle is shifted. In poi timing, as in all moves,
+with the exception of some very specific trick categories, one step is half a poi rotation (or half a
+beat, if using a rhythmic term).
+When considering the simple rotation of a poi in a static hand position, a full cycle of its movement
+consists of one rotation, which includes two half beats. We can construct a time-axis graph based on
+this information, conditionally describing the poi’s movement from the top position (first half beat)
+to the bottom (second half beat) and back (Fig. 6).
+
+Fig. 6. Beat graph of poi movement in a circle
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 8
+
+In such a side projection, the exact movement graph of the poi should resemble a sine wave, where at
+the top and bottom points, the poi crosses the beat reference point. However, for visual simplicity,
+from here on, we will connect the beat points with straight lines.
+The resulting beat graph will be identical for both poi. Therefore, if we start both poi from the same
+position, the graphs will overlap, perfectly mirroring each other—this is called Together Time timing,
+with the beat graphs aligning one-to-one (1/1) (Fig. 7).
+
+Fig. 7. Beat graph of synchronous movement of two poi in a circle
+
+Next, we can shift the starting point of the second poi by one step, with one poi starting from the top
+position and the other from the bottom. In this case, the graphs will be completely opposite to each
+other—this is called Split Time timing, with the beat graphs offset by half of the poi’s full movement
+cycle (1/2) (Fig. 8).
+
+Fig. 8. Beat graph of asynchronous movement of two poi in a circle
+
+Since there are only two half beats in a full cycle, further shifting the second poi’s graph will
+complete the cycle and return it to the starting position. Thus, we can clearly see that for single-beat
+poi movements, there are only two timing types:
+Together Time — both poi pass each beat reference point at the same time (example:
+synchronous butterfly).
+Split Time — both poi pass opposite beat reference points at the same time (example:
+asynchronous butterfly).
+It is important to understand that timing is not inherently related to direction. Here and beyond, we
+will see that any timing type can be performed with both same-direction and opposite-direction poi
+movement:
+Same direction — both poi move in the same direction.
+Opposite direction — the poi move in opposite directions.
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 9
+
+Thus, there are four timing/direction combinations, which we will abbreviate for convenience:
+TS — Together Time / Same direction
+SS — Split Time / Same direction
+TO — Together Time / Opposite direction
+SO — Split Time / Opposite direction
+In this work, I use the term “Together Time” instead of the more familiar “Same Time” for ease of use
+in abbreviations. The words “Same” and “Split” begin with the same letter, making them
+inconvenient to abbreviate.
+
+Beat Graphs of Reels in Wall Plane Projection
+Having understood the principles of beat graphs, let’s change their appearance, adapting them to
+examine reels in the wall plane configuration. First, let’s take a close look at the trajectory diagram of
+a reel (Fig. 9). The poi makes one full circle in front and one behind. In each circle, the poi passes two
+reference points for half beats (the positions at the bottom and top of the circle). The point where
+the poi transitions from one plane to the other is called the transition point.
+
+Fig. 9. Reel below and above the shoulder in wall plane projection
+
+Let’s create the clearest possible projection of the body onto a beat graph using the example of a reel
+performed with the right hand under its own shoulder. Imagine we are looking at the poi spinner
+from behind and change the orientation of the beat graph to vertical, allowing us to move along the
+time axis from top to bottom (Fig. 10).
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 10
+
+To separate the front plane and back plane
+rotations onto different axes, we will depict
+the poi’s circular trajectories as different-sized
+circles. This way, the two half beats in the
+front plane are on the central axis, and the
+other two half beats are in the back plane on
+the side axis. We will label the side axes with
+the letter L (low—position under the
+shoulder) in the colors corresponding to the
+sides.
+In the graph, you can see that both steps on
+each side fall on the same axis, meaning they
+are indistinguishable from one another—just
+by looking at the graph, we cannot tell
+whether the poi is at the top or bottom in a
+specific point. If we spin the poi in the
+opposite direction, the graph will remain the
+same. This is one of the limitations of the
+graphs, but it reflects the real meaning of
+timing—the timing types are not connected to
+Fig. 10. Beat graph of a reel with a single poi in wall
+plane projection
+
+the poi’s direction, so direction does not
+matter when considering them.
+
+By simply moving the graph of the right hand to the left side, we get the graph of a reel performed
+with the right hand on the opposite (left) side. Similarly, by adding the graph for the left hand on its
+own side, we can depict the graph of a two-beat weave on the left side, and by shifting one of the
+graphs (the right-hand one), we can create four timing types for the weave (Fig. 11). Anticipating the
+next step, let’s also add the H axes (high—position above the shoulder), which we will refer to later.
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 11
+
+Fig. 11. Beat graphs of four timing types for the lower weave on the left
+
+From the resulting graphs, it is immediately clear that two timing types are unique in form (the first
+and third), while the other two are mirror copies of each other. This pattern is typical for any
+movements involving more than two beats. In theory, mirrored copies are unique timing types, but in
+practice, they are moves with the same principle but different leading hands.
+Let’s examine each type in detail:
+Unison weave (uni-weave) — the hand movements are completely identical in phase (1/1)—the
+poi move between planes at the same time, together in the front and together in the back plane.
+Chasing weave — a type of hand timing known from the classic two-beat weave, where one poi
+leads and changes sides first, and the second poi follows with a delay of half a beat. This timing
+type is asymmetrical, meaning it has a mirrored copy with the leading hand reversed (1/4, 3/4).
+Counter weave — a timing type with the graphs offset by half of a full cycle (2/4)—one full
+rotation. The poi switch sides at the same time, but move toward each other, never on the same
+side simultaneously.
+These are the three possible timing types for two-beat weaves and mills. Each timing type can be
+performed with both same-direction poi movement and opposite-direction movement, but only in
+one timing type for each direction combination. The possible timing/direction combinations are
+distributed as follows:
+Unison weave — TS, SO (Together Time / Same direction, Split Time / Opposite direction)
+Chasing weave — SS, TO (Split Time / Same direction, Together Time / Opposite direction)
+Counter weave — TS, SO (Together Time / Same direction, Split Time / Opposite direction)
+In the graph above and below each, the abbreviations for the poi directions and timings with which
+the move can be performed are listed.
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 12
+
+In a similar way, we can construct graphs of mill timings by simply depicting each hand’s graph on its
+respective side (Fig. 12).
+
+Fig. 12. Beat graphs of the lower mill
+
+The number and types of timings remain the same; however, it is worth noting that when transferred
+to the opposite side, the graph is mirrored horizontally, meaning the appearance of some timings can
+change to the exact opposite. For example, the graph of a uni-weave deceptively resembles the
+graph of a counter mill.
+When the hands are positioned on opposite sides of the body, the mapping between hand timings
+and timing/direction combinations changes as follows:
+Unison mill — SS, TO
+Chasing mill — TS, SO
+Counter mill — SS, TO
+The distribution of timing/direction combinations is related to the position of the transition points in
+the reels. This entire study is based on the transition points being located on the same horizontal line
+with the center of rotation. When the transition point shifts to a vertical line, it becomes possible to
+perform moves with different timing/direction combinations, but in practice, spinning the poi close to
+the body with a vertically aligned transition point (either above or below) is clearly inconvenient. This
+is likely due to the vertical orientation of our body, where a vertical transition point brings it too close,
+increasing the risk of collision. This hypothesis is supported by the fact that mills above the head,
+where nothing obstructs movement, can be performed with a vertical transition point without any
+problems, unlike mills at hip level.
+Nonetheless, in this study, we do not consider the point above the head, so such transition point
+positions are not taken into account, and the described timing distribution remains unchanged.
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 13
+
+The described beat graph method allows us to visualize any variations of mills and weaves in all
+positions. To explore ways of visualizing them, let’s take a top-down view of a reel (Fig. 13). The
+graph of reels performed on the same side, or in front on the opposite side, is depicted as a solid line
+in the color corresponding to the hand, drawn between the central axis and the side axes “L” for the
+under-shoulder position (1,2) and “H” for the above-shoulder position (4,5). Reels performed behind
+the back or head are depicted with dashed lines between the central axis and the “L” axis for the
+behind-back position (3) and the “H” axis for the behind-head position (6).
+
+Fig. 13. Graphs of reels in 6 possible positions
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 14
+
+For easier understanding of this graphical system, you can imagine the person from a top-down
+perspective, with the axes of the upper positions, which are closer to the viewpoint, appearing wider
+on the outside, and the more distant lower axes closer to the center inside (Fig. 14).
+
+Fig. 14. Visualization option for beat graph axes
+
+Here are several examples of different reel combinations shown on beat graphs (Fig. 15):
+
+Fig. 15. Examples of beat graph diagrams for different weaves and mills
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 15
+
+The Value and Purpose of Beat Graphs
+Before moving on to the next section, I would like to say a few more words about beat graphs. Their
+wide range of capabilities allows us to depict very complex moves; however, they require
+considerable skill to read. Anticipating potential criticism of this tool, I want to highlight its main
+purpose and value.
+Beat graphs, first and foremost, provide a visual way to identify all possible timing variants of moves
+of any length. More importantly, they allow us to translate these timing variants from “paper” into
+practice. Many of the moves described in this work were not known before the application of beat
+graphs, and discovering them purely through imagination, without a clear notation system, would
+have been extremely difficult.
+No matter how complex and difficult a graph may seem, remember that it is not meant to be a
+day-to-day tool requiring quick reading. Instead, it is a research method, needed only in the process
+of discovering new moves and transferring them from “paper” to practical execution.
+
+The Form of Weaves and Mills
+We have theoretically explored where and which types of weaves and mills can be performed, but
+when we place two hands spinning poi in the same zone close to each other, practical questions arise
+about their positioning in a limited space.
+For example, when performing a same-direction counter weave, we can place either hand on top
+without changing the timing type or the weave positioning. These variations in hand positioning
+within the same space and timing are referred to as the “form” of a move.
+In some cases, the form of the move can be determined by the chosen way of layering the planes
+within the move. A simple example outside the scope of this system is the positioning of planes in a
+synchronous butterfly—either the right poi or the left poi can pass closer to the viewer in the upper
+part of the butterfly. Rearranging the planes does not affect the mechanics of the butterfly, but it
+changes its layering.
+In this work, layering has the greatest impact on unison weaves performed in the same zone, such as
+under the shoulder. In these moves, the poi are simultaneously in the same plane, making the
+question of distributing them into different layers more relevant. As a result, the number of different
+forms of the same weave, while maintaining timing and positioning, can reach up to four.
+The topic of layering is too broad to cover in this work, so we have noted the presence of possible
+variations in the forms of individual moves and leave the detailed analysis of this topic for future
+research.
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 16
+
+Section Summary
+• Practically all spinning moves within the body cross zone can be broken down into reels in various
+positions and empty rotations.
+• In the body cross, there are 36 positions for two hands where reels can be performed.
+• Reels with both hands form weaves or mills.
+• Any weave or mill can be performed in one of three timing types: unison, chasing, or counter.
+• There are a total of 4 timing/direction combinations. Each timing type for weaves and mills can be
+performed in two timing/direction combinations.
+• In practice, in some weaves and mills, the hands can occupy different positions within the same
+zone and timing, creating different “forms” of the move.
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 17
+
+The Principle of Combining Reels
+One might assume that by mastering all the timings of weaves and mills in all positions, one could
+gain a comprehensive skill set for learning any trick. While this is close to the truth, it’s not entirely
+accurate. The way we combine reels and make transitions between them is also a crucial skill that
+requires separate study. Therefore, we will now explore the main ways to combine reels, which will
+be divided into double and triple combinations, consisting of two and three reels, respectively.
+Let’s take another look at the reels from above (Fig. 16).
+
+Fig. 16. Three levels of reel combinations
+
+A combination of two reels on two sides, performed with both hands, already has a familiar
+name—waist wrap. We will remove the reference to a specific body part and simply use the term
+wrap as a universal name for a direct combination of two adjacent reels without any extra rotations.
+In the diagram of a combination of three reels in one sequence, we see the familiar trajectory of the
+arm in the cosmo move. In most of the world, cosmo is known as meltdown, but I will use the
+familiar term cosmo, as proposed by the Japanese, because it is simpler and more concise.
+Next, we will examine wraps and cosmo in more detail.
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 18
+
+Wraps
+Using the now familiar term wrap, we will have to slightly alter its meaning. Typically, the term “waist
+wrap” refers to combinations of any two weaves on different sides, most often two-beat or
+three-beat weaves. We do not consider three-beat weaves in this study, as they are essentially more
+complex combinations of two-beat weaves and empty rotations. However, even with two-beat
+weaves, things are not that simple.
+In the classic waist wrap based on two-beat weaves, there is an additional empty rotation in one of
+the transitions from one side to the other, needed only to bring the correct hand forward. This extra
+rotation is required only in one timing/direction combination (Split Same), so this wrap can
+confidently be considered a specific case—a more complex combination, rather than a fundamental
+move.
+Thus, the familiar waist wraps do not fit into this system—we will need to take a step back and
+redefine how we understand the term “wrap.”
+Let’s examine the poi trajectory when adjacent reels are combined into a single action without any
+extra rotations (Fig. 17). We get a looping trajectory lasting three beats (6 steps) without empty
+rotations, where the circle in the front plane is shared by both reels. It is these moves, where the poi
+make such a loop, that we will refer to as wraps.
+
+Fig. 17. Conditional trajectory of one poi in a wrap(The back rotations are drawn smaller for clarity)
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 19
+
+Positioning of Wraps
+Following the familiar method of graphic positioning diagrams, let’s describe all possible
+combinations of two adjacent reels for a single poi. From the six reel positions that can be performed
+with a single poi, eight pairs are possible (Fig. 18). Other double combinations are either impossible
+due to joint limitations or require transitions with additional rotations.
+
+Fig. 18. Variations of wrap positions with a single poi
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 20
+
+Based on the principles we know, let’s create a positioning matrix by grouping symmetrical
+combinations by similarity (Fig. 19). As with weaves, we see a pair of semi-asymmetrical “mirror”
+groups, which represent one type of move in two mirrored versions.
+
+Fig. 19. Positioning matrix of wraps with similarity groups highlighted
+
+Upon closer examination, we can see that most combinations are asymmetrical. From an efficiency
+standpoint in learning, any asymmetrical wraps can be viewed as combinations of two vertical halves
+of symmetrical wraps. For example, symmetrical wraps (let’s call them AA and BB) can combine their
+halves to create asymmetrical wraps (AB and BA, respectively) (Fig. 20).
+
+Fig. 20. Example of constructing asymmetrical wraps by combining halves of symmetrical ones
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 21
+
+Thus, we can assume that mastering all symmetrical wraps will provide the most comprehensive skill
+set. Therefore, asymmetrical combinations may be considered secondary in the system and not
+necessary for primary learning.
+Let’s list the resulting wrap groups in a table and give them names for further analysis (Fig. 21).
+
+Fig. 21. Summary table of wraps
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 22
+
+Let’s take a closer look at each group of wraps:
+Vertical wraps — Vertical wraps are among the most obvious and, at the same time, the most
+distinctive types. We will explore them in more detail later.
+Common wraps — Classic wraps under and over the shoulders, as well as their mixed variations.
+Diagonal wraps — Diagonal wraps and their various combinations.
+Back wraps — Back wraps behind the head and behind the back, as well as their mixed
+variations.
+D-wraps — Double-sided wraps. Semi-asymmetrical wraps with one hand in front and the other
+behind, as well as their mixed variations.
+
+Timing of Wraps
+During a full cycle of 3 beats, a wrap
+completes 6 half-beat steps. Let’s return to
+the previously used depiction of the poi’s
+trajectory in a wrap (Fig. 22). With this
+visualization, we can create a clear vertical
+projection of the beat graph, which we will
+reflect for a back view (Fig. 23).
+
+Fig. 22. Diagram of poi movement in a single-poi wrap
+
+Fig. 23. Projection of a single-poi wrap on a beat graph
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 23
+
+Using the example of a lower wrap, let’s compare the graphs of both hands in the same phase, and
+by shifting the graph of the right hand, we obtain 6 types of wrap timings (Fig. 24).
+
+Fig. 24. Beat graphs of timings for the lower wrap
+
+Similar to the weave graphs, we can see that among the 6 types of wrap timings, in practice only 4
+are unique (1/1, 1/6, 2/6, 3/6), while the last 2 (4/6, 5/6) are mirror copies of existing ones with the
+other leading hand.
+The proposed names of wrap timings, which are visible in the diagram, are based on the practical
+positions of the hands relative to each other:
+Closed wrap — the hands simultaneously move to the opposite sides and fully cross (close) for a
+whole step.
+Half-closed wrap — the crossing of the hands is present but immediately opens up.
+Linked wrap — the timing is exactly between the closed and open positions, but in practice, the
+hands are still slightly crossed (linked) with each other.
+Half-opened wrap — the hands are not necessarily crossed but always move close to each other.
+Each wrap can be broken down into several weaves or mills with different timings, but despite the
+external similarity of the resulting graphs to the weave graphs, in practice, their movement character
+differs. To find parallels in the forms of wrap and weave graphs, one should pay attention to their
+individual details. For example, in the half-closed wrap, one can see a repeating fragment identical to
+the counter weave, and this observation is absolutely correct (Fig. 25). The half-closed wrap indeed
+contains counter weaves, which are easily seen in the graph.
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 24
+
+Fig. 25. Counter weave fragment on the beat graph of a half-closed wrap
+
+Returning to the top-down view, let’s consider how the beat graphs of wraps will look in various
+positions (Fig. 26).
+
+Fig. 26. Diagrams of beat graphs for wraps in different positions
+
+For example, let’s construct the timing graphs of lower wraps behind the back (Fig. 27).
+
+Fig. 27. Beat graphs of lower back wraps
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 25
+
+More specific are the D-wraps, in which the timings are distributed differently, which can be seen in
+the change of their names (Fig. 28).
+
+Fig. 28. Beat graphs of D-wraps
+
+As in the example with weaves, the hands are on opposite sides of the body, so their timings, despite
+the similar appearance of the graphs, change to the opposite. Thus, the closed timing has changed to
+open, where the hands are always on opposite sides of the body and never approach each other. The
+half-opened and half-closed timings have swapped places, and the linked timing remained
+unchanged.
+It can be noted that in the regular wrap there is no open timing, and in D-wraps there is no closed
+timing. The reason for this is that the names of the wrap timings are given by the same logic as in
+cosmo, where all types will be present at once. The names quite literally reflect the essence of what is
+happening during the execution of wraps, so despite seeming complexity on “paper,” in practice
+everything becomes clearer.
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 26
+
+By using different axes and notations, it is possible to depict the graph of any wraps (Fig. 29):
+
+Fig. 29. Examples of diagrams for various wrap graphs
+
+Vertical Wrap Graphs
+Vertical wraps are more complex to depict and should be examined separately. As an example, let’s
+take a vertical wrap performed with the right hand on its own side, with the poi spinning outward
+(Fig. 30).
+
+Fig. 30. Diagram of the conditional trajectory of a vertical wrap with the right hand
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 27
+
+We will unfold the conditional trajectory for a
+back view and deform it for clarity, so that all
+beat reference points align above their
+respective axes (Fig. 31). As shown in the
+graph, the vertical wrap, while maintaining
+the same number of beats, has a structure
+different from other wraps. The poi alternates
+between two half beats on each axis on one
+side: two steps in the front plane, two steps
+above the shoulder, and two steps below the
+shoulder.
+The key feature of vertical wrap graphs is their
+asymmetry along the time axis, which means
+each graph corresponds to only one specific
+poi direction. Therefore, separate graphs must
+be created for all poi directions and their
+combinations.
+
+Fig. 31. Projection of an outward vertical wrap onto the
+beat axis
+
+Let’s examine the graphs of vertical wraps with a single poi (right hand) in all directions, returning to
+the top-down view (Fig. 32).
+
+Fig. 32. Beat graphs of vertical wraps for the right hand in all directions
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 28
+
+Now, we’ll construct graphs for vertical wraps with both hands, with the poi spinning outward
+(Fig. 33).
+
+Fig. 33. Beat graphs of timing variants for parallel vertical wraps in the outward poi direction
+
+Similarly, we can create graphs for poi spinning in the same direction (Fig. 34), where one hand’s
+graph will be vertically mirrored. Interestingly, a same-direction parallel vertical wrap in a half-open
+timing is one of the popular beginner tricks taught—chase the sun.
+
+Fig. 34. Beat graphs of timing variants for parallel vertical wraps in the counterclockwise poi direction
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 29
+
+Likewise, we can build graphs for vertical wraps on the left side with opposing outward poi directions
+(Fig. 35).
+
+Fig. 35. Beat graphs of timing variants for vertical wraps on the left side in the outward poi direction
+
+Section Summary
+• Two adjacent reels can be combined into a single trajectory—a wrap, which is the simplest
+combination without extra rotations.
+• A one-handed wrap can be performed in 8 different positions.
+• Combining wraps with both hands yields 24 symmetrical positions.
+• Any two-handed wrap can be performed in 4 unique timing types.
+• Each timing type of wraps can be performed in two timing/direction combinations.
+• The beat graphs of vertical wraps are asymmetrical along the time axis, so they are vertically
+“mirrored” depending on the poi direction.
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 30
+
+Cosmo
+Positioning of Cosmo
+The combination of three reels in a single sequence without extra rotations is called cosmo.
+Following the familiar pattern, let’s break down all possible combinations, starting with positioning
+diagrams. We will create diagrams of all possible combinations of three reels in a single sequence for
+each hand separately (Fig. 36).
+
+Fig. 36. Variations of cosmo positions with one hand
+
+You may notice that the “⭘” position is always opposite the “━” position. This is a natural limitation
+of our body—we cannot enter or exit a reel behind the back without passing through a reel on our
+own side at the same level. As a result, in the case of cosmo, each “⭘” opposite a “━” could be
+omitted without losing informativeness. However, in this work, I will present diagrams with the full
+set of symbols to ensure that the combination of three reels corresponds to three symbols in the
+diagram.
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 31
+
+Next, we’ll construct a matrix of combinations for both hands (Fig. 37), group all symmetrical
+combinations by similarity, and list the resulting combination groups (Fig. 38).
+
+Fig. 37. Cosmo position matrix
+
+Fig. 38. Summary table of cosmo positions
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 32
+
+Let’s examine the different types in more detail:
+Common cosmo — The classic cosmo around the waist, its version around the head, and parallel
+mixed types. Interestingly, due to physical limitations, poi spinners often perform the upper
+diagonal cosmo when doing cosmo around the head. As a result, a pure upper cosmo is rarely
+performed.
+Diagonal cosmo — Cosmo with a change in vertical level, with the back position either on top or
+below, as well as semi-symmetrical diagonal combinations.
+Vertical cosmo — Cosmo with a vertical wrap in front. Combinations include positions behind
+the head, behind the back, and mixed types.
+
+Timing of Cosmo
+A full cosmo cycle consists of 4 beats—8
+half-beat steps. To visualize this, let’s place the
+step reference points along the conditional
+cosmo trajectory for the right hand (Fig. 39).
+In this form, we can plot all the steps on a
+beat graph, reflecting the trajectory for a back
+view (Fig. 40).
+
+Fig. 39. Diagram of poi movement in a single-poi cosmo
+
+Fig. 40. Projection of poi movement in a single-poi cosmo
+onto a beat graph
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 33
+
+To better understand how this projection
+works on the axes, let’s look at cosmo from
+above (Fig. 41).
+You can immediately notice a new way of
+visualizing the poi’s movement around the
+body, shown as a curve connecting points on
+the central axis.
+In the five-axis system, the central axis
+represents the poi’s position in either the
+front or back plane, depending on the context.
+In cosmo, when transferring the poi from one
+extreme position to the other (e.g., from the
+front to the back), it passes through the front
+plane and immediately moves into the back
+plane without extra rotations. To represent
+this transition along a single axis, the step
+points on the central axis are connected with
+an enclosing curve.
+
+Fig. 41. Projection of poi movement in a single-poi cosmo
+onto a beat graph (top view)
+
+Using the principles we’re already familiar with, we can depict other types of cosmo (Fig. 42).
+
+Fig. 42. Diagrams of different cosmo positions with one hand
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 34
+
+For example, let’s overlay the graphs of both hands in a low cosmo and, by shifting the right-hand
+graph, we’ll create graphs of all eight timing variants of cosmo (Fig. 43).
+
+Fig. 43. Beat graphs of timing variants for the low cosmo
+
+From the graphs, we can see that there are 5 unique timing variants of cosmo. Two of them (8/8 and
+4/8) are symmetrical, and three (1/8, 2/8, and 3/8) are asymmetrical with their mirrored copies (5/8,
+6/8, 7/8) with the other leading hand. Each cosmo also corresponds to a pair of timing/direction
+combinations with which it can be performed. The opened cosmo on this list is the most familiar
+classic cosmo.
+Cosmo and wraps share a common system of timing names, so any cosmo can be broken down into
+wraps or D-wraps with similar names.
+Using other axes, we can create graphs for other types of cosmo, such as high diagonal cosmo
+(Fig. 44).
+
+Fig. 44. Beat graphs of timing variants for upper diagonal cosmo
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 35
+
+Vertical Cosmo Graphs
+Similar to vertical wraps, the beat graphs of vertical cosmo are asymmetrical and change their
+appearance when the poi direction changes, so they require separate consideration.
+For clarity, let’s plot the poi’s movement trajectory using the example of a lower vertical cosmo with
+the right hand (Fig. 45) and build its graph (Fig. 46).
+
+Fig. 45. Diagram of poi movement in a single-poi vertical
+cosmo
+Fig. 46. Projection of poi movement in a single-poi
+vertical cosmo onto a beat graph
+
+Now, let’s examine the graphs of various vertical cosmo moves, taking into account the poi direction
+(Fig. 47).
+
+Fig. 47. Beat graphs of vertical cosmo for the right hand in all directions
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 36
+
+Next, we’ll create the graphs for the timing variants of vertical cosmo using the example of opposite
+outward poi directions (Fig. 48).
+
+Fig. 48. Beat graphs of vertical cosmo in the outward direction
+
+Similarly, we can build graphs for same-direction poi movement, in this case counterclockwise
+(Fig. 49).
+
+Fig. 49. Beat graphs of vertical cosmo in the counterclockwise direction
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 37
+
+Section Summary
+• A combination of three consecutive reels without extra rotations is called cosmo.
+• There are a total of 12 symmetrical positions where cosmo can be performed.
+• Cosmo in any of these positions can be executed in 8 timing variants, 5 of which are unique, and 3
+are mirrored copies of existing types.
+• Each cosmo timing variant can be performed with 2 timing/direction combinations.
+• Any cosmo can be broken down into various wraps, with timing names corresponding to the
+cosmo types.
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 38
+
+Physical Limitations of the System
+Despite the accuracy of the theoretical model, the physical limitations of our body sometimes
+impose constraints, making certain elements described in this work difficult or even impossible to
+perform. Perhaps the most noticeable limitation in this system relates to the Split-Same
+timing/direction combination. Only in the Split-Same timing/direction combination is it impossible to
+spin poi in the same plane from a single point—the poi will simply tangle with each other or wrap
+around the arms. For this reason, in a linked wrap composed of two Split-Same weaves, we cannot
+transition from one weave to another without extra rotations.
+In the classic two-beat waist wrap, as mentioned earlier, this problem is solved with an additional poi
+rotation in front of the body during one of the transitions. Since this system excludes any
+unnecessary rotations, in its pure form, these wraps can only be performed using “workarounds” like
+rotations in the negative space between the arms.
+This issue affects a large number of Split-Same tricks in the described system. Some can be resolved
+by using negative space, while others are simply impossible. Considering how popular this timing is,
+it might seem like a significant drawback of the system. However, I ask everyone to remember that
+tricks in this timing represent only a quarter of the entire variety.
+Another example of physical limitations is the upper D-crossers. When the hand is in the upper back
+position (behind the head), it blocks the entire area above its shoulder. If we need to place the
+second hand above this (non-native) shoulder, we can only thread it through a narrow gap between
+the arm and the head. This allows us to hold the upper D-crosser but will lock one of the hands,
+severely limiting the ability to enter or exit the position. This is precisely why the main version of the
+aforementioned classic upper cosmo around the head is actually diagonal—because the front hand,
+in its extreme position, is placed not above but below the other hand’s shoulder.
+Despite many physical limitations, most elements of the system are performable, and some of the
+“problematic” ones can be executed using various loopholes, encouraging the search for creative
+approaches.
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 39
+
+Conclusion
+In conclusion, any spinning move within the body cross can be decomposed into weaves and mills in
+different positions and timings. The wraps and cosmo we’ve explored cover all the main ways to
+combine weaves and mills. Thus, the described elements can be considered a toolkit, and
+understanding its components provides a comprehensive skill set for performing any possible
+spinning trick within the body cross.
+Without a doubt, the total number of elements described in this work is incredibly vast, but we are
+talking about the theoretical maximum of possible variations. In practice, attempting to learn them
+all would be inefficient. Even the best poi spinners in the world do not master more than 10% of the
+system described above. However, by understanding the structure of the entire variety of body cross
+tricks, we can chart the most efficient path to mastering this field. Not only can this accelerate the
+learning of body tracing, but it can also push its boundaries even further.
+Developing training programs based on this system is a subjective and creative process. Every
+instructor or poi enthusiast can create their own list of tricks to study, based on personal taste,
+teaching experience, and current trends—each approach can be interesting in its own way. That’s
+what I’ve done, forming my own body tracing training program largely based on this system, and I
+encourage other instructors to do the same.
+I hope this system will help more poi spinners reach a high level more quickly, without losing time,
+energy, or motivation to advance poi technique to new heights yet unknown to us.
+
+Acknowledgements
+I want to thank Roman “Rem” Anufriev for his careful review, valuable ideas, and professional advice,
+which significantly improved the quality of this work.
+Special thanks to my wife Julia Kushnaryova for believing in me and her invaluable support in all my
+endeavors.
+
+Ivan “Mel” Gorbunov
+E-mail: antispinner@gmail.com
+Instagram: @antispinner
+YouTube: @antispinner
+Telegram: @antispinners
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 40
+
+Appendix: Hyper
+Although all the important information in this study has already been covered, I would like to
+mention one final missing element of this system. I have described double consecutive reel
+combinations (wraps) and triple combinations (cosmo), but there also exists a quadruple
+combination, which I have named hyper cosmo (or simply Hyper).
+The positioning of the hyper is limited to a single option for each hand, so the positioning matrix will
+look as follows (Fig. 50).
+
+Fig. 50. Positioning matrix of the hyper
+
+Let’s take a closer look at the poi’s movement cycle by drawing its conditional trajectory (Fig. 51). As
+shown in the diagram, the hyper can be considered a vertical cosmo with an added section behind
+the head. We can immediately construct a beat graph, using the right hand as an example (Fig. 52).
+The graph is once again vertically asymmetrical, meaning that a separate set of graphs must be
+created for each poi direction.
+
+Fig. 51. Conditional trajectory of the hyper with the right
+hand in the inward direction
+
+Fig. 52. Beat graph of the hyper with the right hand in
+the inward direction
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 41
+
+The hyper has a 10-step cycle, allowing us to create 10 timing variants for this move, 6 of which are
+unique and 4 are “mirrored” versions of some of them. For example, I will provide the graphs for
+opposite inward poi directions (Fig. 53) and same-direction counterclockwise movement (Fig. 54).
+The naming system for hyper timing is likely to be different, so I will not assign names to the timing
+variants here, leaving only the fractional shift values.
+
+Fig. 53. Beat graphs of the hyper in opposite inward direction
+
+Fig. 54. Beat graphs of the hyper in same-direction counterclockwise
+
+This long and limited-use pattern may not be valuable for effective training programs, but it is
+nonetheless interesting by virtue of its existence and will surely delight those who dare to explore it.
+
+Body Tracing Framework — Ivan “Mel” Gorbunov — 42
+
+
