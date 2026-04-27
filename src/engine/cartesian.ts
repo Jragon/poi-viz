@@ -1,4 +1,12 @@
-import { AngleRad, CartesianRigPose, Radius, RelativeRigPose, Vec2 } from "@/engine/types";
+import {
+  AngleRad,
+  CartesianMultiRigPose,
+  CartesianRigPose,
+  Radius,
+  RelativeRigPose,
+  RigId,
+  Vec2
+} from "@/engine/types";
 
 function polarToCartesian(radius: Radius, angleRad: AngleRad): Vec2 {
   return {
@@ -23,4 +31,12 @@ export function toCartesianRigPose(relative: RelativeRigPose): CartesianRigPose 
     handPosition,
     headPosition
   };
+}
+
+export function toCartesianMultiRigPose(
+  poses: Record<RigId, RelativeRigPose>
+): CartesianMultiRigPose {
+  return Object.fromEntries(
+    Object.entries(poses).map(([rigId, pose]) => [rigId, toCartesianRigPose(pose)])
+  );
 }

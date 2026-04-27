@@ -74,19 +74,20 @@ type PreparedSequence = {
 `EvalPreparedAtResult` is structured:
 
 - success: `{ ok: true, pose, segmentIndex, tLocal }`
-- miss/error: `{ ok: false, reason: "INVALID_TIME" | "OUT_OF_RANGE" }`
+- miss/error: `{ ok: false, reason: "INVALID_TIME" | "NEGATIVE_TIME" }`
 
 ## Boundary Semantics
 
-- Global domain for a prepared sequence is `[0, totalDuration)`.
+- Non-negative finite global time wraps modulo `totalDuration`.
 - Segment intervals are half-open: `[startUnit, endUnit)`.
 - Exact segment boundary selects the next segment.
-- Exact final boundary (`tGlobal === totalDuration`) is `OUT_OF_RANGE`.
-- No clamping, wrapping, or implicit correction.
+- Exact final boundary (`tGlobal === totalDuration`) wraps to local time `0`.
+- Negative time is rejected explicitly.
+- Non-finite time is rejected explicitly.
 
 ## Determinism Rules
 
-- Sequence evaluation is direct (`prepared + tGlobal -> result`), not incremental stepping.
+- Sequence evaluation is direct (`prepared + tGlobal -> result`), with non-negative finite `tGlobal` wrapped before segment lookup.
 - Same inputs produce identical outputs.
 - Validation failures are explicit; runtime misses are explicit.
 

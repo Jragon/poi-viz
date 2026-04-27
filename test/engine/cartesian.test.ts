@@ -1,4 +1,4 @@
-import { toCartesianRigPose } from "@/engine/cartesian";
+import { toCartesianMultiRigPose, toCartesianRigPose } from "@/engine/cartesian";
 import { PI } from "@/engine/constants";
 import type { RelativeRigPose, Vec2 } from "@/engine/types";
 import { describe, expect, it } from "vitest";
@@ -33,5 +33,26 @@ describe("toCartesianRigPose", () => {
 
     expectVecClose(cartPose.handPosition, { x: 0, y: 1 });
     expectVecClose(cartPose.headPosition, { x: 1, y: 1 });
+  });
+});
+
+describe("toCartesianMultiRigPose", () => {
+  it("maps each rig pose independently by rig id", () => {
+    const cartPose = toCartesianMultiRigPose({
+      left: {
+        handPose: { phaseAbs: 0, radius: 1 },
+        headPose: { phaseAbs: 0, radius: 1 }
+      },
+      right: {
+        handPose: { phaseAbs: PI / 2, radius: 1 },
+        headPose: { phaseAbs: 0, radius: 1 }
+      }
+    });
+
+    expect(Object.keys(cartPose)).toEqual(["left", "right"]);
+    expectVecClose(cartPose.left.handPosition, { x: 1, y: 0 });
+    expectVecClose(cartPose.left.headPosition, { x: 2, y: 0 });
+    expectVecClose(cartPose.right.handPosition, { x: 0, y: 1 });
+    expectVecClose(cartPose.right.headPosition, { x: 1, y: 1 });
   });
 });

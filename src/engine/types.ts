@@ -2,6 +2,8 @@ export type AngleRad = number;
 
 export type TimeUnit = number;
 
+export type RigId = string;
+
 export type AngularVelocityRadPerUnit = number;
 
 export type Radius = number;
@@ -26,6 +28,10 @@ export interface CartesianRigPose {
   headPosition: Vec2;
 }
 
+export type MultiRigPose = Record<RigId, RelativeRigPose>;
+
+export type CartesianMultiRigPose = Record<RigId, CartesianRigPose>;
+
 export type Driver = {
   kind: "circle";
   omega: AngularVelocityRadPerUnit;
@@ -49,4 +55,13 @@ export interface SegmentPlacement {
 
 export interface SequenceSpec {
   segments: SegmentPlacement[];
+}
+
+export interface RigSequenceEntry {
+  rigId: RigId;
+  sequence: SequenceSpec;
+}
+
+export interface MultiRigSequence {
+  rigs: RigSequenceEntry[];
 }

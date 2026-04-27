@@ -30,7 +30,11 @@ export type PrepareSequenceResult =
 
 export type EvalPreparedAtResult =
   | { ok: true; pose: RelativeRigPose; segmentIndex: number; tLocal: TimeUnit }
-  | { ok: false; reason: "INVALID_TIME" | "OUT_OF_RANGE" };
+  | { ok: false; reason: "INVALID_TIME" | "NEGATIVE_TIME" };
+
+function wrapSequenceTime(totalDuration: TimeUnit, tGlobal: TimeUnit): TimeUnit {
+  return tGlobal % totalDuration;
+}
 
 export function validateSequence(sequence: SequenceSpec): SequenceValidationResult {
   const errors: SequenceValidationError[] = [];
@@ -86,18 +90,19 @@ export function evalPreparedSequenceAt(
   tGlobal: TimeUnit
 ): EvalPreparedAtResult {
   if (!Number.isFinite(tGlobal)) return { ok: false, reason: "INVALID_TIME" };
-  if (!(0 <= tGlobal && tGlobal < sequence.totalDuration))
-    return { ok: false, reason: "OUT_OF_RANGE" };
+  if (tGlobal < 0) return { ok: false, reason: "NEGATIVE_TIME" };
+
+  const wrappedTime = wrapSequenceTime(sequence.totalDuration, tGlobal);
 
   for (const [index, placement] of sequence.placements.entries()) {
-    if (!(placement.startUnit <= tGlobal && tGlobal < placement.endUnit)) continue;
-    const tLocal = tGlobal - placement.startUnit;
+    if (!(placement.startUnit <= wrappedTime && wrappedTime < placement.endUnit)) continue;
+    const tLocal = wrappedTime - placement.startUnit;
     const pose = evalSegment(placement.segment, tLocal);
 
     return { ok: true, pose, tLocal, segmentIndex: index };
   }
 
-  throw new Error("Invariant violated: no placement found for in-range global time");
+  throw new Error("Invariant violated: no placement found for wrapped global time");
 }
 
 export function samplePreparedSequence(

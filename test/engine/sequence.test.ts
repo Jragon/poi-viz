@@ -143,12 +143,16 @@ describe("evalPreparedSequenceAt", () => {
       reason: "INVALID_TIME"
     });
   });
-  it("returns OUT_OF_RANGE for negative time", () => {
-    expect(evalPreparedSequenceAt(prepared, -0.001)).toEqual({ ok: false, reason: "OUT_OF_RANGE" });
+  it("returns NEGATIVE_TIME for negative time", () => {
+    expect(evalPreparedSequenceAt(prepared, -0.001)).toEqual({
+      ok: false,
+      reason: "NEGATIVE_TIME"
+    });
   });
-  it("returns OUT_OF_RANGE at total duration and beyond", () => {
-    expect(evalPreparedSequenceAt(prepared, 5)).toEqual({ ok: false, reason: "OUT_OF_RANGE" });
-    expect(evalPreparedSequenceAt(prepared, 6)).toEqual({ ok: false, reason: "OUT_OF_RANGE" });
+  it("wraps at total duration and beyond", () => {
+    expect(evalPreparedSequenceAt(prepared, 5)).toEqual(evalPreparedSequenceAt(prepared, 0));
+    expect(evalPreparedSequenceAt(prepared, 6)).toEqual(evalPreparedSequenceAt(prepared, 1));
+    expect(evalPreparedSequenceAt(prepared, 10)).toEqual(evalPreparedSequenceAt(prepared, 0));
   });
   it("evaluates first segment for time inside [0, d0)", () => {
     const tGlobal = 1.25;
