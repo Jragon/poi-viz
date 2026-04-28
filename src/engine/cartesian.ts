@@ -20,7 +20,7 @@ function addCartesian(a: Vec2, b: Vec2): Vec2 {
 }
 
 export function toCartesianRigPose(relative: RelativeRigPose): CartesianRigPose {
-  // assuming that the body is the origin for the hand and at 0, 0
+  // The hand is expressed relative to the rig origin at 0, 0.
   const handPosition: Vec2 = polarToCartesian(relative.handPose.radius, relative.handPose.phaseAbs);
   const headPosition: Vec2 = addCartesian(
     handPosition,

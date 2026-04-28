@@ -3,11 +3,16 @@ import { onBeforeUnmount, onMounted, ref, watch, type PropType } from "vue";
 
 import type { CartesianMultiRigPose, RigId } from "@/engine/types";
 import { computeDisplayPixelsPerWorldUnit } from "@/visualizer/displayScale";
-import { DEFAULT_RIG_STYLES, WEBCAM_RIG_STYLES } from "@/visualizer/drawingTools";
+import {
+  DEFAULT_RIG_STYLES,
+  WEBCAM_RIG_STYLES,
+  type RigRenderStyle
+} from "@/visualizer/drawingTools";
 import {
   DEFAULT_RENDER_FRAME_GEOMETRY,
   WEBCAM_RENDER_FRAME_GEOMETRY,
   renderFrame,
+  type RenderFrameGeometry,
   type RigTrail
 } from "@/visualizer/renderFrame";
 import { createSceneLayout, type SceneLayout } from "@/visualizer/sceneLayout";
@@ -44,8 +49,43 @@ const props = defineProps({
   trails: {
     type: Object as PropType<Partial<Record<RigId, RigTrail>>>,
     default: () => ({})
+  },
+  geometry: {
+    type: Object as PropType<RenderFrameGeometry | null>,
+    default: null
+  },
+  rigStyles: {
+    type: Object as PropType<Partial<Record<RigId, RigRenderStyle>> | null>,
+    default: null
+  },
+  showHandTrails: {
+    type: Boolean,
+    default: true
+  },
+  showHeadTrails: {
+    type: Boolean,
+    default: true
+  },
+  showChainLines: {
+    type: Boolean,
+    default: true
+  },
+  showNodeMarkers: {
+    type: Boolean,
+    default: true
   }
 });
+
+function defaultRigStylesForMode() {
+  return Object.fromEntries(
+    props.rigOrder.map((rigId, index) => [
+      rigId,
+      (props.webcamActive ? WEBCAM_RIG_STYLES : DEFAULT_RIG_STYLES)[
+        index % DEFAULT_RIG_STYLES.length
+      ]
+    ])
+  );
+}
 
 const containerRef = ref<HTMLDivElement | null>(null);
 const canvasRef = ref<HTMLCanvasElement | null>(null);
@@ -72,18 +112,17 @@ const draw = () => {
 
   ctx.setTransform(layout.dpr, 0, 0, layout.dpr, 0, 0);
   renderFrame(ctx, layout, props.poses, {
-    geometry: props.webcamActive ? WEBCAM_RENDER_FRAME_GEOMETRY : DEFAULT_RENDER_FRAME_GEOMETRY,
-    rigStyles: Object.fromEntries(
-      props.rigOrder.map((rigId, index) => [
-        rigId,
-        (props.webcamActive ? WEBCAM_RIG_STYLES : DEFAULT_RIG_STYLES)[
-          index % DEFAULT_RIG_STYLES.length
-        ]
-      ])
-    ),
+    geometry:
+      props.geometry ??
+      (props.webcamActive ? WEBCAM_RENDER_FRAME_GEOMETRY : DEFAULT_RENDER_FRAME_GEOMETRY),
+    rigStyles: props.rigStyles ?? defaultRigStylesForMode(),
     rigOrder: props.rigOrder,
     trails: props.trails,
     transparentBackground: props.webcamActive,
+    showHandTrails: props.showHandTrails,
+    showHeadTrails: props.showHeadTrails,
+    showChainLines: props.showChainLines,
+    showNodeMarkers: props.showNodeMarkers,
     showLabels: false
   });
 };
@@ -115,11 +154,22 @@ const updateLayout = () => {
 };
 
 watch(
-  () => [props.poses, props.rigOrder, props.trails, props.webcamActive],
+  () => [
+    props.poses,
+    props.rigOrder,
+    props.trails,
+    props.geometry,
+    props.rigStyles,
+    props.webcamActive,
+    props.showHandTrails,
+    props.showHeadTrails,
+    props.showChainLines,
+    props.showNodeMarkers
+  ],
   () => {
     draw();
   },
-  { deep: false }
+  { deep: true }
 );
 
 watch(

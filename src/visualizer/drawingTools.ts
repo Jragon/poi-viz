@@ -1,7 +1,6 @@
 import type { Vec2 } from "@/engine/types";
 
 export interface RigRenderStyle {
-  readonly bodyColor: string;
   readonly handColor: string;
   readonly headColor: string;
   readonly lineColor: string;
@@ -17,7 +16,6 @@ export interface ClearFrameOptions {
 
 export const DEFAULT_RIG_STYLES: readonly RigRenderStyle[] = [
   {
-    bodyColor: "#cbd5e1",
     handColor: "#34d399",
     headColor: "#60a5fa",
     lineColor: "#94a3b8",
@@ -26,7 +24,6 @@ export const DEFAULT_RIG_STYLES: readonly RigRenderStyle[] = [
     headTrailColor: "rgba(96, 165, 250, 0.28)"
   },
   {
-    bodyColor: "#fde68a",
     handColor: "#f472b6",
     headColor: "#f87171",
     lineColor: "#fca5a5",
@@ -38,7 +35,6 @@ export const DEFAULT_RIG_STYLES: readonly RigRenderStyle[] = [
 
 export const WEBCAM_RIG_STYLES: readonly RigRenderStyle[] = [
   {
-    bodyColor: "#e2e8f0",
     handColor: "#22c55e",
     headColor: "#2563eb",
     lineColor: "#166534",
@@ -47,7 +43,6 @@ export const WEBCAM_RIG_STYLES: readonly RigRenderStyle[] = [
     headTrailColor: "rgba(37, 99, 235, 0.82)"
   },
   {
-    bodyColor: "#fef3c7",
     handColor: "#db2777",
     headColor: "#dc2626",
     lineColor: "#9f1239",

@@ -1,10 +1,20 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 
 import { createTransport, provideTransport } from "@/composables/useTransport";
-import type { MultiRigSequence } from "@/engine/types";
+import type { MultiRigSequence, RigId } from "@/engine/types";
 import { demoSequence } from "@/visualizer/demoSequence";
+import { createPngSequenceExporter } from "@/visualizer/exportPngSequence";
 import MetronomeControls from "@/visualizer/MetronomeControls.vue";
+import {
+  cloneOverlaySettings,
+  createDefaultOverlaySettings,
+  resetOverlaySettings,
+  syncOverlayRigStyles,
+  type OverlayGeometryKey,
+  type OverlayLayerVisibility,
+  type RigOverlayStyleKey
+} from "@/visualizer/overlaySettings";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
 import TransportControls from "@/visualizer/TransportControls.vue";
 import { usePhaseMetronome } from "@/visualizer/usePhaseMetronome";
@@ -56,12 +66,14 @@ const fullscreenTargetRef = ref<HTMLElement | null>(null);
 const viewportRef = ref<CanvasViewportExposed | null>(null);
 const displayScale = ref(1);
 const isFullscreen = ref(false);
+const pngSequenceExporter = createPngSequenceExporter();
 const webcamActive = computed(() => webcam.isActive.value);
 const webcamStream = computed(() => webcam.stream.value);
 const webcamErrorMessage = computed(() => webcam.errorMessage.value);
 let fullscreenAnimationFrame = 0;
 
 const rigOrder = computed(() => props.sequence.rigs.map((rig) => rig.rigId));
+const overlaySettings = reactive(createDefaultOverlaySettings(rigOrder.value));
 const errorMessage = session.errorMessage;
 const cartesianPoses = computed(() =>
   session.currentFrame.value?.ok ? session.currentFrame.value.cartesianPoses : {}
@@ -88,6 +100,17 @@ const sceneWorldRadius = computed(() => {
     return Math.max(maxRadius, rigMaxRadius);
   }, 2);
 });
+const sequenceSummary = computed(() =>
+  props.sequence.rigs.map((rig) => `${rig.rigId}:${rig.sequence.segments.length}`).join(", ")
+);
+
+watch(
+  rigOrder,
+  (nextRigOrder) => {
+    syncOverlayRigStyles(overlaySettings, nextRigOrder);
+  },
+  { immediate: true }
+);
 
 onBeforeUnmount(() => {
   if (fullscreenAnimationFrame) {
@@ -97,6 +120,7 @@ onBeforeUnmount(() => {
   session.dispose();
   metronome.dispose();
   transport.dispose();
+  pngSequenceExporter.cancel();
 });
 
 function scheduleViewportRecompute() {
@@ -128,6 +152,27 @@ onMounted(() => {
 
 function resetDisplayScale() {
   displayScale.value = 1;
+}
+
+function updateOverlayVisibility(key: keyof OverlayLayerVisibility, value: boolean) {
+  overlaySettings.visibility[key] = value;
+}
+
+function updateOverlayGeometry(key: OverlayGeometryKey, value: number) {
+  overlaySettings.geometry[key] = value;
+}
+
+function updateRigOverlayStyle(rigId: RigId, key: RigOverlayStyleKey, value: string) {
+  const style = overlaySettings.rigStyles[rigId];
+  if (!style) {
+    return;
+  }
+
+  style[key] = value;
+}
+
+function resetOverlayStyle() {
+  resetOverlaySettings(overlaySettings, rigOrder.value);
 }
 
 async function toggleFullscreen() {
@@ -168,6 +213,27 @@ async function toggleWebcam() {
   await webcam.start();
 }
 
+async function startPngSequenceExport() {
+  const wasPlaying = transport.isPlaying.value;
+  transport.pause();
+
+  try {
+    await pngSequenceExporter.start({
+      sequence: props.sequence,
+      sequenceSummary: sequenceSummary.value,
+      rigOrder: rigOrder.value,
+      sceneWorldRadius: sceneWorldRadius.value,
+      displayScale: displayScale.value,
+      trailDecaySteps: session.trailDecaySteps.value,
+      overlaySettings: cloneOverlaySettings(overlaySettings)
+    });
+  } finally {
+    if (wasPlaying) {
+      transport.play();
+    }
+  }
+}
+
 onBeforeUnmount(() => {
   document.removeEventListener("fullscreenchange", syncFullscreenState);
   document.removeEventListener("webkitfullscreenchange", syncFullscreenState as EventListener);
@@ -184,12 +250,22 @@ onBeforeUnmount(() => {
     >
       <VisualizerControls
         v-model:display-scale="displayScale"
+        :overlay-settings="overlaySettings"
+        :rig-order="rigOrder"
+        :export-state="pngSequenceExporter.state"
+        :is-export-ready="session.isReady.value"
         :is-fullscreen="isFullscreen"
         :is-webcam-active="webcamActive"
         :webcam-error-message="webcamErrorMessage"
         @reset-scale="resetDisplayScale"
+        @reset-overlay-style="resetOverlayStyle"
+        @start-export="startPngSequenceExport"
+        @cancel-export="pngSequenceExporter.cancel()"
         @toggle-fullscreen="toggleFullscreen"
         @toggle-webcam="toggleWebcam"
+        @update-overlay-geometry="updateOverlayGeometry"
+        @update-overlay-visibility="updateOverlayVisibility"
+        @update-rig-overlay-style="updateRigOverlayStyle"
       />
 
       <div
@@ -204,10 +280,16 @@ onBeforeUnmount(() => {
         v-else
         ref="viewportRef"
         :display-scale="displayScale"
+        :geometry="overlaySettings.geometry"
         :is-fullscreen="isFullscreen"
         :poses="cartesianPoses"
+        :rig-styles="overlaySettings.rigStyles"
         :rig-order="rigOrder"
         :scene-world-radius="sceneWorldRadius"
+        :show-chain-lines="overlaySettings.visibility.showChainLines"
+        :show-hand-trails="overlaySettings.visibility.showHandTrails"
+        :show-head-trails="overlaySettings.visibility.showHeadTrails"
+        :show-node-markers="overlaySettings.visibility.showNodeMarkers"
         :trails="trails"
         :webcam-active="webcamActive"
         :webcam-stream="webcamStream"

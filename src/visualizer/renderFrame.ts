@@ -19,7 +19,6 @@ import {
 export interface RenderFrameGeometry {
   readonly chainLineWidth: number;
   readonly trailLineWidth: number;
-  readonly bodyRadius: number;
   readonly handRadius: number;
   readonly headRadius: number;
   readonly nodeStrokeWidth: number;
@@ -29,7 +28,6 @@ export interface RenderFrameGeometry {
 export const DEFAULT_RENDER_FRAME_GEOMETRY: RenderFrameGeometry = {
   chainLineWidth: 3,
   trailLineWidth: 3,
-  bodyRadius: 7,
   handRadius: 8,
   headRadius: 10,
   nodeStrokeWidth: 2,
@@ -55,6 +53,10 @@ export interface RenderFrameOptions {
   readonly rigOrder?: readonly RigId[];
   readonly rigStyles?: Partial<Record<RigId, RigRenderStyle>>;
   readonly trails?: Partial<Record<RigId, RigTrail>>;
+  readonly showHandTrails?: boolean;
+  readonly showHeadTrails?: boolean;
+  readonly showChainLines?: boolean;
+  readonly showNodeMarkers?: boolean;
   readonly showLabels?: boolean;
 }
 
@@ -73,6 +75,10 @@ export function renderFrame(
   options: RenderFrameOptions = {}
 ) {
   const geometry = options.geometry ?? DEFAULT_RENDER_FRAME_GEOMETRY;
+  const showHandTrails = options.showHandTrails ?? true;
+  const showHeadTrails = options.showHeadTrails ?? true;
+  const showChainLines = options.showChainLines ?? true;
+  const showNodeMarkers = options.showNodeMarkers ?? true;
 
   clearFrame(ctx, layout.cssWidth, layout.cssHeight, {
     ...(options.backgroundColor ? { backgroundColor: options.backgroundColor } : {}),
@@ -91,13 +97,13 @@ export function renderFrame(
 
     const style = styleForRig(rigId, index, options.rigStyles);
     const anchorWorld = getRigAnchor(layout, rigId);
-    const bodyCanvas = worldToCanvas(layout, anchorWorld);
+    const anchorCanvas = worldToCanvas(layout, anchorWorld);
     const handCanvas = worldToCanvas(layout, translatePoint(anchorWorld, pose.handPosition));
     const headCanvas = worldToCanvas(layout, translatePoint(anchorWorld, pose.headPosition));
     const trail = options.trails?.[rigId];
 
     if (trail) {
-      if (trail.hand && trail.hand.length > 1) {
+      if (showHandTrails && trail.hand && trail.hand.length > 1) {
         const handTrailCanvas = trail.hand.map((point) =>
           worldToCanvas(layout, translatePoint(anchorWorld, point))
         );
@@ -110,7 +116,7 @@ export function renderFrame(
         );
       }
 
-      if (trail.head && trail.head.length > 1) {
+      if (showHeadTrails && trail.head && trail.head.length > 1) {
         const headTrailCanvas = trail.head.map((point) =>
           worldToCanvas(layout, translatePoint(anchorWorld, point))
         );
@@ -124,28 +130,31 @@ export function renderFrame(
       }
     }
 
-    drawLine(ctx, bodyCanvas, handCanvas, style.lineColor, geometry.chainLineWidth);
-    drawLine(ctx, handCanvas, headCanvas, style.lineColor, geometry.chainLineWidth);
-    drawNode(ctx, bodyCanvas, geometry.bodyRadius, style.bodyColor);
-    drawNode(
-      ctx,
-      handCanvas,
-      geometry.handRadius,
-      style.handColor,
-      "#0f172a",
-      geometry.nodeStrokeWidth
-    );
-    drawNode(
-      ctx,
-      headCanvas,
-      geometry.headRadius,
-      style.headColor,
-      "#0f172a",
-      geometry.nodeStrokeWidth
-    );
+    if (showChainLines) {
+      drawLine(ctx, handCanvas, headCanvas, style.lineColor, geometry.chainLineWidth);
+    }
+
+    if (showNodeMarkers) {
+      drawNode(
+        ctx,
+        handCanvas,
+        geometry.handRadius,
+        style.handColor,
+        "#0f172a",
+        geometry.nodeStrokeWidth
+      );
+      drawNode(
+        ctx,
+        headCanvas,
+        geometry.headRadius,
+        style.headColor,
+        "#0f172a",
+        geometry.nodeStrokeWidth
+      );
+    }
 
     if (options.showLabels ?? true) {
-      drawLabel(ctx, rigId, { x: bodyCanvas.x, y: bodyCanvas.y - 10 }, style.labelColor);
+      drawLabel(ctx, rigId, { x: anchorCanvas.x, y: anchorCanvas.y - 10 }, style.labelColor);
     }
   });
 }
