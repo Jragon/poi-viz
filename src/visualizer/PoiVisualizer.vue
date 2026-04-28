@@ -25,6 +25,7 @@ const errorMessage = session.errorMessage;
 const cartesianPoses = computed(() =>
   session.currentFrame.value?.ok ? session.currentFrame.value.cartesianPoses : {}
 );
+const trails = computed(() => session.currentTrails.value);
 const transportDurationLabel = computed(() => transport.duration.value.toFixed(2));
 const sceneWorldRadius = computed(() => {
   const prepared = session.playback.prepared.value;
@@ -66,6 +67,7 @@ onBeforeUnmount(() => {
       :poses="cartesianPoses"
       :rig-order="rigOrder"
       :scene-world-radius="sceneWorldRadius"
+      :trails="trails"
     />
 
     <div

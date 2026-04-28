@@ -101,4 +101,33 @@ describe("useAuthoringPreview", () => {
     expect(transport.duration.value).toBe(6);
     preview.dispose();
   });
+
+  it("computes trail samples for authoring preview", async () => {
+    const scheduler = createScheduler();
+    const transport = createTransport({
+      requestFrame: scheduler.requestFrame,
+      cancelFrame: scheduler.cancelFrame
+    });
+    const preview = useAuthoringPreview(
+      ref<MultiRigSequence>(makeSequence([2, 3])),
+      () => null,
+      transport
+    );
+
+    transport.setCurrentTime(0.25);
+    await nextTick();
+
+    expect(preview.currentTrails.value.left?.hand?.length).toBeGreaterThan(1);
+    expect(preview.currentTrails.value.left?.head?.length).toBeGreaterThan(1);
+
+    const currentFrame = preview.currentFrame.value;
+    if (!currentFrame?.ok) throw new Error("expected evaluated frame");
+    expect(preview.currentTrails.value.left?.hand?.at(-1)).toEqual(
+      currentFrame.cartesianPoses.left.handPosition
+    );
+    expect(preview.currentTrails.value.left?.head?.at(-1)).toEqual(
+      currentFrame.cartesianPoses.left.headPosition
+    );
+    preview.dispose();
+  });
 });

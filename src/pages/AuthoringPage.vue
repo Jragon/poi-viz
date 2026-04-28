@@ -72,6 +72,7 @@ const rigOrder = computed(() => lastValidCompiled.value.sequence.rigs.map((rig) 
 const cartesianPoses = computed(() =>
   preview.currentFrame.value?.ok ? preview.currentFrame.value.cartesianPoses : {}
 );
+const trails = computed(() => preview.currentTrails.value);
 const previewErrorMessage = computed(
   () => compileErrorMessage.value ?? preview.errorMessage.value ?? null
 );
@@ -353,6 +354,7 @@ onBeforeUnmount(() => {
       <AuthoringPreviewPanel
         :error-message="previewErrorMessage"
         :cartesian-poses="cartesianPoses"
+        :trails="trails"
         :rig-order="rigOrder"
         :scene-world-radius="sceneWorldRadius"
         :track-totals="trackTotals"

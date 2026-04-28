@@ -3,10 +3,10 @@ import type { CartesianMultiRigPose, RigId, Vec2 } from "@/engine/types";
 import {
   DEFAULT_RIG_STYLES,
   clearFrame,
+  drawFadingPolyline,
   drawLabel,
   drawLine,
   drawNode,
-  drawPolyline,
   type RigRenderStyle
 } from "@/visualizer/drawingTools";
 import {
@@ -16,11 +16,16 @@ import {
   type SceneLayout
 } from "@/visualizer/sceneLayout";
 
+export interface RigTrail {
+  readonly hand?: readonly Vec2[];
+  readonly head?: readonly Vec2[];
+}
+
 export interface RenderFrameOptions {
   readonly backgroundColor?: string;
   readonly rigOrder?: readonly RigId[];
   readonly rigStyles?: Partial<Record<RigId, RigRenderStyle>>;
-  readonly trails?: Partial<Record<RigId, readonly Vec2[]>>;
+  readonly trails?: Partial<Record<RigId, RigTrail>>;
   readonly showLabels?: boolean;
 }
 
@@ -55,11 +60,20 @@ export function renderFrame(
     const headCanvas = worldToCanvas(layout, translatePoint(anchorWorld, pose.headPosition));
     const trail = options.trails?.[rigId];
 
-    if (trail && trail.length > 1) {
-      const trailCanvas = trail.map((point) =>
-        worldToCanvas(layout, translatePoint(anchorWorld, point))
-      );
-      drawPolyline(ctx, trailCanvas, style.trailColor, 2);
+    if (trail) {
+      if (trail.hand && trail.hand.length > 1) {
+        const handTrailCanvas = trail.hand.map((point) =>
+          worldToCanvas(layout, translatePoint(anchorWorld, point))
+        );
+        drawFadingPolyline(ctx, handTrailCanvas, style.handTrailColor, 2);
+      }
+
+      if (trail.head && trail.head.length > 1) {
+        const headTrailCanvas = trail.head.map((point) =>
+          worldToCanvas(layout, translatePoint(anchorWorld, point))
+        );
+        drawFadingPolyline(ctx, headTrailCanvas, style.headTrailColor, 2);
+      }
     }
 
     drawLine(ctx, bodyCanvas, handCanvas, style.lineColor, 2);

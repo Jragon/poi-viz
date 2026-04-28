@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch, type PropType } from "vue";
 
-import type { CartesianMultiRigPose, RigId, Vec2 } from "@/engine/types";
-import { renderFrame } from "@/visualizer/renderFrame";
+import type { CartesianMultiRigPose, RigId } from "@/engine/types";
+import { renderFrame, type RigTrail } from "@/visualizer/renderFrame";
 import { createSceneLayout, type SceneLayout } from "@/visualizer/sceneLayout";
 
 const props = defineProps({
@@ -19,7 +19,7 @@ const props = defineProps({
     required: true
   },
   trails: {
-    type: Object as PropType<Partial<Record<RigId, readonly Vec2[]>>>,
+    type: Object as PropType<Partial<Record<RigId, RigTrail>>>,
     default: () => ({})
   }
 });

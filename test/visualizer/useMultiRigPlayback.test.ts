@@ -94,3 +94,106 @@ describe("useMultiRigPlayback", () => {
     expect(playback.evaluate(Number.NaN)).toEqual({ ok: false, reason: "INVALID_TIME" });
   });
 });
+
+describe("useMultiRigPlayback.sampleTrails", () => {
+  it("returns origin and the live current tip when t < dt", () => {
+    const playback = useMultiRigPlayback(makeSequence(2));
+
+    expect(playback.sampleTrails(0, 0.1)).toEqual({});
+    const trails = playback.sampleTrails(0.05, 0.1);
+    const evaluated = playback.evaluate(0.05);
+    if (!evaluated.ok) throw new Error("evaluate failed");
+
+    expect(trails.left?.hand).toHaveLength(2);
+    expect(trails.left?.head).toHaveLength(2);
+    expect(trails.left?.hand?.[0]).toEqual({ x: 1, y: 0 });
+    expect(trails.left?.hand?.[1]).toEqual(evaluated.cartesianPoses.left.handPosition);
+    expect(trails.left?.head?.[1]).toEqual(evaluated.cartesianPoses.left.headPosition);
+  });
+
+  it("returns empty for invalid dt", () => {
+    const playback = useMultiRigPlayback(makeSequence(2));
+
+    expect(playback.sampleTrails(1, 0)).toEqual({});
+    expect(playback.sampleTrails(1, -0.1)).toEqual({});
+    expect(playback.sampleTrails(1, Number.NaN)).toEqual({});
+    expect(playback.sampleTrails(Number.NaN, 0.1)).toEqual({});
+  });
+
+  it("returns empty for invalid holdSteps", () => {
+    const playback = useMultiRigPlayback(makeSequence(2));
+
+    expect(playback.sampleTrails(1, 0.1, 1)).toEqual({});
+    expect(playback.sampleTrails(1, 0.1, 0)).toEqual({});
+    expect(playback.sampleTrails(1, 0.1, Number.NaN)).toEqual({});
+  });
+
+  it("returns empty when prepared sequence is unavailable", () => {
+    const playback = useMultiRigPlayback({ rigs: [] });
+    expect(playback.sampleTrails(1, 0.1)).toEqual({});
+  });
+
+  it("returns exactly two samples per node trail at t = dt", () => {
+    const playback = useMultiRigPlayback(makeSequence(2));
+    const trails = playback.sampleTrails(0.1, 0.1);
+
+    expect(Object.keys(trails).sort()).toEqual(["left", "right"]);
+    expect(trails.left?.hand).toHaveLength(2);
+    expect(trails.left?.head).toHaveLength(2);
+    expect(trails.right?.hand).toHaveLength(2);
+    expect(trails.right?.head).toHaveLength(2);
+  });
+
+  it("keeps the grid prefix and appends the live current tip between grid samples", () => {
+    const playback = useMultiRigPlayback(makeSequence(2));
+    const dt = 0.5;
+    const t = 1.6;
+    const sampleIndex = Math.floor(t / dt);
+    const trails = playback.sampleTrails(t, dt);
+
+    expect(trails.left?.hand).toHaveLength(sampleIndex + 2);
+
+    const evaluated = playback.evaluate(0);
+    if (!evaluated.ok) throw new Error("evaluate failed");
+    expect(trails.left?.hand?.[0]).toEqual(evaluated.cartesianPoses.left.handPosition);
+    expect(trails.left?.head?.[0]).toEqual(evaluated.cartesianPoses.left.headPosition);
+
+    const evaluatedAtIndex = playback.evaluate(sampleIndex * dt);
+    if (!evaluatedAtIndex.ok) throw new Error("evaluate failed");
+    expect(trails.left?.hand?.[sampleIndex]).toEqual(
+      evaluatedAtIndex.cartesianPoses.left.handPosition
+    );
+
+    const evaluatedAtCurrent = playback.evaluate(t);
+    if (!evaluatedAtCurrent.ok) throw new Error("evaluate failed");
+    expect(trails.left?.hand?.[sampleIndex + 1]).toEqual(
+      evaluatedAtCurrent.cartesianPoses.left.handPosition
+    );
+    expect(trails.left?.head?.[sampleIndex + 1]).toEqual(
+      evaluatedAtCurrent.cartesianPoses.left.headPosition
+    );
+  });
+
+  it("limits trail size when holdSteps is provided", () => {
+    const playback = useMultiRigPlayback(makeSequence(2));
+    const dt = 0.1;
+    const trails = playback.sampleTrails(1.0, dt, 3);
+
+    expect(trails.left?.hand).toHaveLength(3);
+    expect(trails.left?.head).toHaveLength(3);
+
+    const firstVisibleTime = 0.8;
+    const evaluated = playback.evaluate(firstVisibleTime);
+    if (!evaluated.ok) throw new Error("evaluate failed");
+
+    expect(trails.left?.hand?.[0]).toEqual(evaluated.cartesianPoses.left.handPosition);
+    expect(trails.left?.head?.[0]).toEqual(evaluated.cartesianPoses.left.headPosition);
+  });
+
+  it("is deterministic across repeated calls", () => {
+    const playback = useMultiRigPlayback(makeSequence(2));
+    const a = playback.sampleTrails(1.25, 0.05);
+    const b = playback.sampleTrails(1.25, 0.05);
+    expect(a).toEqual(b);
+  });
+});

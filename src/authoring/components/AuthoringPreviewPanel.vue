@@ -3,11 +3,13 @@ import type { AuthoredTrackId } from "@/authoring/types";
 import { useTransport } from "@/composables/useTransport";
 import type { CartesianMultiRigPose, RigId } from "@/engine/types";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
+import type { RigTrail } from "@/visualizer/renderFrame";
 import TransportControls from "@/visualizer/TransportControls.vue";
 
 defineProps<{
   errorMessage: string | null;
   cartesianPoses: CartesianMultiRigPose;
+  trails: Partial<Record<RigId, RigTrail>>;
   rigOrder: readonly RigId[];
   sceneWorldRadius: number;
   trackTotals: ReadonlyArray<{ trackId: AuthoredTrackId; totalDuration: number }>;
@@ -35,6 +37,7 @@ function formatNumber(value: number, digits = 2): string {
 
       <PoiCanvasViewport
         :poses="cartesianPoses"
+        :trails="trails"
         :rig-order="rigOrder"
         :scene-world-radius="sceneWorldRadius"
       />

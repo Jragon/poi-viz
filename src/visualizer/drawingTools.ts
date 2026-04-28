@@ -6,7 +6,8 @@ export interface RigRenderStyle {
   readonly headColor: string;
   readonly lineColor: string;
   readonly labelColor: string;
-  readonly trailColor: string;
+  readonly handTrailColor: string;
+  readonly headTrailColor: string;
 }
 
 export const DEFAULT_RIG_STYLES: readonly RigRenderStyle[] = [
@@ -16,7 +17,8 @@ export const DEFAULT_RIG_STYLES: readonly RigRenderStyle[] = [
     headColor: "#60a5fa",
     lineColor: "#94a3b8",
     labelColor: "#e2e8f0",
-    trailColor: "rgba(96, 165, 250, 0.28)"
+    handTrailColor: "rgba(52, 211, 153, 0.28)",
+    headTrailColor: "rgba(96, 165, 250, 0.28)"
   },
   {
     bodyColor: "#fde68a",
@@ -24,7 +26,8 @@ export const DEFAULT_RIG_STYLES: readonly RigRenderStyle[] = [
     headColor: "#f87171",
     lineColor: "#fca5a5",
     labelColor: "#fef3c7",
-    trailColor: "rgba(248, 113, 113, 0.28)"
+    handTrailColor: "rgba(244, 114, 182, 0.28)",
+    headTrailColor: "rgba(248, 113, 113, 0.28)"
   }
 ];
 
@@ -94,6 +97,38 @@ export function drawPolyline(
   }
 
   ctx.stroke();
+}
+
+export function drawFadingPolyline(
+  ctx: CanvasRenderingContext2D,
+  points: readonly Vec2[],
+  color: string,
+  width: number,
+  minOpacity = 0.2
+) {
+  if (points.length < 2) {
+    return;
+  }
+
+  const segmentCount = points.length - 1;
+  const floorOpacity = Math.min(Math.max(minOpacity, 0), 1);
+
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+
+  for (let index = 1; index < points.length; index += 1) {
+    const start = points[index - 1];
+    const end = points[index];
+    const progress = index / segmentCount;
+    ctx.globalAlpha = floorOpacity + (1 - floorOpacity) * progress;
+    ctx.beginPath();
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.stroke();
+  }
+
+  ctx.restore();
 }
 
 export function drawLabel(
