@@ -18,7 +18,10 @@ const props = withDefaults(
 );
 
 const transport = provideTransport(createTransport());
-const session = useVisualizerSession(() => props.sequence, transport);
+const session = useVisualizerSession(() => props.sequence, transport, {
+  autoplay: true,
+  resumeOnSequenceChange: true
+});
 
 const rigOrder = computed(() => props.sequence.rigs.map((rig) => rig.rigId));
 const errorMessage = session.errorMessage;

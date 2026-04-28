@@ -48,7 +48,7 @@ function onSpeedChange(event: Event) {
         <input
           type="range"
           min="0.1"
-          max="5"
+          max="10"
           step="0.05"
           :value="secondsPerUnit"
           class="w-full accent-fuchsia-400"

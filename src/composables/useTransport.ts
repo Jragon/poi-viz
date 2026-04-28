@@ -67,7 +67,7 @@ export function createTransport(options: TransportOptions = {}): TransportContro
   const speed = ref(
     Number.isFinite(options.initialSpeed) && (options.initialSpeed ?? 0) > 0
       ? (options.initialSpeed as number)
-      : 1
+      : 0.25
   );
   const isPlaying = ref(false);
   const progress = computed(() => {
