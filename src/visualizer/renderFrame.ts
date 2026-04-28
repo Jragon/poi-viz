@@ -16,6 +16,33 @@ import {
   type SceneLayout
 } from "@/visualizer/sceneLayout";
 
+export interface RenderFrameGeometry {
+  readonly chainLineWidth: number;
+  readonly trailLineWidth: number;
+  readonly bodyRadius: number;
+  readonly handRadius: number;
+  readonly headRadius: number;
+  readonly nodeStrokeWidth: number;
+  readonly trailMinOpacity: number;
+}
+
+export const DEFAULT_RENDER_FRAME_GEOMETRY: RenderFrameGeometry = {
+  chainLineWidth: 3,
+  trailLineWidth: 3,
+  bodyRadius: 7,
+  handRadius: 8,
+  headRadius: 10,
+  nodeStrokeWidth: 2,
+  trailMinOpacity: 0.2
+};
+
+export const WEBCAM_RENDER_FRAME_GEOMETRY: RenderFrameGeometry = {
+  ...DEFAULT_RENDER_FRAME_GEOMETRY,
+  trailMinOpacity: 0.9,
+  chainLineWidth: 5,
+  trailLineWidth: 5
+};
+
 export interface RigTrail {
   readonly hand?: readonly Vec2[];
   readonly head?: readonly Vec2[];
@@ -23,6 +50,8 @@ export interface RigTrail {
 
 export interface RenderFrameOptions {
   readonly backgroundColor?: string;
+  readonly transparentBackground?: boolean;
+  readonly geometry?: RenderFrameGeometry;
   readonly rigOrder?: readonly RigId[];
   readonly rigStyles?: Partial<Record<RigId, RigRenderStyle>>;
   readonly trails?: Partial<Record<RigId, RigTrail>>;
@@ -43,7 +72,14 @@ export function renderFrame(
   poses: CartesianMultiRigPose,
   options: RenderFrameOptions = {}
 ) {
-  clearFrame(ctx, layout.cssWidth, layout.cssHeight, options.backgroundColor ?? "#020617");
+  const geometry = options.geometry ?? DEFAULT_RENDER_FRAME_GEOMETRY;
+
+  clearFrame(ctx, layout.cssWidth, layout.cssHeight, {
+    ...(options.backgroundColor ? { backgroundColor: options.backgroundColor } : {}),
+    ...(options.transparentBackground !== undefined
+      ? { transparentBackground: options.transparentBackground }
+      : {})
+  });
 
   const rigOrder = options.rigOrder ?? Object.keys(poses).sort();
 
@@ -65,22 +101,48 @@ export function renderFrame(
         const handTrailCanvas = trail.hand.map((point) =>
           worldToCanvas(layout, translatePoint(anchorWorld, point))
         );
-        drawFadingPolyline(ctx, handTrailCanvas, style.handTrailColor, 2);
+        drawFadingPolyline(
+          ctx,
+          handTrailCanvas,
+          style.handTrailColor,
+          geometry.trailLineWidth,
+          geometry.trailMinOpacity
+        );
       }
 
       if (trail.head && trail.head.length > 1) {
         const headTrailCanvas = trail.head.map((point) =>
           worldToCanvas(layout, translatePoint(anchorWorld, point))
         );
-        drawFadingPolyline(ctx, headTrailCanvas, style.headTrailColor, 2);
+        drawFadingPolyline(
+          ctx,
+          headTrailCanvas,
+          style.headTrailColor,
+          geometry.trailLineWidth,
+          geometry.trailMinOpacity
+        );
       }
     }
 
-    drawLine(ctx, bodyCanvas, handCanvas, style.lineColor, 2);
-    drawLine(ctx, handCanvas, headCanvas, style.lineColor, 2);
-    drawNode(ctx, bodyCanvas, 5, style.bodyColor);
-    drawNode(ctx, handCanvas, 6, style.handColor, "#0f172a", 1.5);
-    drawNode(ctx, headCanvas, 8, style.headColor, "#0f172a", 1.5);
+    drawLine(ctx, bodyCanvas, handCanvas, style.lineColor, geometry.chainLineWidth);
+    drawLine(ctx, handCanvas, headCanvas, style.lineColor, geometry.chainLineWidth);
+    drawNode(ctx, bodyCanvas, geometry.bodyRadius, style.bodyColor);
+    drawNode(
+      ctx,
+      handCanvas,
+      geometry.handRadius,
+      style.handColor,
+      "#0f172a",
+      geometry.nodeStrokeWidth
+    );
+    drawNode(
+      ctx,
+      headCanvas,
+      geometry.headRadius,
+      style.headColor,
+      "#0f172a",
+      geometry.nodeStrokeWidth
+    );
 
     if (options.showLabels ?? true) {
       drawLabel(ctx, rigId, { x: bodyCanvas.x, y: bodyCanvas.y - 10 }, style.labelColor);

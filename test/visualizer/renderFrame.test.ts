@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import type { CartesianMultiRigPose } from "@/engine/types";
-import { renderFrame } from "@/visualizer/renderFrame";
+import {
+  DEFAULT_RENDER_FRAME_GEOMETRY,
+  WEBCAM_RENDER_FRAME_GEOMETRY,
+  renderFrame
+} from "@/visualizer/renderFrame";
 import { createSceneLayout } from "@/visualizer/sceneLayout";
 
 function createMockContext() {
@@ -203,5 +207,68 @@ describe("renderFrame", () => {
     const alphaOps = operations.filter((op) => op.startsWith("globalAlpha:"));
     expect(alphaOps).toContain("globalAlpha:0.60");
     expect(alphaOps).toContain("globalAlpha:1.00");
+  });
+
+  it("skips background fill when transparent rendering is requested", () => {
+    const layout = createSceneLayout({
+      cssWidth: 300,
+      cssHeight: 200,
+      pixelsPerWorldUnit: 100,
+      rigAnchors: { left: { x: 0, y: 0 } }
+    });
+    const poses: CartesianMultiRigPose = {
+      left: {
+        handPosition: { x: 0.5, y: 0 },
+        headPosition: { x: 1, y: 0 }
+      }
+    };
+    const { ctx, operations } = createMockContext();
+
+    renderFrame(ctx, layout, poses, { transparentBackground: true });
+
+    expect(operations).toContain("clearRect:0,0,300,200");
+    expect(operations.some((operation) => operation.startsWith("fillRect:"))).toBe(false);
+  });
+
+  it("allows webcam geometry to raise trail opacity without changing draw order", () => {
+    const layout = createSceneLayout({
+      cssWidth: 300,
+      cssHeight: 200,
+      pixelsPerWorldUnit: 100,
+      rigAnchors: { left: { x: 0, y: 0 } }
+    });
+    const poses: CartesianMultiRigPose = {
+      left: {
+        handPosition: { x: 0.5, y: 0 },
+        headPosition: { x: 1, y: 0 }
+      }
+    };
+    const trails = {
+      left: {
+        hand: [
+          { x: -0.5, y: -0.25 },
+          { x: 0, y: -0.5 },
+          { x: 0.5, y: -0.25 }
+        ]
+      }
+    };
+
+    const defaultResult = createMockContext();
+    renderFrame(defaultResult.ctx, layout, poses, {
+      trails,
+      geometry: DEFAULT_RENDER_FRAME_GEOMETRY
+    });
+
+    const webcamResult = createMockContext();
+    renderFrame(webcamResult.ctx, layout, poses, {
+      trails,
+      geometry: WEBCAM_RENDER_FRAME_GEOMETRY
+    });
+
+    expect(defaultResult.operations).toContain("globalAlpha:0.60");
+    expect(webcamResult.operations).toContain("globalAlpha:0.90");
+    expect(webcamResult.operations.indexOf("lineTo:200.0,100.0")).toBeGreaterThan(
+      webcamResult.operations.indexOf("lineTo:150.0,150.0")
+    );
   });
 });

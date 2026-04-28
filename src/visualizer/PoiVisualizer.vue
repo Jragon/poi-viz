@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 
 import { createTransport, provideTransport } from "@/composables/useTransport";
 import type { MultiRigSequence } from "@/engine/types";
@@ -7,6 +7,21 @@ import { demoSequence } from "@/visualizer/demoSequence";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
 import TransportControls from "@/visualizer/TransportControls.vue";
 import { useVisualizerSession } from "@/visualizer/useVisualizerSession";
+import { useWebcam } from "@/visualizer/useWebcam";
+import VisualizerControls from "@/visualizer/VisualizerControls.vue";
+
+type FullscreenCapableElement = HTMLElement & {
+  webkitRequestFullscreen?: () => Promise<void> | void;
+};
+
+type WebkitDocument = Document & {
+  webkitExitFullscreen?: () => Promise<void> | void;
+  webkitFullscreenElement?: Element | null;
+};
+
+type CanvasViewportExposed = {
+  recomputeLayout: () => void;
+};
 
 const props = withDefaults(
   defineProps<{
@@ -22,6 +37,15 @@ const session = useVisualizerSession(() => props.sequence, transport, {
   autoplay: true,
   resumeOnSequenceChange: true
 });
+const webcam = useWebcam();
+const fullscreenTargetRef = ref<HTMLElement | null>(null);
+const viewportRef = ref<CanvasViewportExposed | null>(null);
+const displayScale = ref(1);
+const isFullscreen = ref(false);
+const webcamActive = computed(() => webcam.isActive.value);
+const webcamStream = computed(() => webcam.stream.value);
+const webcamErrorMessage = computed(() => webcam.errorMessage.value);
+let fullscreenAnimationFrame = 0;
 
 const rigOrder = computed(() => props.sequence.rigs.map((rig) => rig.rigId));
 const errorMessage = session.errorMessage;
@@ -48,8 +72,86 @@ const sceneWorldRadius = computed(() => {
 });
 
 onBeforeUnmount(() => {
+  if (fullscreenAnimationFrame) {
+    cancelAnimationFrame(fullscreenAnimationFrame);
+  }
+
   session.dispose();
   transport.dispose();
+});
+
+function scheduleViewportRecompute() {
+  if (fullscreenAnimationFrame) {
+    cancelAnimationFrame(fullscreenAnimationFrame);
+  }
+
+  fullscreenAnimationFrame = requestAnimationFrame(() => {
+    viewportRef.value?.recomputeLayout();
+    fullscreenAnimationFrame = 0;
+  });
+}
+
+function syncFullscreenState() {
+  const documentWithWebkit = document as WebkitDocument;
+  isFullscreen.value =
+    document.fullscreenElement === fullscreenTargetRef.value ||
+    documentWithWebkit.webkitFullscreenElement === fullscreenTargetRef.value;
+
+  nextTick(() => {
+    scheduleViewportRecompute();
+  });
+}
+
+onMounted(() => {
+  document.addEventListener("fullscreenchange", syncFullscreenState);
+  document.addEventListener("webkitfullscreenchange", syncFullscreenState as EventListener);
+});
+
+function resetDisplayScale() {
+  displayScale.value = 1;
+}
+
+async function toggleFullscreen() {
+  const target = fullscreenTargetRef.value as FullscreenCapableElement | null;
+  const documentWithWebkit = document as WebkitDocument;
+
+  if (!target) {
+    return;
+  }
+
+  if (
+    document.fullscreenElement === target ||
+    documentWithWebkit.webkitFullscreenElement === target
+  ) {
+    if (document.exitFullscreen) {
+      await document.exitFullscreen();
+      return;
+    }
+
+    await documentWithWebkit.webkitExitFullscreen?.();
+    return;
+  }
+
+  if (target.requestFullscreen) {
+    await target.requestFullscreen();
+    return;
+  }
+
+  await target.webkitRequestFullscreen?.();
+}
+
+async function toggleWebcam() {
+  if (webcam.isActive.value) {
+    webcam.stop();
+    return;
+  }
+
+  await webcam.start();
+}
+
+onBeforeUnmount(() => {
+  document.removeEventListener("fullscreenchange", syncFullscreenState);
+  document.removeEventListener("webkitfullscreenchange", syncFullscreenState as EventListener);
 });
 </script>
 
@@ -58,20 +160,40 @@ onBeforeUnmount(() => {
     <TransportControls />
 
     <div
-      v-if="errorMessage"
-      class="rounded-2xl border border-rose-900/60 bg-rose-950/40 p-6 text-sm text-rose-100"
+      ref="fullscreenTargetRef"
+      :class="['grid gap-4', isFullscreen ? 'bg-slate-950 p-4 md:p-6' : '']"
     >
-      <p class="text-xs uppercase tracking-[0.24em] text-rose-300">Visualizer Error</p>
-      <p class="mt-3">{{ errorMessage }}</p>
-    </div>
+      <VisualizerControls
+        v-model:display-scale="displayScale"
+        :is-fullscreen="isFullscreen"
+        :is-webcam-active="webcamActive"
+        :webcam-error-message="webcamErrorMessage"
+        @reset-scale="resetDisplayScale"
+        @toggle-fullscreen="toggleFullscreen"
+        @toggle-webcam="toggleWebcam"
+      />
 
-    <PoiCanvasViewport
-      v-else
-      :poses="cartesianPoses"
-      :rig-order="rigOrder"
-      :scene-world-radius="sceneWorldRadius"
-      :trails="trails"
-    />
+      <div
+        v-if="errorMessage"
+        class="rounded-2xl border border-rose-900/60 bg-rose-950/40 p-6 text-sm text-rose-100"
+      >
+        <p class="text-xs uppercase tracking-[0.24em] text-rose-300">Visualizer Error</p>
+        <p class="mt-3">{{ errorMessage }}</p>
+      </div>
+
+      <PoiCanvasViewport
+        v-else
+        ref="viewportRef"
+        :display-scale="displayScale"
+        :is-fullscreen="isFullscreen"
+        :poses="cartesianPoses"
+        :rig-order="rigOrder"
+        :scene-world-radius="sceneWorldRadius"
+        :trails="trails"
+        :webcam-active="webcamActive"
+        :webcam-stream="webcamStream"
+      />
+    </div>
 
     <div
       class="grid gap-2 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-300 md:grid-cols-3"

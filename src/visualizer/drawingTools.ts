@@ -10,6 +10,11 @@ export interface RigRenderStyle {
   readonly headTrailColor: string;
 }
 
+export interface ClearFrameOptions {
+  readonly backgroundColor?: string;
+  readonly transparentBackground?: boolean;
+}
+
 export const DEFAULT_RIG_STYLES: readonly RigRenderStyle[] = [
   {
     bodyColor: "#cbd5e1",
@@ -31,14 +36,40 @@ export const DEFAULT_RIG_STYLES: readonly RigRenderStyle[] = [
   }
 ];
 
+export const WEBCAM_RIG_STYLES: readonly RigRenderStyle[] = [
+  {
+    bodyColor: "#e2e8f0",
+    handColor: "#22c55e",
+    headColor: "#2563eb",
+    lineColor: "#166534",
+    labelColor: "#f8fafc",
+    handTrailColor: "rgba(22, 101, 52, 0.82)",
+    headTrailColor: "rgba(37, 99, 235, 0.82)"
+  },
+  {
+    bodyColor: "#fef3c7",
+    handColor: "#db2777",
+    headColor: "#dc2626",
+    lineColor: "#9f1239",
+    labelColor: "#fff7ed",
+    handTrailColor: "rgba(159, 18, 57, 0.82)",
+    headTrailColor: "rgba(185, 28, 28, 0.82)"
+  }
+];
+
 export function clearFrame(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
-  backgroundColor: string
+  options: ClearFrameOptions = {}
 ) {
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = backgroundColor;
+
+  if (options.transparentBackground) {
+    return;
+  }
+
+  ctx.fillStyle = options.backgroundColor ?? "#020617";
   ctx.fillRect(0, 0, width, height);
 }
 
