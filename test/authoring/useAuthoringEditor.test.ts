@@ -3,14 +3,14 @@ import { computed, ref, type ComputedRef, type Ref } from "vue";
 
 import { compileAuthoredDocument } from "@/authoring/compile";
 import type {
-  AuthoredDocumentEntry,
-  AuthoredFirstSegment,
-  AuthoredSequenceDocument
+    AuthoredDocumentEntry,
+    AuthoredFirstSegment,
+    AuthoredSequenceDocument
 } from "@/authoring/types";
 import {
-  useAuthoringEditor,
-  type CompileSuccess,
-  type SelectedSegment
+    useAuthoringEditor,
+    type CompileSuccess,
+    type SelectedSegment
 } from "@/authoring/useAuthoringEditor";
 import { PI } from "@/engine/constants";
 
@@ -69,7 +69,6 @@ interface Harness {
   selectedEntry: ComputedRef<AuthoredDocumentEntry | null>;
   lastValidCompiled: Ref<CompileSuccess>;
   selectedSegment: Ref<SelectedSegment>;
-  pendingRestart: Ref<SelectedSegment>;
   compileErrorMessage: Ref<string | null>;
   persisted: Array<{ id: string; document: AuthoredSequenceDocument }>;
   editor: ReturnType<typeof useAuthoringEditor>;
@@ -86,7 +85,6 @@ function createHarness(initial: AuthoredSequenceDocument): Harness {
   const selectedEntry = computed(() => entryRef.value);
   const lastValidCompiled = ref<CompileSuccess>(compileInitial);
   const selectedSegment = ref<SelectedSegment>(null);
-  const pendingRestart = ref<SelectedSegment>(null);
   const compileErrorMessage = ref<string | null>(null);
   const persisted: Array<{ id: string; document: AuthoredSequenceDocument }> = [];
 
@@ -94,7 +92,6 @@ function createHarness(initial: AuthoredSequenceDocument): Harness {
     selectedEntry,
     lastValidCompiled,
     selectedSegment,
-    pendingRestart,
     compileErrorMessage,
     persist: (id, document) => {
       persisted.push({ id, document });
@@ -106,7 +103,6 @@ function createHarness(initial: AuthoredSequenceDocument): Harness {
     selectedEntry,
     lastValidCompiled,
     selectedSegment,
-    pendingRestart,
     compileErrorMessage,
     persisted,
     editor,
@@ -128,7 +124,6 @@ describe("useAuthoringEditor", () => {
       expect(appended.hand.driver.omega).toBe(5);
       expect(appended.head.driver.omega).toBe(6);
       expect(harness.selectedSegment.value).toEqual({ trackId: "left", segmentIndex: 3 });
-      expect(harness.pendingRestart.value).toEqual({ trackId: "left", segmentIndex: 3 });
       expect(harness.persisted).toHaveLength(1);
     });
 

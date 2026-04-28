@@ -2,13 +2,13 @@ import type { ComputedRef, Ref } from "vue";
 
 import { compileAuthoredDocument, validateAuthoredDocument } from "@/authoring/compile";
 import type {
-  AuthoredCircleDriverInput,
-  AuthoredContinuationSegment,
-  AuthoredDocumentEntry,
-  AuthoredOmegaUnit,
-  AuthoredSequenceDocument,
-  AuthoredTrackId,
-  CompileAuthoredDocumentResult
+    AuthoredCircleDriverInput,
+    AuthoredContinuationSegment,
+    AuthoredDocumentEntry,
+    AuthoredOmegaUnit,
+    AuthoredSequenceDocument,
+    AuthoredTrackId,
+    CompileAuthoredDocumentResult
 } from "@/authoring/types";
 import { PI } from "@/engine/constants";
 
@@ -24,7 +24,6 @@ export interface AuthoringEditorDeps {
   readonly selectedEntry: ComputedRef<AuthoredDocumentEntry | null>;
   readonly lastValidCompiled: Ref<CompileSuccess>;
   readonly selectedSegment: Ref<SelectedSegment>;
-  readonly pendingRestart: Ref<SelectedSegment>;
   readonly compileErrorMessage: Ref<string | null>;
   /** Called after a successful compile to persist the new document. */
   readonly persist: (id: string, document: AuthoredSequenceDocument) => void;
@@ -110,8 +109,7 @@ function formatCompileErrors(result: CompileAuthoredDocumentResult): string | nu
 
 export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
   function commitDocumentChange(
-    mutate: (nextDocument: AuthoredSequenceDocument) => SelectedSegment,
-    options: { restart?: SelectedSegment } = {}
+    mutate: (nextDocument: AuthoredSequenceDocument) => SelectedSegment
   ) {
     const entry = deps.selectedEntry.value;
     if (!entry) {
@@ -135,7 +133,6 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
 
     deps.compileErrorMessage.value = null;
     deps.lastValidCompiled.value = compileResult;
-    deps.pendingRestart.value = options.restart ?? nextSelectedSegment;
     deps.selectedSegment.value = nextSelectedSegment;
     deps.persist(entry.id, nextDocument);
   }
@@ -307,13 +304,10 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
     if (!entry) return;
     const trimmed = nextValue.trim() || "Untitled";
     if (trimmed === entry.document.name) return;
-    commitDocumentChange(
-      (nextDocument) => {
-        nextDocument.name = trimmed;
-        return deps.selectedSegment.value;
-      },
-      { restart: null }
-    );
+    commitDocumentChange((nextDocument) => {
+      nextDocument.name = trimmed;
+      return deps.selectedSegment.value;
+    });
   }
 
   function updateDocumentDescription(nextValue: string | null) {
@@ -321,13 +315,10 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
     if (!entry) return;
     const normalized = nextValue && nextValue.trim() ? nextValue : null;
     if (normalized === (entry.document.description ?? null)) return;
-    commitDocumentChange(
-      (nextDocument) => {
-        nextDocument.description = normalized;
-        return deps.selectedSegment.value;
-      },
-      { restart: null }
-    );
+    commitDocumentChange((nextDocument) => {
+      nextDocument.description = normalized;
+      return deps.selectedSegment.value;
+    });
   }
 
   return {

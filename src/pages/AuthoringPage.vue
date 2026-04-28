@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, provide, reactive, ref } from "vue";
+import { computed, onBeforeUnmount, provide, reactive, ref, watch } from "vue";
 
 import { findActiveSegmentIndex } from "@/authoring/activeSegment";
 import { compileAuthoredDocument } from "@/authoring/compile";
@@ -13,8 +13,8 @@ import type {
 } from "@/authoring/types";
 import { useAuthoringEditor, type SelectedSegment } from "@/authoring/useAuthoringEditor";
 import { useAuthoringLibrary } from "@/authoring/useAuthoringLibrary";
-import { useAuthoringPreview } from "@/authoring/useAuthoringPreview";
 import { createTransport, transportKey } from "@/composables/useTransport";
+import { useVisualizerSession } from "@/visualizer/useVisualizerSession";
 
 const TRACK_IDS: readonly AuthoredTrackId[] = ["left", "right"];
 
@@ -40,7 +40,6 @@ const initialCompiled = (() => {
 
 const lastValidCompiled = ref(initialCompiled);
 const compileErrorMessage = ref<string | null>(null);
-const pendingRestart = ref<SelectedSegment>(null);
 const selectedSegment = ref<SelectedSegment>(null);
 const metaDrafts = reactive<{ name: string | null; description: string | null }>({
   name: null,
@@ -51,22 +50,10 @@ const globalOmegaUnit = ref<AuthoredOmegaUnit>("circles-per-unit");
 const transport = createTransport();
 provide(transportKey, transport);
 
-const preview = useAuthoringPreview(
-  () => lastValidCompiled.value.sequence,
-  () => {
-    if (!pendingRestart.value) {
-      return null;
-    }
-
-    const boundary =
-      lastValidCompiled.value.boundariesByTrack[pendingRestart.value.trackId]?.[
-        pendingRestart.value.segmentIndex
-      ];
-    pendingRestart.value = null;
-    return boundary?.startUnit ?? 0;
-  },
-  transport
-);
+const preview = useVisualizerSession(() => lastValidCompiled.value.sequence, transport, {
+  autoplay: true,
+  resumeOnSequenceChange: true
+});
 
 const rigOrder = computed(() => lastValidCompiled.value.sequence.rigs.map((rig) => rig.rigId));
 const cartesianPoses = computed(() =>
@@ -110,13 +97,14 @@ const trackTotals = computed(() =>
   trackViews.value.map((view) => ({ trackId: view.trackId, totalDuration: view.totalDuration }))
 );
 
+const selectedDocumentId = computed(() => selectedEntry.value?.id ?? null);
+
 const presentTrackCount = computed(() => trackViews.value.filter((view) => view.track).length);
 
 const editor = useAuthoringEditor({
   selectedEntry,
   lastValidCompiled,
   selectedSegment,
-  pendingRestart,
   compileErrorMessage,
   persist: (id, document) => library.updateDocument(id, document)
 });
@@ -163,6 +151,11 @@ function commitMetaDescription() {
   editor.updateDocumentDescription(next);
 }
 
+function onDocumentSelectionChange(event: Event) {
+  const id = (event.target as HTMLSelectElement).value || null;
+  library.selectDocument(id);
+}
+
 function isSelected(trackId: AuthoredTrackId, segmentIndex: number): boolean {
   return (
     selectedSegment.value?.trackId === trackId &&
@@ -174,6 +167,29 @@ function canDeleteSegment(_trackId: AuthoredTrackId, totalSegmentsInTrack: numbe
   if (totalSegmentsInTrack > 1) return true;
   return presentTrackCount.value > 1;
 }
+
+watch(selectedDocumentId, (nextId, previousId) => {
+  if (!nextId || nextId === previousId) {
+    return;
+  }
+
+  const entry = selectedEntry.value;
+  if (!entry) {
+    return;
+  }
+
+  const nextCompiled = compileAuthoredDocument(entry.document);
+  if (!nextCompiled.ok) {
+    compileErrorMessage.value = nextCompiled.errors.map((error) => error.code).join(", ");
+    return;
+  }
+
+  metaDrafts.name = null;
+  metaDrafts.description = null;
+  selectedSegment.value = null;
+  compileErrorMessage.value = null;
+  lastValidCompiled.value = nextCompiled;
+});
 
 onBeforeUnmount(() => {
   preview.dispose();
@@ -204,7 +220,7 @@ onBeforeUnmount(() => {
         <select
           class="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
           :value="selectedEntry?.id ?? ''"
-          @change="library.selectDocument(($event.target as HTMLSelectElement).value || null)"
+          @change="onDocumentSelectionChange"
         >
           <option v-for="entry in library.documents.value" :key="entry.id" :value="entry.id">
             {{ entry.document.name }}
@@ -328,9 +344,7 @@ onBeforeUnmount(() => {
                 @delete="deleteSegment(view.trackId, segmentIndex)"
                 @jump-to-boundary="jumpToSegmentStart(view.trackId, segmentIndex)"
                 @jump-to-start="jumpToSegmentStart(view.trackId, segmentIndex)"
-                @update:duration="
-                  (value) => updateSegmentDuration(view.trackId, segmentIndex, value)
-                "
+                @update:duration="(value) => updateSegmentDuration(view.trackId, segmentIndex, value)"
                 @update:start-pose="
                   (payload) =>
                     updateSegmentStartPose(
@@ -342,8 +356,7 @@ onBeforeUnmount(() => {
                     )
                 "
                 @update:omega="
-                  (payload) =>
-                    updateSegmentOmega(view.trackId, segmentIndex, payload.node, payload.value)
+                  (payload) => updateSegmentOmega(view.trackId, segmentIndex, payload.node, payload.value)
                 "
               />
             </template>

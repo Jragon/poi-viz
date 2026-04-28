@@ -1,27 +1,32 @@
 import {
-  computed,
-  ref,
-  toValue,
-  watch,
-  watchEffect,
-  type ComputedRef,
-  type MaybeRefOrGetter,
-  type Ref
+    computed,
+    ref,
+    toValue,
+    watch,
+    watchEffect,
+    type ComputedRef,
+    type MaybeRefOrGetter,
+    type Ref
 } from "vue";
 
 import { createTransport, type TransportController } from "@/composables/useTransport";
 import type { MultiRigSequence } from "@/engine/types";
 import {
-  useMultiRigPlayback,
-  type MultiRigPlaybackController,
-  type MultiRigTrailSamples,
-  type PlaybackEvaluateResult
+    useMultiRigPlayback,
+    type MultiRigPlaybackController,
+    type MultiRigTrailSamples,
+    type PlaybackEvaluateResult
 } from "@/visualizer/useMultiRigPlayback";
 
 export const TRAIL_STEP_FIXED = 0.01;
 export const TRAIL_DECAY_MIN = 2;
 export const TRAIL_DECAY_MAX = 250;
 export const TRAIL_DECAY_DEFAULT = 100;
+
+export interface VisualizerSessionOptions {
+  readonly autoplay?: boolean;
+  readonly resumeOnSequenceChange?: boolean;
+}
 
 export interface VisualizerSession {
   readonly transport: TransportController;
@@ -46,19 +51,29 @@ function formatPrepareErrors(codes: readonly { code: string }[]): string {
 
 export function useVisualizerSession(
   sequence: MaybeRefOrGetter<MultiRigSequence>,
-  transport: TransportController = createTransport()
+  transport: TransportController = createTransport(),
+  options: VisualizerSessionOptions = {}
 ): VisualizerSession {
   const playback = useMultiRigPlayback(() => toValue(sequence));
   const currentFrame = ref<PlaybackEvaluateResult | null>(null);
   const trailDecaySteps = ref<number>(TRAIL_DECAY_DEFAULT);
 
-  const stopDurationWatch = watch(
-    () => playback.maxSequenceDuration.value,
-    (nextDuration) => {
+  const stopPreparedWatch = watch(
+    () => playback.prepared.value,
+    (prepared) => {
+      const wasPlaying = transport.isPlaying.value;
+      const shouldAutoplay =
+        options.autoplay === true && currentFrame.value === null && transport.currentTime.value === 0;
+      const shouldResume = options.resumeOnSequenceChange === true && (wasPlaying || shouldAutoplay);
+
       transport.pause();
       transport.reset();
-      transport.setDuration(nextDuration);
+      transport.setDuration(prepared?.maxSequenceDuration ?? 0);
       currentFrame.value = null;
+
+      if (prepared && shouldResume) {
+        transport.play();
+      }
     },
     { immediate: true }
   );
@@ -104,7 +119,7 @@ export function useVisualizerSession(
 
   const dispose = () => {
     stopEvaluationWatch();
-    stopDurationWatch();
+    stopPreparedWatch();
     playback.dispose();
   };
 

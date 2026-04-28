@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nextTick, ref } from "vue";
+import { nextTick, ref, type MaybeRefOrGetter } from "vue";
 
 import { createTransport } from "@/composables/useTransport";
 import type { MultiRigSequence, Segment } from "@/engine/types";
@@ -8,7 +8,8 @@ import {
   TRAIL_DECAY_MAX,
   TRAIL_DECAY_MIN,
   TRAIL_STEP_FIXED,
-  useVisualizerSession
+  useVisualizerSession,
+  type VisualizerSessionOptions
 } from "@/visualizer/useVisualizerSession";
 
 function createScheduler() {
@@ -54,15 +55,26 @@ function makeSequence(durationUnits: number): MultiRigSequence {
   };
 }
 
+function createSession(
+  sequence: MaybeRefOrGetter<MultiRigSequence>,
+  options: VisualizerSessionOptions = {}
+) {
+  const scheduler = createScheduler();
+  const transport = createTransport({
+    requestFrame: scheduler.requestFrame,
+    cancelFrame: scheduler.cancelFrame
+  });
+
+  return {
+    transport,
+    session: useVisualizerSession(sequence, transport, options)
+  };
+}
+
 describe("useVisualizerSession", () => {
   it("resets transport to zero and pauses when the sequence reference changes", async () => {
-    const scheduler = createScheduler();
-    const transport = createTransport({
-      requestFrame: scheduler.requestFrame,
-      cancelFrame: scheduler.cancelFrame
-    });
     const sequence = ref<MultiRigSequence>(makeSequence(2));
-    const session = useVisualizerSession(sequence, transport);
+    const { session, transport } = createSession(sequence);
 
     expect(transport.duration.value).toBe(2);
 
@@ -79,13 +91,60 @@ describe("useVisualizerSession", () => {
     expect(session.currentFrame.value).toBeTruthy();
   });
 
-  it("clamps trailDecaySteps to [min, max] and rejects non-finite or non-positive input", () => {
-    const scheduler = createScheduler();
-    const transport = createTransport({
-      requestFrame: scheduler.requestFrame,
-      cancelFrame: scheduler.cancelFrame
+  it("resets transport even when a new sequence has the same max duration", async () => {
+    const sequence = ref<MultiRigSequence>(makeSequence(2));
+    const { session, transport } = createSession(sequence);
+
+    transport.setCurrentTime(1.25);
+    transport.play();
+
+    sequence.value = {
+      rigs: [
+        {
+          rigId: "left",
+          sequence: {
+            segments: [
+              {
+                segment: makeSegment(5, 6),
+                durationUnits: 2
+              }
+            ]
+          }
+        }
+      ]
+    };
+    await nextTick();
+
+    expect(transport.isPlaying.value).toBe(false);
+    expect(transport.currentTime.value).toBe(0);
+    expect(transport.duration.value).toBe(2);
+    expect(session.currentFrame.value).toBeTruthy();
+  });
+
+  it("autoplays on initial prepare when enabled", () => {
+    const { transport } = createSession(makeSequence(2), { autoplay: true, resumeOnSequenceChange: true });
+    expect(transport.isPlaying.value).toBe(true);
+  });
+
+  it("keeps playing across sequence changes when resumeOnSequenceChange is enabled", async () => {
+    const sequence = ref<MultiRigSequence>(makeSequence(2));
+    const { transport } = createSession(sequence, {
+      autoplay: true,
+      resumeOnSequenceChange: true
     });
-    const session = useVisualizerSession(makeSequence(2), transport);
+
+    expect(transport.isPlaying.value).toBe(true);
+
+    sequence.value = makeSequence(5);
+    await nextTick();
+
+    expect(transport.isPlaying.value).toBe(true);
+    expect(transport.currentTime.value).toBe(0);
+    expect(transport.duration.value).toBe(5);
+  });
+
+  it("clamps trailDecaySteps to [min, max] and rejects non-finite or non-positive input", () => {
+    const { session } = createSession(makeSequence(2));
 
     expect(session.trailDecaySteps.value).toBe(TRAIL_DECAY_DEFAULT);
 
@@ -106,13 +165,8 @@ describe("useVisualizerSession", () => {
   });
 
   it("keeps the live trail tip aligned with the current frame between grid samples", async () => {
-    const scheduler = createScheduler();
-    const transport = createTransport({
-      requestFrame: scheduler.requestFrame,
-      cancelFrame: scheduler.cancelFrame
-    });
-    const session = useVisualizerSession(makeSequence(2), transport);
-    expect(TRAIL_STEP_FIXED).toBe(0.05);
+    const { session, transport } = createSession(makeSequence(2));
+    expect(TRAIL_STEP_FIXED).toBe(0.01);
 
     transport.setCurrentTime(TRAIL_STEP_FIXED * 0.5);
     await nextTick();
@@ -146,12 +200,7 @@ describe("useVisualizerSession", () => {
   });
 
   it("collapses currentTrails back to empty after transport wraps to 0", async () => {
-    const scheduler = createScheduler();
-    const transport = createTransport({
-      requestFrame: scheduler.requestFrame,
-      cancelFrame: scheduler.cancelFrame
-    });
-    const session = useVisualizerSession(makeSequence(2), transport);
+    const { session, transport } = createSession(makeSequence(2));
     transport.setCurrentTime(1.0);
     await nextTick();
     expect(Object.keys(session.currentTrails.value).length).toBeGreaterThan(0);
@@ -162,12 +211,7 @@ describe("useVisualizerSession", () => {
   });
 
   it("applies trail decay as a max hold window", async () => {
-    const scheduler = createScheduler();
-    const transport = createTransport({
-      requestFrame: scheduler.requestFrame,
-      cancelFrame: scheduler.cancelFrame
-    });
-    const session = useVisualizerSession(makeSequence(2), transport);
+    const { session, transport } = createSession(makeSequence(2));
     session.setTrailDecaySteps(3);
 
     transport.setCurrentTime(TRAIL_STEP_FIXED * 8);
