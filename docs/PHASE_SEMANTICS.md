@@ -53,6 +53,16 @@ Relative poi angular velocity:
 
 These are useful for classification (for example inspin/antispin), even though core state is absolute.
 
+## Phase Trigger Detection
+
+Visualizer-side trigger features such as the metronome should compare against unwrapped phase values.
+
+- absolute trigger: compare a node's world `phase`
+- relative trigger: compare `head.phase - hand.phase`
+
+Use periodic target matching against the unwrapped value rather than wrapping every sample first.
+That preserves direction, supports multiple crossings in one frame interval, and keeps boundary handling explicit.
+
 ## Examples
 
 ### Example A

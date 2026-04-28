@@ -4,8 +4,10 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { createTransport, provideTransport } from "@/composables/useTransport";
 import type { MultiRigSequence } from "@/engine/types";
 import { demoSequence } from "@/visualizer/demoSequence";
+import MetronomeControls from "@/visualizer/MetronomeControls.vue";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
 import TransportControls from "@/visualizer/TransportControls.vue";
+import { usePhaseMetronome } from "@/visualizer/usePhaseMetronome";
 import { useVisualizerSession } from "@/visualizer/useVisualizerSession";
 import { useWebcam } from "@/visualizer/useWebcam";
 import VisualizerControls from "@/visualizer/VisualizerControls.vue";
@@ -37,6 +39,18 @@ const session = useVisualizerSession(() => props.sequence, transport, {
   autoplay: true,
   resumeOnSequenceChange: true
 });
+const metronome = usePhaseMetronome({
+  currentFrame: session.currentFrame,
+  prepared: session.playback.prepared,
+  currentTime: transport.currentTime,
+  duration: transport.duration,
+  isPlaying: transport.isPlaying,
+  speed: transport.speed,
+  unitsPerSecond: transport.unitsPerSecond,
+  onRuleAdded: () => {
+    transport.reset();
+  }
+});
 const webcam = useWebcam();
 const fullscreenTargetRef = ref<HTMLElement | null>(null);
 const viewportRef = ref<CanvasViewportExposed | null>(null);
@@ -54,6 +68,10 @@ const cartesianPoses = computed(() =>
 );
 const trails = computed(() => session.currentTrails.value);
 const transportDurationLabel = computed(() => transport.duration.value.toFixed(2));
+const metronomeRules = computed(() => metronome.rules.value);
+const metronomeRigIds = computed(() => metronome.rigIds.value);
+const metronomeAudioEnabled = computed(() => metronome.isAudioEnabled.value);
+const metronomeAudioErrorMessage = computed(() => metronome.audioErrorMessage.value);
 const sceneWorldRadius = computed(() => {
   const prepared = session.playback.prepared.value;
   if (!prepared) {
@@ -77,6 +95,7 @@ onBeforeUnmount(() => {
   }
 
   session.dispose();
+  metronome.dispose();
   transport.dispose();
 });
 
@@ -194,6 +213,18 @@ onBeforeUnmount(() => {
         :webcam-stream="webcamStream"
       />
     </div>
+
+    <MetronomeControls
+      v-if="!isFullscreen"
+      :rules="metronomeRules"
+      :rig-ids="metronomeRigIds"
+      :is-audio-enabled="metronomeAudioEnabled"
+      :audio-error-message="metronomeAudioErrorMessage"
+      @add-rule="metronome.addRule()"
+      @remove-rule="metronome.removeRule($event)"
+      @update-rule="(ruleId, nextRule) => metronome.updateRule(ruleId, nextRule)"
+      @set-audio-enabled="metronome.setAudioEnabled($event)"
+    />
 
     <div
       class="grid gap-2 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-300 md:grid-cols-3"

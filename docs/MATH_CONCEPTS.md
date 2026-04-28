@@ -24,8 +24,8 @@ This is a short reference for core math ideas used by the engine.
 ## Relative vs Absolute Phase
 
 - Hand phase is absolute in body frame.
-- Head phase is relative to hand.
-- Head absolute phase = hand phase + head relative phase.
+- Head phase is also absolute in body frame.
+- Relative poi phase is derived when needed: `head.phase - hand.phase`.
 
 ## Deterministic Evaluation
 

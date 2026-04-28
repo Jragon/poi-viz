@@ -36,6 +36,7 @@ describe("createTransport", () => {
     const scheduler = createScheduler();
     const transport = createTransport({
       initialDuration: 10,
+      initialSpeed: 1,
       requestFrame: scheduler.requestFrame,
       cancelFrame: scheduler.cancelFrame
     });
@@ -93,6 +94,7 @@ describe("createTransport", () => {
     const scheduler = createScheduler();
     const transport = createTransport({
       initialDuration: 10,
+      initialSpeed: 1,
       requestFrame: scheduler.requestFrame,
       cancelFrame: scheduler.cancelFrame,
       maxFrameDeltaMs: 100

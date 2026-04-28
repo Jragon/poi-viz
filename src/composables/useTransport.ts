@@ -15,6 +15,7 @@ export interface TransportController {
   readonly currentTime: Ref<number>;
   readonly duration: Ref<number>;
   readonly speed: Ref<number>;
+  readonly unitsPerSecond: Ref<number>;
   readonly isPlaying: Ref<boolean>;
   readonly progress: Ref<number>;
   play: () => void;
@@ -69,16 +70,16 @@ export function createTransport(options: TransportOptions = {}): TransportContro
       ? (options.initialSpeed as number)
       : 0.25
   );
+  const unitsPerSecond = ref(
+    Number.isFinite(options.unitsPerSecond) && (options.unitsPerSecond ?? 0) > 0
+      ? (options.unitsPerSecond as number)
+      : 1
+  );
   const isPlaying = ref(false);
   const progress = computed(() => {
     if (duration.value <= 0) return 0;
     return currentTime.value / duration.value;
   });
-
-  const unitsPerSecond =
-    Number.isFinite(options.unitsPerSecond) && (options.unitsPerSecond ?? 0) > 0
-      ? (options.unitsPerSecond as number)
-      : 1;
   const maxFrameDeltaMs =
     Number.isFinite(options.maxFrameDeltaMs) && (options.maxFrameDeltaMs ?? 0) > 0
       ? (options.maxFrameDeltaMs as number)
@@ -106,7 +107,7 @@ export function createTransport(options: TransportOptions = {}): TransportContro
 
     if (lastFrameTimeMs !== null && duration.value > 0) {
       const deltaMs = Math.min(Math.max(timestampMs - lastFrameTimeMs, 0), maxFrameDeltaMs);
-      const deltaUnits = (deltaMs / 1000) * unitsPerSecond * speed.value;
+      const deltaUnits = (deltaMs / 1000) * unitsPerSecond.value * speed.value;
       const nextTime = currentTime.value + deltaUnits;
       currentTime.value = nextTime >= duration.value ? 0 : nextTime;
     }
@@ -175,6 +176,7 @@ export function createTransport(options: TransportOptions = {}): TransportContro
     currentTime,
     duration,
     speed,
+    unitsPerSecond,
     isPlaying,
     progress,
     play,
