@@ -23,7 +23,7 @@ function formatNumber(value: number, digits = 2): string {
 </script>
 
 <template>
-  <aside class="grid min-w-0 gap-4 self-start xl:sticky xl:top-6">
+  <div class="grid min-w-0 gap-4">
     <div
       v-if="errorMessage"
       class="rounded-3xl border border-rose-900/60 bg-rose-950/40 p-5 text-sm text-rose-100"
@@ -62,5 +62,5 @@ function formatNumber(value: number, digits = 2): string {
         </div>
       </div>
     </section>
-  </aside>
+  </div>
 </template>

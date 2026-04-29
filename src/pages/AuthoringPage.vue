@@ -199,61 +199,6 @@ onBeforeUnmount(() => {
 
 <template>
   <main class="mx-auto flex min-h-screen w-full max-w-360 flex-col gap-6 px-6 py-8">
-    <header
-      class="grid gap-4 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end"
-    >
-      <div>
-        <p class="text-xs uppercase tracking-[0.22em] text-slate-500">Sequence Authoring</p>
-        <h1 class="mt-2 text-3xl font-semibold tracking-tight text-slate-100">
-          Continuity-first editor with live preview
-        </h1>
-        <p class="mt-3 max-w-3xl text-sm text-slate-400">
-          Edit authored tracks on blur, keep boundaries legible, and preview exactly with the same
-          looping rules as the main visualizer.
-        </p>
-      </div>
-
-      <div
-        class="grid gap-2 rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-300"
-      >
-        <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Document</p>
-        <select
-          class="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
-          :value="selectedEntry?.id ?? ''"
-          @change="onDocumentSelectionChange"
-        >
-          <option v-for="entry in library.documents.value" :key="entry.id" :value="entry.id">
-            {{ entry.document.name }}
-          </option>
-        </select>
-        <div class="flex flex-wrap gap-2">
-          <button
-            type="button"
-            class="rounded-xl bg-emerald-400 px-3 py-2 text-sm font-medium text-slate-950 transition hover:bg-emerald-300"
-            @click="library.createDocument()"
-          >
-            New
-          </button>
-          <button
-            type="button"
-            class="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-200 transition hover:border-slate-500"
-            :disabled="!selectedEntry"
-            @click="selectedEntry && library.duplicateDocument(selectedEntry.id)"
-          >
-            Duplicate
-          </button>
-          <button
-            type="button"
-            class="rounded-xl border border-rose-800 px-3 py-2 text-sm text-rose-200 transition hover:border-rose-600 disabled:opacity-50"
-            :disabled="library.documents.value.length <= 1 || !selectedEntry"
-            @click="selectedEntry && library.deleteDocument(selectedEntry.id)"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    </header>
-
     <section class="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
       <div class="grid min-w-0 gap-6">
         <section
@@ -273,26 +218,12 @@ onBeforeUnmount(() => {
           <label class="grid min-w-0 gap-2 text-sm text-slate-300">
             <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Description</span>
             <textarea
-              rows="3"
-              class="w-full min-w-0 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-sky-400"
+              rows="1"
+              class="min-h-12 w-full min-w-0 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-sky-400"
               :value="metaDrafts.description ?? selectedDocument?.description ?? ''"
               @input="metaDrafts.description = ($event.target as HTMLTextAreaElement).value"
               @blur="commitMetaDescription"
             />
-          </label>
-
-          <label class="grid min-w-0 gap-2 text-sm text-slate-300 lg:col-span-2">
-            <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Omega Unit</span>
-            <select
-              class="w-full min-w-0 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-sky-400"
-              :value="globalOmegaUnit"
-              @change="
-                globalOmegaUnit = ($event.target as HTMLSelectElement).value as AuthoredOmegaUnit
-              "
-            >
-              <option value="circles-per-unit">circles / unit</option>
-              <option value="radians-per-unit">rad / unit</option>
-            </select>
           </label>
         </section>
 
@@ -344,7 +275,9 @@ onBeforeUnmount(() => {
                 @delete="deleteSegment(view.trackId, segmentIndex)"
                 @jump-to-boundary="jumpToSegmentStart(view.trackId, segmentIndex)"
                 @jump-to-start="jumpToSegmentStart(view.trackId, segmentIndex)"
-                @update:duration="(value) => updateSegmentDuration(view.trackId, segmentIndex, value)"
+                @update:duration="
+                  (value) => updateSegmentDuration(view.trackId, segmentIndex, value)
+                "
                 @update:start-pose="
                   (payload) =>
                     updateSegmentStartPose(
@@ -356,7 +289,8 @@ onBeforeUnmount(() => {
                     )
                 "
                 @update:omega="
-                  (payload) => updateSegmentOmega(view.trackId, segmentIndex, payload.node, payload.value)
+                  (payload) =>
+                    updateSegmentOmega(view.trackId, segmentIndex, payload.node, payload.value)
                 "
               />
             </template>
@@ -364,14 +298,56 @@ onBeforeUnmount(() => {
         </section>
       </div>
 
-      <AuthoringPreviewPanel
-        :error-message="previewErrorMessage"
-        :cartesian-poses="cartesianPoses"
-        :trails="trails"
-        :rig-order="rigOrder"
-        :scene-world-radius="sceneWorldRadius"
-        :track-totals="trackTotals"
-      />
+      <aside class="grid min-w-0 gap-4 self-start xl:sticky xl:top-6">
+        <section
+          class="grid gap-2 rounded-3xl border border-slate-800 bg-slate-900/60 p-5 text-sm text-slate-300"
+        >
+          <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Document</p>
+          <select
+            class="w-full min-w-0 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-slate-100 outline-none transition focus:border-sky-400"
+            :value="selectedEntry?.id ?? ''"
+            @change="onDocumentSelectionChange"
+          >
+            <option v-for="entry in library.documents.value" :key="entry.id" :value="entry.id">
+              {{ entry.document.name }}
+            </option>
+          </select>
+          <div class="flex flex-wrap gap-2 pt-1">
+            <button
+              type="button"
+              class="rounded-lg bg-emerald-400 px-3 py-2 text-sm font-medium text-slate-950 transition hover:bg-emerald-300"
+              @click="library.createDocument()"
+            >
+              New
+            </button>
+            <button
+              type="button"
+              class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 transition hover:border-slate-500 disabled:opacity-50"
+              :disabled="!selectedEntry"
+              @click="selectedEntry && library.duplicateDocument(selectedEntry.id)"
+            >
+              Duplicate
+            </button>
+            <button
+              type="button"
+              class="rounded-lg border border-rose-800 px-3 py-2 text-sm text-rose-200 transition hover:border-rose-600 disabled:opacity-50"
+              :disabled="library.documents.value.length <= 1 || !selectedEntry"
+              @click="selectedEntry && library.deleteDocument(selectedEntry.id)"
+            >
+              Delete
+            </button>
+          </div>
+        </section>
+
+        <AuthoringPreviewPanel
+          :error-message="previewErrorMessage"
+          :cartesian-poses="cartesianPoses"
+          :trails="trails"
+          :rig-order="rigOrder"
+          :scene-world-radius="sceneWorldRadius"
+          :track-totals="trackTotals"
+        />
+      </aside>
     </section>
   </main>
 </template>
