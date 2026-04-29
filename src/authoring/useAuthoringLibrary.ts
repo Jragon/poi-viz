@@ -1,15 +1,12 @@
 import { computed, ref, type ComputedRef, type Ref } from "vue";
 
-import {
-  authoredDocumentFromMultiRigSequence,
-  validateAuthoredDocument
-} from "@/authoring/compile";
+import { validateAuthoredDocument } from "@/authoring/compile";
+import { seedDocuments as defaultSeedDocuments } from "@/authoring/seedDocuments";
 import type {
   AuthoredDocumentEntry,
   AuthoredDocumentLibrarySnapshot,
   AuthoredSequenceDocument
 } from "@/authoring/types";
-import { demoSequence } from "@/visualizer/demoSequence";
 
 const DEFAULT_STORAGE_KEY = "poi-v2:authoring-library";
 
@@ -35,11 +32,6 @@ export interface AuthoringLibraryController {
   deleteDocument: (id: string) => void;
   selectDocument: (id: string | null) => void;
 }
-
-const defaultSeedDocument = authoredDocumentFromMultiRigSequence(demoSequence, {
-  name: "Demo Sequence",
-  description: "Imported from the existing visualizer demo sequence."
-});
 
 function getDefaultStorage(): StorageLike | null {
   if (typeof globalThis.localStorage === "undefined") {
@@ -140,19 +132,13 @@ function cloneEntry(entry: AuthoredDocumentEntry): AuthoredDocumentEntry {
 }
 
 function makeSeedEntries(
-  seedDocuments: AuthoredDocumentEntry[] | undefined,
-  createId: () => string
+  seedDocuments: AuthoredDocumentEntry[] | undefined
 ): AuthoredDocumentEntry[] {
   if (seedDocuments && seedDocuments.length > 0) {
     return seedDocuments.map(cloneEntry);
   }
 
-  return [
-    {
-      id: createId(),
-      document: cloneDocument(defaultSeedDocument)
-    }
-  ];
+  return defaultSeedDocuments.map(cloneEntry);
 }
 
 export function useAuthoringLibrary(
@@ -175,7 +161,7 @@ export function useAuthoringLibrary(
     );
   };
 
-  const seedEntries = makeSeedEntries(options.seedDocuments, createId);
+  const seedEntries = makeSeedEntries(options.seedDocuments);
   const hydrated = parseSnapshot(storage?.getItem(storageKey) ?? null);
 
   documentsRef.value = hydrated?.documents ?? seedEntries;
