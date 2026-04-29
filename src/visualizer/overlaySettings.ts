@@ -27,7 +27,7 @@ export interface VisualizerOverlaySettings {
 }
 
 const DEFAULT_VISIBILITY: OverlayLayerVisibility = {
-  showHandTrails: true,
+  showHandTrails: false,
   showHeadTrails: true,
   showChainLines: true,
   showNodeMarkers: true

@@ -286,7 +286,7 @@ describe("createPngSequenceExporter", () => {
       displayScale: 1.5,
       overlaySettings: {
         visibility: {
-          showHandTrails: true,
+          showHandTrails: false,
           showHeadTrails: true,
           showChainLines: true,
           showNodeMarkers: true
@@ -300,6 +300,7 @@ describe("createPngSequenceExporter", () => {
     const { factory, canvases } = createCanvasFactory();
     const playbackResult = createPlayback(0.1);
     const overlaySettings = createDefaultOverlaySettings(["left"]);
+    overlaySettings.visibility.showHandTrails = true;
     overlaySettings.visibility.showHeadTrails = false;
     overlaySettings.geometry.trailLineWidth = 7.5;
     overlaySettings.geometry.chainLineWidth = 6;
