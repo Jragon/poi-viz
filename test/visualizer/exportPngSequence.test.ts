@@ -15,7 +15,8 @@ import { createDefaultOverlaySettings } from "@/visualizer/overlaySettings";
 import type {
   MultiRigPlaybackController,
   MultiRigTrailSamples,
-  PlaybackEvaluateResult
+  PlaybackEvaluateResult,
+  TrailSamplingOptions
 } from "@/visualizer/useMultiRigPlayback";
 import { TRAIL_STEP_FIXED } from "@/visualizer/useVisualizerSession";
 
@@ -152,7 +153,12 @@ function createPlayback(
   overrides: Partial<MultiRigPlaybackController> = {}
 ) {
   const evaluateTimes: number[] = [];
-  const trailCalls: { t: number; dt: number; holdSteps?: number }[] = [];
+  const trailCalls: {
+    t: number;
+    dt: number;
+    holdSteps?: number;
+    options?: TrailSamplingOptions;
+  }[] = [];
   const disposed = vi.fn();
   const cartesianPoses: CartesianMultiRigPose = {
     left: {
@@ -181,8 +187,18 @@ function createPlayback(
       evaluateTimes.push(t);
       return success(t);
     },
-    sampleTrails: (t: number, dt: number, holdSteps?: number): MultiRigTrailSamples => {
-      trailCalls.push({ t, dt, ...(holdSteps !== undefined ? { holdSteps } : {}) });
+    sampleTrails: (
+      t: number,
+      dt: number,
+      holdSteps?: number,
+      options?: TrailSamplingOptions
+    ): MultiRigTrailSamples => {
+      trailCalls.push({
+        t,
+        dt,
+        ...(holdSteps !== undefined ? { holdSteps } : {}),
+        ...(options !== undefined ? { options } : {})
+      });
       return {
         left: {
           hand: [
@@ -249,9 +265,24 @@ describe("createPngSequenceExporter", () => {
     expect(exporter.state.framesWritten).toBe(3);
     expect(playbackResult.evaluateTimes).toEqual([0, 0.1, 0.2]);
     expect(playbackResult.trailCalls).toEqual([
-      { t: 0, dt: TRAIL_STEP_FIXED, holdSteps: 42 },
-      { t: 0.1, dt: TRAIL_STEP_FIXED, holdSteps: 42 },
-      { t: 0.2, dt: TRAIL_STEP_FIXED, holdSteps: 42 }
+      {
+        t: 0,
+        dt: TRAIL_STEP_FIXED,
+        holdSteps: 42,
+        options: { loopMode: "auto", loopDuration: 0.3 }
+      },
+      {
+        t: 0.1,
+        dt: TRAIL_STEP_FIXED,
+        holdSteps: 42,
+        options: { loopMode: "auto", loopDuration: 0.3 }
+      },
+      {
+        t: 0.2,
+        dt: TRAIL_STEP_FIXED,
+        holdSteps: 42,
+        options: { loopMode: "auto", loopDuration: 0.3 }
+      }
     ]);
     expect(archive.files.map((file) => file.path)).toEqual([
       "frames/frame_00000.png",
@@ -283,6 +314,7 @@ describe("createPngSequenceExporter", () => {
       generatedAt: "2026-04-28T12:34:56.000Z",
       sequenceSummary: "test sequence",
       trailDecaySteps: 42,
+      trailLoopMode: "auto",
       displayScale: 1.5,
       overlaySettings: {
         visibility: {
@@ -353,6 +385,32 @@ describe("createPngSequenceExporter", () => {
         }
       }
     });
+  });
+
+  it("passes the selected trail loop mode into trail sampling and the manifest", async () => {
+    const archive = new MemoryArchiveSink();
+    const { factory } = createCanvasFactory();
+    const playbackResult = createPlayback(0.1);
+    const exporter = createPngSequenceExporter({
+      archiveSinkFactory: () => archive,
+      canvasFactory: factory,
+      createPlayback: () => playbackResult.playback,
+      downloadAdapter: { download: vi.fn() },
+      now: () => new Date("2026-04-28T12:34:56Z"),
+      yieldToBrowser: async () => undefined
+    });
+
+    await exporter.start(createOptions({ trailLoopMode: "off" }));
+
+    expect(playbackResult.trailCalls).toEqual([
+      { t: 0, dt: TRAIL_STEP_FIXED, holdSteps: 42, options: { loopMode: "off", loopDuration: 0.1 } }
+    ]);
+
+    const manifest = JSON.parse(await readBlobText(archive.files[1].body)) as Record<
+      string,
+      unknown
+    >;
+    expect(manifest).toMatchObject({ trailLoopMode: "off" });
   });
 
   it("cancels through AbortSignal without finalizing or downloading", async () => {

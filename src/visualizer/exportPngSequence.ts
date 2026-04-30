@@ -8,7 +8,8 @@ import { renderFrame, type RenderFrameOptions } from "@/visualizer/renderFrame";
 import { createSceneLayout } from "@/visualizer/sceneLayout";
 import {
   useMultiRigPlayback,
-  type MultiRigPlaybackController
+  type MultiRigPlaybackController,
+  type TrailLoopMode
 } from "@/visualizer/useMultiRigPlayback";
 import { TRAIL_STEP_FIXED } from "@/visualizer/useVisualizerSession";
 
@@ -33,6 +34,7 @@ export interface PngSequenceExportOptions {
   readonly sceneWorldRadius: number;
   readonly displayScale: number;
   readonly trailDecaySteps: number;
+  readonly trailLoopMode?: TrailLoopMode;
   readonly overlaySettings: VisualizerOverlaySettings;
   readonly width?: number;
   readonly height?: number;
@@ -80,6 +82,7 @@ interface ExportManifest {
   readonly sceneWorldRadius: number;
   readonly displayScale: number;
   readonly trailDecaySteps: number;
+  readonly trailLoopMode: TrailLoopMode;
   readonly overlaySettings: VisualizerOverlaySettings;
   readonly sequenceSummary: string;
 }
@@ -190,6 +193,7 @@ function createManifest(options: {
     sceneWorldRadius: exportOptions.sceneWorldRadius,
     displayScale: exportOptions.displayScale,
     trailDecaySteps: exportOptions.trailDecaySteps,
+    trailLoopMode: exportOptions.trailLoopMode ?? "auto",
     overlaySettings: cloneOverlaySettings(exportOptions.overlaySettings),
     sequenceSummary: exportOptions.sequenceSummary
   };
@@ -319,7 +323,10 @@ export function createPngSequenceExporter(
           throw new Error(`Playback evaluation failed: ${evaluation.reason}`);
         }
 
-        const trails = playback.sampleTrails(t, TRAIL_STEP_FIXED, options.trailDecaySteps);
+        const trails = playback.sampleTrails(t, TRAIL_STEP_FIXED, options.trailDecaySteps, {
+          loopMode: options.trailLoopMode ?? "auto",
+          loopDuration: durationUnits
+        });
         renderFrame(canvas.ctx, layout, evaluation.cartesianPoses, {
           ...renderOptions,
           trails

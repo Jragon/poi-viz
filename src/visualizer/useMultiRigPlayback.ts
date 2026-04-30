@@ -12,7 +12,6 @@ import { toCartesianMultiRigPose } from "@/engine/cartesian";
 import {
   evalPreparedMultiRigSequenceAt,
   prepareMultiRigSequence,
-  samplePreparedMultiRigSequence,
   type EvalMultiRigAtResult,
   type EvaluatedMultiRigPose,
   type MultiRigSequenceValidationError,
@@ -23,9 +22,26 @@ import type {
   MultiRigSequence,
   RelativeRigPose,
   RigId,
-  TimeUnit,
-  Vec2
+  TimeUnit
 } from "@/engine/types";
+import {
+  appendCurrentPoseToTrails,
+  isContinuousAtLoopBoundary,
+  isValidNormalizedHoldSteps,
+  normalizeTrailHoldSteps,
+  sampleMultiRigTrailGrid,
+  shouldAppendCurrentTrailTip,
+  type MultiRigTrailSamples,
+  type TrailLoopMode,
+  type TrailSamplingOptions
+} from "@/visualizer/trailSampling";
+
+export type {
+  MultiRigTrailSamples,
+  RigTrailSamples,
+  TrailLoopMode,
+  TrailSamplingOptions
+} from "@/visualizer/trailSampling";
 
 export type PlaybackEvalSuccess = {
   ok: true;
@@ -40,107 +56,23 @@ export type PlaybackEvalFailure =
 
 export type PlaybackEvaluateResult = PlaybackEvalSuccess | PlaybackEvalFailure;
 
-export interface RigTrailSamples {
-  hand: Vec2[];
-  head: Vec2[];
-}
-
-export type MultiRigTrailSamples = Partial<Record<RigId, RigTrailSamples>>;
-
-const TRAIL_POINT_EPSILON = 1e-9;
-
 export interface MultiRigPlaybackController {
   readonly prepared: Ref<PreparedMultiRigSequence | null>;
   readonly prepareErrors: Ref<MultiRigSequenceValidationError[]>;
   readonly maxSequenceDuration: ComputedRef<TimeUnit>;
   readonly lastEvaluation: Ref<PlaybackEvaluateResult | null>;
   evaluate: (t: TimeUnit) => PlaybackEvaluateResult;
-  sampleTrails: (t: TimeUnit, dt: TimeUnit, holdSteps?: number) => MultiRigTrailSamples;
+  sampleTrails: (
+    t: TimeUnit,
+    dt: TimeUnit,
+    holdSteps?: number,
+    options?: TrailSamplingOptions
+  ) => MultiRigTrailSamples;
   dispose: () => void;
 }
 
 function toRelativePoses(poses: EvaluatedMultiRigPose): Record<RigId, RelativeRigPose> {
   return Object.fromEntries(Object.entries(poses).map(([rigId, value]) => [rigId, value.pose]));
-}
-
-function createEmptyTrails(prepared: PreparedMultiRigSequence): Record<RigId, RigTrailSamples> {
-  const trails: Record<RigId, RigTrailSamples> = {};
-
-  for (const rig of prepared.rigs) {
-    trails[rig.rigId] = { hand: [], head: [] };
-  }
-
-  return trails;
-}
-
-function appendCartesianSample(
-  trails: Record<RigId, RigTrailSamples>,
-  cartesian: CartesianMultiRigPose
-) {
-  for (const [rigId, pose] of Object.entries(cartesian)) {
-    const bucket = trails[rigId];
-    if (!bucket) continue;
-    bucket.hand.push(pose.handPosition);
-    bucket.head.push(pose.headPosition);
-  }
-}
-
-function pointsMatch(a: Vec2 | undefined, b: Vec2): boolean {
-  if (!a) return false;
-  return Math.abs(a.x - b.x) <= TRAIL_POINT_EPSILON && Math.abs(a.y - b.y) <= TRAIL_POINT_EPSILON;
-}
-
-function appendTrailPoint(
-  points: readonly Vec2[],
-  nextPoint: Vec2,
-  maxPoints: number | null
-): Vec2[] {
-  const withTip = pointsMatch(points[points.length - 1], nextPoint)
-    ? [...points]
-    : [...points, nextPoint];
-
-  if (maxPoints === null || withTip.length <= maxPoints) {
-    return withTip;
-  }
-
-  return withTip.slice(withTip.length - maxPoints);
-}
-
-export function appendCurrentPoseToTrails(
-  trails: MultiRigTrailSamples,
-  currentPoses: CartesianMultiRigPose,
-  holdSteps?: number
-): MultiRigTrailSamples {
-  const normalizedHoldSteps =
-    holdSteps === undefined
-      ? null
-      : Number.isFinite(holdSteps)
-        ? Math.floor(holdSteps)
-        : Number.NaN;
-  if (
-    normalizedHoldSteps !== null &&
-    (!Number.isFinite(normalizedHoldSteps) || normalizedHoldSteps < 2)
-  ) {
-    return {};
-  }
-
-  const rigIds = new Set([...Object.keys(trails), ...Object.keys(currentPoses)]);
-  const nextTrails: MultiRigTrailSamples = {};
-
-  for (const rigId of rigIds) {
-    const currentPose = currentPoses[rigId];
-    if (!currentPose) {
-      continue;
-    }
-
-    const existing = trails[rigId];
-    nextTrails[rigId] = {
-      hand: appendTrailPoint(existing?.hand ?? [], currentPose.handPosition, normalizedHoldSteps),
-      head: appendTrailPoint(existing?.head ?? [], currentPose.headPosition, normalizedHoldSteps)
-    };
-  }
-
-  return nextTrails;
 }
 
 export function useMultiRigPlayback(
@@ -154,6 +86,9 @@ export function useMultiRigPlayback(
     dt: TimeUnit;
     holdSteps: number | null;
     sampleIndex: number;
+    loopMode: TrailLoopMode;
+    loopDuration: TimeUnit | null;
+    isContinuous: boolean;
     trails: MultiRigTrailSamples;
   } | null = null;
 
@@ -206,66 +141,68 @@ export function useMultiRigPlayback(
     stopWatching();
   };
 
-  const sampleTrails = (t: TimeUnit, dt: TimeUnit, holdSteps?: number): MultiRigTrailSamples => {
+  const sampleTrails = (
+    t: TimeUnit,
+    dt: TimeUnit,
+    holdSteps?: number,
+    options: TrailSamplingOptions = {}
+  ): MultiRigTrailSamples => {
     if (!prepared.value) return {};
     if (!Number.isFinite(t) || !Number.isFinite(dt)) return {};
-    if (t <= 0 || dt <= 0) return {};
+    if (t < 0 || dt <= 0) return {};
 
     const sampleIndex = Math.floor(t / dt);
-
-    const normalizedHoldSteps =
-      holdSteps === undefined
-        ? null
-        : Number.isFinite(holdSteps)
-          ? Math.floor(holdSteps)
-          : Number.NaN;
-    if (
-      normalizedHoldSteps !== null &&
-      (!Number.isFinite(normalizedHoldSteps) || normalizedHoldSteps < 2)
-    ) {
+    const normalizedHoldSteps = normalizeTrailHoldSteps(holdSteps);
+    if (!isValidNormalizedHoldSteps(normalizedHoldSteps)) {
       return {};
     }
 
-    const startIndex =
-      normalizedHoldSteps === null ? 0 : Math.max(0, sampleIndex - (normalizedHoldSteps - 1));
+    const loopMode = options.loopMode ?? "off";
+    const optionLoopDuration = options.loopDuration ?? 0;
+    const loopDuration =
+      Number.isFinite(optionLoopDuration) && optionLoopDuration > 0 ? optionLoopDuration : null;
+    const isContinuous =
+      loopMode === "auto" && loopDuration !== null
+        ? isContinuousAtLoopBoundary(prepared.value, loopDuration)
+        : false;
+    const wrappedLoopDuration =
+      loopMode === "auto" && isContinuous && normalizedHoldSteps !== null ? loopDuration : null;
+
+    if (t === 0 && wrappedLoopDuration === null) return {};
 
     let baseTrails =
       trailCache &&
       trailCache.prepared === prepared.value &&
       trailCache.dt === dt &&
       trailCache.holdSteps === normalizedHoldSteps &&
-      trailCache.sampleIndex === sampleIndex
+      trailCache.sampleIndex === sampleIndex &&
+      trailCache.loopMode === loopMode &&
+      trailCache.loopDuration === wrappedLoopDuration &&
+      trailCache.isContinuous === isContinuous
         ? trailCache.trails
         : null;
 
     if (!baseTrails) {
-      const pointCount = sampleIndex - startIndex + 1;
-      const times: TimeUnit[] = new Array(pointCount);
-      for (let index = 0; index < pointCount; index += 1) {
-        times[index] = (startIndex + index) * dt;
-      }
-
-      const results = samplePreparedMultiRigSequence(prepared.value, times);
-      const trails = createEmptyTrails(prepared.value);
-
-      for (const result of results) {
-        if (!result.ok) return {};
-        appendCartesianSample(trails, toCartesianMultiRigPose(toRelativePoses(result.poses)));
-      }
-
-      baseTrails = trails;
+      baseTrails = sampleMultiRigTrailGrid(
+        prepared.value,
+        sampleIndex,
+        dt,
+        normalizedHoldSteps,
+        wrappedLoopDuration
+      );
       trailCache = {
         prepared: prepared.value,
         dt,
         holdSteps: normalizedHoldSteps,
         sampleIndex,
-        trails
+        loopMode,
+        loopDuration: wrappedLoopDuration,
+        isContinuous,
+        trails: baseTrails
       };
     }
 
-    const lastSampleTime = sampleIndex * dt;
-    const appendCurrentTip = t - lastSampleTime > Number.EPSILON * Math.max(1, Math.abs(t));
-    if (!appendCurrentTip) {
+    if (!shouldAppendCurrentTrailTip(t, dt)) {
       return baseTrails;
     }
 
@@ -275,7 +212,7 @@ export function useMultiRigPlayback(
     return appendCurrentPoseToTrails(
       baseTrails,
       toCartesianMultiRigPose(toRelativePoses(currentEval.poses)),
-      normalizedHoldSteps ?? undefined
+      normalizedHoldSteps
     );
   };
 

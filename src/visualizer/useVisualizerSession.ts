@@ -1,21 +1,22 @@
 import {
-    computed,
-    ref,
-    toValue,
-    watch,
-    watchEffect,
-    type ComputedRef,
-    type MaybeRefOrGetter,
-    type Ref
+  computed,
+  ref,
+  toValue,
+  watch,
+  watchEffect,
+  type ComputedRef,
+  type MaybeRefOrGetter,
+  type Ref
 } from "vue";
 
 import { createTransport, type TransportController } from "@/composables/useTransport";
 import type { MultiRigSequence } from "@/engine/types";
 import {
-    useMultiRigPlayback,
-    type MultiRigPlaybackController,
-    type MultiRigTrailSamples,
-    type PlaybackEvaluateResult
+  useMultiRigPlayback,
+  type MultiRigPlaybackController,
+  type MultiRigTrailSamples,
+  type PlaybackEvaluateResult,
+  type TrailLoopMode
 } from "@/visualizer/useMultiRigPlayback";
 
 export const TRAIL_STEP_FIXED = 0.01;
@@ -34,9 +35,11 @@ export interface VisualizerSession {
   readonly currentFrame: Ref<PlaybackEvaluateResult | null>;
   readonly currentTrails: ComputedRef<MultiRigTrailSamples>;
   readonly trailDecaySteps: Ref<number>;
+  readonly trailLoopMode: Ref<TrailLoopMode>;
   readonly errorMessage: ComputedRef<string | null>;
   readonly isReady: ComputedRef<boolean>;
   setTrailDecaySteps: (value: number) => void;
+  setTrailLoopMode: (value: TrailLoopMode) => void;
   dispose: () => void;
 }
 
@@ -57,14 +60,18 @@ export function useVisualizerSession(
   const playback = useMultiRigPlayback(() => toValue(sequence));
   const currentFrame = ref<PlaybackEvaluateResult | null>(null);
   const trailDecaySteps = ref<number>(TRAIL_DECAY_DEFAULT);
+  const trailLoopMode = ref<TrailLoopMode>("auto");
 
   const stopPreparedWatch = watch(
     () => playback.prepared.value,
     (prepared) => {
       const wasPlaying = transport.isPlaying.value;
       const shouldAutoplay =
-        options.autoplay === true && currentFrame.value === null && transport.currentTime.value === 0;
-      const shouldResume = options.resumeOnSequenceChange === true && (wasPlaying || shouldAutoplay);
+        options.autoplay === true &&
+        currentFrame.value === null &&
+        transport.currentTime.value === 0;
+      const shouldResume =
+        options.resumeOnSequenceChange === true && (wasPlaying || shouldAutoplay);
 
       transport.pause();
       transport.reset();
@@ -93,14 +100,22 @@ export function useVisualizerSession(
   });
 
   const currentTrails = computed<MultiRigTrailSamples>(() => {
-    if (!playback.prepared.value) return {};
+    const prepared = playback.prepared.value;
+    if (!prepared) return {};
     const t = transport.currentTime.value;
-    if (t <= 0) return {};
-    return playback.sampleTrails(t, TRAIL_STEP_FIXED, trailDecaySteps.value);
+    if (t < 0 || (t === 0 && trailLoopMode.value === "off")) return {};
+    return playback.sampleTrails(t, TRAIL_STEP_FIXED, trailDecaySteps.value, {
+      loopMode: trailLoopMode.value,
+      loopDuration: prepared.maxSequenceDuration
+    });
   });
 
   const setTrailDecaySteps = (value: number) => {
     trailDecaySteps.value = clampTrailDecaySteps(value);
+  };
+
+  const setTrailLoopMode = (value: TrailLoopMode) => {
+    trailLoopMode.value = value === "auto" ? "auto" : "off";
   };
 
   const errorMessage = computed(() => {
@@ -129,9 +144,11 @@ export function useVisualizerSession(
     currentFrame,
     currentTrails,
     trailDecaySteps,
+    trailLoopMode,
     errorMessage,
     isReady,
     setTrailDecaySteps,
+    setTrailLoopMode,
     dispose
   };
 }

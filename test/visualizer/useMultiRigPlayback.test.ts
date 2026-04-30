@@ -36,6 +36,19 @@ function makeSequence(durationUnits: number): MultiRigSequence {
   };
 }
 
+function makeSingleRigSequence(segment: Segment, durationUnits: number): MultiRigSequence {
+  return {
+    rigs: [
+      {
+        rigId: "left",
+        sequence: {
+          segments: [{ segment, durationUnits }]
+        }
+      }
+    ]
+  };
+}
+
 describe("useMultiRigPlayback", () => {
   it("prepares immediately and evaluates both raw and Cartesian pose views", () => {
     const playback = useMultiRigPlayback(makeSequence(2));
@@ -195,5 +208,59 @@ describe("useMultiRigPlayback.sampleTrails", () => {
     const a = playback.sampleTrails(1.25, 0.05);
     const b = playback.sampleTrails(1.25, 0.05);
     expect(a).toEqual(b);
+  });
+
+  it("wraps finite trails at t = 0 for continuous loops in auto mode", () => {
+    const playback = useMultiRigPlayback(
+      makeSingleRigSequence(makeSegment(Math.PI * 2, Math.PI * 2), 1)
+    );
+    const trails = playback.sampleTrails(0, 0.1, 3, { loopMode: "auto", loopDuration: 1 });
+
+    expect(trails.left?.hand).toHaveLength(3);
+    expect(trails.left?.hand?.[0].x).toBeCloseTo(Math.cos(Math.PI * 2 * 0.8), 12);
+    expect(trails.left?.hand?.[1].x).toBeCloseTo(Math.cos(Math.PI * 2 * 0.9), 12);
+    expect(trails.left?.hand?.[2]).toEqual({ x: 1, y: 0 });
+  });
+
+  it("keeps t = 0 empty when loop mode is off", () => {
+    const playback = useMultiRigPlayback(
+      makeSingleRigSequence(makeSegment(Math.PI * 2, Math.PI * 2), 1)
+    );
+
+    expect(playback.sampleTrails(0, 0.1, 3, { loopMode: "off", loopDuration: 1 })).toEqual({});
+  });
+
+  it("does not wrap discontinuous loops in auto mode", () => {
+    const playback = useMultiRigPlayback(makeSingleRigSequence(makeSegment(1, 1), 1));
+
+    expect(playback.sampleTrails(0, 0.1, 3, { loopMode: "auto", loopDuration: 1 })).toEqual({});
+  });
+
+  it("separates cached trail windows by loop mode", () => {
+    const playback = useMultiRigPlayback(
+      makeSingleRigSequence(makeSegment(Math.PI * 2, Math.PI * 2), 1)
+    );
+    const off = playback.sampleTrails(0.05, 0.1, 3, { loopMode: "off", loopDuration: 1 });
+    const auto = playback.sampleTrails(0.05, 0.1, 3, { loopMode: "auto", loopDuration: 1 });
+
+    expect(off.left?.hand).toHaveLength(2);
+    expect(auto.left?.hand).toHaveLength(3);
+    expect(auto).not.toEqual(off);
+  });
+
+  it("leaves unbounded trails unchanged in auto mode", () => {
+    const playback = useMultiRigPlayback(
+      makeSingleRigSequence(makeSegment(Math.PI * 2, Math.PI * 2), 1)
+    );
+    const off = playback.sampleTrails(1.25, 0.05, undefined, {
+      loopMode: "off",
+      loopDuration: 1
+    });
+    const auto = playback.sampleTrails(1.25, 0.05, undefined, {
+      loopMode: "auto",
+      loopDuration: 1
+    });
+
+    expect(auto).toEqual(off);
   });
 });

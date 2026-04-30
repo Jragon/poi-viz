@@ -55,6 +55,24 @@ function makeSequence(durationUnits: number): MultiRigSequence {
   };
 }
 
+function makeContinuousSequence(durationUnits: number): MultiRigSequence {
+  return {
+    rigs: [
+      {
+        rigId: "left",
+        sequence: {
+          segments: [
+            {
+              segment: makeSegment((Math.PI * 2) / durationUnits, (Math.PI * 2) / durationUnits),
+              durationUnits
+            }
+          ]
+        }
+      }
+    ]
+  };
+}
+
 function createSession(
   sequence: MaybeRefOrGetter<MultiRigSequence>,
   options: VisualizerSessionOptions = {}
@@ -122,7 +140,10 @@ describe("useVisualizerSession", () => {
   });
 
   it("autoplays on initial prepare when enabled", () => {
-    const { transport } = createSession(makeSequence(2), { autoplay: true, resumeOnSequenceChange: true });
+    const { transport } = createSession(makeSequence(2), {
+      autoplay: true,
+      resumeOnSequenceChange: true
+    });
     expect(transport.isPlaying.value).toBe(true);
   });
 
@@ -208,6 +229,36 @@ describe("useVisualizerSession", () => {
     transport.setCurrentTime(0);
     await nextTick();
     expect(session.currentTrails.value).toEqual({});
+  });
+
+  it("keeps continuous currentTrails populated at the transport boundary in auto mode", async () => {
+    const { session, transport } = createSession(makeContinuousSequence(2));
+    session.setTrailDecaySteps(3);
+
+    expect(session.trailLoopMode.value).toBe("auto");
+    transport.setCurrentTime(0);
+    await nextTick();
+
+    expect(session.currentTrails.value.left?.hand).toHaveLength(3);
+    expect(session.currentTrails.value.left?.head).toHaveLength(3);
+  });
+
+  it("turns continuous boundary trails off when trailLoopMode is off", async () => {
+    const { session, transport } = createSession(makeContinuousSequence(2));
+    session.setTrailDecaySteps(3);
+
+    session.setTrailLoopMode("off");
+    transport.setCurrentTime(0);
+    await nextTick();
+
+    expect(session.trailLoopMode.value).toBe("off");
+    expect(session.currentTrails.value).toEqual({});
+
+    session.setTrailLoopMode("auto");
+    await nextTick();
+
+    expect(session.trailLoopMode.value).toBe("auto");
+    expect(session.currentTrails.value.left?.hand).toHaveLength(3);
   });
 
   it("applies trail decay as a max hold window", async () => {

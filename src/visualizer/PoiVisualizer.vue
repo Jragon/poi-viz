@@ -225,6 +225,7 @@ async function startPngSequenceExport() {
       sceneWorldRadius: sceneWorldRadius.value,
       displayScale: displayScale.value,
       trailDecaySteps: session.trailDecaySteps.value,
+      trailLoopMode: session.trailLoopMode.value,
       overlaySettings: cloneOverlaySettings(overlaySettings)
     });
   } finally {
@@ -251,6 +252,7 @@ onBeforeUnmount(() => {
       <VisualizerControls
         v-model:display-scale="displayScale"
         :overlay-settings="overlaySettings"
+        :trail-loop-mode="session.trailLoopMode.value"
         :rig-order="rigOrder"
         :export-state="pngSequenceExporter.state"
         :is-export-ready="session.isReady.value"
@@ -266,6 +268,7 @@ onBeforeUnmount(() => {
         @update-overlay-geometry="updateOverlayGeometry"
         @update-overlay-visibility="updateOverlayVisibility"
         @update-rig-overlay-style="updateRigOverlayStyle"
+        @update-trail-loop-mode="session.setTrailLoopMode"
       />
 
       <div

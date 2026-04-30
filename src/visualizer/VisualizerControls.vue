@@ -8,6 +8,7 @@ import {
   type RigOverlayStyleKey,
   type VisualizerOverlaySettings
 } from "@/visualizer/overlaySettings";
+import type { TrailLoopMode } from "@/visualizer/useMultiRigPlayback";
 
 const props = defineProps<{
   displayScale: number;
@@ -17,6 +18,7 @@ const props = defineProps<{
   isWebcamActive: boolean;
   rigOrder: readonly RigId[];
   overlaySettings: VisualizerOverlaySettings;
+  trailLoopMode: TrailLoopMode;
   exportState: PngSequenceExportState;
   isExportReady: boolean;
   webcamErrorMessage?: string | null;
@@ -27,6 +29,7 @@ const emit = defineEmits<{
   updateOverlayVisibility: [key: keyof OverlayLayerVisibility, value: boolean];
   updateOverlayGeometry: [key: OverlayGeometryKey, value: number];
   updateRigOverlayStyle: [rigId: RigId, key: RigOverlayStyleKey, value: string];
+  updateTrailLoopMode: [value: TrailLoopMode];
   resetScale: [];
   resetOverlayStyle: [];
   toggleFullscreen: [];
@@ -79,6 +82,10 @@ function onScaleInput(event: Event) {
 
 function checkboxValue(event: Event): boolean {
   return (event.target as HTMLInputElement).checked;
+}
+
+function trailLoopModeValue(event: Event): TrailLoopMode {
+  return checkboxValue(event) ? "auto" : "off";
 }
 
 function numberValue(event: Event): number {
@@ -164,6 +171,15 @@ function rigStyle(rigId: RigId, index: number) {
               @change="emit('updateOverlayVisibility', control.key, checkboxValue($event))"
             />
             {{ control.label }}
+          </label>
+          <label class="flex items-center gap-2">
+            <input
+              type="checkbox"
+              :checked="props.trailLoopMode === 'auto'"
+              class="accent-amber-400"
+              @change="emit('updateTrailLoopMode', trailLoopModeValue($event))"
+            />
+            Loop Continuous Trails
           </label>
         </div>
       </fieldset>

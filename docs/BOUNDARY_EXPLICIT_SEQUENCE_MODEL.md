@@ -85,6 +85,15 @@ type PreparedSequence = {
 - Negative time is rejected explicitly.
 - Non-finite time is rejected explicitly.
 
+## Visualizer Trail Overlay
+
+Trail rendering may use continuity-aware wraparound at the transport boundary as a visual overlay behavior. This does not change engine evaluation semantics.
+
+- The trail loop period is the prepared multi-rig `maxSequenceDuration`, matching the transport window.
+- In automatic mode, finite trail windows wrap across the boundary only when every rig's hand and head polar phase/radius match between `t = 0` and the exact left-limit pose at the transport boundary, modulo whole turns and within visual tolerance.
+- Continuity is position-only; tangent and velocity continuity are not part of the trail decision.
+- The visualizer normalizes wrapped trail sample times before calling engine evaluation, so the engine still receives non-negative finite times.
+
 ## Determinism Rules
 
 - Sequence evaluation is direct (`prepared + tGlobal -> result`), with non-negative finite `tGlobal` wrapped before segment lookup.
