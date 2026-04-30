@@ -9,13 +9,15 @@ const source = useVisualizerDocumentSource(library);
 </script>
 
 <template>
-  <main class="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-6 py-8">
+  <main class="mx-auto flex min-h-screen w-full max-w-400 flex-col gap-6 px-6 py-8">
     <template v-if="source.sequence.value">
-      <DocumentSelector
-        :documents="source.documents.value"
-        :selected-id="source.selectedId.value"
-        @select="source.select($event)"
-      />
+      <div class="mx-auto w-full max-w-6xl">
+        <DocumentSelector
+          :documents="source.documents.value"
+          :selected-id="source.selectedId.value"
+          @select="source.select($event)"
+        />
+      </div>
 
       <section class="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 md:p-6">
         <PoiVisualizer :sequence="source.sequence.value" />
@@ -24,7 +26,7 @@ const source = useVisualizerDocumentSource(library);
 
     <section
       v-else
-      class="rounded-2xl border border-slate-800 bg-slate-900/40 p-8 text-center text-sm text-slate-400"
+      class="mx-auto w-full max-w-6xl rounded-2xl border border-slate-800 bg-slate-900/40 p-8 text-center text-sm text-slate-400"
     >
       <p>No saved documents.</p>
       <router-link

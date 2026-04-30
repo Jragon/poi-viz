@@ -3,27 +3,20 @@ import { computed } from "vue";
 
 import { useTransport } from "@/composables/useTransport";
 
-const { currentTime, duration, speed, isPlaying, play, pause, setCurrentTime, setSpeed } =
-  useTransport();
+const { currentTime, duration, isPlaying, play, pause, setCurrentTime } = useTransport();
 
 const currentTimeLabel = computed(() => currentTime.value.toFixed(2));
 const durationLabel = computed(() => duration.value.toFixed(2));
-const secondsPerUnit = computed(() => (1 / speed.value).toFixed(2));
 
 function onScrub(event: Event) {
   const target = event.target as HTMLInputElement;
   setCurrentTime(Number(target.value));
 }
-
-function onSpeedChange(event: Event) {
-  const target = event.target as HTMLInputElement;
-  setSpeed(1 / Number(target.value));
-}
 </script>
 
 <template>
   <section class="grid gap-4 rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-    <div class="grid gap-4 md:grid-cols-[auto_minmax(0,1fr)_15rem] md:items-center">
+    <div class="grid gap-4 md:grid-cols-[auto_minmax(0,1fr)] md:items-center">
       <div class="flex gap-2">
         <button
           type="button"
@@ -43,24 +36,8 @@ function onSpeedChange(event: Event) {
         </button>
       </div>
 
-      <label class="grid gap-1 text-xs uppercase tracking-[0.2em] text-slate-500">
-        Seconds per Time Unit
-        <input
-          type="range"
-          min="0.1"
-          max="10"
-          step="0.05"
-          :value="secondsPerUnit"
-          class="w-full accent-fuchsia-400"
-          @input="onSpeedChange"
-        />
-      </label>
-
       <div class="grid w-full gap-1 text-sm text-slate-300 md:justify-self-end md:text-right">
         <p class="font-mono tabular-nums">{{ currentTimeLabel }} / {{ durationLabel }} units</p>
-        <p class="font-mono text-xs uppercase tracking-[0.2em] text-slate-500 tabular-nums">
-          {{ secondsPerUnit }} s / unit
-        </p>
       </div>
     </div>
 
