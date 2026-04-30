@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, provide, reactive, ref, watch } from "vue";
+import { computed, onBeforeUnmount, reactive, ref, watch } from "vue";
 
 import { findActiveSegmentIndex } from "@/authoring/activeSegment";
 import { compileAuthoredDocument } from "@/authoring/compile";
@@ -13,9 +13,9 @@ import type {
 } from "@/authoring/types";
 import { useAuthoringEditor, type SelectedSegment } from "@/authoring/useAuthoringEditor";
 import { useAuthoringLibrary } from "@/authoring/useAuthoringLibrary";
-import { createTransport, transportKey } from "@/composables/useTransport";
+import { createTransport } from "@/composables/useTransport";
 import { createDefaultOverlaySettings } from "@/visualizer/overlaySettings";
-import { useVisualizerSession } from "@/visualizer/useVisualizerSession";
+import { useVisualizerCore } from "@/visualizer/useVisualizerCore";
 
 const TRACK_IDS: readonly AuthoredTrackId[] = ["left", "right"];
 
@@ -49,38 +49,22 @@ const metaDrafts = reactive<{ name: string | null; description: string | null }>
 const globalOmegaUnit = ref<AuthoredOmegaUnit>("circles-per-unit");
 
 const transport = createTransport();
-provide(transportKey, transport);
-
-const preview = useVisualizerSession(() => lastValidCompiled.value.sequence, transport, {
+const {
+  rigOrder,
+  cartesianPoses,
+  trails,
+  sceneWorldRadius,
+  errorMessage: previewSessionErrorMessage
+} = useVisualizerCore(() => lastValidCompiled.value.sequence, {
+  transport,
   autoplay: true,
   resumeOnSequenceChange: true
 });
 
-const rigOrder = computed(() => lastValidCompiled.value.sequence.rigs.map((rig) => rig.rigId));
 const previewOverlaySettings = computed(() => createDefaultOverlaySettings(rigOrder.value));
-const cartesianPoses = computed(() =>
-  preview.currentFrame.value?.ok ? preview.currentFrame.value.cartesianPoses : {}
-);
-const trails = computed(() => preview.currentTrails.value);
 const previewErrorMessage = computed(
-  () => compileErrorMessage.value ?? preview.errorMessage.value ?? null
+  () => compileErrorMessage.value ?? previewSessionErrorMessage.value ?? null
 );
-const sceneWorldRadius = computed(() => {
-  const prepared = preview.playback.prepared.value;
-  if (!prepared) {
-    return 2;
-  }
-
-  return prepared.rigs.reduce((maxRadius, rig) => {
-    const rigMaxRadius = rig.prepared.placements.reduce((maxPlacementRadius, placement) => {
-      const chainRadius =
-        placement.segment.hand.startPose.radius + placement.segment.head.startPose.radius;
-      return Math.max(maxPlacementRadius, chainRadius);
-    }, 0);
-
-    return Math.max(maxRadius, rigMaxRadius);
-  }, 2);
-});
 
 const trackViews = computed(() =>
   TRACK_IDS.map((trackId) => {
@@ -194,7 +178,6 @@ watch(selectedDocumentId, (nextId, previousId) => {
 });
 
 onBeforeUnmount(() => {
-  preview.dispose();
   transport.dispose();
 });
 </script>

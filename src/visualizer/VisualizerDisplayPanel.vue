@@ -12,6 +12,17 @@ import {
 } from "@/visualizer/useDisplaySettings";
 import type { TrailLoopMode } from "@/visualizer/useMultiRigPlayback";
 
+const props = withDefaults(
+  defineProps<{
+    showHeader?: boolean;
+    framed?: boolean;
+  }>(),
+  {
+    showHeader: true,
+    framed: true
+  }
+);
+
 const display = useDisplaySettings();
 
 const activePresetLabel = computed(() =>
@@ -44,10 +55,15 @@ function trailLoopModeValue(event: Event): TrailLoopMode {
 
 <template>
   <aside
-    class="max-h-full overflow-y-auto rounded-2xl border border-slate-800 bg-slate-950/95 p-4 shadow-2xl shadow-slate-950/60 backdrop-blur"
+    :class="[
+      'max-h-full overflow-y-auto p-4',
+      props.framed
+        ? 'rounded-2xl border border-slate-800 bg-slate-950/95 shadow-2xl shadow-slate-950/60 backdrop-blur'
+        : ''
+    ]"
   >
     <div class="grid gap-4">
-      <div class="flex items-start justify-between gap-3">
+      <div v-if="props.showHeader" class="flex items-start justify-between gap-3">
         <div>
           <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Display</p>
           <p class="mt-1 font-mono text-sm text-slate-300">{{ activePresetLabel }}</p>
