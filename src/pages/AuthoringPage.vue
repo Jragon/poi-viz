@@ -14,6 +14,7 @@ import type {
 import { useAuthoringEditor, type SelectedSegment } from "@/authoring/useAuthoringEditor";
 import { useAuthoringLibrary } from "@/authoring/useAuthoringLibrary";
 import { createTransport, transportKey } from "@/composables/useTransport";
+import { createDefaultOverlaySettings } from "@/visualizer/overlaySettings";
 import { useVisualizerSession } from "@/visualizer/useVisualizerSession";
 
 const TRACK_IDS: readonly AuthoredTrackId[] = ["left", "right"];
@@ -56,6 +57,7 @@ const preview = useVisualizerSession(() => lastValidCompiled.value.sequence, tra
 });
 
 const rigOrder = computed(() => lastValidCompiled.value.sequence.rigs.map((rig) => rig.rigId));
+const previewOverlaySettings = computed(() => createDefaultOverlaySettings(rigOrder.value));
 const cartesianPoses = computed(() =>
   preview.currentFrame.value?.ok ? preview.currentFrame.value.cartesianPoses : {}
 );
@@ -345,6 +347,8 @@ onBeforeUnmount(() => {
           :trails="trails"
           :rig-order="rigOrder"
           :scene-world-radius="sceneWorldRadius"
+          :display-scale="1"
+          :overlay-settings="previewOverlaySettings"
           :track-totals="trackTotals"
         />
       </aside>

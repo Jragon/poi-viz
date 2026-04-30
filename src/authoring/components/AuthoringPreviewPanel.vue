@@ -2,6 +2,7 @@
 import type { AuthoredTrackId } from "@/authoring/types";
 import { useTransport } from "@/composables/useTransport";
 import type { CartesianMultiRigPose, RigId } from "@/engine/types";
+import type { VisualizerOverlaySettings } from "@/visualizer/overlaySettings";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
 import type { RigTrail } from "@/visualizer/renderFrame";
 import TransportControls from "@/visualizer/TransportControls.vue";
@@ -12,6 +13,8 @@ defineProps<{
   trails: Partial<Record<RigId, RigTrail>>;
   rigOrder: readonly RigId[];
   sceneWorldRadius: number;
+  displayScale: number;
+  overlaySettings: VisualizerOverlaySettings;
   trackTotals: ReadonlyArray<{ trackId: AuthoredTrackId; totalDuration: number }>;
 }>();
 
@@ -40,6 +43,8 @@ function formatNumber(value: number, digits = 2): string {
         :trails="trails"
         :rig-order="rigOrder"
         :scene-world-radius="sceneWorldRadius"
+        :display-scale="displayScale"
+        :overlay-settings="overlaySettings"
       />
 
       <div
