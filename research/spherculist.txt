@@ -1,0 +1,607 @@
+A Spherculist Manifesto
+By Rev
+*** DISCLAIMER: The views presented here are mine alone. This means that I may use/define terms in
+ways outside of that commonly accepted/used in the greater poi community. I’m not trying to challenge,
+change, or redefine said concepts. It’s basically just my way of saying that I don’t want to argue, and that I
+may use terms in ways that other definitions might not accommodate. I’m doing this to help you understand
+how –I- see things, and through this alternate perspective enrich your own conceptualization. Whether or
+not you accept these definitions outside of this discussion doesn’t really matter. They reflect my current
+understanding, and may be altered at a later date. ***
+I'm going to lock this thread so that I can keep my ideas neat and organized. That means you can go HERE
+(right click, open in a new window) to post comments. This is helpful I think in many ways. That being
+said,
+A Spherculist Manifesto: Theory, Conjecture, and Folly by Rev
+1- Degrees
+2- Inswings
+3- Introversions
+4- Inversions
+coming soon
+5- Bf introversions
+6- Bf inversions
+eventually I'll get around to other topics like antispin and spun stalls
+To begin, I would like to discuss the notion of degrees. I think this notion has been tossed around for a
+while and it gets misused or misinterpreted in many ways. First off, what is a degree? To put it simply, a
+degree is 180 degrees of twist. Naturally, this definition is quite vague. Twist of what you might ask? The
+answer to that depends on your perspective. Normally, we refer to the twist of the arms, but we can refer to
+it in other cases as well. For instance, we can refer to the amount of twist of the poi in a twist, tangle, or
+knot.
+
+So, how do we apply degrees to patterns? This happens to be the point where I think most confusion comes
+in. degrees are not a static property of a pattern, instead they refer to positions within a pattern. Ultimately,
+they are used to talk about the position that one is in when they try to do x, y, z.
+
+Let’s get a quick rundown of the degree positions:
+zero degree- In this position, the arms are on their respective sides. Respective side of what, you might
+wonder? That I will discuss later, for now just consider it an axis. For example, a butterfly (or buzzsaw) in
+front of you would yield and axis where on the right half of the body is the right side and the left half of the
+body is the left side. If you consider a weave, then you must instead consider one of the side planes, and
+consider yourself facing that way (ie, facing the right side plane or facing the left side plane). Their
+respective side when your torso is thusly turned is the side that that shoulder is on. These are but simple
+examples, but it quickly gets more complicated. Think of a horizontal buzzsaw or a wallplane buzzsaw.
+Hopefully, you see how in these instances it is relative to which shoulder(arm) is higher in the horizontal
+case, or which shoulder (arm) is further out in the wallplane case. The take home point here is that in this
+position the arms are not crossed/twisted in any way.
+first degree- in this position, you have moved 180 degrees of twist. This motion can go one of two ways.
+Either the right hand can over (CCW) to the left side (and left hand under) or the left hand can go over
+
+(CW) to the right side (and the right hand under). We say that it is 180 degrees of twist because the hands
+have gone from 3:00 to 9:00 (and vice versa) and have thus gone through 180 degrees of a circle.
+second degree- In this position the hands have moved a full 360 degrees from their original position. This
+means that the right hand has gone from 3:00 -> 9:00 -> 3:00. Again, this can be either over (CCW) 3 -> 12
+->9 -> 6 -> 3 or under (CW) 3 -> 6 ->9 -> 12 -> 3. Notice that you cannot accomplish this by going from
+3:00 -> 12:00 -> 9:00 -> 12:00 -> 3:00. degrees of twist are counted from the zero degree in one direction.
+If you reverse that direction, you are untwisting back to thezero degree position. Once you pass the zero
+degree position, you are now twisting in the other direction. degrees are neutral with respect to direction.
+
+To expand on this idea, let me try to compare this with the concept it is meant to replace, the beat. Let us
+start with the simplest, yet complex example, the weave. The weave will help illustrate a number of key
+ideas. First, let’s look at the 3bt weave.
+
+To illustrate this with beats, we might say that one does:
+R_L_R <-> L_R_L
+This notation shows what occurs on each side. The left poi does 2bts on the right side, and the right does 2
+bts on the left side. We call it 3bt, because each side of the weave does 3 bts.
+To illustrate this with degrees, we would say that one does:
+-1_0_+1 <-> +1_0_-1
+First let me say that the +/- does not connote +twist and –twist.. instead they confer a directionality.
+Remember when I said that you can either take the right hand OVER or the right hand UNDER. In this
+example, (-) would be right over (CCW), while (+) would be left over (CW). So what this notation reveals,
+is that on the left side we have 1 degree of CCW twist. We then untwist that to a zero degree position. We
+finally twist 1 degree of clockwise twist. The entire time we are ‘twisting’ in a CW direction. And so
+linearly, the numbers all move in the same direction. On the right side of the weave, we start with the 1
+degree of CW twist. We then keep going in a CCW direction until we have untwisted it back to a zero and
+then further to 1 in the other direction.
+
+The +/- distinction is arbitrary in my opinion. I only use it to separate one direction from the other. Other
+people have tried to use the notation:
+-1_0_+1 <-> -1_0_+1
+Under this version, (+) means twisting, and (-) means untwisting. This captures the same idea in a slightly
+different way. The former way gives the direction of twist a static property. Thus going CW is always (+)
+while going CCW is always (-). In the later, the zero degree position becomes the static focus. The
+problem is that in this latter condition, butterfly stuff is difficult to classify. You can twist a bf in either
+direction, and focusing on whether you are twisting up or untwisting, doesn’t tell you much of anything.
+Moreover, antispin is equally difficult to classify and discuss. Neither of these are a problem for the version
+I presented first. In the case of a bf, the direction of twisting, lets you know which way you are threading.
+In the case of antispin, well we can simply write:
+-1_0_+1 _0_-1
+Here, we see that there is no side transition ( <-> ) thus, here on this one side we can follow the motion
+twist into anti-twist. It’s moving CW from -1 -> 0 -> +1. But its moving CCW on that same side when it
+goes from +1 -> 0 -> -1. Thus we can follow the pattern of twisting and then anti-twisting. This is
+
+something that cannot be captured in the other presentation method. Hopefully that last point about the
+notation didn’t throw any of you off. It’s one of those points that needs to be made.
+Here’s a video to give you some visual aid. Right click, open in new window
+In this video you will notice that I start out with a presentation of the positions. Starting with a zero degree
+position, I being twisting clockwise (I’m speaking from my perspective as the spinner, since that is the
+language I used above). I twist it 180 degrees. I am now in a first degree position. Notice the left hand is
+on my right side, and likewise the right is on the left side. We untwist by going the other way (CCW). We
+can keep twisting CCW and reach the other first degree position.
+Now starting from a zero degree position again, I go through the same style of motions (ie. twisting all the
+way CW, then going all the way back CCW). Only this time, I go a full 360 in each direction. Thus, I twist
+up to a second degree position.
+To add some context to these positions and to the notation I used in this post, I end the video showing you
+how 3bt weave, and 5bt weave incorporate these positions. The 3bt weave if you recall is:
+-1_0_+1 <-> +1_0_-1
+If you notice, this is exactly what happens. You go from into a first degree, crossover (still in that degree),
+and then untwist to zero then into one the other way. Again, hold that position as you crossover, and then
+untwist again. Lather rinse repeat.
+The 5bt weave is pretty much the same thing only going the extra bit on each side. I will include the
+notation as a reference, but leave you to sort out the details.
+-2_-1_0_+1_+2 <-> +2_+1_0_-1_-2
+
+You are probably wondering why all this degree mess is important anyway. It doesn’t at first seem to be
+any more fruitful for discussion. But, degrees are a powerful technical tool for discussion. First, they apply
+across the board. We can discuss any pattern, whether bf, weave, link, wrap, etc. beats cannot capture this
+wide range of patterns. Second, it captures the richness of patterns that have multiple centers of spin. beats
+are limited to discussing poi circles. As patterns increase in complexity, the poi revolution to arm
+revolution, does not remain as correlated as before. For instance, flowers are a simple example. Antispin
+patterns are another example. Finally, inversions provide perhaps a tantamount example.
+Though I could discuss the relative merits for quite some time, I think it is in everyone’s best interest if I
+move on. We will come back to this topic more when we get into the discussion of inversions.
+THUS SPOKE REV!
+Before I can get into inversions, I think I need to discuss a few key definitions. First, I want to discuss
+plane facings. There are two key facings: outside and inside. outside is what we spin most of the time.
+facing outside is how we refer to any pattern in which the poi spin outside the arms and body. facing
+inside refers by contrast to patterns that spin in-between the arms and the body. This is a critical point. (see
+video for a poi spinning outside and inside). Outside vs inside (Right click, open in new window) I know I
+have only briefly touched upon these topics, but I feel that the video will help make these plane facings
+more concrete, and thus excluding the need for a more in-depth explanation.
+The next topic however, will need considerably more discussion. I want to distinguish between outswings
+and inswings. I know this will sound a bit strange but both outside and inside plane facings are spun using
+outswings. outswings are when the poi swings a full circle outside the arms. Notice that I said outside the
+arms and not outside the arms and body. Swings are based solely on the arms. (see the video above again
+for this point. Notice that in the above video the poi spins to the same side of –both- arms)
+inswings contrast from outswings by passing in between the arms. This is an important point. Because they
+
+pass in between the arms, the do not pass on the same side of each arm. Typically, this means that they will
+be in the outside plane of one arm, and inside plane of the other arm—during the same circle. The concept
+of inswing is crucial to understanding many other concepts as we’ll will see in the coming discussion of
+inversions. Here is video that sows the two types of inswings. inswings (right click, open in new window)
+Notice that one goes outside the left arm and inside the right arm. The other one goes outside the right arm
+and inside the left. Direction here is irrelevant since you can go either direction in each of these positions.
+Also, I only show one hand because the other hand still only does these two positions.
+For now, let’s take a break from theory for a bit and learn some patterns. I think these patterns will help
+drill the above concepts a bit more firmly. The first pattern that we are going to cover is a front wallplane
+weave. This pattern will help illustrate inside planes and how they relate to patterns that we already know.
+To do a front wallplane weave, we are going to start by making small changes to another pattern, the
+corkscrew. normally, the corkscrew will spin about a reflexive axis centered on our arms. In this case, the
+arms are pointing straight out. We are going to take this pattern, and continue looping(repeating) it over and
+over. While looping the pattern, we are going to slowly lean forward and point our arms down a little. For
+now, just try to point them at about a 45 degree angle from the ground. That is, instead of having your arms
+parallel to the ground, they should be pointing at the ground way out in front of you. Pretty simple, eh? It
+shouldn’t take much effort keeping the pattern going at this angle. Remember that your poi plane should be
+tilted so that the poi are spinning parallel to your arms, and not parallel to the ground like in a normal cork.
+Our next step is to slowly lean forward a little more. By bending over forward, we are creating more room
+between our arms and our body. This makes the inside plane easier to reach because you don’t have to spin
+as perfect
+. Now that we have leaned up even further, we should be able to point our arms straight
+down at the ground. At this point, there should be a perpendicular line from shoulder to ground via the
+arms. If you are still able to continue your cork pattern, then you will find that you are doing half of the
+weave in the outside front wallplane and the other half in the inside front wallplane. (for a visual, see
+video) cork to wallplane weave (right click, open in new window) I start with a cork, and slowly keep
+angling it more and more until I have it perpendicular to the ground. Voila, front wallplane weave.
+I’ll let you play with that and all the little variations in your own time. You’ll find that insides are a lot like
+many other patterns that you do. The difference (apart from the plane) is that they tend to be tightened
+versions of these other patterns. Here, I simply mean that they will tightly hug the axis of your arms rather
+than using your whole body as a reflexive axis.
+So now you have some idea of insides. I guess that means it’s time to learn some inswings. The best
+pattern to begin with in my opinion is the notcoleman3. For now, let’s say that a notcoleman3 is simply a
+3bt weave with a single inswing done in-between the 2nd and 3rd beats. Now, technically, the inswing is a
+beat, however we talk about it being in-between beats because the full circle of the inswing starts and ends
+0-180 degrees off the normal beat circle. The only point that matters is here is that the inswing occurs in
+some sense between the conventional beats. Because of the variance, we say in-between beats because it
+occurs in-between the start of one beat, and the start of the next beat.
+So now that I’m done with yet –another- digression, we can get back to the task at hand. The notcoleman3
+is a 3bt weave with a single inswing done in-between the 2nd and 3rd beats. It’s variant is a 3bt weave
+with a single inswing done in-between the 1rst and 2nd beats. Now that sounds nice and dandy, but what
+about the nitty-gritty? In the notcoleman3, the inswing is done with the same side hand. Thus on the right
+side, the right poi enters from under the right arm, and passes over the left arm and across. On the left side,
+the left poi enters from under the left arm and passes over the right arm and across. Thus one might say:
+R_LvR <-> L_RvL v=inswing done by the hand immediately preceding it (enters from below)
+(see video) 3bt weave w/ same side inswing (right click, open in new window)
+The variant on the notcoleman3 is only marginally different. In the variant, the inswing is done by cross
+
+side poi. Thus, on the right side, the left poi will enter from the top after passing over the right arm, pass
+under the left arm, and push outside. On the left side, the right poi enters from the top after passing over the
+left arm, moves under the right arm, and pushes outside. In this case, we would say that:
+R^L_R <-> L^R_L ^=inswing done by the hand immediately preceding it (enters from above)
+(see video) 3bt weave with cross side inswing (right click, open in new window)
+While you work on these patterns, I want to return briefly to a point made earlier about how the inswing
+occurs at different times relative the beat. If you notice, the notcoleman3 has the poi moving in time with
+the beat. The same side poi only makes one full rotation on its side and that (in addition to direction and
+what not) results in the harmonious timing of inswing and beat. The variant by contrast is off. The cross
+side poi does not make a full rotation when the inswing occurs. Thus the inswing ‘beat’ is 180 degrees
+offset from the normal beat circle. In other words, the cross side poi does half of a beat, an inswing, and
+then another half of a beat. If that confuses you, try to think of it this way. The cross side poi does 2 full
+circles, so I’m saying that its half a circle, full inswing circle, half of a circle (.5 + 1 + .5 = 2).
+If you notice, this means that the inswings are technically happening at the same time. That is, they both
+happen on the second beat. This distinction is why earlier I said that we would define the notcoleman3
+as…”for now.” I think that the other definition helps initially. It allows you to grasp the pattern bit. In
+particular, the diagram is a bit more intuitive that way. I think it’s easier to talk about some the technical
+details thereafter. I don’t know if that’s necessarily the best way to approach things, but it’s the direction
+I’m taking for now. (This is a learning experience for both of us) A more proper definition of each of these
+patterns would be:
+notcoleman3 is a 3bt weave with a single inswing done by the same side poi (aka. a 3bt weave a same
+side inswing). The variant would be a 3bt weave with a single inswing done by the cross side poi (aka. a
+3bt weave a cross side inswing).
+That being said, one thing I do want to do now is show how degrees relate to this. If we parse things out,
+the notcoleman3 looks like this:
+(-1)v(0)_(+1) <-> (+1)v(0)_(-1) v= inswing that enters from below and goes over
+the other arm
+The variant likewise looks like this:
+(-1)^(0)_(+1) <-> (+1)^(0)_(-1) ^= inswing that enters from above
+What does this help illuminate, you might wonder. First, it shows that the inswings start at the same time.
+If you notice the earlier diagram focused on the hand/poi that does a particular beat. Looking at it from this
+new perspective however, doesn’t have that limitation. Second, it demonstrates that the inswing is
+occurring between the first degree and zero degree position. This is important. Recall earlier that I said
+inswings are a full circle. This means that in a 3bt weave, if you inswing the same side poi, then that takes
+the whole beat for that poi. Why does that matter? Well… It means that half of the inswing occurs on
+either side of the zero degree position. If this doesn’t make sense, then hopefully this next bit will help.
+Recall earlier that I said that the cross side poi does 2 full circles. I also said that the inswing occurs in the
+middle (.5, inswing, .5). This means that the cross side poi also does half of its inswing on either side of
+zero degree position.
+Now for some of you, light bulbs are going off. But, the rest of you shouldn’t worry. We are getting into
+some decently tech theory, and I’ll explain some the implications of this in my next section. I just want to
+give you something to think about for now.
+Let’s take another break from theory and such. I want to show you a fun pattern I came up with years ago. I
+call it splitthreading (aka splitthreads). Sorry Matt. I know you hate the name. I came up with the name
+
+because it’s a threading pattern that is done with the poi split into opposite planes. splitthreads make use of
+inside planes, outside planes, and inswings. So I think it’s an appropriate pattern to end this section with.
+I’m going to teach this pattern in 3 steps. All you need to know is how to 4bt ttn. If you can’t 4bt ttn then
+look at this post. (insert link to thread) [can't find it at the moment will add later]
+The first thing you will want to do is learn how to add an inside beat to the 4bt ttn. Basically, as the right
+poi comes over the left arm bring it inside for one beat. Then push it outside, and bring the left hand around
+and over and inside. (see video) 4bt ttn with insides (right click, open in new window) Pretty much the
+same thing you were doing before, just with one minor change.
+Now, let’s learn how to do a 4bt ttn with inswings. This time, we will start again with the right hand
+coming over and everything like a normal ttn. Instead of bringing the left arm –around- and over, do an
+inswing and over. Then push it out like normal. The right poi should likewiseinswing and over. Etc. (see
+video) 4bt ttn with inswings (right click, open in new window) Again, this is not much different from the
+4bt ttn.
+It is important that you pay attention to how these patterns differ from each other, as well as from the
+original pattern. By doing the same base pattern, the differences should emerge more clearly. This should
+give you a better understanding of what we mean by each.
+Finally with that in mind, let’s combine it all. Begin by bringing the right poi over the left arm and inside.
+Then as the right poi pushes out, inswing the left poi, over, and inside. Then as the left poi pushes out,
+inswing the right poi, over, and inside. Lather, rinse, repeat. (see video) forward splitthreading (right click,
+open in new window)
+The reverse version is a little bit backwards. Rather than going inswing, over, and inside, you will instead
+go inside, over, and inswing. (see video) reverse splitthreading (right click, open in new window)
+Inswings are single swings of the poi. So, they can be thrown into patterns somewhat willy-nilly. So
+referring to the base pattern, and what type of inswing we are using (same side vs cross side), we can pretty
+effectively discuss patterns. Once we enter into more complex uses of inswings, we find a need for a new
+vocabulary. This may not be clear at the outset, but I trust things will make sufficient sense when we
+understand the unique properties of the subclasses.
+The need for separate subclasses arise when we begin to talk about doing 2 inswings. One of those I call
+introversions. introvert- to turn inward on itself. This class of inswing patterns, as well will see, twist in on
+themselves. I define introversions as being two simultaneous inswings that enter from opposite points (ie.
+top and bottom). But what exactly does that mean?
+Well, let’s start by going back to some of the discussion from earlier. I talked about the fact that in a 3bt
+weave, the cross side inswing and same side inswing happen at the same time. They both occur on the
+second beat. At that point, we were talking about patterns with a single inswing. So, the implication of that
+might not have been directly intuitive at that point. In actuality, you can combine these into the same
+pattern. If you do both of the inswings on the same side of the same of a 3bt weave, then you the result is a
+pair of simultaneous inswings. One poi will do its swing entering from the bottom, while the other enters
+from the top. Thus, not only are they simultaneous, but they enter from opposite sides. (this of course is
+only natural. I mean they are spinning splittime, so they if they enter at the same time[not in sametime],
+they have to enter from opposite points).
+Before I go further, look at this video. zero degree introversion (right click, open in new window) It is a
+basic introversion. It is important that you see, and hopefully take some time to learn this pattern. Doing so
+will make the next part go a LOT smoother for you. In the video, you should see that I am just combining
+the two inswings that we learned in the previous section.
+We are now going to be moving into bit deeper theory. The reason that I defined introversions by those
+
+features is because you get some pretty special qualities. The first of which is that introversions are VERY
+much like a weave. This just means that they thread (ie. twist and untwist). I want to keep this as basic as
+possible, so let’s just focus on the pattern from the above video. In the introversion, you probably noticed
+that the inswings continue the normal twisting and untwisting of the weave. Let’s pull up a diagram:
+(-1)^v(0)_(+1) <-> (+1)^v(0)_(-1) ^=inswing from the top, and v= inswing from the bottom
+Remember from our inswing discussion that because of the timing of the inswing half was occurring
+during before the zero degree position, and the other half was happening afterwards. This first half is the
+untwisting portion, and the other half is the retwist. Let’s look at another video that shows this in a bit more
+detail. (see video) zero degree introversion motions emphasized
+See how it starts from the first degree position and ends at a first degree position. If you recall, each
+degree is 180 degrees. Also, recall that an inswing is a full circle. Therefore, inswings take you across 2
+degree positions. This should become a bit clearer when you look back at the video. It does half from first
+degree to zero degree (180) and the other half is from zero degree to first degree (180).
+This action is one reason why I refer to introversions by the degree that they revolve around. Thus, in the
+case of the pattern mentioned above (and in the videos), I would say it’s a zero degree introversion.
+Some of you may be wondering why? I mean if it twists and such, why not call it by the amount of twist?
+The answer to that can be found in the second quality of introversions. They only operate around one
+degree. What I mean by this is that they do half on either side of that degree. If we look at the previous
+example, that occurs on each side of the zero degree position. In this case, it does twist –and- untwist.
+However, when you look at another example it is quite different. Let’s look at a 5bt weave.
+(-2)_(-1)_(0)_(+1)_(+2)
+We can add an introversion around the first degree position. For example:
+(-2)_(-1)_(0)^v(+1)_(+2) ^=inswing from the top, and v= inswing from the bottom
+Here is where that full circle of the inswing and the fact that it ‘revolves around a degree’ come together to
+illustrate a key point. Let’s begin by isolating the section of the pattern where the inswings occur.
+(0)^v(+1)_(+2)
+This is a full circle. However, this circle does not include twisting and untwisting as before. In this case, we
+only see a twisting motion. If we take a glance at the other half, we can see that it would likewise occur
+only in the untwisting phase.
+(-2)^v(-1)_(0)
+Thus on each side, we can untwist and retwist.
+(-2)^v(-1)_(0)^v(+1)_(+2)
+One thing should quickly emerge here. Notice that we do not have room in this pattern to include its zero
+degree counterpart. Recall that the zero degree introversion starts from the first degree position.
+However, in order to start there, we would have to start in the middle of the inswings we are already doing.
+This is problematic.
+To explore this problem, let’s start by looking at the different inswings. Assuming we take only one hand,
+the right hand, we have two potential inswings. we can enter over the right arm (from the top), or we can
+enter under the right arm (from the bottom). These are mutually exclusive. In other words, they can’t be
+combined without ‘switching’ patterns. To illustrate this point, look at this video. (see video) switching
+
+between inswings (right click, open in new window)
+Notice that when I try to switch between inswings, I get a weave-like pattern. This is because the two
+halves of the inswings combine to form an outswing. So I have an inside circle and an outside circle. This
+means that if I were to try and break the inswing in the first degree introversion to try and flow into the
+zero degree introversion, I would essentially be doing a set of fakeys.
+For the purposes of the theory here, this means that you can only connect even degree introversions
+together or odd degree introversions together. So you could connect second degree introversions with
+the zero degree introversions because they would use the same sets of inswings.
+(-3)^v(-2)_(-1)^v(0)_(+1)^v(+2)_(+3) ^=inswing from the top, and v= inswing from the bottom
+Notice that we can separate those out, and place them together in chunks.
+(-3)^v(-2)_(-1)
+(-1)^v(0)_(+1)
+(+1)^v(+2)_(+3)
+Each set of circles can complete its phase without interruption or conflict with the next pattern. This should
+probably be placed in future thoughts for now. Though I can step-by-step work my way through the second
+degree introversion, I can’t spin it yet.
+For now, I want to leave the theory (for the most part) and discuss the first degree introversion in a bit
+more detail. (see video) first degree introversion (right click, open in new window)
+now, it resembles an sj. This is due to the fact that you are twisting the pattern inward on itself, so your
+arms are on the outside. Naturally, this will be a bit like an sj. The main difference is that an sj has your
+arms folded, while this pattern is twisting at the wrists. This seems like a subtle point, but aren’t they all?
+If you look closely, you’ll see that after twisting in on itself, you cross to the other side. On this side, the
+untwist involves simultaneous inswings that go directly into the simultaneous inswings for the twisting
+part. In this way, you can grasp the sense of fluidity of the pattern. You should be able to more clearly see
+its relation to the weave. Like a weave, you can do this pattern with the wrists together. However, the main
+point is that it twists and untwists. This will be clearer when we compare them to the other subclass,
+inversions.
+first degree introversion motions emphasized (right click, open in new window)
+This video focuses in on how the pattern twists in on itself. I think this addition might help some people see
+what I mean, as well as learn the pattern.
+Hopefully, this pattern should help give you some sense of how the second degree introversions would
+flow fluidly with the zero degree introversions. The main thing is that you notice how in the zero degree
+introversion uses one type of inswing (ie. the right poi spins inside the right arm and outside the left arm).
+The first degree introversion uses a different inswing (ie. the right poi swings outside the right arm and
+inside the left arm). The second degree introversion would uses the same inswings as the zero degree. If
+that doesn’t make sense now, I wouldn’t worry. It’s not terribly important.
+Now we have the terminology in place to talk about the many complex facets of inversions. I’m going to
+run through a bit of the theoretical issues, and then later at the end go through some tutorials in a bit more
+detail. The first order of business is to define inversion. An inversion is a combination of two consecutive
+inswings that enter from the same plane and enter from the same point (ie. top or bottom). Now this
+definition will naturally require a bit more elucidation. The point about two consecutive inswings comes
+
+from our discussion of introversions. Recall that introversions are simultaneous. Therefore it is in some
+sense a doubled inswing. inversions on the other hand are one inswing followed by the other one. This
+seems trivial, but it helps define some of the key properties of the inversions. Before we get to those
+though, the other important features are that the inswings enter from the same plane AND same point.
+These requirements are jointly sufficient in separating inversions from anything else.
+Let’s examine these last two requirements separately. By stating that they must enter from the same point
+(side), I mean simply that if the first poi enters from the bottom (coming up into the inversion) then the
+second poi likewise must enter from the bottom. If the first poi enters from the top, then the second poi
+must also enter from the top. This point is related to the second in that the poi must enter from the same
+plane. For example, if the first enters from outside right, then the second from outside right. Similarly, it
+applies to inside planes and so forth.
+Now, that we have the requirements in place, I want to explain in more detail how these features single out
+an inversion. First and foremost is the matter of entering from the same point. inswings are done with
+individual poi, and can be thrown in a few different places. The two consecutive rule allows us to limit the
+use of inswings to those that are back-to-back. The enter from the same point rule (in addition to the
+previous point) allows us to distinguish an inversion from an introversion pattern. (see videos)
+introversion (right click, open in a new window)
+inversion (right click, open in new window)
+Notice that in the introversion video, one poi enters from above and one from below. Thus we describe it
+like:
+(-1)^v(0)_(+1) ^=inswing from the top, and v= inswing from the bottom
+Now, notice that in the inversion, they enter back-to-back from either above or below. (see video). So, we
+would describe it instead as
+(-1)^^(0)_(+1) ^=inswing from the top
+I use the above example because it more closely resembles the introversion in structure. I could have used
+one of the other 3 zero degree inversions, but I think this one is sufficient.
+Regardless, these diagrams, along with the vids and descriptions, should help provide a little context for
+how these are different. So to rehash, introversions are simultaneous and enter from top and bottom.
+inversions are consecutive and enter from the same point (top or bottom).
+There are a number of things that I could get into here, but I don’t want to muddy this issue too much.
+Suffice to say, these rules set a ‘narrow’ (I use that term loosely) definition that matches the term inversion
+without adding needless complications. Some may wish to press further on why these other things are not
+included. As I hope to show, inversions are by nature very complex, and this definition allows us to talk
+about a family of patterns that share specific properties. The other patterns that are left out share their own
+unique set of properties that allow us to discuss them meaningfully in their own right. The two groups
+however do not mesh. These rules are meant to act as guidelines for defining a member as part of one
+subclass or another, but at this point they are not hard and fast. The butterfly versions tend to get even
+messier than what we are about to cover. But let’s save that for when we get to it.
+Earlier I said that inversions have a couple of special qualities. 1) They are repeatable. The same inversion
+can be done over and over again without exiting or doing another pattern. 2) They don’t change. Here, I’m
+referring to degrees. Whatever you enter the pattern with, is what you will exit with.
+This last point is important because it helps to clarify one of the aspects of degrees. If you recall before I
+talked about degrees of twist. now I will talk about degree of crossover. One of the features of an
+inversion is that you can exit out either side. Though each inversion has a side it naturally exits to, it can
+be pulled back out the other side. An intriguing consequence of this is that you can have a different degree
+
+of crossover than the degree of twistused in the inversion. What do I mean here? Well, recall that degrees
+refer to a position that you are in a given time. In many patterns, the crossover/transition occurs when you
+have finished twisting. inversions don’t always follow this pattern. Since you can exit back out to the same
+side that you entered on, you can potentially twist up more. So for instance, say you enter an inversion
+from a first degree twist (like a 3bt weave) and push it back out the side you entered on. Because the
+inversion doesn’t change the amount of twist, you exit still in a first degree position. Now normally, you
+would be on the other side, and thus you would begin untwisting. But, since you are on the same side you
+are still twisting the same direction. Thus, you do a first degree inversion, but have a second (or higher)
+degree crossover.
+I hope that’s not too confusing. I’ve included a video to illustrate the difference.
+1-2 vs 1-1 (right click, open in a new window)
+The first half shows a first degree inversion followed by a second degree crossover(1-2). Notice that the
+left poi leads left and the right poi leads right. The second shows the exact same pattern only with a first
+degree crossover (1-1). Notice the right poi leads left and the left poi leads right. Don’t worry about
+learning the patterns yet. They are just meant to be illustrative at the moment. Hopefully the video helps
+this make a bit of sense.
+Before we get into the tuts, there are two more points that we need to cover. The first involves the 4
+primary divisions. Each degree inversion has 4 main versions. To put it simply: left led over, left led
+under, right led over, and right led under. Sometimes you may see me refer to them as same side led
+inversions and cross side led inversions. It really depends on how you want to discuss them. The left led
+over and what not are pretty straight forward, but you have to distinguish the direction. If you don’t need to
+go into a great amount of detail, you can simply use same or cross side led and specify the direction. I tend
+to use the latter for things like tuts, where I show both sides, and reserve the former for technical
+discussions that require precision. Here is a list of how these relate to each other:
+Right side right hand led over :: Same side fwd right
+Right side left hand led under :: cross side fwd right
+Left side right hand led under :: cross side fwd left
+Left side left hand led over :: Same side fwd left
+Right side right hand led under :: Same side rev right
+Right side left hand led over :: cross side rev right
+Left side right hand led over :: cross side rev left
+Left side left hand led under :: Same side rev left
+As you’ve probably noticed they equally get the job done, but the right column is significantly shorter.
+That’s why I prefer it, but both are useful. I sometimes find the left column to be a bit more helpful when it
+comes to butterfly inversions. But, let’s just take this one step at a time. One thing I should note here:
+when the lead hand goes over, it is a bottom led inversion, and vice versa. Over and under refer to how the
+hand passes relative the other arm, while top and bottom refer to the entrance to the inversion.
+The last thing that I want to cover theoretically is the distinction between inversions that are done precrossover and post-crossover. Let’s take a look at a 5bt weave in terms of degrees:
+(-2)_(-1)_(0)_(+1)_(+2) <-> (+2)_(+1)_(0)_(-1)_(-2)
+Notice that there are 4 sets of first degree positions . There are two that are done in the twisting phase or
+pre-crossover:
+(-2)_(-1)_(0)_(+1)_(+2) <-> (+2)_(+1)_(0)_(-1)_(-2)
+There are also two sets that are done in the untwisting phase or post-crossover:
+(-2)_(-1)_(0)_(+1)_(+2) <-> (+2)_(+1)_(0)_(-1)_(-2)
+
+I think this is conceptually straight forward, even if you don’t fully understand right now. Normally we
+would have taken a break by now, but it’s really hard to introduce patterns without adequately covering the
+terms used to describe it. I know that not all the terms may be crystal clear to everyone, but it will act as a
+baseline from which we can jump into things.
+Let’s get started with the basic zero degree inversions. There are 8, but I’m going to reduce that to 4 basic
+weave patterns.
+pre same led zero degree inversion (right click, open in a new window)
+In this video, the poi that leads into the inversion is the poi whose side we are one. The inversions are also
+taking place during the twist phase. So this would be a pre same led zero degree inversion. the point
+about it being pre will become clearer after the next video. For now, just focus on how the pattern spins.
+The same side poi is leading into the inversion from the top.
+post same led zero degree inversion (right click, open in a new window)
+This next video shows the post version of that pattern. Notice that this time it enters from the bottom.
+Unlike the higher degree patterns, the zeroes have very minor differences. But, they are still important
+from a technical standpoint. In this video, notice that the right begins going into the inversion as soon as it
+cross to the right side. This means that it never gets to untwist. Hence it being a post crossover inversion.
+Look again at the other video. In that one the right poi doesn’t start the inversion until it has already done
+half of a circle on that side. Since it only does one full circle, anything after the first half is done in the
+twisting phase. Hence the first video is a pre crossover inversion.
+Now let’s look at the other two.
+pre cross led zero degree inversion (right click, open in new window)
+Notice that in this pattern, the right poi is leading into the inversion on the left side. So this is a cross side
+led pattern. It’s a pre pattern because the right poi has already done one of its two circles.
+post cross led zero degree inversion (right click, open in new window)
+In this one by contrast, notice that the right poi leads into the inversion after only doing half of its first
+circle. This one is done in the untwisting phase. So, it’s a post cross led zero degree inversion
+Hopefully, you are beginning to see how inversions have many more features to them, then the other
+patterns we discussed. The vocabulary helps a lot to clearer up some of these facets. To further demonstrate
+this, let’s look at the 4 first degree inversions.
+pre same led first degree inversion (right click, open in new window)
+Here, you see the most common inversion. This one is same side led. It is also first degree because of the
+amount of twist that is held in the pattern. Finally, it is pre because it happens during the twisting phase.
+Notice on the right side, the right poi swings over the left arm (thus making the first degree and showing
+re-affirming the ‘twisting phase’) and enters the inversion from the bottom.
+pre cross led first degree inversion with first degree crossover (right click, open in a new window)
+motions for the above pre 1-1 inversion (right click, open in a new window)
+I’m going to change things up here and show you the other pre pattern. This is the other commonly used
+inversion. If you recall, earlier I showed that this pattern can be done with either a first degree crossover
+(as a 1-1), or with a second degree crossover. The one above is the 1-1, here is the 1-2.
+
+pre cross led first degree inversions with a second degree crossover (right click, open in a new window)
+motions for the above pre 1-2 inversion (right click, open in a new window)
+I’ve included the motions with these patterns because we are starting to get into some more complex
+patterns. These are not as directly intuitive as the ones before. Notice that in the 1-1, the left hand leads into
+the inversion from the top on the right side. After the inversion, the left poi pushes back out to the right for
+its second circle (of 2), while the right poi leads across to the left side. This way it captures the normal 3bt
+pattern.
+The 1-2 by contrast, enters the same way (ie. the left hand leads form the top on the right side). However,
+this time, the left poi exits the inversion directly into the crossover. So, here the left poi leads across as in a
+5bt pattern. This version gets the 5 outside circles (for the most part) before the inversion.
+This should help show some of the differences. You can imagine from here what it would look like if
+instead of leading across upon exit, you continued to twist on the outside. Thus, you might spin a 7bt
+pattern (ie. a 1-3). But enough of that for now, let’s go back to learning patterns.
+These next two patterns are demonstrated in a second degree pattern. I do this to help emphasize how there
+are different from their pre counterparts. If I would have used a first degree as above, it would have been a
+bit messier visually. Thought the overall pattern is second degree these are still only first degree
+inversions.
+post cross led first degree inversion (right click, open in a new window)
+motions for the above inversion (right click, open in a new window)
+Hopefully it is immediately clear how this differs from the pre. Unlike the zero degree patterns, this one is
+clearly occurring before you have finished untwisting. If you look at the motions video, you will see that
+after you twist up your second degree, you will cross normally to the other side. Ie. the right leads to the
+right side. Once on the right side, the right poi will spin one circle. The left poi then leads into the
+inversion from the bottom. After exiting, you continue to untwist and retwist as normal.
+post same led first degree inversion (right click, open in a new window)
+motions for the above inversion (right click, open in a new window)
+If by now you haven’t grasped the difference between pre and post then this vid should drill the point
+home. After twisting up to a second degree position, the right poi leads to the right side. On the right side,
+notice that the right poi begins the inversion 180 degrees into its circle. That means it enters from the top
+after half of a circle. This is important because that little bit of circle it spins allows it to untwist to a first
+degree position before entering the inversion. After it exits, it is plain as day how you continue untwisting
+and then re-twisting.
+Before ending this section, I want to do two things. First, I want to say that I hope you have a clearer
+picture of how inversions can be complicated. Unlike the other inswing patterns, inversions have many
+complex features (which hand leads, which poi does it enter from, how much twist, etc.). If you look back
+at the other patterns, there isn’t the remote glimpse of this intricacy. inswings alone are just one poi, so all
+you have to say is where. introversions happen at the same time. So again, all you have to say is where.
+inversions are a sequence and therefore need a much richer vocabulary to describe.
+The second thing I want to mention is that thus far we have only talked about same direction patterns.
+Things get a bit fuzzier when we enter into the bf domain. I’ll be posting up the bf equivalent to all of this
+stuff in a few more weeks. Those patterns have similar defining properties but aren’t as directly intuitive as
+you might think. For example, above we saw that a buzzsaw can be an inversion, later we will see that
+doesn’t necessarily hold for butterflies. But, I’m getting ahead of myself.
+Here is an excerpt from poi goes punk. I’ve not really changed much except a few terms. All of the
+descriptions here refer to pre crossover inversions.
+
+******
+In this section, I am going to go over outside led inversions and inside led inversions.. One of the things I
+have said numerous times is that it’s much easier to work out inside led inversions by refering to
+horiztontal inversions. And the clip in this section should demonstrate that quite well.. but before I jump
+too far ahead, let’s get started with our wallplane inversions.
+I'm going to work with a clockwise spinning wallplane weave.. To make things easier, let’s just focus on
+one hand at a time.. let’s start with the right hand.. since we are spinning clockwise, the right hand should
+come under the left arm (like a rev first degree inversion).. let it exit on the inside.. let the left arm just
+spin there on the inside while the right arm comes around and enters again from underneath..
+Here's our clip for this section.. it has watermill and corkscrew right hand led inversions.
+Music: Ten foot pole- I dont mind
+right hand led inversions (right click, open in a new window)
+I filmed the watermill part (wallplane weave) sideplaned so that you can see all the crossovers and the
+planes a little clearer.. if you notice the corkscrew part at the end, you will see that the top part of the
+corkscrew is EXACTLY like the outside of the watermill.. and the bottom part of the corkscrew is
+EXACTLY like the inside of the watermill.. some people find the horizontal inversions to be harder.. I
+think the horizontal inversions help you keep track of where your poi need to be and where they are going..
+EVEN IF YOU CANT DO IT... just being able to see where it should go horizontally, will let you know
+where it needs to go with the watermill part..
+You can invert that to learn the windmill inversions... the top of the corkscrew is the back of the windmill
+and the bottom of the corkscrew is the front of the windmill.. think windmill points up, corkscrew points
+out, and watermill points down.. otherwise, they are exactly the same thing..
+
+I've covered the right hand led inversions, now let me move to the left hand led inversions.. this one is a
+little harder because there are more beats that occur in between the sides.. (this is just because we are going
+clockwise, if we were going counter clock it would be just the opposite)
+To start the left hand will lead from the outside like a fwd first degree inversion. The left hand will go
+over the right arm and come up in the buzzsaw.. remember to bring it across to the inside.. once on the
+inside things get a little tricky because the left poi has to lead the inversion from the right side of the right
+arm..
+because I know that helps none at all.. here again is a nice helpful clip..
+Music: Hi-Standard- Asian pride
+left hand led inversions (right click, open in a new window)
+The first part of the vid shows the watermill from the side.. and is even slowed down to clearly show the
+left poi leading over the right arm to the inside and then under and around the right arm to comes back to
+the outside..
+the end of the clip shows the corkscrew version of the move..
+
+So to recap thus far, we've learned how to do first degree inversions.. We've learned right hand and left
+hand led inversions, same side and cross side exits, and outside and inside entrances.. so what's left? rolling
+between them of course..
+One of the most fun parts of inversions, imo, is the fact that you can move from one into the other.. I'm
+only going to cover the smooth flowing roll, but by the time you reach this point, you should be able to get
+the other jerky one if you wanted..
+
+lets go back to spinning clockwise wallplaned.. start with a left hand led inversion but DONT take it inside,
+instead we are going to go straight from that inversion into a right hand led inversion...its going to feel like
+you are 'flipping' the spin.. anyone who has read some of my earlier talks on inversions will recall I refer to
+this as flipping the pole..
+more video goodness..
+Music: Dillinger 4- Farts are jazz to assholes
+rolling between inversions (right click, open in a new window)
+In this clip I use a reverse weave base. I start with a pre cross side first degree inversion and roll it into a
+pre same side first degree inversion across to the other side,and then repeat back.. I have also included
+some horizontal footage so that you can see this from a different angle, and so that you can get an idea of
+how this would roll for watermill and windmill stuff..
+***
+I didn’t really feel like re-filming and going back through all of this stuff again. I hope that this makes
+sense. I didn’t think it needed much in the way of changes. I mean, you already have an understanding of
+the patterns, this was mainly just to gloss over the horizontal versions, inside versions, and rolling between
+them.
+From here, I trust that you can figure out how to do the horizontal and inside versions of the post crossover
+versions. I’ll probably edit this section and add them at a later date just to make it more comprehensive.
+That being said, I’m going to end this section with a clip of rolling between ALL of the first degree
+inversions. Technically, you could add the zero degree ones in there two, but why? HAHA.
+pre and post first degree inversion rolls (right click, open in a new window)
+I feel that if after all the preceding discussion, you should be able to pick up on what is going on here. But
+as I said before, I will probably come back and edit this in the future to give a more
+complete/comprehensive explanation of all of these patterns. I know at the very least I’ll have to come back
+to include a description of the how degrees of twist and degree of crossover relate to the post crossover
+inversions.
+
+
