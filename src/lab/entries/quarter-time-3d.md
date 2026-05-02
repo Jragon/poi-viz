@@ -27,12 +27,14 @@ Quarter time instead is when, at the cardinals, your arms and poi are on differe
 
 If you move a quarter your arms a quarter of a circle and end up again with your arms making a right angle, you've done quarter time! You can move in and out of all the timings and directions very easily once you become used to the quarter time stall points.
 
-As with many things in poi, it's worth breaking it down into the most managable peaces. Below is an interactive demo of the quarter time stall elements. You can select the quarter arc you want to explore for each hand, and then see what together time looks like and what quarter time looks like. You don't need to practice all of these at the start, but you will eventually come back to them. Also, the stalls from bottom are always hard, and just take practice.
+As with many things in poi, it's worth breaking it down into the most managable peaces. Below is an interactive demo of the quarter time stall elements. You can select the quarter arc you want to explore for each hand, and then see what same time looks like and what quarter time looks like. You don't need to practice all of these at the start, but you will eventually come back to them. Also, the stalls from bottom are always hard, and just take practice.
 
 <QuarterTimeExplorer />
 
 ## Personal notes
 
+- Same time: the movement starts or resolves with both hands sharing an axis.
+- Quarter time: the movement starts and resolves with the hands on different axes.
 - can we actually make a stall point with any anti spin? From reading Zaltymbunk's cap math document I realised that we get much cleaner stall points if we reduce the length of the tether relative to the arm span.
 - We probably need to go through and start mapping what actually constitutes a stall.
 

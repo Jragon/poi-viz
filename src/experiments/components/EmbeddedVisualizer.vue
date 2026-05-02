@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-import type { ProjectionModePreference } from "@/engine/planeProjection";
 import type { MultiRigSequence } from "@/engine/types";
 import { createDefaultOverlaySettings } from "@/visualizer/overlaySettings";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
 import { useVisualizerCore } from "@/visualizer/useVisualizerCore";
 
-type EmbeddedVisualizerSize = "normal" | "compact";
+type EmbeddedVisualizerSize = "normal" | "compact" | "mini";
 
 const props = withDefaults(
   defineProps<{
@@ -47,9 +46,11 @@ const activePlanesLabel = computed(() => {
   return Array.from(planes).join(" / ");
 });
 const canvasClass = computed(() =>
-  props.size === "compact"
-    ? "!min-h-80 rounded-none border-0 md:!min-h-96"
-    : "!min-h-112 rounded-none border-0 md:!min-h-136"
+  props.size === "mini"
+    ? "!min-h-64 rounded-none border-0 md:!min-h-80"
+    : props.size === "compact"
+      ? "!min-h-80 rounded-none border-0 md:!min-h-96"
+      : "!min-h-112 rounded-none border-0 md:!min-h-136"
 );
 
 function togglePlayback() {
@@ -62,24 +63,6 @@ function onScrub(event: Event) {
 
 function setSpeed(value: number) {
   core.transport.setSpeed(value);
-}
-
-function onTrailDecayChange(event: Event) {
-  core.session.setTrailDecaySteps(Number((event.target as HTMLInputElement).value));
-}
-
-function onProjectionModeChange(event: Event) {
-  core.session.setProjectionMode(
-    (event.target as HTMLSelectElement).value as ProjectionModePreference
-  );
-}
-
-function onProjectionYawChange(event: Event) {
-  core.session.setProjectionYawDeg(Number((event.target as HTMLInputElement).value));
-}
-
-function onProjectionPitchChange(event: Event) {
-  core.session.setProjectionPitchDeg(Number((event.target as HTMLInputElement).value));
 }
 </script>
 
@@ -177,62 +160,6 @@ function onProjectionPitchChange(event: Event) {
           </button>
         </div>
       </div>
-    </div>
-
-    <div
-      class="hidden gap-4 border-t border-slate-900 px-4 py-3 text-sm text-slate-300 md:grid md:grid-cols-4 md:items-end"
-    >
-      <label class="grid gap-1 text-xs uppercase tracking-[0.18em] text-slate-500">
-        Trails
-        <input
-          type="range"
-          min="2"
-          max="250"
-          step="1"
-          :value="core.session.trailDecaySteps.value"
-          class="w-full accent-sky-400"
-          @input="onTrailDecayChange"
-        />
-      </label>
-
-      <label class="grid gap-1 text-xs uppercase tracking-[0.18em] text-slate-500">
-        Projection
-        <select
-          class="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm normal-case tracking-normal text-slate-100 outline-none focus:border-sky-400"
-          :value="core.session.projectionMode.value"
-          @change="onProjectionModeChange"
-        >
-          <option value="auto">Auto</option>
-          <option value="orthographic">Flat</option>
-          <option value="tilted">Tilted</option>
-        </select>
-      </label>
-
-      <label class="grid gap-1 text-xs uppercase tracking-[0.18em] text-slate-500">
-        Yaw
-        <input
-          type="range"
-          min="-60"
-          max="60"
-          step="1"
-          :value="core.session.projectionYawDeg.value"
-          class="w-full accent-sky-400"
-          @input="onProjectionYawChange"
-        />
-      </label>
-
-      <label class="grid gap-1 text-xs uppercase tracking-[0.18em] text-slate-500">
-        Pitch
-        <input
-          type="range"
-          min="-45"
-          max="45"
-          step="1"
-          :value="core.session.projectionPitchDeg.value"
-          class="w-full accent-sky-400"
-          @input="onProjectionPitchChange"
-        />
-      </label>
     </div>
   </section>
 </template>

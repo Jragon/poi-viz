@@ -1,12 +1,15 @@
 import { evalPreparedMultiRigSequenceAt, prepareMultiRigSequence } from "@/engine/multirig";
+import type { PlaneId } from "@/engine/types";
 import {
   buildElementaryQuarterTimeSequence,
-  ELEMENTARY_QUARTER_ARCS,
+  ELEMENTARY_PLANE_OPTIONS,
   ELEMENTARY_TIMING_OPTIONS,
-  getElementaryArcEndpointAxis,
-  type ElementaryEndpointAxis,
+  getAvailableElementaryArcIds,
+  getElementaryArcEndpointWorldAxis,
+  isElementaryTimingAvailable,
   type ElementaryQuarterArcId,
-  type ElementaryTimingMode
+  type ElementaryTimingMode,
+  type ElementaryWorldAxis
 } from "@/experiments/quarterTime/elementaryQuarterTime";
 import { describe, expect, it } from "vitest";
 
@@ -16,25 +19,34 @@ function toRadians(degrees: number): number {
   return (degrees * Math.PI) / 180;
 }
 
-function axisFromPhase(phaseRad: number): ElementaryEndpointAxis {
+function axisFromPhase(planeId: PlaneId, phaseRad: number): ElementaryWorldAxis {
   const normalizedDegrees = Math.round((((phaseRad * 180) / Math.PI) % 360) + 360) % 360;
-  if (normalizedDegrees === 0 || normalizedDegrees === 180) {
-    return "horizontal";
-  }
+  const localAxis = normalizedDegrees === 0 || normalizedDegrees === 180 ? "x" : "y";
 
-  if (normalizedDegrees === 90 || normalizedDegrees === 270) {
-    return "vertical";
+  switch (planeId) {
+    case "wall":
+      return localAxis === "x" ? "x" : "y";
+    case "wheel":
+      return localAxis === "x" ? "z" : "y";
+    case "floor":
+      return localAxis === "x" ? "x" : "z";
   }
-
-  throw new Error(`Expected a cardinal phase, got ${normalizedDegrees}`);
 }
 
 function getPreparedSequence(
+  leftPlaneId: PlaneId,
   leftArcId: ElementaryQuarterArcId,
+  rightPlaneId: PlaneId,
   rightArcId: ElementaryQuarterArcId,
   timingMode: ElementaryTimingMode
 ) {
-  const sequence = buildElementaryQuarterTimeSequence({ leftArcId, rightArcId, timingMode });
+  const sequence = buildElementaryQuarterTimeSequence({
+    leftPlaneId,
+    leftArcId,
+    rightPlaneId,
+    rightArcId,
+    timingMode
+  });
   const prepared = prepareMultiRigSequence(sequence);
 
   expect(prepared.ok).toBe(true);
@@ -46,22 +58,60 @@ function getPreparedSequence(
 }
 
 describe("buildElementaryQuarterTimeSequence", () => {
-  it("prepares every elementary left/right arc and timing combination", () => {
-    for (const leftArc of ELEMENTARY_QUARTER_ARCS) {
-      for (const rightArc of ELEMENTARY_QUARTER_ARCS) {
-        for (const timing of ELEMENTARY_TIMING_OPTIONS) {
-          const prepared = getPreparedSequence(leftArc.id, rightArc.id, timing.id);
+  it("prepares every available elementary left/right arc and timing combination", () => {
+    for (const leftPlane of ELEMENTARY_PLANE_OPTIONS) {
+      for (const rightPlane of ELEMENTARY_PLANE_OPTIONS) {
+        for (const leftArcId of getAvailableElementaryArcIds(leftPlane.id)) {
+          for (const rightArcId of getAvailableElementaryArcIds(rightPlane.id)) {
+            for (const timing of ELEMENTARY_TIMING_OPTIONS) {
+              const available = isElementaryTimingAvailable({
+                leftPlaneId: leftPlane.id,
+                leftArcId,
+                rightPlaneId: rightPlane.id,
+                rightArcId,
+                timingMode: timing.id
+              });
+              if (!available) continue;
 
-          expect(prepared.maxSequenceDuration).toBe(LOOP_DURATION_UNITS);
-          expect(prepared.rigs.map((rig) => rig.rigId)).toEqual(["left", "right"]);
-          expect(prepared.rigs.flatMap((rig) => rig.prepared.placements)).toHaveLength(4);
+              const prepared = getPreparedSequence(
+                leftPlane.id,
+                leftArcId,
+                rightPlane.id,
+                rightArcId,
+                timing.id
+              );
+
+              expect(prepared.maxSequenceDuration).toBe(LOOP_DURATION_UNITS);
+              expect(prepared.rigs.map((rig) => rig.rigId)).toEqual(["left", "right"]);
+              expect(prepared.rigs.flatMap((rig) => rig.prepared.placements)).toHaveLength(4);
+            }
+          }
         }
       }
     }
   });
 
+  it("preserves independent per-hand planes in generated placements", () => {
+    const sequence = buildElementaryQuarterTimeSequence({
+      leftPlaneId: "wheel",
+      leftArcId: "0-90",
+      rightPlaneId: "floor",
+      rightArcId: "90-180",
+      timingMode: "quarter"
+    });
+
+    expect(sequence.rigs[0].sequence.segments.map((placement) => placement.planeId)).toEqual([
+      "wheel",
+      "wheel"
+    ]);
+    expect(sequence.rigs[1].sequence.segments.map((placement) => placement.planeId)).toEqual([
+      "floor",
+      "floor"
+    ]);
+  });
+
   it("loops each hand back to its start pose", () => {
-    const prepared = getPreparedSequence("270-0", "90-180", "quarter");
+    const prepared = getPreparedSequence("floor", "90-180", "wheel", "270-0", "quarter");
     const start = evalPreparedMultiRigSequenceAt(prepared, 0);
     const loopBoundary = evalPreparedMultiRigSequenceAt(prepared, LOOP_DURATION_UNITS);
 
@@ -75,51 +125,93 @@ describe("buildElementaryQuarterTimeSequence", () => {
     expect(loopBoundary.poses.right.pose).toEqual(start.poses.right.pose);
   });
 
-  it("preserves independent right arc selection", () => {
-    const prepared = getPreparedSequence("0-90", "270-0", "quarter");
-    const result = evalPreparedMultiRigSequenceAt(prepared, 0);
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) {
-      throw new Error("expected start to evaluate");
-    }
-
-    expect(result.poses.left.pose.handPose.phaseAbs).toBeCloseTo(toRadians(0));
-    expect(result.poses.right.pose.handPose.phaseAbs).toBeCloseTo(toRadians(270));
+  it.each([
+    ["wall", ["0-90", "90-180", "180-270", "270-0"]],
+    ["wheel", ["0-90", "270-0"]],
+    ["floor", ["0-90", "90-180"]]
+  ] as const)("enables only front arcs for %s", (planeId, expectedArcIds) => {
+    expect(getAvailableElementaryArcIds(planeId)).toEqual(expectedArcIds);
   });
 
   it.each([
-    ["together", true],
-    ["quarter", false]
-  ] as const)("%s is defined by endpoint axis relation", (timingMode, shouldMatchAxis) => {
-    for (const leftArc of ELEMENTARY_QUARTER_ARCS) {
-      for (const rightArc of ELEMENTARY_QUARTER_ARCS) {
-        const prepared = getPreparedSequence(leftArc.id, rightArc.id, timingMode);
+    ["wall", "0-90", "start", "x"],
+    ["wall", "0-90", "end", "y"],
+    ["wheel", "0-90", "start", "z"],
+    ["wheel", "0-90", "end", "y"],
+    ["floor", "0-90", "start", "x"],
+    ["floor", "0-90", "end", "z"]
+  ] as const)("classifies %s %s %s as world %s", (planeId, arcId, endpoint, axis) => {
+    expect(getElementaryArcEndpointWorldAxis(planeId, arcId, endpoint)).toBe(axis);
+  });
 
-        for (const t of [0, 0.25]) {
-          const result = evalPreparedMultiRigSequenceAt(prepared, t);
-          expect(result.ok).toBe(true);
-          if (!result.ok) {
-            throw new Error(`expected t=${t} to evaluate`);
+  it.each(["same", "quarter"] as const)(
+    "%s is defined by world-axis relation at movement checkpoints",
+    (timingMode) => {
+      for (const plane of ELEMENTARY_PLANE_OPTIONS) {
+        for (const leftArcId of getAvailableElementaryArcIds(plane.id)) {
+          for (const rightArcId of getAvailableElementaryArcIds(plane.id)) {
+            const prepared = getPreparedSequence(
+              plane.id,
+              leftArcId,
+              plane.id,
+              rightArcId,
+              timingMode
+            );
+            const checkpointAxisMatches: boolean[] = [];
+
+            for (const t of [0, 0.25]) {
+              const result = evalPreparedMultiRigSequenceAt(prepared, t);
+              expect(result.ok).toBe(true);
+              if (!result.ok) {
+                throw new Error(`expected t=${t} to evaluate`);
+              }
+
+              const leftAxis = axisFromPhase(plane.id, result.poses.left.pose.handPose.phaseAbs);
+              const rightAxis = axisFromPhase(plane.id, result.poses.right.pose.handPose.phaseAbs);
+              checkpointAxisMatches.push(rightAxis === leftAxis);
+            }
+
+            if (timingMode === "same") {
+              expect(checkpointAxisMatches.some(Boolean)).toBe(true);
+            } else {
+              expect(checkpointAxisMatches).toEqual([false, false]);
+            }
           }
-
-          const leftAxis = axisFromPhase(result.poses.left.pose.handPose.phaseAbs);
-          const rightAxis = axisFromPhase(result.poses.right.pose.handPose.phaseAbs);
-          expect(rightAxis === leftAxis).toBe(shouldMatchAxis);
         }
       }
     }
+  );
+
+  it("allows same-time for mixed planes when either checkpoint can share an axis", () => {
+    expect(
+      isElementaryTimingAvailable({
+        leftPlaneId: "wall",
+        leftArcId: "0-90",
+        rightPlaneId: "wheel",
+        rightArcId: "0-90",
+        timingMode: "same"
+      })
+    ).toBe(true);
+    expect(
+      isElementaryTimingAvailable({
+        leftPlaneId: "wall",
+        leftArcId: "0-90",
+        rightPlaneId: "wheel",
+        rightArcId: "0-90",
+        timingMode: "quarter"
+      })
+    ).toBe(true);
   });
 
   it.each([
     ["0-90", "0-90", "quarter", 0, 90, 90, 0],
     ["0-90", "90-180", "quarter", 0, 90, 90, 180],
-    ["0-90", "180-270", "together", 0, 180, 90, 270],
-    ["0-90", "270-0", "together", 0, 360, 90, 270]
+    ["0-90", "180-270", "same", 0, 180, 90, 270],
+    ["0-90", "270-0", "same", 0, 360, 90, 270]
   ] as const)(
-    "matches concrete %s / %s / %s checkpoints",
+    "matches concrete wall %s / %s / %s checkpoints",
     (leftArcId, rightArcId, timingMode, leftT0, rightT0, leftT1, rightT1) => {
-      const prepared = getPreparedSequence(leftArcId, rightArcId, timingMode);
+      const prepared = getPreparedSequence("wall", leftArcId, "wall", rightArcId, timingMode);
       const start = evalPreparedMultiRigSequenceAt(prepared, 0);
       const halfLoop = evalPreparedMultiRigSequenceAt(prepared, 0.25);
 
@@ -135,11 +227,4 @@ describe("buildElementaryQuarterTimeSequence", () => {
       expect(halfLoop.poses.right.pose.handPose.phaseAbs).toBeCloseTo(toRadians(rightT1));
     }
   );
-
-  it("classifies arc endpoints by horizontal and vertical axis", () => {
-    expect(getElementaryArcEndpointAxis("0-90", "start")).toBe("horizontal");
-    expect(getElementaryArcEndpointAxis("0-90", "end")).toBe("vertical");
-    expect(getElementaryArcEndpointAxis("90-180", "start")).toBe("vertical");
-    expect(getElementaryArcEndpointAxis("90-180", "end")).toBe("horizontal");
-  });
 });

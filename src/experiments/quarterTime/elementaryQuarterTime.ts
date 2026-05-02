@@ -3,10 +3,10 @@ import type { MultiRigSequence, PlaneId, SegmentPlacement } from "@/engine/types
 
 export type ElementaryQuarterArcId = "0-90" | "90-180" | "180-270" | "270-0";
 
-export type ElementaryTimingMode = "together" | "quarter";
+export type ElementaryTimingMode = "same" | "quarter";
 export type ElementaryEndpoint = "start" | "end";
-export type ElementaryEndpointAxis = "horizontal" | "vertical";
-export type ElementaryTimingRelation = "same-axis" | "right-angle";
+export type ElementaryWorldAxis = "x" | "y" | "z";
+export type ElementaryTimingRelation = "shares-axis" | "right-angle";
 
 export interface ElementaryQuarterArc {
   id: ElementaryQuarterArcId;
@@ -26,10 +26,29 @@ export interface ElementaryTimingOption {
 }
 
 export interface BuildElementaryQuarterTimeSequenceOptions {
+  leftPlaneId: PlaneId;
   leftArcId: ElementaryQuarterArcId;
+  rightPlaneId: PlaneId;
   rightArcId: ElementaryQuarterArcId;
   timingMode: ElementaryTimingMode;
-  planeId?: PlaneId;
+}
+
+export interface ElementaryPlaneOption {
+  id: PlaneId;
+  label: string;
+}
+
+export interface ElementaryTimingStartEndpoints {
+  leftStartsAt: ElementaryEndpoint;
+  rightStartsAt: ElementaryEndpoint;
+}
+
+export interface ElementaryTimingAvailabilityOptions {
+  leftPlaneId: PlaneId;
+  leftArcId: ElementaryQuarterArcId;
+  rightPlaneId: PlaneId;
+  rightArcId: ElementaryQuarterArcId;
+  timingMode: ElementaryTimingMode;
 }
 
 const TAU = 2 * PI;
@@ -38,6 +57,7 @@ const HAND_RADIUS = 1;
 const HEAD_RADIUS = 0.5;
 const HAND_OMEGA = TAU;
 const HEAD_OMEGA = -3 * TAU;
+const FRONT_EPSILON = 1e-9;
 
 export const ELEMENTARY_QUARTER_ARCS: readonly ElementaryQuarterArc[] = [
   {
@@ -83,8 +103,14 @@ export const ELEMENTARY_QUARTER_ARCS: readonly ElementaryQuarterArc[] = [
 ];
 
 export const ELEMENTARY_TIMING_OPTIONS: readonly ElementaryTimingOption[] = [
-  { id: "together", label: "Together time", relation: "same-axis" },
+  { id: "same", label: "Same time", relation: "shares-axis" },
   { id: "quarter", label: "Quarter time", relation: "right-angle" }
+];
+
+export const ELEMENTARY_PLANE_OPTIONS: readonly ElementaryPlaneOption[] = [
+  { id: "wall", label: "Wall" },
+  { id: "wheel", label: "Wheel" },
+  { id: "floor", label: "Floor" }
 ];
 
 const ARCS_BY_ID: ReadonlyMap<ElementaryQuarterArcId, ElementaryQuarterArc> = new Map(
@@ -99,17 +125,40 @@ function normalizeDegrees(degrees: number): number {
   return ((degrees % 360) + 360) % 360;
 }
 
-function getEndpointAxis(degrees: number): ElementaryEndpointAxis {
+function getLocalEndpointAxis(degrees: number): "x" | "y" {
   const normalizedDegrees = normalizeDegrees(degrees);
   if (normalizedDegrees === 0 || normalizedDegrees === 180) {
-    return "horizontal";
+    return "x";
   }
 
   if (normalizedDegrees === 90 || normalizedDegrees === 270) {
-    return "vertical";
+    return "y";
   }
 
   throw new Error(`Elementary quarter endpoint must be cardinal, got ${degrees}`);
+}
+
+function getEndpointDepth(planeId: PlaneId, degrees: number): number {
+  const phaseRad = toRadians(degrees);
+  switch (planeId) {
+    case "wall":
+      return 0;
+    case "wheel":
+      return Math.cos(phaseRad);
+    case "floor":
+      return Math.sin(phaseRad);
+  }
+}
+
+function getWorldAxisForLocalAxis(planeId: PlaneId, localAxis: "x" | "y"): ElementaryWorldAxis {
+  switch (planeId) {
+    case "wall":
+      return localAxis === "x" ? "x" : "y";
+    case "wheel":
+      return localAxis === "x" ? "z" : "y";
+    case "floor":
+      return localAxis === "x" ? "x" : "z";
+  }
 }
 
 function requireArc(arcId: ElementaryQuarterArcId): ElementaryQuarterArc {
@@ -130,28 +179,113 @@ export function getElementaryTimingOption(mode: ElementaryTimingMode): Elementar
   return option;
 }
 
-export function getElementaryArcEndpointAxis(
+export function getElementaryArcEndpointWorldAxis(
+  planeId: PlaneId,
   arcId: ElementaryQuarterArcId,
   endpoint: ElementaryEndpoint
-): ElementaryEndpointAxis {
+): ElementaryWorldAxis {
   const arc = requireArc(arcId);
-  return getEndpointAxis(endpoint === "start" ? arc.startDeg : arc.endDeg);
+  return getWorldAxisForLocalAxis(
+    planeId,
+    getLocalEndpointAxis(endpoint === "start" ? arc.startDeg : arc.endDeg)
+  );
 }
 
-export function getRightStartEndpointForTiming(
+export function isElementaryArcAvailableInPlane(
+  planeId: PlaneId,
+  arcId: ElementaryQuarterArcId
+): boolean {
+  const arc = requireArc(arcId);
+  return (
+    getEndpointDepth(planeId, arc.startDeg) >= -FRONT_EPSILON &&
+    getEndpointDepth(planeId, arc.endDeg) >= -FRONT_EPSILON
+  );
+}
+
+export function getAvailableElementaryArcIds(planeId: PlaneId): ElementaryQuarterArcId[] {
+  return ELEMENTARY_QUARTER_ARCS.filter((arc) =>
+    isElementaryArcAvailableInPlane(planeId, arc.id)
+  ).map((arc) => arc.id);
+}
+
+function getOppositeEndpoint(endpoint: ElementaryEndpoint): ElementaryEndpoint {
+  return endpoint === "start" ? "end" : "start";
+}
+
+function endpointsShareAxis(
+  leftPlaneId: PlaneId,
   leftArcId: ElementaryQuarterArcId,
+  leftEndpoint: ElementaryEndpoint,
+  rightPlaneId: PlaneId,
+  rightArcId: ElementaryQuarterArcId,
+  rightEndpoint: ElementaryEndpoint
+): boolean {
+  const leftAxis = getElementaryArcEndpointWorldAxis(leftPlaneId, leftArcId, leftEndpoint);
+  const rightAxis = getElementaryArcEndpointWorldAxis(rightPlaneId, rightArcId, rightEndpoint);
+
+  return leftAxis === rightAxis;
+}
+
+export function getStartEndpointsForTiming(
+  leftPlaneId: PlaneId,
+  leftArcId: ElementaryQuarterArcId,
+  rightPlaneId: PlaneId,
   rightArcId: ElementaryQuarterArcId,
   timingMode: ElementaryTimingMode
-): ElementaryEndpoint {
+): ElementaryTimingStartEndpoints {
   const timingOption = getElementaryTimingOption(timingMode);
-  const leftStartAxis = getElementaryArcEndpointAxis(leftArcId, "start");
-  const rightStartAxis = getElementaryArcEndpointAxis(rightArcId, "start");
-  const rightStartMatchesRelation =
-    timingOption.relation === "same-axis"
-      ? rightStartAxis === leftStartAxis
-      : rightStartAxis !== leftStartAxis;
+  const endpointPairs: readonly ElementaryTimingStartEndpoints[] = [
+    { leftStartsAt: "start", rightStartsAt: "start" },
+    { leftStartsAt: "start", rightStartsAt: "end" },
+    { leftStartsAt: "end", rightStartsAt: "start" },
+    { leftStartsAt: "end", rightStartsAt: "end" }
+  ];
 
-  return rightStartMatchesRelation ? "start" : "end";
+  const match = endpointPairs.find(({ leftStartsAt, rightStartsAt }) => {
+    const startsShareAxis = endpointsShareAxis(
+      leftPlaneId,
+      leftArcId,
+      leftStartsAt,
+      rightPlaneId,
+      rightArcId,
+      rightStartsAt
+    );
+    const endsShareAxis = endpointsShareAxis(
+      leftPlaneId,
+      leftArcId,
+      getOppositeEndpoint(leftStartsAt),
+      rightPlaneId,
+      rightArcId,
+      getOppositeEndpoint(rightStartsAt)
+    );
+
+    return timingOption.relation === "shares-axis"
+      ? startsShareAxis || endsShareAxis
+      : !startsShareAxis && !endsShareAxis;
+  });
+
+  if (!match) {
+    throw new Error(
+      `No ${timingMode} endpoint pairing exists for ${leftPlaneId}:${leftArcId} and ${rightPlaneId}:${rightArcId}`
+    );
+  }
+
+  return match;
+}
+
+export function isElementaryTimingAvailable({
+  leftPlaneId,
+  leftArcId,
+  rightPlaneId,
+  rightArcId,
+  timingMode
+}: ElementaryTimingAvailabilityOptions): boolean {
+  try {
+    getStartEndpointsForTiming(leftPlaneId, leftArcId, rightPlaneId, rightArcId, timingMode);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function makeBackAndForthPlacements(
@@ -196,25 +330,32 @@ function makeBackAndForthPlacements(
 }
 
 export function buildElementaryQuarterTimeSequence({
+  leftPlaneId,
   leftArcId,
+  rightPlaneId,
   rightArcId,
-  timingMode,
-  planeId = "wall"
+  timingMode
 }: BuildElementaryQuarterTimeSequenceOptions): MultiRigSequence {
-  const rightStartsAt = getRightStartEndpointForTiming(leftArcId, rightArcId, timingMode);
+  const { leftStartsAt, rightStartsAt } = getStartEndpointsForTiming(
+    leftPlaneId,
+    leftArcId,
+    rightPlaneId,
+    rightArcId,
+    timingMode
+  );
 
   return {
     rigs: [
       {
         rigId: "left",
         sequence: {
-          segments: makeBackAndForthPlacements(leftArcId, planeId, "start")
+          segments: makeBackAndForthPlacements(leftArcId, leftPlaneId, leftStartsAt)
         }
       },
       {
         rigId: "right",
         sequence: {
-          segments: makeBackAndForthPlacements(rightArcId, planeId, rightStartsAt)
+          segments: makeBackAndForthPlacements(rightArcId, rightPlaneId, rightStartsAt)
         }
       }
     ]
