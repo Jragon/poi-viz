@@ -1,11 +1,19 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch, type PropType } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch, type PropType } from "vue";
 
+import type { ProjectionMode } from "@/engine/planeProjection";
 import type { CartesianMultiRigPose, RigId } from "@/engine/types";
 import { computeDisplayPixelsPerWorldUnit } from "@/visualizer/displayScale";
 import type { VisualizerOverlaySettings } from "@/visualizer/overlaySettings";
+import { computeDragProjection, createProjectionDragState } from "@/visualizer/projectionDrag";
 import { renderFrame, type RigTrail } from "@/visualizer/renderFrame";
 import { createSceneLayout, type SceneLayout } from "@/visualizer/sceneLayout";
+
+export interface ProjectionDragSettings {
+  readonly mode: ProjectionMode;
+  readonly yawDeg: number;
+  readonly pitchDeg: number;
+}
 
 const props = defineProps({
   poses: {
@@ -43,14 +51,27 @@ const props = defineProps({
   overlaySettings: {
     type: Object as PropType<VisualizerOverlaySettings>,
     required: true
+  },
+  projectionDrag: {
+    type: Object as PropType<ProjectionDragSettings | null>,
+    default: null
   }
 });
+
+const emit = defineEmits<{
+  "update:projectionYawDeg": [value: number];
+  "update:projectionPitchDeg": [value: number];
+}>();
 
 const containerRef = ref<HTMLDivElement | null>(null);
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const videoRef = ref<HTMLVideoElement | null>(null);
 const layoutRef = ref<SceneLayout | null>(null);
 const canvasContextRef = ref<CanvasRenderingContext2D | null>(null);
+const activePointerId = ref<number | null>(null);
+const dragState = createProjectionDragState();
+const isProjectionDragAvailable = computed(() => props.projectionDrag?.mode === "tilted");
+const isProjectionDragging = computed(() => activePointerId.value !== null && dragState.isActive());
 
 let resizeObserver: ResizeObserver | null = null;
 
@@ -129,6 +150,74 @@ watch(layoutRef, () => {
   draw();
 });
 
+function endProjectionDrag(event?: PointerEvent, releaseCapture = true) {
+  const pointerId = activePointerId.value;
+  if (pointerId === null) {
+    dragState.end();
+    return;
+  }
+
+  if (event && event.pointerId !== pointerId) {
+    return;
+  }
+
+  const container = containerRef.value;
+  if (releaseCapture && container?.hasPointerCapture(pointerId)) {
+    container.releasePointerCapture(pointerId);
+  }
+
+  dragState.end();
+  activePointerId.value = null;
+}
+
+function onProjectionPointerDown(event: PointerEvent) {
+  const projectionDrag = props.projectionDrag;
+  if (
+    event.pointerType !== "mouse" ||
+    event.button !== 0 ||
+    activePointerId.value !== null ||
+    !isProjectionDragAvailable.value ||
+    !projectionDrag
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+  activePointerId.value = event.pointerId;
+  dragState.start(event.clientX, event.clientY, projectionDrag.yawDeg, projectionDrag.pitchDeg);
+  containerRef.value?.setPointerCapture(event.pointerId);
+}
+
+function onProjectionPointerMove(event: PointerEvent) {
+  if (activePointerId.value !== event.pointerId) {
+    return;
+  }
+
+  const move = dragState.move(event.clientX, event.clientY);
+  if (!move) {
+    return;
+  }
+
+  event.preventDefault();
+  const next = computeDragProjection(move.startYawDeg, move.startPitchDeg, move.dx, move.dy);
+  emit("update:projectionYawDeg", next.yawDeg);
+  emit("update:projectionPitchDeg", next.pitchDeg);
+}
+
+function onProjectionPointerEnd(event: PointerEvent) {
+  endProjectionDrag(event);
+}
+
+function onProjectionLostPointerCapture(event: PointerEvent) {
+  endProjectionDrag(event, false);
+}
+
+watch(isProjectionDragAvailable, (available) => {
+  if (!available) {
+    endProjectionDrag();
+  }
+});
+
 onMounted(() => {
   const canvas = canvasRef.value;
   if (!canvas) {
@@ -148,6 +237,7 @@ onBeforeUnmount(() => {
   resizeObserver?.disconnect();
   resizeObserver = null;
   canvasContextRef.value = null;
+  endProjectionDrag();
 });
 
 defineExpose({
@@ -178,11 +268,17 @@ onBeforeUnmount(() => {
 <template>
   <div
     ref="containerRef"
+    @pointerdown="onProjectionPointerDown"
+    @pointermove="onProjectionPointerMove"
+    @pointerup="onProjectionPointerEnd"
+    @pointercancel="onProjectionPointerEnd"
+    @lostpointercapture="onProjectionLostPointerCapture"
     :class="[
       'relative overflow-hidden bg-slate-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]',
       props.isFullscreen
         ? 'min-h-[calc(100vh-12rem)] rounded-none border-0'
-        : 'min-h-112 rounded-2xl border border-slate-800'
+        : 'min-h-112 rounded-2xl border border-slate-800',
+      isProjectionDragging ? 'cursor-grabbing' : isProjectionDragAvailable ? 'cursor-grab' : ''
     ]"
   >
     <div

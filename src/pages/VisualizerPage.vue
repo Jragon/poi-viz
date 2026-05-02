@@ -87,6 +87,11 @@ const {
 const fullscreenTargetRef = ref<HTMLElement | null>(null);
 const viewportRef = ref<CanvasViewportExposed | null>(null);
 const isFullscreen = ref(false);
+const projectionDrag = computed(() => ({
+  mode: core.session.projectionSettings.value.mode,
+  yawDeg: core.session.projectionYawDeg.value,
+  pitchDeg: core.session.projectionPitchDeg.value
+}));
 
 let fullscreenAnimationFrame = 0;
 
@@ -226,11 +231,14 @@ async function toggleWebcam() {
                 :is-fullscreen="isFullscreen"
                 :overlay-settings="overlaySettings"
                 :poses="cartesianPoses"
+                :projection-drag="projectionDrag"
                 :rig-order="rigOrder"
                 :scene-world-radius="sceneWorldRadius"
                 :trails="trails"
                 :webcam-active="webcamActive"
                 :webcam-stream="webcamStream"
+                @update:projection-yaw-deg="core.session.setProjectionYawDeg"
+                @update:projection-pitch-deg="core.session.setProjectionPitchDeg"
               />
 
               <VisualizerDisplayPanel

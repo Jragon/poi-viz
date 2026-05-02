@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, watch } from "vue";
 
+import type { ProjectionModePreference } from "@/engine/planeProjection";
 import type { MultiRigSequence } from "@/engine/types";
 import { createDefaultOverlaySettings } from "@/visualizer/overlaySettings";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
@@ -15,11 +16,15 @@ const props = withDefaults(
     summary?: string;
     autoplay?: boolean;
     size?: EmbeddedVisualizerSize;
+    projectionMode?: ProjectionModePreference;
+    projectionDragEnabled?: boolean;
   }>(),
   {
     title: "Embedded visualizer",
     autoplay: true,
-    size: "normal"
+    size: "normal",
+    projectionMode: "tilted",
+    projectionDragEnabled: true
   }
 );
 
@@ -27,6 +32,14 @@ const core = useVisualizerCore(() => props.sequence, {
   autoplay: props.autoplay,
   resumeOnSequenceChange: true
 });
+
+watch(
+  () => props.projectionMode,
+  (projectionMode) => {
+    core.session.setProjectionMode(projectionMode);
+  },
+  { immediate: true }
+);
 
 const overlaySettings = computed(() => {
   const settings = createDefaultOverlaySettings(core.rigOrder.value);
@@ -51,6 +64,15 @@ const canvasClass = computed(() =>
     : props.size === "compact"
       ? "!min-h-80 rounded-none border-0 md:!min-h-96"
       : "!min-h-112 rounded-none border-0 md:!min-h-136"
+);
+const projectionDrag = computed(() =>
+  props.projectionDragEnabled
+    ? {
+        mode: core.session.projectionSettings.value.mode,
+        yawDeg: core.session.projectionYawDeg.value,
+        pitchDeg: core.session.projectionPitchDeg.value
+      }
+    : null
 );
 
 function togglePlayback() {
@@ -105,12 +127,15 @@ function setSpeed(value: number) {
       :is-fullscreen="false"
       :overlay-settings="overlaySettings"
       :poses="core.cartesianPoses.value"
+      :projection-drag="projectionDrag"
       :projection-settings="core.session.projectionSettings.value"
       :rig-order="core.rigOrder.value"
       :scene-world-radius="core.sceneWorldRadius.value"
       :trails="core.trails.value"
       :webcam-active="false"
       :webcam-stream="null"
+      @update:projection-yaw-deg="core.session.setProjectionYawDeg"
+      @update:projection-pitch-deg="core.session.setProjectionPitchDeg"
     />
 
     <div
