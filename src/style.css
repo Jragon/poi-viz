@@ -70,6 +70,28 @@ body,
   line-height: 1.75;
 }
 
+.lab-prose > div a {
+  color: var(--color-sky-300);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-sky-300) 65%, transparent);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.18em;
+  transition:
+    color 150ms ease,
+    text-decoration-color 150ms ease;
+}
+
+.lab-prose > div a:hover {
+  color: var(--color-sky-200);
+  text-decoration-color: var(--color-sky-200);
+}
+
+.lab-prose > div a:focus-visible {
+  border-radius: var(--radius-sm);
+  outline: 2px solid color-mix(in srgb, var(--color-sky-300) 70%, white);
+  outline-offset: 2px;
+}
+
 .lab-prose > div > h1 + p {
   color: var(--color-slate-300);
   font-size: var(--text-lg);

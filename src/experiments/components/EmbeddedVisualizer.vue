@@ -23,7 +23,7 @@ const props = withDefaults(
     title: "Embedded visualizer",
     autoplay: true,
     size: "normal",
-    projectionMode: "tilted",
+    projectionMode: "auto",
     projectionDragEnabled: true
   }
 );

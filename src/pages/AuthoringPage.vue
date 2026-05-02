@@ -42,11 +42,13 @@ const initialCompiled = (() => {
 const lastValidCompiled = ref(initialCompiled);
 const compileErrorMessage = ref<string | null>(null);
 const selectedSegment = ref<SelectedSegment>(null);
+const exportFeedbackMessage = ref<string | null>(null);
 const metaDrafts = reactive<{ name: string | null; description: string | null }>({
   name: null,
   description: null
 });
 const globalOmegaUnit = ref<AuthoredOmegaUnit>("circles-per-unit");
+let exportFeedbackTimeout: number | null = null;
 
 const transport = createTransport();
 const {
@@ -158,6 +160,58 @@ function canDeleteSegment(_trackId: AuthoredTrackId, totalSegmentsInTrack: numbe
   return presentTrackCount.value > 1;
 }
 
+function setExportFeedbackMessage(message: string | null) {
+  exportFeedbackMessage.value = message;
+
+  if (exportFeedbackTimeout !== null) {
+    window.clearTimeout(exportFeedbackTimeout);
+    exportFeedbackTimeout = null;
+  }
+
+  if (message) {
+    exportFeedbackTimeout = window.setTimeout(() => {
+      exportFeedbackMessage.value = null;
+      exportFeedbackTimeout = null;
+    }, 2400);
+  }
+}
+
+function copyTextWithExecCommand(text: string): boolean {
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "true");
+  textarea.style.position = "absolute";
+  textarea.style.left = "-9999px";
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    return document.execCommand("copy");
+  } finally {
+    document.body.removeChild(textarea);
+  }
+}
+
+async function exportSelectedDocumentJson() {
+  if (!selectedEntry.value) {
+    return;
+  }
+
+  const exportedJson = JSON.stringify(selectedEntry.value, null, 2);
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(exportedJson);
+    } else if (!copyTextWithExecCommand(exportedJson)) {
+      throw new Error("Copy command failed");
+    }
+
+    setExportFeedbackMessage("Copied selected document JSON.");
+  } catch {
+    setExportFeedbackMessage("Could not copy JSON to clipboard.");
+  }
+}
+
 watch(selectedDocumentId, (nextId, previousId) => {
   if (!nextId || nextId === previousId) {
     return;
@@ -182,6 +236,10 @@ watch(selectedDocumentId, (nextId, previousId) => {
 });
 
 onBeforeUnmount(() => {
+  if (exportFeedbackTimeout !== null) {
+    window.clearTimeout(exportFeedbackTimeout);
+  }
+
   transport.dispose();
 });
 </script>
@@ -354,7 +412,18 @@ onBeforeUnmount(() => {
             >
               Delete
             </button>
+            <button
+              type="button"
+              class="rounded-lg border border-sky-700 px-3 py-2 text-sm text-sky-200 transition hover:border-sky-500 disabled:opacity-50"
+              :disabled="!selectedEntry"
+              @click="exportSelectedDocumentJson"
+            >
+              Export JSON
+            </button>
           </div>
+          <p v-if="exportFeedbackMessage" class="pt-1 text-xs text-sky-300">
+            {{ exportFeedbackMessage }}
+          </p>
         </section>
 
         <AuthoringPreviewPanel

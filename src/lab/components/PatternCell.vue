@@ -2,6 +2,7 @@
 import { computed } from "vue";
 
 import type { MultiRigSequence } from "@/engine/types";
+import { getFiveBeatSplitOppositeEarthHandRadiusShiftSequence } from "@/experiments/archerWeaves/archerWeavesPatterns";
 import EmbeddedVisualizer from "@/experiments/components/EmbeddedVisualizer.vue";
 import { getPastedQuarterTimeSequence } from "@/experiments/quarterTime/pastedQuarterTimePattern";
 
@@ -10,6 +11,12 @@ const props = defineProps<{
 }>();
 
 const patterns: Record<string, { title: string; summary: string; sequence: MultiRigSequence }> = {
+  "archer-weaves-five-beat-radius-shift": {
+    title: "5-beat split-op archer weave with hand radius shifts",
+    summary:
+      "An initial archer-weaves exhibit. The hand radius profiles are authored as time-keyed shifts to approximate the over-under arm path while keeping the pattern inside the current 2D segment model.",
+    sequence: getFiveBeatSplitOppositeEarthHandRadiusShiftSequence()
+  },
   "pasted-quarter-time": {
     title: "Pasted 3D quarter-time pattern",
     summary:
