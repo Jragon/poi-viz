@@ -7,16 +7,20 @@ import { createDefaultOverlaySettings } from "@/visualizer/overlaySettings";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
 import { useVisualizerCore } from "@/visualizer/useVisualizerCore";
 
+type EmbeddedVisualizerSize = "normal" | "compact";
+
 const props = withDefaults(
   defineProps<{
     sequence: MultiRigSequence;
     title?: string;
     summary?: string;
     autoplay?: boolean;
+    size?: EmbeddedVisualizerSize;
   }>(),
   {
     title: "Embedded visualizer",
-    autoplay: true
+    autoplay: true,
+    size: "normal"
   }
 );
 
@@ -42,6 +46,11 @@ const activePlanesLabel = computed(() => {
   );
   return Array.from(planes).join(" / ");
 });
+const canvasClass = computed(() =>
+  props.size === "compact"
+    ? "!min-h-80 rounded-none border-0 md:!min-h-96"
+    : "!min-h-112 rounded-none border-0 md:!min-h-136"
+);
 
 function togglePlayback() {
   core.transport.toggle();
@@ -108,7 +117,7 @@ function onProjectionPitchChange(event: Event) {
 
     <PoiCanvasViewport
       v-else
-      class="min-h-112 rounded-none border-0 md:min-h-136"
+      :class="canvasClass"
       :display-scale="1"
       :is-fullscreen="false"
       :overlay-settings="overlaySettings"
