@@ -1,4 +1,4 @@
-import type { MultiRigSequence, RelativeRigPose, Segment, TimeUnit } from "@/engine/types";
+import type { MultiRigSequence, PlaneId, RelativeRigPose, Segment, TimeUnit } from "@/engine/types";
 
 export type AuthoredTrackId = "left" | "right";
 
@@ -18,6 +18,7 @@ export interface AuthoredCircleDriverInput {
 export interface AuthoredFirstSegment {
   kind: "first";
   durationUnits: TimeUnit;
+  planeId?: PlaneId;
   hand: {
     startPose: AuthoredNodeStartPose;
     driver: AuthoredCircleDriverInput;
@@ -31,6 +32,7 @@ export interface AuthoredFirstSegment {
 export interface AuthoredContinuationSegment {
   kind: "continuation";
   durationUnits: TimeUnit;
+  planeId?: PlaneId;
   hand: {
     driver: AuthoredCircleDriverInput;
   };
@@ -69,6 +71,10 @@ export type AuthoredDocumentValidationErrorCode =
   | "NON_POSITIVE_DURATION"
   | "INVALID_PHASE_DEGREES"
   | "INVALID_RADIUS"
+  | "INVALID_PLANE_ID"
+  | "UNSUPPORTED_PLANE_BREAK"
+  | "PLANE_BREAK_INVALID_HAND_ALIGNMENT"
+  | "PLANE_BREAK_INVALID_HEAD_ALIGNMENT"
   | "INVALID_OMEGA";
 
 export interface AuthoredDocumentValidationError {
@@ -89,6 +95,7 @@ export interface DerivedAuthoredSegmentBoundary {
   endUnit: TimeUnit;
   startPose: RelativeRigPose;
   endPose: RelativeRigPose;
+  planeId: PlaneId;
   segment: Segment;
 }
 

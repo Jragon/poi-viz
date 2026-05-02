@@ -40,6 +40,7 @@ export function useVisualizerExport(
         displayScale: display.displayScale.value,
         trailDecaySteps: core.session.trailDecaySteps.value,
         trailLoopMode: core.session.trailLoopMode.value,
+        projectionSettings: core.session.projectionSettings.value,
         overlaySettings: cloneOverlaySettings(display.overlaySettings.value)
       });
     } finally {

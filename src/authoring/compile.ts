@@ -3,6 +3,7 @@ import { evalSegment } from "@/engine/engine";
 import type {
   Driver,
   MultiRigSequence,
+  PlaneId,
   RelativeNodePose,
   RelativeRigPose,
   Segment
@@ -23,7 +24,20 @@ import type {
 } from "@/authoring/types";
 
 const TRACK_ORDER: readonly AuthoredTrackId[] = ["left", "right"];
+const PLANE_IDS = new Set<PlaneId>(["wall", "wheel", "floor"]);
+const DEFAULT_PLANE_ID: PlaneId = "wall";
 const TAU = 2 * PI;
+const PLANE_BREAK_EPSILON = 1e-9;
+
+type PlaneBreakRule = {
+  allowedSourceHandPhases: readonly number[];
+  targetPhaseOffset: number;
+};
+
+type DeriveTrackBoundariesResult = {
+  boundaries: DerivedAuthoredSegmentBoundary[];
+  errors: AuthoredDocumentValidationError[];
+};
 
 function toRadians(phaseDeg: number): number {
   return (phaseDeg * PI) / 180;
@@ -53,8 +67,79 @@ function toDriver(driver: AuthoredCircleDriverInput): Driver {
   };
 }
 
+function isPlaneId(value: unknown): value is PlaneId {
+  return typeof value === "string" && PLANE_IDS.has(value as PlaneId);
+}
+
+function resolveAuthoredPlaneId(segment: AuthoredSegment): PlaneId {
+  return segment.planeId ?? DEFAULT_PLANE_ID;
+}
+
+function planeBreakKey(sourcePlaneId: PlaneId, targetPlaneId: PlaneId): string {
+  return `${sourcePlaneId}->${targetPlaneId}`;
+}
+
+function getPlaneBreakRule(sourcePlaneId: PlaneId, targetPlaneId: PlaneId): PlaneBreakRule | null {
+  switch (planeBreakKey(sourcePlaneId, targetPlaneId)) {
+    case "wall->floor":
+    case "floor->wall":
+      return { allowedSourceHandPhases: [0, PI], targetPhaseOffset: 0 };
+    case "wall->wheel":
+    case "wheel->wall":
+      return { allowedSourceHandPhases: [PI / 2, (3 * PI) / 2], targetPhaseOffset: 0 };
+    case "wheel->floor":
+      return { allowedSourceHandPhases: [0, PI], targetPhaseOffset: PI / 2 };
+    case "floor->wheel":
+      return { allowedSourceHandPhases: [PI / 2, (3 * PI) / 2], targetPhaseOffset: -PI / 2 };
+    default:
+      return null;
+  }
+}
+
 function wrapAngleDelta(delta: number): number {
-  return ((delta + PI) % TAU) - PI;
+  return ((((delta + PI) % TAU) + TAU) % TAU) - PI;
+}
+
+function angleMatchesAny(angle: number, targets: readonly number[]): boolean {
+  return targets.some((target) => Math.abs(wrapAngleDelta(angle - target)) <= PLANE_BREAK_EPSILON);
+}
+
+function remapPoseByPhaseOffset(pose: RelativeRigPose, phaseOffset: number): RelativeRigPose {
+  return {
+    handPose: {
+      phaseAbs: pose.handPose.phaseAbs + phaseOffset,
+      radius: pose.handPose.radius
+    },
+    headPose: {
+      phaseAbs: pose.headPose.phaseAbs + phaseOffset,
+      radius: pose.headPose.radius
+    }
+  };
+}
+
+function planeBreakPoseMatchesRule(pose: RelativeRigPose, rule: PlaneBreakRule): boolean {
+  const headRelativePhase = pose.headPose.phaseAbs - pose.handPose.phaseAbs;
+  return (
+    angleMatchesAny(pose.handPose.phaseAbs, rule.allowedSourceHandPhases) &&
+    angleMatchesAny(headRelativePhase, [0, PI])
+  );
+}
+
+function remapPoseForPlaneTransition(
+  sourcePose: RelativeRigPose,
+  sourcePlaneId: PlaneId,
+  targetPlaneId: PlaneId
+): RelativeRigPose | null {
+  if (sourcePlaneId === targetPlaneId) {
+    return sourcePose;
+  }
+
+  const rule = getPlaneBreakRule(sourcePlaneId, targetPlaneId);
+  if (!rule || !planeBreakPoseMatchesRule(sourcePose, rule)) {
+    return null;
+  }
+
+  return remapPoseByPhaseOffset(sourcePose, rule.targetPhaseOffset);
 }
 
 function posesMatchModuloTurns(a: RelativeNodePose, b: RelativeNodePose, epsilon = 1e-9): boolean {
@@ -140,6 +225,57 @@ function validateFiniteDriverValues(
   }
 }
 
+function validatePlaneIdValue(
+  trackId: AuthoredTrackId,
+  segmentIndex: number,
+  segment: AuthoredSegment,
+  errors: AuthoredDocumentValidationError[]
+) {
+  if (segment.planeId !== undefined && !isPlaneId(segment.planeId)) {
+    errors.push({ code: "INVALID_PLANE_ID", trackId, segmentIndex });
+  }
+}
+
+function validateAndRemapPlaneBreakStartPose(
+  trackId: AuthoredTrackId,
+  targetSegmentIndex: number,
+  previousBoundary: DerivedAuthoredSegmentBoundary,
+  targetPlaneId: PlaneId,
+  errors: AuthoredDocumentValidationError[]
+): RelativeRigPose {
+  if (previousBoundary.planeId === targetPlaneId) {
+    return previousBoundary.endPose;
+  }
+
+  const rule = getPlaneBreakRule(previousBoundary.planeId, targetPlaneId);
+  if (!rule) {
+    errors.push({ code: "UNSUPPORTED_PLANE_BREAK", trackId, segmentIndex: targetSegmentIndex });
+    return previousBoundary.endPose;
+  }
+
+  const pose = previousBoundary.endPose;
+  if (!angleMatchesAny(pose.handPose.phaseAbs, rule.allowedSourceHandPhases)) {
+    errors.push({
+      code: "PLANE_BREAK_INVALID_HAND_ALIGNMENT",
+      trackId,
+      segmentIndex: targetSegmentIndex,
+      node: "hand"
+    });
+  }
+
+  const headRelativePhase = pose.headPose.phaseAbs - pose.handPose.phaseAbs;
+  if (!angleMatchesAny(headRelativePhase, [0, PI])) {
+    errors.push({
+      code: "PLANE_BREAK_INVALID_HEAD_ALIGNMENT",
+      trackId,
+      segmentIndex: targetSegmentIndex,
+      node: "head"
+    });
+  }
+
+  return remapPoseByPhaseOffset(previousBoundary.endPose, rule.targetPhaseOffset);
+}
+
 export function validateAuthoredDocument(
   document: AuthoredSequenceDocument
 ): AuthoredDocumentValidationResult {
@@ -167,6 +303,7 @@ export function validateAuthoredDocument(
 
       validateFiniteDriverValues(trackId, segmentIndex, "hand", segment, errors);
       validateFiniteDriverValues(trackId, segmentIndex, "head", segment, errors);
+      validatePlaneIdValue(trackId, segmentIndex, segment, errors);
 
       if (segment.kind === "first") {
         validateFiniteNodeValues(trackId, segmentIndex, "hand", segment, errors);
@@ -182,12 +319,33 @@ export function deriveTrackBoundaries(
   trackId: AuthoredTrackId,
   track: AuthoredTrack
 ): DerivedAuthoredSegmentBoundary[] {
+  return deriveTrackBoundariesWithValidation(trackId, track).boundaries;
+}
+
+function deriveTrackBoundariesWithValidation(
+  trackId: AuthoredTrackId,
+  track: AuthoredTrack
+): DeriveTrackBoundariesResult {
   const boundaries: DerivedAuthoredSegmentBoundary[] = [];
+  const errors: AuthoredDocumentValidationError[] = [];
 
   let cursor = 0;
   let startPose: RelativeRigPose | null = null;
 
   track.segments.forEach((authoredSegment, segmentIndex) => {
+    const planeId = resolveAuthoredPlaneId(authoredSegment);
+    const remappedStartPose =
+      segmentIndex === 0
+        ? null
+        : validateAndRemapPlaneBreakStartPose(
+            trackId,
+            segmentIndex,
+            boundaries[boundaries.length - 1],
+            planeId,
+            errors
+          );
+    startPose = remappedStartPose ?? startPose;
+
     const segment =
       segmentIndex === 0
         ? makeFirstSegment(authoredSegment as AuthoredFirstSegment)
@@ -208,6 +366,7 @@ export function deriveTrackBoundaries(
       endUnit,
       startPose: resolvedStartPose,
       endPose,
+      planeId,
       segment
     });
 
@@ -215,7 +374,7 @@ export function deriveTrackBoundaries(
     startPose = endPose;
   });
 
-  return boundaries;
+  return { boundaries, errors };
 }
 
 export function compileAuthoredDocument(
@@ -227,8 +386,18 @@ export function compileAuthoredDocument(
   }
 
   const boundariesByTrack: DerivedBoundaryMap = {};
-  const rigs = getTrackEntries(document).map(([trackId, track]) => {
-    const boundaries = deriveTrackBoundaries(trackId, track);
+  const transitionErrors: AuthoredDocumentValidationError[] = [];
+  const entries = getTrackEntries(document).map(([trackId, track]) => {
+    const result = deriveTrackBoundariesWithValidation(trackId, track);
+    transitionErrors.push(...result.errors);
+    return [trackId, result.boundaries] as const;
+  });
+
+  if (transitionErrors.length > 0) {
+    return { ok: false, errors: transitionErrors };
+  }
+
+  const rigs = entries.map(([trackId, boundaries]) => {
     boundariesByTrack[trackId] = boundaries;
 
     return {
@@ -236,7 +405,8 @@ export function compileAuthoredDocument(
       sequence: {
         segments: boundaries.map((boundary) => ({
           segment: boundary.segment,
-          durationUnits: boundary.endUnit - boundary.startUnit
+          durationUnits: boundary.endUnit - boundary.startUnit,
+          planeId: boundary.planeId
         }))
       }
     };
@@ -261,12 +431,16 @@ export function authoredDocumentFromMultiRigSequence(
     }
 
     let previousEndPose: RelativeRigPose | null = null;
+    let previousPlaneId: PlaneId | null = null;
     tracks[rig.rigId as AuthoredTrackId] = {
       segments: rig.sequence.segments.map((placement, segmentIndex) => {
+        const planeId = placement.planeId ?? DEFAULT_PLANE_ID;
+
         if (segmentIndex === 0) {
           const firstSegment: AuthoredFirstSegment = {
             kind: "first",
             durationUnits: placement.durationUnits,
+            planeId,
             hand: {
               startPose: {
                 phaseDeg: toDegrees(placement.segment.hand.startPose.phaseAbs),
@@ -291,13 +465,19 @@ export function authoredDocumentFromMultiRigSequence(
             }
           };
           previousEndPose = evalSegment(placement.segment, placement.durationUnits);
+          previousPlaneId = planeId;
           return firstSegment;
         }
 
+        const expectedStartPose =
+          previousEndPose && previousPlaneId
+            ? remapPoseForPlaneTransition(previousEndPose, previousPlaneId, planeId)
+            : null;
+
         if (
-          !previousEndPose ||
-          !posesMatchModuloTurns(previousEndPose.handPose, placement.segment.hand.startPose) ||
-          !posesMatchModuloTurns(previousEndPose.headPose, placement.segment.head.startPose)
+          !expectedStartPose ||
+          !posesMatchModuloTurns(expectedStartPose.handPose, placement.segment.hand.startPose) ||
+          !posesMatchModuloTurns(expectedStartPose.headPose, placement.segment.head.startPose)
         ) {
           throw new Error(
             `Rig ${rig.rigId} segment ${segmentIndex} cannot be represented as a continuity-first authored segment`
@@ -305,9 +485,11 @@ export function authoredDocumentFromMultiRigSequence(
         }
 
         previousEndPose = evalSegment(placement.segment, placement.durationUnits);
+        previousPlaneId = planeId;
         return {
           kind: "continuation",
           durationUnits: placement.durationUnits,
+          planeId,
           hand: {
             driver: {
               kind: "circle",

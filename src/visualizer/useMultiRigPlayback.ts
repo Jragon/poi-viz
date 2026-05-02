@@ -8,7 +8,6 @@ import {
   type Ref
 } from "vue";
 
-import { toCartesianMultiRigPose } from "@/engine/cartesian";
 import {
   evalPreparedMultiRigSequenceAt,
   prepareMultiRigSequence,
@@ -17,6 +16,12 @@ import {
   type MultiRigSequenceValidationError,
   type PreparedMultiRigSequence
 } from "@/engine/multirig";
+import {
+  DEFAULT_PLANE_PROJECTION_SETTINGS,
+  toProjectedMultiRigPose,
+  type PlaneProjectionSettings,
+  type ProjectionMode
+} from "@/engine/planeProjection";
 import type {
   CartesianMultiRigPose,
   MultiRigSequence,
@@ -76,7 +81,8 @@ function toRelativePoses(poses: EvaluatedMultiRigPose): Record<RigId, RelativeRi
 }
 
 export function useMultiRigPlayback(
-  sequence: MaybeRefOrGetter<MultiRigSequence>
+  sequence: MaybeRefOrGetter<MultiRigSequence>,
+  projectionSettings: MaybeRefOrGetter<PlaneProjectionSettings> = DEFAULT_PLANE_PROJECTION_SETTINGS
 ): MultiRigPlaybackController {
   const prepared = ref<PreparedMultiRigSequence | null>(null);
   const prepareErrors = ref<MultiRigSequenceValidationError[]>([]);
@@ -89,6 +95,9 @@ export function useMultiRigPlayback(
     loopMode: TrailLoopMode;
     loopDuration: TimeUnit | null;
     isContinuous: boolean;
+    projectionMode: ProjectionMode;
+    projectionYawDeg: number;
+    projectionPitchDeg: number;
     trails: MultiRigTrailSamples;
   } | null = null;
 
@@ -127,11 +136,12 @@ export function useMultiRigPlayback(
     }
 
     const relativePoses = toRelativePoses(evalResult.poses);
+    const currentProjectionSettings = toValue(projectionSettings);
     const result: PlaybackEvalSuccess = {
       ok: true,
       evaluatedPoses: evalResult.poses,
       relativePoses,
-      cartesianPoses: toCartesianMultiRigPose(relativePoses)
+      cartesianPoses: toProjectedMultiRigPose(evalResult.poses, currentProjectionSettings)
     };
     lastEvaluation.value = result;
     return result;
@@ -158,6 +168,7 @@ export function useMultiRigPlayback(
     }
 
     const loopMode = options.loopMode ?? "off";
+    const currentProjectionSettings = toValue(projectionSettings);
     const optionLoopDuration = options.loopDuration ?? 0;
     const loopDuration =
       Number.isFinite(optionLoopDuration) && optionLoopDuration > 0 ? optionLoopDuration : null;
@@ -178,7 +189,10 @@ export function useMultiRigPlayback(
       trailCache.sampleIndex === sampleIndex &&
       trailCache.loopMode === loopMode &&
       trailCache.loopDuration === wrappedLoopDuration &&
-      trailCache.isContinuous === isContinuous
+      trailCache.isContinuous === isContinuous &&
+      trailCache.projectionMode === currentProjectionSettings.mode &&
+      trailCache.projectionYawDeg === currentProjectionSettings.yawDeg &&
+      trailCache.projectionPitchDeg === currentProjectionSettings.pitchDeg
         ? trailCache.trails
         : null;
 
@@ -188,7 +202,8 @@ export function useMultiRigPlayback(
         sampleIndex,
         dt,
         normalizedHoldSteps,
-        wrappedLoopDuration
+        wrappedLoopDuration,
+        currentProjectionSettings
       );
       trailCache = {
         prepared: prepared.value,
@@ -198,6 +213,9 @@ export function useMultiRigPlayback(
         loopMode,
         loopDuration: wrappedLoopDuration,
         isContinuous,
+        projectionMode: currentProjectionSettings.mode,
+        projectionYawDeg: currentProjectionSettings.yawDeg,
+        projectionPitchDeg: currentProjectionSettings.pitchDeg,
         trails: baseTrails
       };
     }
@@ -211,7 +229,7 @@ export function useMultiRigPlayback(
 
     return appendCurrentPoseToTrails(
       baseTrails,
-      toCartesianMultiRigPose(toRelativePoses(currentEval.poses)),
+      toProjectedMultiRigPose(currentEval.poses, currentProjectionSettings),
       normalizedHoldSteps
     );
   };

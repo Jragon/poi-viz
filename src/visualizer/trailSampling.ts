@@ -1,7 +1,23 @@
-import { toCartesianMultiRigPose } from "@/engine/cartesian";
 import { evalSegment } from "@/engine/engine";
 import { evalPreparedMultiRigSequenceAt, type PreparedMultiRigSequence } from "@/engine/multirig";
-import type { CartesianMultiRigPose, RelativeRigPose, RigId, TimeUnit, Vec2 } from "@/engine/types";
+import {
+  DEFAULT_PLANE_PROJECTION_SETTINGS,
+  toProjectedMultiRigPose,
+  type PlaneProjectionSettings
+} from "@/engine/planeProjection";
+import type {
+  CartesianMultiRigPose,
+  PlaneId,
+  RelativeRigPose,
+  RigId,
+  TimeUnit,
+  Vec2
+} from "@/engine/types";
+
+type EvaluatedTrailPose = {
+  pose: RelativeRigPose;
+  planeId: PlaneId;
+};
 
 export type TrailLoopMode = "auto" | "off";
 
@@ -20,12 +36,6 @@ export type MultiRigTrailSamples = Partial<Record<RigId, RigTrailSamples>>;
 export const TRAIL_POINT_EPSILON = 1e-9;
 export const TRAIL_CONTINUITY_EPSILON = 1e-6;
 const TAU = 2 * Math.PI;
-
-function toRelativePoses(
-  poses: Record<RigId, { pose: RelativeRigPose }>
-): Record<RigId, RelativeRigPose> {
-  return Object.fromEntries(Object.entries(poses).map(([rigId, value]) => [rigId, value.pose]));
-}
 
 function timeMatches(a: TimeUnit, b: TimeUnit): boolean {
   return Math.abs(a - b) <= TRAIL_POINT_EPSILON * Math.max(1, Math.abs(a), Math.abs(b));
@@ -128,7 +138,7 @@ export function appendCurrentPoseToTrails(
 function evalRigSequenceFromLeft(
   rig: PreparedMultiRigSequence["rigs"][number],
   tGlobal: TimeUnit
-): RelativeRigPose | null {
+): EvaluatedTrailPose | null {
   const sequence = rig.prepared;
   if (!Number.isFinite(tGlobal) || tGlobal < 0 || sequence.totalDuration <= 0) return null;
 
@@ -137,18 +147,27 @@ function evalRigSequenceFromLeft(
 
   if (timeMatches(wrappedTime, 0)) {
     const placement = placements[placements.length - 1];
-    return evalSegment(placement.segment, placement.endUnit - placement.startUnit);
+    return {
+      pose: evalSegment(placement.segment, placement.endUnit - placement.startUnit),
+      planeId: placement.planeId
+    };
   }
 
   for (let index = 0; index < placements.length; index += 1) {
     const placement = placements[index];
     if (timeMatches(wrappedTime, placement.startUnit) && index > 0) {
       const previous = placements[index - 1];
-      return evalSegment(previous.segment, previous.endUnit - previous.startUnit);
+      return {
+        pose: evalSegment(previous.segment, previous.endUnit - previous.startUnit),
+        planeId: previous.planeId
+      };
     }
 
     if (placement.startUnit < wrappedTime && wrappedTime <= placement.endUnit) {
-      return evalSegment(placement.segment, wrappedTime - placement.startUnit);
+      return {
+        pose: evalSegment(placement.segment, wrappedTime - placement.startUnit),
+        planeId: placement.planeId
+      };
     }
   }
 
@@ -158,8 +177,8 @@ function evalRigSequenceFromLeft(
 function evalMultiRigSequenceFromLeft(
   prepared: PreparedMultiRigSequence,
   tGlobal: TimeUnit
-): Record<RigId, RelativeRigPose> | null {
-  const poses: Record<RigId, RelativeRigPose> = {};
+): Record<RigId, EvaluatedTrailPose> | null {
+  const poses: Record<RigId, EvaluatedTrailPose> = {};
 
   for (const rig of prepared.rigs) {
     const pose = evalRigSequenceFromLeft(rig, tGlobal);
@@ -178,14 +197,15 @@ function nodePoseMatches(a: RelativeRigPose["handPose"], b: RelativeRigPose["han
 }
 
 function relativePoseMatches(
-  a: Record<RigId, RelativeRigPose>,
-  b: Record<RigId, RelativeRigPose>
+  a: Record<RigId, EvaluatedTrailPose>,
+  b: Record<RigId, EvaluatedTrailPose>
 ): boolean {
-  for (const [rigId, pose] of Object.entries(a)) {
+  for (const [rigId, value] of Object.entries(a)) {
     const other = b[rigId];
     if (!other) return false;
-    if (!nodePoseMatches(pose.handPose, other.handPose)) return false;
-    if (!nodePoseMatches(pose.headPose, other.headPose)) return false;
+    if (value.planeId !== other.planeId) return false;
+    if (!nodePoseMatches(value.pose.handPose, other.pose.handPose)) return false;
+    if (!nodePoseMatches(value.pose.headPose, other.pose.headPose)) return false;
   }
 
   return Object.keys(a).length === Object.keys(b).length;
@@ -200,10 +220,10 @@ export function isContinuousAtLoopBoundary(
   const startEval = evalPreparedMultiRigSequenceAt(prepared, 0);
   if (!startEval.ok) return false;
 
-  const endRelativePoses = evalMultiRigSequenceFromLeft(prepared, loopDuration);
-  if (!endRelativePoses) return false;
+  const endPoses = evalMultiRigSequenceFromLeft(prepared, loopDuration);
+  if (!endPoses) return false;
 
-  return relativePoseMatches(toRelativePoses(startEval.poses), endRelativePoses);
+  return relativePoseMatches(startEval.poses, endPoses);
 }
 
 export function sampleMultiRigTrailGrid(
@@ -211,7 +231,8 @@ export function sampleMultiRigTrailGrid(
   sampleIndex: number,
   dt: TimeUnit,
   normalizedHoldSteps: number | null,
-  loopDuration: TimeUnit | null
+  loopDuration: TimeUnit | null,
+  projectionSettings: PlaneProjectionSettings = DEFAULT_PLANE_PROJECTION_SETTINGS
 ): MultiRigTrailSamples {
   const effectiveLoopDuration = normalizedHoldSteps === null ? null : loopDuration;
   const startIndex = normalizedHoldSteps === null ? 0 : sampleIndex - (normalizedHoldSteps - 1);
@@ -226,7 +247,7 @@ export function sampleMultiRigTrailGrid(
       effectiveLoopDuration === null ? rawTime : normalizeLoopTime(rawTime, effectiveLoopDuration);
     const result = evalPreparedMultiRigSequenceAt(prepared, sampleTime);
     if (!result.ok) return {};
-    appendCartesianSample(trails, toCartesianMultiRigPose(toRelativePoses(result.poses)));
+    appendCartesianSample(trails, toProjectedMultiRigPose(result.poses, projectionSettings));
   }
 
   return trails;

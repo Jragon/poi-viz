@@ -3,14 +3,14 @@ import { computed, ref, type ComputedRef, type Ref } from "vue";
 
 import { compileAuthoredDocument } from "@/authoring/compile";
 import type {
-    AuthoredDocumentEntry,
-    AuthoredFirstSegment,
-    AuthoredSequenceDocument
+  AuthoredDocumentEntry,
+  AuthoredFirstSegment,
+  AuthoredSequenceDocument
 } from "@/authoring/types";
 import {
-    useAuthoringEditor,
-    type CompileSuccess,
-    type SelectedSegment
+  useAuthoringEditor,
+  type CompileSuccess,
+  type SelectedSegment
 } from "@/authoring/useAuthoringEditor";
 import { PI } from "@/engine/constants";
 
@@ -152,6 +152,50 @@ describe("useAuthoringEditor", () => {
       expect(appended.hand.driver.omega).toBeCloseTo(PI, 9);
     });
 
+    it("defaults a new track's first segment to wall", () => {
+      const harness = createHarness(makeBaseDocument());
+
+      harness.editor.addSegment("right");
+
+      expect(harness.currentDocument().tracks.right!.segments[0].planeId).toBe("wall");
+    });
+
+    it("copies the source plane when appending a continuation", () => {
+      const document: AuthoredSequenceDocument = {
+        name: "Plane copy",
+        description: null,
+        tracks: {
+          left: {
+            segments: [
+              makeFirstSegment({
+                planeId: "wall",
+                hand: {
+                  startPose: { phaseDeg: 0, radius: 1 },
+                  driver: { kind: "circle", omega: 0, omegaUnit: "radians-per-unit" }
+                },
+                head: {
+                  startPose: { phaseDeg: 0, radius: 1 },
+                  driver: { kind: "circle", omega: 0, omegaUnit: "radians-per-unit" }
+                }
+              }),
+              {
+                kind: "continuation",
+                durationUnits: 1,
+                planeId: "floor",
+                hand: { driver: { kind: "circle", omega: 0, omegaUnit: "radians-per-unit" } },
+                head: { driver: { kind: "circle", omega: 0, omegaUnit: "radians-per-unit" } }
+              }
+            ]
+          }
+        }
+      };
+      const harness = createHarness(document);
+
+      harness.editor.addSegment("left");
+
+      expect(harness.currentDocument().tracks.left!.segments[2].planeId).toBe("floor");
+    });
+
     it("appends to the tail even when a middle segment is selected", () => {
       const harness = createHarness(makeBaseDocument());
       harness.selectedSegment.value = { trackId: "left", segmentIndex: 1 };
@@ -187,6 +231,16 @@ describe("useAuthoringEditor", () => {
       expect((segments[1] as { hand: { driver: { omega: number } } }).hand.driver.omega).toBe(1);
       expect(harness.selectedSegment.value).toEqual({ trackId: "left", segmentIndex: 1 });
     });
+
+    it("copies the source plane when duplicating", () => {
+      const document = makeBaseDocument();
+      document.tracks.left!.segments[0].planeId = "wall";
+      const harness = createHarness(document);
+
+      harness.editor.duplicateSegment("left", 0);
+
+      expect(harness.currentDocument().tracks.left!.segments[1].planeId).toBe("wall");
+    });
   });
 
   describe("deleteSegment", () => {
@@ -203,6 +257,7 @@ describe("useAuthoringEditor", () => {
       expect(promoted.kind).toBe("first");
       const promotedFirst = promoted as AuthoredFirstSegment;
       expect(promotedFirst.durationUnits).toBe(2);
+      expect(promotedFirst.planeId).toBe("wall");
       expect(promotedFirst.hand.driver.omega).toBe(3);
       expect(promotedFirst.head.driver.omega).toBe(4);
       expect(promotedFirst.hand.startPose.radius).toBeCloseTo(promotedStartPose.handPose.radius, 9);
@@ -288,6 +343,36 @@ describe("useAuthoringEditor", () => {
       const handDriver = harness.currentDocument().tracks.left!.segments[0].hand.driver;
       expect(handDriver.omegaUnit).toBe("radians-per-unit");
       expect(handDriver.omega).toBeCloseTo(2 * PI, 9);
+    });
+  });
+
+  describe("plane updates", () => {
+    it("updates a segment plane when the resulting document compiles", () => {
+      const document: AuthoredSequenceDocument = {
+        name: "One segment",
+        description: null,
+        tracks: {
+          left: { segments: [makeFirstSegment()] }
+        }
+      };
+      const harness = createHarness(document);
+
+      harness.editor.updateSegmentPlane("left", 0, "wheel");
+
+      expect(harness.currentDocument().tracks.left!.segments[0].planeId).toBe("wheel");
+      expect(harness.compileErrorMessage.value).toBeNull();
+      expect(harness.persisted).toHaveLength(1);
+    });
+
+    it("does not persist a plane update that creates an invalid plane break", () => {
+      const harness = createHarness(makeBaseDocument());
+      const before = harness.currentDocument();
+
+      harness.editor.updateSegmentPlane("left", 1, "floor");
+
+      expect(harness.currentDocument()).toBe(before);
+      expect(harness.persisted).toHaveLength(0);
+      expect(harness.compileErrorMessage.value).toContain("PLANE_BREAK_INVALID_HAND_ALIGNMENT");
     });
   });
 

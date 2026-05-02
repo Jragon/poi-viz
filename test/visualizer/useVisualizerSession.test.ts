@@ -4,6 +4,10 @@ import { nextTick, ref, type MaybeRefOrGetter } from "vue";
 import { createTransport } from "@/composables/useTransport";
 import type { MultiRigSequence, Segment } from "@/engine/types";
 import {
+  PROJECTION_PITCH_MAX,
+  PROJECTION_PITCH_MIN,
+  PROJECTION_YAW_MAX,
+  PROJECTION_YAW_MIN,
   TRAIL_DECAY_DEFAULT,
   TRAIL_DECAY_MAX,
   TRAIL_DECAY_MIN,
@@ -49,6 +53,19 @@ function makeSequence(durationUnits: number): MultiRigSequence {
         rigId: "left",
         sequence: {
           segments: [{ segment: makeSegment(1, 2), durationUnits }]
+        }
+      }
+    ]
+  };
+}
+
+function makeSinglePlaneSequence(durationUnits: number, planeId: "wall" | "wheel" | "floor") {
+  return {
+    rigs: [
+      {
+        rigId: "left",
+        sequence: {
+          segments: [{ segment: makeSegment(0, 0), durationUnits, planeId }]
         }
       }
     ]
@@ -259,6 +276,44 @@ describe("useVisualizerSession", () => {
 
     expect(session.trailLoopMode.value).toBe("auto");
     expect(session.currentTrails.value.left?.hand).toHaveLength(3);
+  });
+
+  it("updates current frame and trails when projection settings change", async () => {
+    const { session, transport } = createSession(makeSinglePlaneSequence(2, "wheel"));
+
+    transport.setCurrentTime(TRAIL_STEP_FIXED * 0.5);
+    await nextTick();
+    const orthographicFrame = session.currentFrame.value;
+    if (!orthographicFrame?.ok) throw new Error("expected evaluated frame");
+    expect(session.projectionMode.value).toBe("orthographic");
+    expect(orthographicFrame.cartesianPoses.left.handPosition).toEqual({ x: 0, y: 0 });
+
+    session.setProjectionMode("tilted");
+    await nextTick();
+
+    const tiltedFrame = session.currentFrame.value;
+    if (!tiltedFrame?.ok) throw new Error("expected evaluated frame");
+    expect(tiltedFrame.cartesianPoses.left.handPosition.x).toBeCloseTo(-0.422618, 6);
+    expect(tiltedFrame.cartesianPoses.left.handPosition.y).toBeCloseTo(-0.280065, 6);
+    expect(session.currentTrails.value.left?.hand?.at(-1)).toEqual(
+      tiltedFrame.cartesianPoses.left.handPosition
+    );
+  });
+
+  it("clamps projection yaw and pitch controls", () => {
+    const { session } = createSession(makeSequence(2));
+
+    session.setProjectionYawDeg(PROJECTION_YAW_MIN - 1);
+    expect(session.projectionYawDeg.value).toBe(PROJECTION_YAW_MIN);
+
+    session.setProjectionYawDeg(PROJECTION_YAW_MAX + 1);
+    expect(session.projectionYawDeg.value).toBe(PROJECTION_YAW_MAX);
+
+    session.setProjectionPitchDeg(PROJECTION_PITCH_MIN - 1);
+    expect(session.projectionPitchDeg.value).toBe(PROJECTION_PITCH_MIN);
+
+    session.setProjectionPitchDeg(PROJECTION_PITCH_MAX + 1);
+    expect(session.projectionPitchDeg.value).toBe(PROJECTION_PITCH_MAX);
   });
 
   it("applies trail decay as a max hold window", async () => {

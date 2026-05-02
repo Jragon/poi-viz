@@ -4,11 +4,15 @@ export type TimeUnit = number;
 
 export type RigId = string;
 
+export type PlaneId = "wall" | "wheel" | "floor";
+
 export type AngularVelocityRadPerUnit = number;
 
 export type Radius = number;
 
 export type Vec2 = { x: number; y: number };
+
+export type Vec3 = { x: number; y: number; z: number };
 
 export interface RelativeNodePose {
   // absolute world phase
@@ -51,6 +55,7 @@ export interface Segment {
 export interface SegmentPlacement {
   segment: Segment;
   durationUnits: TimeUnit;
+  planeId?: PlaneId;
 }
 
 export interface SequenceSpec {

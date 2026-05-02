@@ -1,10 +1,20 @@
 import { evalSegment } from "@/engine/engine";
-import type { RelativeRigPose, SegmentPlacement, SequenceSpec, TimeUnit } from "@/engine/types";
+import type {
+  PlaneId,
+  RelativeRigPose,
+  SegmentPlacement,
+  SequenceSpec,
+  TimeUnit
+} from "@/engine/types";
+
+const DEFAULT_PLANE_ID: PlaneId = "wall";
+const PLANE_IDS = new Set<PlaneId>(["wall", "wheel", "floor"]);
 
 export type SequenceValidationErrorCode =
   | "EMPTY_SEQUENCE"
   | "INVALID_DURATION_UNITS"
-  | "NON_POSITIVE_DURATION";
+  | "NON_POSITIVE_DURATION"
+  | "INVALID_PLANE_ID";
 
 export type SequenceValidationError = {
   code: SequenceValidationErrorCode;
@@ -15,6 +25,7 @@ export type SequenceValidationResult =
   | { ok: false; errors: SequenceValidationError[] };
 
 export type PreparedPlacement = SegmentPlacement & {
+  readonly planeId: PlaneId;
   readonly startUnit: TimeUnit;
   readonly endUnit: TimeUnit;
 };
@@ -29,14 +40,14 @@ export type PrepareSequenceResult =
   | { ok: false; errors: SequenceValidationError[] };
 
 export type EvalPreparedAtResult =
-  | { ok: true; pose: RelativeRigPose; segmentIndex: number; tLocal: TimeUnit }
+  | { ok: true; pose: RelativeRigPose; planeId: PlaneId; segmentIndex: number; tLocal: TimeUnit }
   | { ok: false; reason: "INVALID_TIME" | "NEGATIVE_TIME" };
 
 function wrapSequenceTime(totalDuration: TimeUnit, tGlobal: TimeUnit): TimeUnit {
   return tGlobal % totalDuration;
 }
 
-export function validateSequence(sequence: SequenceSpec): SequenceValidationResult {
+export function validateSequenceStructure(sequence: SequenceSpec): SequenceValidationResult {
   const errors: SequenceValidationError[] = [];
   if (sequence.segments.length === 0) {
     errors.push({ code: "EMPTY_SEQUENCE" });
@@ -53,13 +64,17 @@ export function validateSequence(sequence: SequenceSpec): SequenceValidationResu
     if (duration <= 0) {
       errors.push({ code: "NON_POSITIVE_DURATION", index });
     }
+
+    if (placement.planeId !== undefined && !PLANE_IDS.has(placement.planeId)) {
+      errors.push({ code: "INVALID_PLANE_ID", index });
+    }
   });
 
   return errors.length > 0 ? { ok: false, errors } : { ok: true };
 }
 
 export function prepareSequence(sequence: SequenceSpec): PrepareSequenceResult {
-  const validateResult = validateSequence(sequence);
+  const validateResult = validateSequenceStructure(sequence);
   if (!validateResult.ok) return validateResult;
 
   const placements: PreparedPlacement[] = [];
@@ -70,6 +85,7 @@ export function prepareSequence(sequence: SequenceSpec): PrepareSequenceResult {
 
     placements.push({
       ...placement,
+      planeId: placement.planeId ?? DEFAULT_PLANE_ID,
       startUnit,
       endUnit
     });
@@ -99,7 +115,7 @@ export function evalPreparedSequenceAt(
     const tLocal = wrappedTime - placement.startUnit;
     const pose = evalSegment(placement.segment, tLocal);
 
-    return { ok: true, pose, tLocal, segmentIndex: index };
+    return { ok: true, pose, planeId: placement.planeId, tLocal, segmentIndex: index };
   }
 
   throw new Error("Invariant violated: no placement found for wrapped global time");

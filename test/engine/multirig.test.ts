@@ -106,9 +106,37 @@ describe("evalPreparedMultiRigSequenceAt", () => {
     if (singleResult.ok && multiResult.ok) {
       expect(multiResult.poses.left).toEqual({
         pose: singleResult.pose,
+        planeId: singleResult.planeId,
         segmentIndex: singleResult.segmentIndex,
         tLocal: singleResult.tLocal
       });
+    }
+  });
+
+  it("passes active plane ids through evaluated rig poses", () => {
+    const preparedResult = prepareMultiRigSequence({
+      rigs: [
+        {
+          rigId: "left",
+          sequence: {
+            segments: [{ segment: makeSegment(1, 2), durationUnits: 2, planeId: "floor" }]
+          }
+        },
+        {
+          rigId: "right",
+          sequence: { segments: [{ segment: makeSegment(3, 4), durationUnits: 2 }] }
+        }
+      ]
+    });
+    if (!preparedResult.ok) {
+      throw new Error("Fixture must prepare successfully");
+    }
+
+    const result = evalPreparedMultiRigSequenceAt(preparedResult.prepared, 1);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.poses.left.planeId).toBe("floor");
+      expect(result.poses.right.planeId).toBe("wall");
     }
   });
 

@@ -413,6 +413,31 @@ describe("createPngSequenceExporter", () => {
     expect(manifest).toMatchObject({ trailLoopMode: "off" });
   });
 
+  it("passes projection settings into playback and the manifest", async () => {
+    const archive = new MemoryArchiveSink();
+    const { factory } = createCanvasFactory();
+    const playbackResult = createPlayback(0.1);
+    const projectionSettings = { mode: "tilted", yawDeg: -30, pitchDeg: 20 } as const;
+    const createPlaybackAdapter = vi.fn(() => playbackResult.playback);
+    const exporter = createPngSequenceExporter({
+      archiveSinkFactory: () => archive,
+      canvasFactory: factory,
+      createPlayback: createPlaybackAdapter,
+      downloadAdapter: { download: vi.fn() },
+      now: () => new Date("2026-04-28T12:34:56Z"),
+      yieldToBrowser: async () => undefined
+    });
+
+    await exporter.start(createOptions({ projectionSettings }));
+
+    expect(createPlaybackAdapter).toHaveBeenCalledWith(sequence, projectionSettings);
+    const manifest = JSON.parse(await readBlobText(archive.files[1].body)) as Record<
+      string,
+      unknown
+    >;
+    expect(manifest).toMatchObject({ projectionSettings });
+  });
+
   it("cancels through AbortSignal without finalizing or downloading", async () => {
     const archive = new MemoryArchiveSink();
     const { factory, canvases } = createCanvasFactory();

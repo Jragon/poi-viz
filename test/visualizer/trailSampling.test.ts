@@ -111,6 +111,25 @@ describe("trailSampling", () => {
     expect(isContinuousAtLoopBoundary(prepared, 1)).toBe(false);
   });
 
+  it("requires plane match for loop continuity", () => {
+    const segment = makeSegment(0, 0);
+    const prepared = prepare({
+      rigs: [
+        {
+          rigId: "left",
+          sequence: {
+            segments: [
+              { segment, durationUnits: 1, planeId: "wall" },
+              { segment, durationUnits: 1, planeId: "floor" }
+            ]
+          }
+        }
+      ]
+    });
+
+    expect(isContinuousAtLoopBoundary(prepared, prepared.maxSequenceDuration)).toBe(false);
+  });
+
   it("does not use D minus dt as the continuity source", () => {
     const prepared = prepare(singleRigSequence(makeSegment(Math.PI * 2, Math.PI * 2), 1));
     const nearEnd = cartesianAt(prepared, 0.9);
@@ -169,6 +188,44 @@ describe("trailSampling", () => {
     expectVecClose(trails.left?.hand[0], atHalfTurn.left.handPosition);
     expectVecClose(trails.left?.hand[1], atThreeQuarterTurn.left.handPosition);
     expectVecClose(trails.left?.hand[2], atStart.left.handPosition);
+  });
+
+  it("samples trail points with orthographic projection by default", () => {
+    const prepared = prepare({
+      rigs: [
+        {
+          rigId: "left",
+          sequence: {
+            segments: [{ segment: makeSegment(0, 0), durationUnits: 1, planeId: "wheel" }]
+          }
+        }
+      ]
+    });
+
+    const trails = sampleMultiRigTrailGrid(prepared, 0, 0.25, 2, null);
+    expect(trails.left?.hand[0]).toEqual({ x: 0, y: 0 });
+    expect(trails.left?.head[0]).toEqual({ x: 0, y: 0 });
+  });
+
+  it("samples trail points with tilted projection settings", () => {
+    const prepared = prepare({
+      rigs: [
+        {
+          rigId: "left",
+          sequence: {
+            segments: [{ segment: makeSegment(0, 0), durationUnits: 1, planeId: "wheel" }]
+          }
+        }
+      ]
+    });
+
+    const trails = sampleMultiRigTrailGrid(prepared, 0, 0.25, 2, null, {
+      mode: "tilted",
+      yawDeg: -25,
+      pitchDeg: 18
+    });
+    expect(trails.left?.hand[0].x).toBeCloseTo(-0.422618, 6);
+    expect(trails.left?.hand[0].y).toBeCloseTo(-0.280065, 6);
   });
 
   it("keeps unbounded sampling on the non-wrapped grid", () => {

@@ -1,5 +1,9 @@
 import { reactive, type Reactive } from "vue";
 
+import {
+  DEFAULT_PLANE_PROJECTION_SETTINGS,
+  type PlaneProjectionSettings
+} from "@/engine/planeProjection";
 import type { MultiRigSequence, RigId } from "@/engine/types";
 import { computeDisplayPixelsPerWorldUnit } from "@/visualizer/displayScale";
 import { TarArchiveSink, type ArchiveSink } from "@/visualizer/exportTar";
@@ -35,6 +39,7 @@ export interface PngSequenceExportOptions {
   readonly displayScale: number;
   readonly trailDecaySteps: number;
   readonly trailLoopMode?: TrailLoopMode;
+  readonly projectionSettings?: PlaneProjectionSettings;
   readonly overlaySettings: VisualizerOverlaySettings;
   readonly width?: number;
   readonly height?: number;
@@ -59,7 +64,10 @@ export interface PngSequenceExporterDependencies {
   readonly archiveSinkFactory?: (now: () => Date) => ArchiveSink;
   readonly canvasFactory?: CanvasFactory;
   readonly downloadAdapter?: DownloadAdapter;
-  readonly createPlayback?: (sequence: MultiRigSequence) => MultiRigPlaybackController;
+  readonly createPlayback?: (
+    sequence: MultiRigSequence,
+    projectionSettings: PlaneProjectionSettings
+  ) => MultiRigPlaybackController;
   readonly now?: () => Date;
   readonly yieldToBrowser?: () => Promise<void>;
 }
@@ -83,6 +91,7 @@ interface ExportManifest {
   readonly displayScale: number;
   readonly trailDecaySteps: number;
   readonly trailLoopMode: TrailLoopMode;
+  readonly projectionSettings: PlaneProjectionSettings;
   readonly overlaySettings: VisualizerOverlaySettings;
   readonly sequenceSummary: string;
 }
@@ -194,6 +203,7 @@ function createManifest(options: {
     displayScale: exportOptions.displayScale,
     trailDecaySteps: exportOptions.trailDecaySteps,
     trailLoopMode: exportOptions.trailLoopMode ?? "auto",
+    projectionSettings: exportOptions.projectionSettings ?? DEFAULT_PLANE_PROJECTION_SETTINGS,
     overlaySettings: cloneOverlaySettings(exportOptions.overlaySettings),
     sequenceSummary: exportOptions.sequenceSummary
   };
@@ -218,7 +228,8 @@ export function createPngSequenceExporter(
   const canvasFactory = dependencies.canvasFactory ?? createDomCanvasFactory();
   const downloadAdapter = dependencies.downloadAdapter ?? createDownloadAdapter();
   const createPlayback =
-    dependencies.createPlayback ?? ((sequence) => useMultiRigPlayback(sequence));
+    dependencies.createPlayback ??
+    ((sequence, projectionSettings) => useMultiRigPlayback(sequence, projectionSettings));
   const yieldToBrowser = dependencies.yieldToBrowser ?? defaultYieldToBrowser;
 
   let activeAbortController: AbortController | null = null;
@@ -239,9 +250,10 @@ export function createPngSequenceExporter(
       "Export height"
     );
     const fps = normalizePositiveNumber(options.fps, PNG_SEQUENCE_EXPORT_FPS, "Export FPS");
-    const exportOptions = { ...options, width, height, fps };
+    const projectionSettings = options.projectionSettings ?? DEFAULT_PLANE_PROJECTION_SETTINGS;
+    const exportOptions = { ...options, width, height, fps, projectionSettings };
     const generatedAt = now();
-    const playback = createPlayback(options.sequence);
+    const playback = createPlayback(options.sequence, projectionSettings);
     const archive = archiveSinkFactory(now);
     const abortController = new AbortController();
     const canvas = canvasFactory.createCanvas(width, height);

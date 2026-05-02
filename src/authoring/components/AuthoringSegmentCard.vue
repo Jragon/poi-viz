@@ -8,9 +8,10 @@ import type {
   DerivedAuthoredSegmentBoundary
 } from "@/authoring/types";
 import { PI } from "@/engine/constants";
-import type { RelativeRigPose } from "@/engine/types";
+import type { PlaneId, RelativeRigPose } from "@/engine/types";
 
 type EditableNode = "hand" | "head";
+const PLANE_OPTIONS: readonly PlaneId[] = ["wall", "wheel", "floor"];
 
 const props = defineProps<{
   segment: AuthoredSegment;
@@ -30,6 +31,7 @@ const emit = defineEmits<{
   (event: "jump-to-boundary"): void;
   (event: "jump-to-start"): void;
   (event: "update:duration", value: number): void;
+  (event: "update:plane", value: PlaneId): void;
   (
     event: "update:start-pose",
     payload: { node: EditableNode; field: "phaseDeg" | "radius"; value: number }
@@ -106,6 +108,10 @@ function displayOmega(node: EditableNode): number {
 function onUpdateOmega(node: EditableNode, displayValue: number) {
   emit("update:omega", { node, value: toRadiansPerUnit(displayValue, props.omegaUnit) });
 }
+
+function onPlaneChange(event: Event) {
+  emit("update:plane", (event.target as HTMLSelectElement).value as PlaneId);
+}
 </script>
 
 <template>
@@ -117,7 +123,8 @@ function onUpdateOmega(node: EditableNode, displayValue: number) {
       @click="emit('jump-to-boundary')"
     >
       <span class="min-w-0 wrap-break-word"
-        >Boundary {{ segmentIndex }}: {{ formatPose(boundary.startPose) }}</span
+        >Boundary {{ segmentIndex }} / {{ boundary.planeId }}:
+        {{ formatPose(boundary.startPose) }}</span
       >
       <span class="uppercase tracking-[0.2em] text-sky-300">Jump</span>
     </button>
@@ -135,6 +142,9 @@ function onUpdateOmega(node: EditableNode, displayValue: number) {
         <div class="min-w-0 flex-1">
           <p class="text-xs uppercase tracking-[0.22em] text-slate-500">
             {{ segment.kind === "first" ? "Starting segment" : "Continuation segment" }}
+          </p>
+          <p class="mt-1 text-xs uppercase tracking-[0.16em] text-sky-300">
+            {{ boundary.planeId }} plane
           </p>
           <p class="mt-1 text-sm text-slate-300 wrap-break-word">
             {{ formatPose(boundary.startPose) }}
@@ -165,6 +175,20 @@ function onUpdateOmega(node: EditableNode, displayValue: number) {
 
       <div class="grid gap-3 sm:grid-cols-2">
         <label class="grid min-w-0 gap-1 text-sm text-slate-300">
+          <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Plane</span>
+          <select
+            class="w-full min-w-0 rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none transition focus:border-sky-400"
+            :value="segment.planeId ?? 'wall'"
+            @click.stop
+            @change="onPlaneChange"
+          >
+            <option v-for="plane in PLANE_OPTIONS" :key="plane" :value="plane">
+              {{ plane }}
+            </option>
+          </select>
+        </label>
+
+        <label class="grid min-w-0 gap-1 text-sm text-slate-300">
           <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Duration</span>
           <input
             type="number"
@@ -179,7 +203,7 @@ function onUpdateOmega(node: EditableNode, displayValue: number) {
 
         <button
           type="button"
-          class="rounded-2xl border border-slate-700 px-3 py-2 text-sm text-slate-200 transition hover:border-slate-500"
+          class="rounded-2xl border border-slate-700 px-3 py-2 text-sm text-slate-200 transition hover:border-slate-500 sm:col-start-2"
           @click.stop="emit('jump-to-start')"
         >
           Restart Preview Here

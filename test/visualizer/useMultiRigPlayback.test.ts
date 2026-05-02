@@ -69,6 +69,49 @@ describe("useMultiRigPlayback", () => {
     expect(result.cartesianPoses.left.handPosition.x).toBeCloseTo(Math.cos(1));
   });
 
+  it("uses orthographic projection by default", () => {
+    const playback = useMultiRigPlayback({
+      rigs: [
+        {
+          rigId: "left",
+          sequence: {
+            segments: [{ segment: makeSegment(0, 0), durationUnits: 1, planeId: "wheel" }]
+          }
+        }
+      ]
+    });
+
+    const result = playback.evaluate(0);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.cartesianPoses.left.handPosition).toEqual({ x: 0, y: 0 });
+    expect(result.cartesianPoses.left.headPosition).toEqual({ x: 0, y: 0 });
+  });
+
+  it("projects current poses through tilted settings", () => {
+    const playback = useMultiRigPlayback(
+      {
+        rigs: [
+          {
+            rigId: "left",
+            sequence: {
+              segments: [{ segment: makeSegment(0, 0), durationUnits: 1, planeId: "wheel" }]
+            }
+          }
+        ]
+      },
+      { mode: "tilted", yawDeg: -25, pitchDeg: 18 }
+    );
+
+    const result = playback.evaluate(0);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.cartesianPoses.left.handPosition.x).toBeCloseTo(-0.422618, 6);
+    expect(result.cartesianPoses.left.handPosition.y).toBeCloseTo(-0.280065, 6);
+  });
+
   it("reports unprepared state when the input sequence fails validation", async () => {
     const sequence = ref<MultiRigSequence>({ rigs: [] });
     const playback = useMultiRigPlayback(sequence);
@@ -122,6 +165,43 @@ describe("useMultiRigPlayback.sampleTrails", () => {
     expect(trails.left?.hand?.[0]).toEqual({ x: 1, y: 0 });
     expect(trails.left?.hand?.[1]).toEqual(evaluated.cartesianPoses.left.handPosition);
     expect(trails.left?.head?.[1]).toEqual(evaluated.cartesianPoses.left.headPosition);
+  });
+
+  it("projects trail tips using orthographic projection by default", () => {
+    const playback = useMultiRigPlayback({
+      rigs: [
+        {
+          rigId: "left",
+          sequence: {
+            segments: [{ segment: makeSegment(0, 0), durationUnits: 1, planeId: "wheel" }]
+          }
+        }
+      ]
+    });
+
+    const trails = playback.sampleTrails(0.05, 0.1);
+    expect(trails.left?.hand?.[0]).toEqual({ x: 0, y: 0 });
+    expect(trails.left?.head?.[0]).toEqual({ x: 0, y: 0 });
+  });
+
+  it("projects trail tips through tilted settings", () => {
+    const playback = useMultiRigPlayback(
+      {
+        rigs: [
+          {
+            rigId: "left",
+            sequence: {
+              segments: [{ segment: makeSegment(0, 0), durationUnits: 1, planeId: "wheel" }]
+            }
+          }
+        ]
+      },
+      { mode: "tilted", yawDeg: -25, pitchDeg: 18 }
+    );
+
+    const trails = playback.sampleTrails(0.05, 0.1);
+    expect(trails.left?.hand?.[0].x).toBeCloseTo(-0.422618, 6);
+    expect(trails.left?.hand?.[0].y).toBeCloseTo(-0.280065, 6);
   });
 
   it("returns empty for invalid dt", () => {

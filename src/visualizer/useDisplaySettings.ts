@@ -10,6 +10,7 @@ import {
   type Ref
 } from "vue";
 
+import type { ProjectionMode } from "@/engine/planeProjection";
 import type { RigId } from "@/engine/types";
 import {
   cloneOverlaySettings,
@@ -73,10 +74,18 @@ export interface DisplayTrailLoopBinding {
   set: (value: TrailLoopMode) => void;
 }
 
+export interface DisplayProjectionModeBinding {
+  readonly value: Ref<ProjectionMode> | ComputedRef<ProjectionMode>;
+  set: (value: ProjectionMode) => void;
+}
+
 export interface ExternalDisplaySettingBindings {
   trailDecaySteps?: DisplayNumberBinding;
   trailLoopMode?: DisplayTrailLoopBinding;
   transportSecondsPerUnit?: DisplayNumberBinding;
+  projectionMode?: DisplayProjectionModeBinding;
+  projectionYawDeg?: DisplayNumberBinding;
+  projectionPitchDeg?: DisplayNumberBinding;
 }
 
 export interface DisplaySettingsOptions {
@@ -304,6 +313,35 @@ export const EXTERNAL_DISPLAY_SETTINGS: readonly SettingRegistryEntry[] = [
     group: "Session",
     kind: "boolean",
     ownership: "external"
+  },
+  {
+    id: "projectionMode",
+    label: "Tilted Projection",
+    group: "Projection",
+    kind: "boolean",
+    ownership: "external"
+  },
+  {
+    id: "projectionYawDeg",
+    label: "Yaw",
+    group: "Projection",
+    kind: "range",
+    ownership: "external",
+    min: -60,
+    max: 60,
+    step: 1,
+    digits: 0
+  },
+  {
+    id: "projectionPitchDeg",
+    label: "Pitch",
+    group: "Projection",
+    kind: "range",
+    ownership: "external",
+    min: -45,
+    max: 45,
+    step: 1,
+    digits: 0
   },
   {
     id: "transportSecondsPerUnit",

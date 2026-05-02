@@ -101,7 +101,8 @@ const {
   deleteSegment,
   updateSegmentDuration,
   updateSegmentStartPose,
-  updateSegmentOmega
+  updateSegmentOmega,
+  updateSegmentPlane
 } = editor;
 
 function formatNumber(value: number, digits = 2): string {
@@ -263,6 +264,7 @@ onBeforeUnmount(() => {
                 @update:duration="
                   (value) => updateSegmentDuration(view.trackId, segmentIndex, value)
                 "
+                @update:plane="(value) => updateSegmentPlane(view.trackId, segmentIndex, value)"
                 @update:start-pose="
                   (payload) =>
                     updateSegmentStartPose(

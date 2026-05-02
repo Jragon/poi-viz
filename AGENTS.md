@@ -32,16 +32,17 @@ Build a poi simulation engine that is deterministic, testable, and easy to reaso
 ## Scope (Part 1)
 
 - Engine-only.
-- 2D single-plane.
+- Current source evaluates local 2D segment motion with atomic plane metadata.
 - Two-node chain: hand -> head.
 - Segment transport, pose evaluation, sequence validation, trace sampling.
+- Atomic plane metadata supports `wall`, `wheel`, and `floor`; projection is an adapter over local 2D motion.
 
 ## Non-Goals (Part 1)
 
 - No generator logic (QFT, CAPs, VTG) in runtime.
 - No rendering or UI.
 - No auto-correction solver.
-- No multi-plane or 3D behavior.
+- No arbitrary 3D paths, continuous plane bends, body-aware topology, or WebGL renderer in current Part 1 source.
 
 ## Guardrails
 
@@ -62,7 +63,8 @@ Build a poi simulation engine that is deterministic, testable, and easy to reaso
 
 ## Source Priority
 
-- `src/` and `docs/` define current implementation truth.
+- `src/` defines current implementation truth.
+- `docs/` may include both source-aligned documentation and explicit proposals; label proposal material clearly.
 - `research/` provides context and theory.
 - Ignore generated output as source (`dist/`) unless explicitly requested.
 

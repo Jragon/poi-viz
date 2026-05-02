@@ -1,5 +1,9 @@
 import { evalSegment } from "@/engine/engine";
-import { evalPreparedSequenceAt, prepareSequence, validateSequence } from "@/engine/sequence";
+import {
+  evalPreparedSequenceAt,
+  prepareSequence,
+  validateSequenceStructure
+} from "@/engine/sequence";
 import type { Segment, SequenceSpec } from "@/engine/types";
 import { describe, expect, it } from "vitest";
 
@@ -16,7 +20,7 @@ function makeSegment(handOmega: number, headOmega: number): Segment {
   };
 }
 
-describe("validateSequence", () => {
+describe("validateSequenceStructure", () => {
   const base = makeSegment(1, 2);
   it("accepts a valid contiguous sequence", () => {
     const seq: SequenceSpec = {
@@ -25,14 +29,14 @@ describe("validateSequence", () => {
         { segment: base, durationUnits: 3 }
       ]
     };
-    const result = validateSequence(seq);
+    const result = validateSequenceStructure(seq);
     if (!result.ok) {
       throw new Error(`expected valid sequence, got errors: ${JSON.stringify(result.errors)}`);
     }
   });
   it("rejects empty sequence", () => {
     const seq: SequenceSpec = { segments: [] };
-    const result = validateSequence(seq);
+    const result = validateSequenceStructure(seq);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.errors).toContainEqual({ code: "EMPTY_SEQUENCE" });
@@ -45,7 +49,7 @@ describe("validateSequence", () => {
         { segment: base, durationUnits: -1 }
       ]
     };
-    const result = validateSequence(seq);
+    const result = validateSequenceStructure(seq);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.errors).toContainEqual({ code: "NON_POSITIVE_DURATION", index: 0 });
@@ -59,7 +63,7 @@ describe("validateSequence", () => {
         { segment: base, durationUnits: Number.NaN }
       ]
     };
-    const result = validateSequence(seq);
+    const result = validateSequenceStructure(seq);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.errors).toContainEqual({ code: "INVALID_DURATION_UNITS", index: 0 });
@@ -75,7 +79,7 @@ describe("validateSequence", () => {
         { segment: base, durationUnits: -10 }
       ]
     };
-    const result = validateSequence(seq);
+    const result = validateSequenceStructure(seq);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.errors).toEqual([
@@ -84,6 +88,17 @@ describe("validateSequence", () => {
         { code: "INVALID_DURATION_UNITS", index: 2 },
         { code: "NON_POSITIVE_DURATION", index: 3 }
       ]);
+    }
+  });
+  it("rejects invalid placement plane ids", () => {
+    const seq = {
+      segments: [{ segment: base, durationUnits: 1, planeId: "diagonal" }]
+    } as unknown as SequenceSpec;
+    const result = validateSequenceStructure(seq);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContainEqual({ code: "INVALID_PLANE_ID", index: 0 });
     }
   });
 });
@@ -112,6 +127,26 @@ describe("prepareSequence", () => {
     if (prepared.ok) {
       expect(prepared.prepared.totalDuration).toBe(5);
       expect(prepared.prepared.placements.length).toBe(2);
+    }
+  });
+  it("defaults omitted placement planes to wall", () => {
+    const seq: SequenceSpec = {
+      segments: [{ segment: segA, durationUnits: 2 }]
+    };
+    const prepared = prepareSequence(seq);
+    expect(prepared.ok).toBe(true);
+    if (prepared.ok) {
+      expect(prepared.prepared.placements[0].planeId).toBe("wall");
+    }
+  });
+  it("preserves explicit placement planes", () => {
+    const seq: SequenceSpec = {
+      segments: [{ segment: segA, durationUnits: 2, planeId: "wheel" }]
+    };
+    const prepared = prepareSequence(seq);
+    expect(prepared.ok).toBe(true);
+    if (prepared.ok) {
+      expect(prepared.prepared.placements[0].planeId).toBe("wheel");
     }
   });
 });
@@ -161,8 +196,24 @@ describe("evalPreparedSequenceAt", () => {
       throw new Error(`expected ok result, got ${result.reason}`);
     }
     expect(result.segmentIndex).toBe(0);
+    expect(result.planeId).toBe("wall");
     expect(result.tLocal).toBeCloseTo(1.25, 12);
     expect(result.pose).toEqual(evalSegment(segA, 1.25));
+  });
+  it("returns the active plane for explicit placement planes", () => {
+    const explicitPlanePrepared = prepareSequence({
+      segments: [{ segment: segA, durationUnits: 2, planeId: "floor" }]
+    });
+    if (!explicitPlanePrepared.ok) {
+      throw new Error("Test fixture sequence must be valid");
+    }
+
+    const result = evalPreparedSequenceAt(explicitPlanePrepared.prepared, 1);
+    if (!result.ok) {
+      throw new Error(`expected ok result, got ${result.reason}`);
+    }
+
+    expect(result.planeId).toBe("floor");
   });
   it("uses half-open boundary semantics: exact boundary selects next segment", () => {
     const tGlobal = 2;

@@ -6,11 +6,11 @@ Provide deterministic sequence evaluation over global time with explicit boundar
 
 ## Scope (Part 1)
 
-- 2D plane only
+- Current source: local 2D pose evaluation with atomic plane metadata (`wall`, `wheel`, `floor`)
 - Rig: `body -> hand -> head`
-- Absolute world phase per node
+- Current source: plane-local phase per node with `wall` as the default plane
 - Sequence timing is contiguous by order (no explicit segment start times in authored spec)
-- Boundary mode is `jump` only
+- Future extension: explicit authored boundary modes such as `jump` and `plane-break`
 
 ## Core Terms
 
@@ -27,6 +27,8 @@ Ordered list of placements:
 
 - each placement has `segment`
 - each placement has `durationUnits`
+- each placement may have `planeId`
+- future extension: each placement after the first may have `entryBoundary`
 
 There is no authored `startUnit` in `SequenceSpec`.
 
@@ -35,6 +37,7 @@ There is no authored `startUnit` in `SequenceSpec`.
 Validated + derived runtime representation:
 
 - `placements[]` with derived `startUnit` / `endUnit`
+- resolved `planeId` on every placement
 - `totalDuration`
 
 `PreparedSequence` is created once via `prepareSequence` and evaluated many times.
@@ -43,10 +46,12 @@ Validated + derived runtime representation:
 
 ```ts
 type TimeUnit = number;
+type PlaneId = "wall" | "wheel" | "floor";
 
 type SegmentPlacement = {
   segment: Segment;
   durationUnits: TimeUnit;
+  planeId?: PlaneId;
 };
 
 type SequenceSpec = {
@@ -54,6 +59,7 @@ type SequenceSpec = {
 };
 
 type PreparedPlacement = SegmentPlacement & {
+  readonly planeId: PlaneId;
   readonly startUnit: TimeUnit;
   readonly endUnit: TimeUnit;
 };
@@ -64,16 +70,42 @@ type PreparedSequence = {
 };
 ```
 
+## Future Boundary Metadata Extension
+
+```ts
+type PlaneId = "wall" | "wheel" | "floor";
+type BoundaryMode = "jump" | "plane-break";
+type ZeroPointKind = "lobe" | "antilobe" | "antispin" | "stall" | "pendulum" | "authored";
+
+type SegmentEntryBoundary = {
+  mode: BoundaryMode;
+  zeroPointKind?: ZeroPointKind;
+};
+
+type SegmentPlacement = {
+  segment: Segment;
+  durationUnits: TimeUnit;
+  planeId?: PlaneId;
+  entryBoundary?: SegmentEntryBoundary;
+};
+
+type PreparedPlacement = Omit<SegmentPlacement, "planeId"> & {
+  readonly planeId: PlaneId;
+  readonly startUnit: TimeUnit;
+  readonly endUnit: TimeUnit;
+};
+```
+
 ## Public Sequence API (Part 1)
 
-- `validateSequence(sequence) -> { ok: true } | { ok: false; errors[] }`
+- `validateSequenceStructure(sequence) -> { ok: true } | { ok: false; errors[] }`
 - `prepareSequence(sequence) -> { ok: true; prepared } | { ok: false; errors[] }`
 - `evalPreparedSequenceAt(prepared, tGlobal) -> EvalPreparedAtResult`
 - `samplePreparedSequence(prepared, times[]) -> EvalPreparedAtResult[]`
 
 `EvalPreparedAtResult` is structured:
 
-- success: `{ ok: true, pose, segmentIndex, tLocal }`
+- success: `{ ok: true, pose, planeId, segmentIndex, tLocal }`
 - miss/error: `{ ok: false, reason: "INVALID_TIME" | "NEGATIVE_TIME" }`
 
 ## Boundary Semantics
@@ -84,6 +116,14 @@ type PreparedSequence = {
 - Exact final boundary (`tGlobal === totalDuration`) wraps to local time `0`.
 - Negative time is rejected explicitly.
 - Non-finite time is rejected explicitly.
+
+## Atomic Plane Semantics
+
+- Omitted `planeId` resolves to `wall` during preparation.
+- A placement's `planeId` describes the local plane context for that segment's 2D motion.
+- `wall`, `wheel`, and `floor` are atomic planes. A segment does not occupy an in-between plane in this model.
+- Authored plane changes are validated by the compile layer from evaluated boundary poses.
+- Local segment evaluation remains unchanged.
 
 ## Visualizer Trail Overlay
 
@@ -105,9 +145,17 @@ Trail rendering may use continuity-aware wraparound at the transport boundary as
 - Sequence cannot be empty.
 - Each `durationUnits` must be finite.
 - Each `durationUnits` must be strictly positive.
+- Engine placement `planeId`, when present, must be `wall`, `wheel`, or `floor`.
+
+## Additional Implemented Validation Rules
+
+- Authored plane changes require the previous end pose hand to be on the source plane's shared-axis cardinal.
+- Authored plane changes require the head to be collinear with the hand: relative phase `0` or `PI`.
+- `wheel <-> floor` applies an explicit absolute-phase remap while preserving relative phase.
 
 ## Future Extension Direction
 
 - Keep contiguous timing as Part 1 base model.
 - If sparse timing is needed later, add a new explicit model/type instead of mutating current semantics.
-- Keep boundary modes explicit (`jump` now; continuity modes later).
+- Keep proposed boundary modes explicit (`jump` / `plane-break` first; continuity modes later).
+- Continuous plane bends, weaves, toroids, and body-aware 3D paths need separate future models.

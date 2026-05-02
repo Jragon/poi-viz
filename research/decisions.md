@@ -8,3 +8,16 @@ Trail continuity is handled in the visualizer, not the engine. Engine sequence e
 - Continuity means hand and head phase/radius match at `t = 0` and the exact left-limit pose at the transport boundary, modulo whole turns. Tangent/velocity continuity is intentionally not required.
 - The exact final boundary is evaluated from the left for continuity checks because normal engine evaluation at `D` wraps to `0`.
 - PNG sequence export records and uses the selected trail loop mode so export output matches interactive visualization.
+
+## 2026-05-01: Atomic Plane Breaks POC: Plane Metadata and Projection Adapter
+
+Plane-break support starts with three orthogonal atomic planes and compile-layer boundary validation, not arbitrary 3D motion.
+
+- Atomic plane ids are `wall`, `wheel`, and `floor`.
+- Omitted placement `planeId` values resolve to `wall` during sequence preparation.
+- `Segment` remains plane-agnostic; plane context belongs to authored segments and engine placements.
+- Local pose evaluation remains 2D. Evaluated placements expose resolved `planeId` so visual consumers can project poses through an adapter.
+- Projection defaults to front orthographic so wall-plane output stays normal; visualizer display settings can switch to tilted orthographic projection with yaw and pitch controls.
+- Authored plane changes are valid only when the previous end pose lies on the source plane's shared axis and the head is collinear with the hand.
+- `wheel <-> floor` remaps both hand and head by the same absolute phase offset, preserving relative phase.
+- Explicit boundary mode fields, zero-point annotations, body-aware weaves, toroids, continuous plane bends, and WebGL remain future work.

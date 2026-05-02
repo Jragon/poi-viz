@@ -42,6 +42,18 @@ export function useVisualizerDisplay(
         value: core.session.trailLoopMode,
         set: core.session.setTrailLoopMode
       },
+      projectionMode: {
+        value: core.session.projectionMode,
+        set: core.session.setProjectionMode
+      },
+      projectionYawDeg: {
+        value: core.session.projectionYawDeg,
+        set: core.session.setProjectionYawDeg
+      },
+      projectionPitchDeg: {
+        value: core.session.projectionPitchDeg,
+        set: core.session.setProjectionPitchDeg
+      },
       transportSecondsPerUnit: {
         value: transportSecondsPerUnit,
         set: (value) => {

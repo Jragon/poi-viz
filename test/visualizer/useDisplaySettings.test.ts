@@ -186,6 +186,8 @@ describe("useDisplaySettings", () => {
     const storage = new MemoryStorage();
     const trailDecaySteps = ref(100);
     const secondsPerUnit = ref(4);
+    const projectionYawDeg = ref(-25);
+    const projectionPitchDeg = ref(18);
     const controller = createDisplaySettingsController({
       rigOrder: ["left"],
       storage,
@@ -201,18 +203,36 @@ describe("useDisplaySettings", () => {
           set: (value) => {
             secondsPerUnit.value = value;
           }
+        },
+        projectionYawDeg: {
+          value: projectionYawDeg,
+          set: (value) => {
+            projectionYawDeg.value = value;
+          }
+        },
+        projectionPitchDeg: {
+          value: projectionPitchDeg,
+          set: (value) => {
+            projectionPitchDeg.value = value;
+          }
         }
       }
     });
 
     controller.external.trailDecaySteps?.set(42);
     controller.external.transportSecondsPerUnit?.set(2.5);
+    controller.external.projectionYawDeg?.set(-30);
+    controller.external.projectionPitchDeg?.set(20);
     controller.setDisplayScale(1.5);
 
     expect(trailDecaySteps.value).toBe(42);
     expect(secondsPerUnit.value).toBe(2.5);
+    expect(projectionYawDeg.value).toBe(-30);
+    expect(projectionPitchDeg.value).toBe(20);
     expect(JSON.stringify(storedSnapshot(storage))).not.toContain("trailDecaySteps");
     expect(JSON.stringify(storedSnapshot(storage))).not.toContain("transportSecondsPerUnit");
+    expect(JSON.stringify(storedSnapshot(storage))).not.toContain("projectionYawDeg");
+    expect(JSON.stringify(storedSnapshot(storage))).not.toContain("projectionPitchDeg");
   });
 
   it("exposes registry ownership for preset and external settings", () => {
@@ -224,6 +244,9 @@ describe("useDisplaySettings", () => {
     expect(ownershipById.displayScale).toBe("preset");
     expect(ownershipById.trailDecaySteps).toBe("external");
     expect(ownershipById.transportSecondsPerUnit).toBe("external");
+    expect(ownershipById.projectionMode).toBe("external");
+    expect(ownershipById.projectionYawDeg).toBe("external");
+    expect(ownershipById.projectionPitchDeg).toBe("external");
   });
 
   it("normalizes only lowercaseable six-digit hex colors", () => {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
+import type { ProjectionMode } from "@/engine/planeProjection";
 import {
   DISPLAY_SCALE_SETTING,
   EXTERNAL_DISPLAY_SETTINGS,
@@ -31,10 +32,19 @@ const activePresetLabel = computed(() =>
 const trailDecaySetting = EXTERNAL_DISPLAY_SETTINGS.find(
   (setting) => setting.id === "trailDecaySteps"
 ) as RangeSettingRegistryEntry;
+const projectionYawSetting = EXTERNAL_DISPLAY_SETTINGS.find(
+  (setting) => setting.id === "projectionYawDeg"
+) as RangeSettingRegistryEntry;
+const projectionPitchSetting = EXTERNAL_DISPLAY_SETTINGS.find(
+  (setting) => setting.id === "projectionPitchDeg"
+) as RangeSettingRegistryEntry;
 const transportSpeedSetting = EXTERNAL_DISPLAY_SETTINGS.find(
   (setting) => setting.id === "transportSecondsPerUnit"
 ) as RangeSettingRegistryEntry;
 const trailLoopEnabled = computed(() => display.external.trailLoopMode?.value.value === "auto");
+const tiltedProjectionEnabled = computed(
+  () => display.external.projectionMode?.value.value === "tilted"
+);
 
 function numberValue(event: Event): number {
   return Number((event.target as HTMLInputElement).value);
@@ -50,6 +60,10 @@ function inputValue(event: Event): string {
 
 function trailLoopModeValue(event: Event): TrailLoopMode {
   return checkboxValue(event) ? "auto" : "off";
+}
+
+function projectionModeValue(event: Event): ProjectionMode {
+  return checkboxValue(event) ? "tilted" : "orthographic";
 }
 </script>
 
@@ -206,6 +220,77 @@ function trailLoopModeValue(event: Event): TrailLoopMode {
             :value="display.external.transportSecondsPerUnit.value.value"
             class="w-full accent-fuchsia-400"
             @input="display.external.transportSecondsPerUnit.set(numberValue($event))"
+          />
+        </label>
+      </div>
+
+      <div
+        v-if="
+          display.external.projectionMode ||
+          display.external.projectionYawDeg ||
+          display.external.projectionPitchDeg
+        "
+        class="grid gap-3 border-t border-slate-800 pt-4"
+      >
+        <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Projection</p>
+        <label
+          v-if="display.external.projectionMode"
+          class="flex items-center gap-2 text-sm text-slate-300"
+        >
+          <input
+            type="checkbox"
+            :checked="tiltedProjectionEnabled"
+            class="accent-amber-400"
+            @change="display.external.projectionMode.set(projectionModeValue($event))"
+          />
+          Tilted Projection
+        </label>
+
+        <label
+          v-if="display.external.projectionYawDeg"
+          class="grid gap-2 text-xs uppercase tracking-[0.16em] text-slate-500"
+        >
+          <span class="flex items-center justify-between gap-3">
+            <span>{{ projectionYawSetting.label }}</span>
+            <span class="font-mono text-sm normal-case tracking-normal text-slate-300">
+              {{
+                display.external.projectionYawDeg.value.value.toFixed(projectionYawSetting.digits)
+              }}deg
+            </span>
+          </span>
+          <input
+            type="range"
+            :min="projectionYawSetting.min"
+            :max="projectionYawSetting.max"
+            :step="projectionYawSetting.step"
+            :value="display.external.projectionYawDeg.value.value"
+            class="w-full accent-fuchsia-400"
+            @input="display.external.projectionYawDeg.set(numberValue($event))"
+          />
+        </label>
+
+        <label
+          v-if="display.external.projectionPitchDeg"
+          class="grid gap-2 text-xs uppercase tracking-[0.16em] text-slate-500"
+        >
+          <span class="flex items-center justify-between gap-3">
+            <span>{{ projectionPitchSetting.label }}</span>
+            <span class="font-mono text-sm normal-case tracking-normal text-slate-300">
+              {{
+                display.external.projectionPitchDeg.value.value.toFixed(
+                  projectionPitchSetting.digits
+                )
+              }}deg
+            </span>
+          </span>
+          <input
+            type="range"
+            :min="projectionPitchSetting.min"
+            :max="projectionPitchSetting.max"
+            :step="projectionPitchSetting.step"
+            :value="display.external.projectionPitchDeg.value.value"
+            class="w-full accent-fuchsia-400"
+            @input="display.external.projectionPitchDeg.set(numberValue($event))"
           />
         </label>
       </div>
