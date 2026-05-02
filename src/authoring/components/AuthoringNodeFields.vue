@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
+
+import AuthoringRadiusProfileFields from "@/authoring/components/AuthoringRadiusProfileFields.vue";
+import type { AuthoredRadiusProfileKey } from "@/authoring/types";
 
 const props = defineProps<{
   node: "hand" | "head";
@@ -7,12 +10,20 @@ const props = defineProps<{
   phaseDeg: number;
   radius: number;
   omega: number;
+  durationUnits: number;
+  radiusProfileKeys: readonly AuthoredRadiusProfileKey[];
 }>();
 
 const emit = defineEmits<{
   (event: "update:phase-deg", value: number): void;
   (event: "update:radius", value: number): void;
   (event: "update:omega", value: number): void;
+  (event: "add:radius-profile-key", key: AuthoredRadiusProfileKey): void;
+  (
+    event: "update:radius-profile-key",
+    payload: { keyIndex: number; field: "t" | "radius"; value: number }
+  ): void;
+  (event: "delete:radius-profile-key", keyIndex: number): void;
 }>();
 
 const phaseDraft = ref<string | null>(null);
@@ -21,6 +32,11 @@ const radiusDraft = ref<string | null>(null);
 const radiusError = ref(false);
 const omegaDraft = ref<string | null>(null);
 const omegaError = ref(false);
+
+const hasRadiusProfileKeys = computed(() => props.radiusProfileKeys.length > 0);
+const canAddRadiusProfileKey = computed(
+  () => Number.isFinite(props.durationUnits) && props.durationUnits > 0
+);
 
 watch(
   () => props.phaseDeg,
@@ -87,11 +103,34 @@ function onOmegaInput(event: Event) {
 function onOmegaBlur() {
   commitNumeric(omegaDraft, omegaError, props.omega, (value) => emit("update:omega", value));
 }
+
+function addInitialRadiusProfileKey() {
+  if (!canAddRadiusProfileKey.value) {
+    return;
+  }
+
+  emit("add:radius-profile-key", { t: props.durationUnits, radius: props.radius });
+}
 </script>
 
 <template>
-  <div class="grid min-w-0 gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
-    <p class="text-xs uppercase tracking-[0.2em] text-slate-500">{{ node }}</p>
+  <div
+    class="grid min-w-0 content-start gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-3"
+  >
+    <div class="flex items-center justify-between gap-2">
+      <p class="text-xs uppercase tracking-[0.2em] text-slate-500">{{ node }}</p>
+      <button
+        v-if="!hasRadiusProfileKeys"
+        type="button"
+        class="rounded-lg border border-slate-800 px-2 py-1 text-xs text-slate-400 transition hover:border-sky-400 hover:text-slate-200 disabled:opacity-40"
+        :disabled="!canAddRadiusProfileKey"
+        aria-label="Add radius keys"
+        title="Add radius keys"
+        @click.stop="addInitialRadiusProfileKey"
+      >
+        +
+      </button>
+    </div>
 
     <template v-if="isFirstSegment">
       <label class="grid min-w-0 gap-1 text-sm text-slate-300">
@@ -107,7 +146,7 @@ function onOmegaBlur() {
         />
       </label>
 
-      <label class="grid min-w-0 gap-1 text-sm text-slate-300">
+      <label v-if="!hasRadiusProfileKeys" class="grid min-w-0 gap-1 text-sm text-slate-300">
         <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Radius</span>
         <input
           type="number"
@@ -133,5 +172,17 @@ function onOmegaBlur() {
         @blur="onOmegaBlur"
       />
     </label>
+
+    <AuthoringRadiusProfileFields
+      v-if="hasRadiusProfileKeys"
+      :keys="radiusProfileKeys"
+      :duration-units="durationUnits"
+      :anchor-radius="radius"
+      :is-anchor-editable="isFirstSegment"
+      @update:anchor-radius="(value) => emit('update:radius', value)"
+      @add:key="(key) => emit('add:radius-profile-key', key)"
+      @update:key="(payload) => emit('update:radius-profile-key', payload)"
+      @delete:key="(keyIndex) => emit('delete:radius-profile-key', keyIndex)"
+    />
   </div>
 </template>

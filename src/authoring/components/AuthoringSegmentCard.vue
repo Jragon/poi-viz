@@ -4,6 +4,7 @@ import { ref, watch } from "vue";
 import AuthoringNodeFields from "@/authoring/components/AuthoringNodeFields.vue";
 import type {
   AuthoredOmegaUnit,
+  AuthoredRadiusProfileKey,
   AuthoredSegment,
   DerivedAuthoredSegmentBoundary
 } from "@/authoring/types";
@@ -29,7 +30,6 @@ const emit = defineEmits<{
   (event: "duplicate"): void;
   (event: "delete"): void;
   (event: "jump-to-boundary"): void;
-  (event: "jump-to-start"): void;
   (event: "update:duration", value: number): void;
   (event: "update:plane", value: PlaneId): void;
   (
@@ -37,6 +37,15 @@ const emit = defineEmits<{
     payload: { node: EditableNode; field: "phaseDeg" | "radius"; value: number }
   ): void;
   (event: "update:omega", payload: { node: EditableNode; value: number }): void;
+  (
+    event: "add:radius-profile-key",
+    payload: { node: EditableNode; key: AuthoredRadiusProfileKey }
+  ): void;
+  (
+    event: "update:radius-profile-key",
+    payload: { node: EditableNode; keyIndex: number; field: "t" | "radius"; value: number }
+  ): void;
+  (event: "delete:radius-profile-key", payload: { node: EditableNode; keyIndex: number }): void;
 }>();
 
 const durationDraft = ref<string | null>(null);
@@ -103,6 +112,20 @@ function displayOmega(node: EditableNode): number {
   const driver = props.segment[node].driver;
   const radians = toRadiansPerUnit(driver.omega, driver.omegaUnit);
   return fromRadiansPerUnit(radians, props.omegaUnit);
+}
+
+function displayStartRadius(node: EditableNode): number {
+  if (props.segment.kind === "first") {
+    return props.segment[node].startPose.radius;
+  }
+
+  return node === "hand"
+    ? props.boundary.startPose.handPose.radius
+    : props.boundary.startPose.headPose.radius;
+}
+
+function radiusProfileKeys(node: EditableNode): readonly AuthoredRadiusProfileKey[] {
+  return props.segment[node].radiusProfile?.keys ?? [];
 }
 
 function onUpdateOmega(node: EditableNode, displayValue: number) {
@@ -200,14 +223,6 @@ function onPlaneChange(event: Event) {
             @blur="onDurationBlur"
           />
         </label>
-
-        <button
-          type="button"
-          class="rounded-2xl border border-slate-700 px-3 py-2 text-sm text-slate-200 transition hover:border-slate-500 sm:col-start-2"
-          @click.stop="emit('jump-to-start')"
-        >
-          Restart Preview Here
-        </button>
       </div>
 
       <div class="grid min-w-0 grid-cols-2 gap-4">
@@ -217,13 +232,22 @@ function onPlaneChange(event: Event) {
           :node="node"
           :is-first-segment="segment.kind === 'first'"
           :phase-deg="segment.kind === 'first' ? segment[node].startPose.phaseDeg : 0"
-          :radius="segment.kind === 'first' ? segment[node].startPose.radius : 0"
+          :radius="displayStartRadius(node)"
           :omega="displayOmega(node)"
+          :duration-units="segment.durationUnits"
+          :radius-profile-keys="radiusProfileKeys(node)"
           @update:phase-deg="
             (value) => emit('update:start-pose', { node, field: 'phaseDeg', value })
           "
           @update:radius="(value) => emit('update:start-pose', { node, field: 'radius', value })"
           @update:omega="(value) => onUpdateOmega(node, value)"
+          @add:radius-profile-key="(key) => emit('add:radius-profile-key', { node, key })"
+          @update:radius-profile-key="
+            (payload) => emit('update:radius-profile-key', { node, ...payload })
+          "
+          @delete:radius-profile-key="
+            (keyIndex) => emit('delete:radius-profile-key', { node, keyIndex })
+          "
         />
       </div>
     </section>

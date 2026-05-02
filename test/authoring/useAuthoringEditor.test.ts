@@ -376,6 +376,52 @@ describe("useAuthoringEditor", () => {
     });
   });
 
+  describe("radius profile updates", () => {
+    it("adds, updates, and deletes radius profile rows for either node", () => {
+      const harness = createHarness(makeBaseDocument());
+
+      harness.editor.addSegmentRadiusProfileKey("left", 1, "head", { t: 1, radius: 0.25 });
+
+      let segment = harness.currentDocument().tracks.left!.segments[1];
+      expect(segment.head.radiusProfile?.keys).toEqual([{ t: 1, radius: 0.25 }]);
+
+      harness.editor.updateSegmentRadiusProfileKey("left", 1, "head", 0, "radius", 0.75);
+
+      segment = harness.currentDocument().tracks.left!.segments[1];
+      expect(segment.head.radiusProfile?.keys).toEqual([{ t: 1, radius: 0.75 }]);
+
+      harness.editor.deleteSegmentRadiusProfileKey("left", 1, "head", 0);
+
+      segment = harness.currentDocument().tracks.left!.segments[1];
+      expect(segment.head.radiusProfile).toBeUndefined();
+    });
+
+    it("does not persist radius profile keys beyond the segment duration", () => {
+      const harness = createHarness(makeBaseDocument());
+      const before = harness.currentDocument();
+
+      harness.editor.addSegmentRadiusProfileKey("left", 0, "hand", { t: 2, radius: 1 });
+
+      expect(harness.currentDocument()).toBe(before);
+      expect(harness.persisted).toHaveLength(0);
+    });
+
+    it("copies radius profiles when duplicating a segment", () => {
+      const document = makeBaseDocument();
+      document.tracks.left!.segments[0].hand.radiusProfile = {
+        kind: "time-keyed",
+        keys: [{ t: 0.5, radius: 2 }]
+      };
+      const harness = createHarness(document);
+
+      harness.editor.duplicateSegment("left", 0);
+
+      const duplicate = harness.currentDocument().tracks.left!.segments[1];
+      expect(duplicate.kind).toBe("continuation");
+      expect(duplicate.hand.radiusProfile?.keys).toEqual([{ t: 0.5, radius: 2 }]);
+    });
+  });
+
   describe("commit semantics", () => {
     it("does not persist or update lastValidCompiled when the mutation produces an invalid document", () => {
       const harness = createHarness(makeBaseDocument());

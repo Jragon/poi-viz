@@ -195,6 +195,139 @@ describe("compileAuthoredDocument", () => {
     expect(prepared.ok).toBe(true);
   });
 
+  it("compiles radius profiles for either node and carries the evaluated end radius forward", () => {
+    const document: AuthoredSequenceDocument = {
+      name: "Radius profile",
+      description: null,
+      tracks: {
+        left: {
+          segments: [
+            {
+              kind: "first",
+              durationUnits: 1,
+              hand: {
+                startPose: { phaseDeg: 0, radius: 1 },
+                driver: { kind: "circle", omega: 0, omegaUnit: "radians-per-unit" },
+                radiusProfile: { kind: "time-keyed", keys: [{ t: 0.5, radius: 2 }] }
+              },
+              head: {
+                startPose: { phaseDeg: 0, radius: 1 },
+                driver: { kind: "circle", omega: 0, omegaUnit: "radians-per-unit" },
+                radiusProfile: { kind: "time-keyed", keys: [{ t: 1, radius: 0.25 }] }
+              }
+            },
+            {
+              kind: "continuation",
+              durationUnits: 1,
+              hand: {
+                driver: { kind: "circle", omega: 0, omegaUnit: "radians-per-unit" }
+              },
+              head: {
+                driver: { kind: "circle", omega: 0, omegaUnit: "radians-per-unit" }
+              }
+            }
+          ]
+        }
+      }
+    };
+
+    const result = compileAuthoredDocument(document);
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      throw new Error("expected valid authored document");
+    }
+
+    const firstBoundary = result.boundariesByTrack.left?.[0];
+    const secondBoundary = result.boundariesByTrack.left?.[1];
+    expect(firstBoundary?.endPose.handPose.radius).toBe(2);
+    expect(firstBoundary?.endPose.headPose.radius).toBe(0.25);
+    expect(secondBoundary?.startPose.handPose.radius).toBe(2);
+    expect(secondBoundary?.startPose.headPose.radius).toBe(0.25);
+    expect(result.sequence.rigs[0].sequence.segments[0].segment.hand.radiusProfile?.keys).toEqual([
+      { t: 0.5, radius: 2 }
+    ]);
+  });
+
+  it("rejects radius profile keys outside the segment duration", () => {
+    const document: AuthoredSequenceDocument = {
+      name: "Invalid profile",
+      description: null,
+      tracks: {
+        left: {
+          segments: [
+            {
+              kind: "first",
+              durationUnits: 0.5,
+              hand: {
+                startPose: { phaseDeg: 0, radius: 1 },
+                driver: { kind: "circle", omega: 0, omegaUnit: "radians-per-unit" },
+                radiusProfile: { kind: "time-keyed", keys: [{ t: 0.75, radius: 1 }] }
+              },
+              head: {
+                startPose: { phaseDeg: 0, radius: 1 },
+                driver: { kind: "circle", omega: 0, omegaUnit: "radians-per-unit" }
+              }
+            }
+          ]
+        }
+      }
+    };
+
+    const result = validateAuthoredDocument(document);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContainEqual({
+        code: "INVALID_RADIUS_PROFILE",
+        trackId: "left",
+        segmentIndex: 0,
+        node: "hand"
+      });
+    }
+  });
+
+  it("rejects negative start and profile radii", () => {
+    const document: AuthoredSequenceDocument = {
+      name: "Invalid radii",
+      description: null,
+      tracks: {
+        left: {
+          segments: [
+            {
+              kind: "first",
+              durationUnits: 1,
+              hand: {
+                startPose: { phaseDeg: 0, radius: -1 },
+                driver: { kind: "circle", omega: 0, omegaUnit: "radians-per-unit" }
+              },
+              head: {
+                startPose: { phaseDeg: 0, radius: 1 },
+                driver: { kind: "circle", omega: 0, omegaUnit: "radians-per-unit" },
+                radiusProfile: { kind: "time-keyed", keys: [{ t: 0.5, radius: -0.25 }] }
+              }
+            }
+          ]
+        }
+      }
+    };
+
+    const result = validateAuthoredDocument(document);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContainEqual({
+        code: "INVALID_RADIUS",
+        trackId: "left",
+        segmentIndex: 0,
+        node: "hand"
+      });
+      expect(result.errors).toContainEqual({
+        code: "INVALID_RADIUS_PROFILE",
+        trackId: "left",
+        segmentIndex: 0,
+        node: "head"
+      });
+    }
+  });
+
   it("preserves authored plane ids in derived boundaries and compiled placements", () => {
     const document: AuthoredSequenceDocument = {
       name: "Planes",

@@ -102,6 +102,9 @@ const {
   updateSegmentDuration,
   updateSegmentStartPose,
   updateSegmentOmega,
+  addSegmentRadiusProfileKey,
+  updateSegmentRadiusProfileKey,
+  deleteSegmentRadiusProfileKey,
   updateSegmentPlane
 } = editor;
 
@@ -184,8 +187,8 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <main class="mx-auto flex min-h-screen w-full max-w-360 flex-col gap-6 px-6 py-8">
-    <section class="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+  <main class="mx-auto flex min-h-screen w-full max-w-[96rem] flex-col gap-6 px-6 py-8">
+    <section class="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.65fr)]">
       <div class="grid min-w-0 gap-6">
         <section
           class="grid gap-4 rounded-3xl border border-slate-800 bg-slate-900/60 p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
@@ -213,11 +216,11 @@ onBeforeUnmount(() => {
           </label>
         </section>
 
-        <section class="grid gap-5 2xl:grid-cols-2">
+        <section class="grid items-start gap-5 2xl:grid-cols-2">
           <article
             v-for="view in trackViews"
             :key="view.trackId"
-            class="grid min-w-0 gap-4 rounded-3xl border border-slate-800 bg-slate-900/55 p-4"
+            class="grid min-w-0 content-start gap-4 rounded-3xl border border-slate-800 bg-slate-900/55 p-4"
           >
             <header class="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -260,7 +263,6 @@ onBeforeUnmount(() => {
                 @duplicate="duplicateSegment(view.trackId, segmentIndex)"
                 @delete="deleteSegment(view.trackId, segmentIndex)"
                 @jump-to-boundary="jumpToSegmentStart(view.trackId, segmentIndex)"
-                @jump-to-start="jumpToSegmentStart(view.trackId, segmentIndex)"
                 @update:duration="
                   (value) => updateSegmentDuration(view.trackId, segmentIndex, value)
                 "
@@ -278,6 +280,35 @@ onBeforeUnmount(() => {
                 @update:omega="
                   (payload) =>
                     updateSegmentOmega(view.trackId, segmentIndex, payload.node, payload.value)
+                "
+                @add:radius-profile-key="
+                  (payload) =>
+                    addSegmentRadiusProfileKey(
+                      view.trackId,
+                      segmentIndex,
+                      payload.node,
+                      payload.key
+                    )
+                "
+                @update:radius-profile-key="
+                  (payload) =>
+                    updateSegmentRadiusProfileKey(
+                      view.trackId,
+                      segmentIndex,
+                      payload.node,
+                      payload.keyIndex,
+                      payload.field,
+                      payload.value
+                    )
+                "
+                @delete:radius-profile-key="
+                  (payload) =>
+                    deleteSegmentRadiusProfileKey(
+                      view.trackId,
+                      segmentIndex,
+                      payload.node,
+                      payload.keyIndex
+                    )
                 "
               />
             </template>

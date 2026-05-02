@@ -10,6 +10,16 @@ export type AngularVelocityRadPerUnit = number;
 
 export type Radius = number;
 
+export interface RadiusProfileKey {
+  t: TimeUnit;
+  radius: Radius;
+}
+
+export interface RadiusProfile {
+  kind: "time-keyed";
+  keys: RadiusProfileKey[];
+}
+
 export type Vec2 = { x: number; y: number };
 
 export type Vec3 = { x: number; y: number; z: number };
@@ -41,15 +51,15 @@ export type Driver = {
   omega: AngularVelocityRadPerUnit;
 };
 
+export interface SegmentNodeMotion {
+  startPose: RelativeNodePose;
+  driver: Driver;
+  radiusProfile?: RadiusProfile;
+}
+
 export interface Segment {
-  hand: {
-    startPose: RelativeNodePose;
-    driver: Driver;
-  };
-  head: {
-    startPose: RelativeNodePose;
-    driver: Driver;
-  };
+  hand: SegmentNodeMotion;
+  head: SegmentNodeMotion;
 }
 
 export interface SegmentPlacement {

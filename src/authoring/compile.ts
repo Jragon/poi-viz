@@ -4,6 +4,7 @@ import type {
   Driver,
   MultiRigSequence,
   PlaneId,
+  RadiusProfile,
   RelativeNodePose,
   RelativeRigPose,
   Segment
@@ -14,6 +15,7 @@ import type {
   AuthoredDocumentValidationError,
   AuthoredDocumentValidationResult,
   AuthoredFirstSegment,
+  AuthoredRadiusProfileInput,
   AuthoredSegment,
   AuthoredSequenceDocument,
   AuthoredTrack,
@@ -64,6 +66,30 @@ function toDriver(driver: AuthoredCircleDriverInput): Driver {
   return {
     kind: "circle",
     omega: toOmegaRadiansPerUnit(driver)
+  };
+}
+
+function toRadiusProfile(radiusProfile?: AuthoredRadiusProfileInput): RadiusProfile | undefined {
+  if (!radiusProfile || radiusProfile.keys.length === 0) {
+    return undefined;
+  }
+
+  return {
+    kind: "time-keyed",
+    keys: radiusProfile.keys.map((key) => ({ t: key.t, radius: key.radius }))
+  };
+}
+
+function toAuthoredRadiusProfile(
+  radiusProfile?: RadiusProfile
+): AuthoredRadiusProfileInput | undefined {
+  if (!radiusProfile || radiusProfile.keys.length === 0) {
+    return undefined;
+  }
+
+  return {
+    kind: "time-keyed",
+    keys: radiusProfile.keys.map((key) => ({ t: key.t, radius: key.radius }))
   };
 }
 
@@ -150,7 +176,7 @@ function posesMatchModuloTurns(a: RelativeNodePose, b: RelativeNodePose, epsilon
 }
 
 function makeFirstSegment(segment: AuthoredFirstSegment): Segment {
-  return {
+  const nextSegment: Segment = {
     hand: {
       startPose: toRelativeNodePose(segment.hand.startPose),
       driver: toDriver(segment.hand.driver)
@@ -160,6 +186,11 @@ function makeFirstSegment(segment: AuthoredFirstSegment): Segment {
       driver: toDriver(segment.head.driver)
     }
   };
+  const handRadiusProfile = toRadiusProfile(segment.hand.radiusProfile);
+  const headRadiusProfile = toRadiusProfile(segment.head.radiusProfile);
+  if (handRadiusProfile) nextSegment.hand.radiusProfile = handRadiusProfile;
+  if (headRadiusProfile) nextSegment.head.radiusProfile = headRadiusProfile;
+  return nextSegment;
 }
 
 function makeContinuationSegment(segment: AuthoredSegment, startPose: RelativeRigPose): Segment {
@@ -167,7 +198,7 @@ function makeContinuationSegment(segment: AuthoredSegment, startPose: RelativeRi
     return makeFirstSegment(segment);
   }
 
-  return {
+  const nextSegment: Segment = {
     hand: {
       startPose: startPose.handPose,
       driver: toDriver(segment.hand.driver)
@@ -177,6 +208,11 @@ function makeContinuationSegment(segment: AuthoredSegment, startPose: RelativeRi
       driver: toDriver(segment.head.driver)
     }
   };
+  const handRadiusProfile = toRadiusProfile(segment.hand.radiusProfile);
+  const headRadiusProfile = toRadiusProfile(segment.head.radiusProfile);
+  if (handRadiusProfile) nextSegment.hand.radiusProfile = handRadiusProfile;
+  if (headRadiusProfile) nextSegment.head.radiusProfile = headRadiusProfile;
+  return nextSegment;
 }
 
 function getTrackEntries(document: AuthoredSequenceDocument) {
@@ -208,7 +244,7 @@ function validateFiniteNodeValues(
     errors.push({ code: "INVALID_PHASE_DEGREES", trackId, segmentIndex, node });
   }
 
-  if (!Number.isFinite(segment[node].startPose.radius)) {
+  if (!Number.isFinite(segment[node].startPose.radius) || segment[node].startPose.radius < 0) {
     errors.push({ code: "INVALID_RADIUS", trackId, segmentIndex, node });
   }
 }
@@ -222,6 +258,40 @@ function validateFiniteDriverValues(
 ) {
   if (!Number.isFinite(segment[node].driver.omega)) {
     errors.push({ code: "INVALID_OMEGA", trackId, segmentIndex, node });
+  }
+}
+
+function validateRadiusProfileValues(
+  trackId: AuthoredTrackId,
+  segmentIndex: number,
+  node: "hand" | "head",
+  segment: AuthoredSegment,
+  errors: AuthoredDocumentValidationError[]
+) {
+  const radiusProfile = segment[node].radiusProfile;
+  if (!radiusProfile) {
+    return;
+  }
+
+  if (radiusProfile.kind !== "time-keyed" || !Array.isArray(radiusProfile.keys)) {
+    errors.push({ code: "INVALID_RADIUS_PROFILE", trackId, segmentIndex, node });
+    return;
+  }
+
+  let previousT = 0;
+  for (const key of radiusProfile.keys) {
+    if (
+      !Number.isFinite(key.t) ||
+      key.t <= 0 ||
+      key.t > segment.durationUnits ||
+      key.t <= previousT ||
+      !Number.isFinite(key.radius) ||
+      key.radius < 0
+    ) {
+      errors.push({ code: "INVALID_RADIUS_PROFILE", trackId, segmentIndex, node });
+    }
+
+    previousT = key.t;
   }
 }
 
@@ -303,6 +373,8 @@ export function validateAuthoredDocument(
 
       validateFiniteDriverValues(trackId, segmentIndex, "hand", segment, errors);
       validateFiniteDriverValues(trackId, segmentIndex, "head", segment, errors);
+      validateRadiusProfileValues(trackId, segmentIndex, "hand", segment, errors);
+      validateRadiusProfileValues(trackId, segmentIndex, "head", segment, errors);
       validatePlaneIdValue(trackId, segmentIndex, segment, errors);
 
       if (segment.kind === "first") {
@@ -437,6 +509,8 @@ export function authoredDocumentFromMultiRigSequence(
         const planeId = placement.planeId ?? DEFAULT_PLANE_ID;
 
         if (segmentIndex === 0) {
+          const handRadiusProfile = toAuthoredRadiusProfile(placement.segment.hand.radiusProfile);
+          const headRadiusProfile = toAuthoredRadiusProfile(placement.segment.head.radiusProfile);
           const firstSegment: AuthoredFirstSegment = {
             kind: "first",
             durationUnits: placement.durationUnits,
@@ -450,7 +524,8 @@ export function authoredDocumentFromMultiRigSequence(
                 kind: "circle",
                 omega: placement.segment.hand.driver.omega,
                 omegaUnit: "radians-per-unit"
-              }
+              },
+              ...(handRadiusProfile ? { radiusProfile: handRadiusProfile } : {})
             },
             head: {
               startPose: {
@@ -461,7 +536,8 @@ export function authoredDocumentFromMultiRigSequence(
                 kind: "circle",
                 omega: placement.segment.head.driver.omega,
                 omegaUnit: "radians-per-unit"
-              }
+              },
+              ...(headRadiusProfile ? { radiusProfile: headRadiusProfile } : {})
             }
           };
           previousEndPose = evalSegment(placement.segment, placement.durationUnits);
@@ -486,6 +562,8 @@ export function authoredDocumentFromMultiRigSequence(
 
         previousEndPose = evalSegment(placement.segment, placement.durationUnits);
         previousPlaneId = planeId;
+        const handRadiusProfile = toAuthoredRadiusProfile(placement.segment.hand.radiusProfile);
+        const headRadiusProfile = toAuthoredRadiusProfile(placement.segment.head.radiusProfile);
         return {
           kind: "continuation",
           durationUnits: placement.durationUnits,
@@ -495,14 +573,16 @@ export function authoredDocumentFromMultiRigSequence(
               kind: "circle",
               omega: placement.segment.hand.driver.omega,
               omegaUnit: "radians-per-unit"
-            }
+            },
+            ...(handRadiusProfile ? { radiusProfile: handRadiusProfile } : {})
           },
           head: {
             driver: {
               kind: "circle",
               omega: placement.segment.head.driver.omega,
               omegaUnit: "radians-per-unit"
-            }
+            },
+            ...(headRadiusProfile ? { radiusProfile: headRadiusProfile } : {})
           }
         };
       })

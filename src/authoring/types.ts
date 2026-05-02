@@ -15,6 +15,16 @@ export interface AuthoredCircleDriverInput {
   omegaUnit: AuthoredOmegaUnit;
 }
 
+export interface AuthoredRadiusProfileKey {
+  t: TimeUnit;
+  radius: number;
+}
+
+export interface AuthoredRadiusProfileInput {
+  kind: "time-keyed";
+  keys: AuthoredRadiusProfileKey[];
+}
+
 export interface AuthoredFirstSegment {
   kind: "first";
   durationUnits: TimeUnit;
@@ -22,10 +32,12 @@ export interface AuthoredFirstSegment {
   hand: {
     startPose: AuthoredNodeStartPose;
     driver: AuthoredCircleDriverInput;
+    radiusProfile?: AuthoredRadiusProfileInput;
   };
   head: {
     startPose: AuthoredNodeStartPose;
     driver: AuthoredCircleDriverInput;
+    radiusProfile?: AuthoredRadiusProfileInput;
   };
 }
 
@@ -35,9 +47,11 @@ export interface AuthoredContinuationSegment {
   planeId?: PlaneId;
   hand: {
     driver: AuthoredCircleDriverInput;
+    radiusProfile?: AuthoredRadiusProfileInput;
   };
   head: {
     driver: AuthoredCircleDriverInput;
+    radiusProfile?: AuthoredRadiusProfileInput;
   };
 }
 
@@ -71,6 +85,7 @@ export type AuthoredDocumentValidationErrorCode =
   | "NON_POSITIVE_DURATION"
   | "INVALID_PHASE_DEGREES"
   | "INVALID_RADIUS"
+  | "INVALID_RADIUS_PROFILE"
   | "INVALID_PLANE_ID"
   | "UNSUPPORTED_PLANE_BREAK"
   | "PLANE_BREAK_INVALID_HAND_ALIGNMENT"
