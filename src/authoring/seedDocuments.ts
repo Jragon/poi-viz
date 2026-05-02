@@ -1374,5 +1374,265 @@ export const seedDocuments: AuthoredDocumentEntry[] = [
         }
       }
     }
+  },
+  {
+    id: "4b8565b4-8cb0-46e8-be71-db99869f0406",
+    document: {
+      name: "itai 3d",
+      description: null,
+      tracks: {
+        left: {
+          segments: [
+            {
+              kind: "first",
+              durationUnits: 0.25,
+              hand: {
+                startPose: {
+                  phaseDeg: 270,
+                  radius: 1
+                },
+                driver: {
+                  kind: "circle",
+                  omega: 6.283185307179586,
+                  omegaUnit: "radians-per-unit"
+                }
+              },
+              head: {
+                startPose: {
+                  phaseDeg: 270,
+                  radius: 0.5
+                },
+                driver: {
+                  kind: "circle",
+                  omega: -18.84955592153876,
+                  omegaUnit: "radians-per-unit"
+                }
+              }
+            },
+            {
+              kind: "continuation",
+              durationUnits: 0.25,
+              planeId: "floor",
+              hand: {
+                driver: {
+                  kind: "circle",
+                  omega: 6.283185307179586,
+                  omegaUnit: "radians-per-unit"
+                }
+              },
+              head: {
+                driver: {
+                  kind: "circle",
+                  omega: -18.84955592153876,
+                  omegaUnit: "radians-per-unit"
+                }
+              }
+            },
+            {
+              kind: "continuation",
+              durationUnits: 0.25,
+              planeId: "wheel",
+              hand: {
+                driver: {
+                  kind: "circle",
+                  omega: 6.283185307179586,
+                  omegaUnit: "radians-per-unit"
+                }
+              },
+              head: {
+                driver: {
+                  kind: "circle",
+                  omega: -18.84955592153876,
+                  omegaUnit: "radians-per-unit"
+                }
+              }
+            },
+            {
+              kind: "continuation",
+              durationUnits: 0.25,
+              planeId: "wall",
+              hand: {
+                driver: {
+                  kind: "circle",
+                  omega: -6.283185307179586,
+                  omegaUnit: "radians-per-unit"
+                }
+              },
+              head: {
+                driver: {
+                  kind: "circle",
+                  omega: 18.84955592153876,
+                  omegaUnit: "radians-per-unit"
+                }
+              }
+            },
+            {
+              kind: "continuation",
+              durationUnits: 0.25,
+              planeId: "floor",
+              hand: {
+                driver: {
+                  kind: "circle",
+                  omega: 6.283185307179586,
+                  omegaUnit: "radians-per-unit"
+                }
+              },
+              head: {
+                driver: {
+                  kind: "circle",
+                  omega: -18.84955592153876,
+                  omegaUnit: "radians-per-unit"
+                }
+              }
+            },
+            {
+              kind: "continuation",
+              durationUnits: 0.25,
+              planeId: "wheel",
+              hand: {
+                driver: {
+                  kind: "circle",
+                  omega: -6.283185307179586,
+                  omegaUnit: "radians-per-unit"
+                }
+              },
+              head: {
+                driver: {
+                  kind: "circle",
+                  omega: 18.84955592153876,
+                  omegaUnit: "radians-per-unit"
+                }
+              }
+            }
+          ]
+        },
+        right: {
+          segments: [
+            {
+              kind: "first",
+              durationUnits: 0.25,
+              planeId: "wall",
+              hand: {
+                startPose: {
+                  phaseDeg: 90,
+                  radius: 1
+                },
+                driver: {
+                  kind: "circle",
+                  omega: 6.283185307179586,
+                  omegaUnit: "radians-per-unit"
+                }
+              },
+              head: {
+                startPose: {
+                  phaseDeg: 90,
+                  radius: 0.5
+                },
+                driver: {
+                  kind: "circle",
+                  omega: -18.84955592153876,
+                  omegaUnit: "radians-per-unit"
+                }
+              }
+            },
+            {
+              kind: "continuation",
+              durationUnits: 0.25,
+              planeId: "floor",
+              hand: {
+                driver: {
+                  kind: "circle",
+                  omega: -6.283185307179586,
+                  omegaUnit: "radians-per-unit"
+                }
+              },
+              head: {
+                driver: {
+                  kind: "circle",
+                  omega: 18.84955592153876,
+                  omegaUnit: "radians-per-unit"
+                }
+              }
+            },
+            {
+              kind: "continuation",
+              durationUnits: 0.25,
+              planeId: "wheel",
+              hand: {
+                driver: {
+                  kind: "circle",
+                  omega: -6.283185307179586,
+                  omegaUnit: "radians-per-unit"
+                }
+              },
+              head: {
+                driver: {
+                  kind: "circle",
+                  omega: 18.84955592153876,
+                  omegaUnit: "radians-per-unit"
+                }
+              }
+            },
+            {
+              kind: "continuation",
+              durationUnits: 0.25,
+              planeId: "wall",
+              hand: {
+                driver: {
+                  kind: "circle",
+                  omega: -6.283185307179586,
+                  omegaUnit: "radians-per-unit"
+                }
+              },
+              head: {
+                driver: {
+                  kind: "circle",
+                  omega: 18.84955592153876,
+                  omegaUnit: "radians-per-unit"
+                }
+              }
+            },
+            {
+              kind: "continuation",
+              durationUnits: 0.25,
+              planeId: "floor",
+              hand: {
+                driver: {
+                  kind: "circle",
+                  omega: -6.283185307179586,
+                  omegaUnit: "radians-per-unit"
+                }
+              },
+              head: {
+                driver: {
+                  kind: "circle",
+                  omega: 18.84955592153876,
+                  omegaUnit: "radians-per-unit"
+                }
+              }
+            },
+            {
+              kind: "continuation",
+              durationUnits: 0.25,
+              planeId: "wheel",
+              hand: {
+                driver: {
+                  kind: "circle",
+                  omega: 6.283185307179586,
+                  omegaUnit: "radians-per-unit"
+                }
+              },
+              head: {
+                driver: {
+                  kind: "circle",
+                  omega: -18.84955592153876,
+                  omegaUnit: "radians-per-unit"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
   }
 ];
