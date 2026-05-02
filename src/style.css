@@ -19,3 +19,101 @@ body,
   margin: 0;
   min-height: 100%;
 }
+
+.lab-prose {
+  margin-inline: auto;
+  max-width: var(--container-6xl);
+  width: 100%;
+}
+
+.lab-prose > div {
+  display: grid;
+  gap: calc(var(--spacing) * 7);
+  width: 100%;
+}
+
+.lab-prose > div > :not(.lab-live-cell) {
+  margin-inline: auto;
+  max-width: 52rem;
+  width: 100%;
+}
+
+.lab-prose > div > h1 {
+  color: var(--color-slate-50);
+  font-size: var(--text-3xl);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--leading-tight);
+  max-width: 46rem;
+}
+
+.lab-prose > div > h2 {
+  color: var(--color-slate-100);
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-semibold);
+  padding-top: calc(var(--spacing) * 2);
+}
+
+.lab-prose > div > p,
+.lab-prose > div > ul li {
+  color: var(--color-slate-300);
+  line-height: 1.75;
+}
+
+.lab-prose > div > h1 + p {
+  color: var(--color-slate-300);
+  font-size: var(--text-lg);
+  line-height: 1.7;
+  margin-top: calc(var(--spacing) * -3);
+  max-width: 48rem;
+}
+
+.lab-prose > div > h2 + p,
+.lab-prose > div > h2 + ul {
+  margin-top: calc(var(--spacing) * -4);
+}
+
+.lab-prose > div > ul {
+  display: grid;
+  gap: calc(var(--spacing) * 2);
+  list-style-position: outside;
+  list-style-type: disc;
+  padding-left: calc(var(--spacing) * 5);
+}
+
+.lab-entry-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--spacing) * 2);
+  padding-bottom: calc(var(--spacing) * 3);
+}
+
+.lab-entry-meta span {
+  border: 1px solid var(--color-slate-800);
+  border-radius: var(--radius-md);
+  color: var(--color-slate-500);
+  font-size: var(--text-xs);
+  letter-spacing: 0.18em;
+  padding: calc(var(--spacing) * 1) calc(var(--spacing) * 2);
+  text-transform: uppercase;
+}
+
+.lab-entry-kicker {
+  color: var(--color-sky-300) !important;
+  font-size: var(--text-sm);
+  letter-spacing: 0.22em;
+  margin-bottom: calc(var(--spacing) * -6);
+  text-transform: uppercase;
+}
+
+.lab-live-cell {
+  margin-block: calc(var(--spacing) * 3);
+  margin-inline: auto;
+  max-width: var(--container-6xl);
+  width: 100%;
+}
+
+@media (min-width: 48rem) {
+  .lab-prose > div > h1 {
+    font-size: var(--text-5xl);
+  }
+}

@@ -1,6 +1,7 @@
 import { createApp } from "vue";
 import App from "./App.vue";
+import PatternCell from "./lab/components/PatternCell.vue";
 import { router } from "./router";
 import "./style.css";
 
-createApp(App).use(router).mount("#app");
+createApp(App).component("PatternCell", PatternCell).use(router).mount("#app");
