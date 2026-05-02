@@ -278,14 +278,35 @@ describe("useVisualizerSession", () => {
     expect(session.currentTrails.value.left?.hand).toHaveLength(3);
   });
 
-  it("updates current frame and trails when projection settings change", async () => {
+  it("auto projection stays orthographic for wall-only sequences", async () => {
+    const { session } = createSession(makeSinglePlaneSequence(2, "wall"));
+
+    expect(session.projectionMode.value).toBe("auto");
+    expect(session.projectionSettings.value.mode).toBe("orthographic");
+  });
+
+  it("auto projection tilts when any placement is non-wall", async () => {
     const { session, transport } = createSession(makeSinglePlaneSequence(2, "wheel"));
 
     transport.setCurrentTime(TRAIL_STEP_FIXED * 0.5);
     await nextTick();
+    const autoFrame = session.currentFrame.value;
+    if (!autoFrame?.ok) throw new Error("expected evaluated frame");
+    expect(session.projectionMode.value).toBe("auto");
+    expect(session.projectionSettings.value.mode).toBe("tilted");
+    expect(autoFrame.cartesianPoses.left.handPosition.x).toBeCloseTo(-0.422618, 6);
+    expect(autoFrame.cartesianPoses.left.handPosition.y).toBeCloseTo(-0.280065, 6);
+  });
+
+  it("manual projection mode overrides auto behavior", async () => {
+    const { session, transport } = createSession(makeSinglePlaneSequence(2, "wheel"));
+
+    session.setProjectionMode("orthographic");
+    transport.setCurrentTime(TRAIL_STEP_FIXED * 0.5);
+    await nextTick();
     const orthographicFrame = session.currentFrame.value;
     if (!orthographicFrame?.ok) throw new Error("expected evaluated frame");
-    expect(session.projectionMode.value).toBe("orthographic");
+    expect(session.projectionSettings.value.mode).toBe("orthographic");
     expect(orthographicFrame.cartesianPoses.left.handPosition).toEqual({ x: 0, y: 0 });
 
     session.setProjectionMode("tilted");

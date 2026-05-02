@@ -186,6 +186,7 @@ describe("useDisplaySettings", () => {
     const storage = new MemoryStorage();
     const trailDecaySteps = ref(100);
     const secondsPerUnit = ref(4);
+    const projectionMode = ref<"auto" | "orthographic" | "tilted">("auto");
     const projectionYawDeg = ref(-25);
     const projectionPitchDeg = ref(18);
     const controller = createDisplaySettingsController({
@@ -202,6 +203,12 @@ describe("useDisplaySettings", () => {
           value: secondsPerUnit,
           set: (value) => {
             secondsPerUnit.value = value;
+          }
+        },
+        projectionMode: {
+          value: projectionMode,
+          set: (value) => {
+            projectionMode.value = value;
           }
         },
         projectionYawDeg: {
@@ -221,16 +228,19 @@ describe("useDisplaySettings", () => {
 
     controller.external.trailDecaySteps?.set(42);
     controller.external.transportSecondsPerUnit?.set(2.5);
+    controller.external.projectionMode?.set("tilted");
     controller.external.projectionYawDeg?.set(-30);
     controller.external.projectionPitchDeg?.set(20);
     controller.setDisplayScale(1.5);
 
     expect(trailDecaySteps.value).toBe(42);
     expect(secondsPerUnit.value).toBe(2.5);
+    expect(projectionMode.value).toBe("tilted");
     expect(projectionYawDeg.value).toBe(-30);
     expect(projectionPitchDeg.value).toBe(20);
     expect(JSON.stringify(storedSnapshot(storage))).not.toContain("trailDecaySteps");
     expect(JSON.stringify(storedSnapshot(storage))).not.toContain("transportSecondsPerUnit");
+    expect(JSON.stringify(storedSnapshot(storage))).not.toContain("projectionMode");
     expect(JSON.stringify(storedSnapshot(storage))).not.toContain("projectionYawDeg");
     expect(JSON.stringify(storedSnapshot(storage))).not.toContain("projectionPitchDeg");
   });
@@ -247,6 +257,18 @@ describe("useDisplaySettings", () => {
     expect(ownershipById.projectionMode).toBe("external");
     expect(ownershipById.projectionYawDeg).toBe("external");
     expect(ownershipById.projectionPitchDeg).toBe("external");
+  });
+
+  it("registers projection preference as a select setting", () => {
+    const controller = createDisplaySettingsController({ rigOrder: ["left"], storage: null });
+    const projectionModeSetting = controller.registry.find(
+      (entry) => entry.id === "projectionMode"
+    );
+
+    expect(projectionModeSetting).toMatchObject({
+      kind: "select",
+      options: ["auto", "orthographic", "tilted"]
+    });
   });
 
   it("normalizes only lowercaseable six-digit hex colors", () => {

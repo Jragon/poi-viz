@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-import type { ProjectionMode } from "@/engine/planeProjection";
+import type { ProjectionModePreference } from "@/engine/planeProjection";
 import {
   DISPLAY_SCALE_SETTING,
   EXTERNAL_DISPLAY_SETTINGS,
@@ -42,9 +42,6 @@ const transportSpeedSetting = EXTERNAL_DISPLAY_SETTINGS.find(
   (setting) => setting.id === "transportSecondsPerUnit"
 ) as RangeSettingRegistryEntry;
 const trailLoopEnabled = computed(() => display.external.trailLoopMode?.value.value === "auto");
-const tiltedProjectionEnabled = computed(
-  () => display.external.projectionMode?.value.value === "tilted"
-);
 
 function numberValue(event: Event): number {
   return Number((event.target as HTMLInputElement).value);
@@ -62,8 +59,9 @@ function trailLoopModeValue(event: Event): TrailLoopMode {
   return checkboxValue(event) ? "auto" : "off";
 }
 
-function projectionModeValue(event: Event): ProjectionMode {
-  return checkboxValue(event) ? "tilted" : "orthographic";
+function projectionModeValue(event: Event): ProjectionModePreference {
+  const value = (event.target as HTMLSelectElement).value;
+  return value === "orthographic" || value === "tilted" ? value : "auto";
 }
 </script>
 
@@ -233,17 +231,17 @@ function projectionModeValue(event: Event): ProjectionMode {
         class="grid gap-3 border-t border-slate-800 pt-4"
       >
         <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Projection</p>
-        <label
-          v-if="display.external.projectionMode"
-          class="flex items-center gap-2 text-sm text-slate-300"
-        >
-          <input
-            type="checkbox"
-            :checked="tiltedProjectionEnabled"
-            class="accent-amber-400"
+        <label v-if="display.external.projectionMode" class="grid gap-2 text-sm text-slate-300">
+          <span class="text-xs uppercase tracking-[0.16em] text-slate-500">Mode</span>
+          <select
+            class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none transition focus:border-amber-400"
+            :value="display.external.projectionMode.value.value"
             @change="display.external.projectionMode.set(projectionModeValue($event))"
-          />
-          Tilted Projection
+          >
+            <option value="auto">Auto</option>
+            <option value="orthographic">Flat</option>
+            <option value="tilted">Tilted</option>
+          </select>
         </label>
 
         <label

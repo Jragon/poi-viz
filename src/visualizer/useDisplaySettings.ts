@@ -10,7 +10,7 @@ import {
   type Ref
 } from "vue";
 
-import type { ProjectionMode } from "@/engine/planeProjection";
+import type { ProjectionModePreference } from "@/engine/planeProjection";
 import type { RigId } from "@/engine/types";
 import {
   cloneOverlaySettings,
@@ -32,7 +32,7 @@ export const DISPLAY_SCALE_STEP = 0.05;
 
 export type BuiltInDisplayPresetId = "normal" | "webcam";
 export type DisplaySettingOwnership = "preset" | "external";
-export type DisplaySettingKind = "boolean" | "range" | "color";
+export type DisplaySettingKind = "boolean" | "range" | "color" | "select";
 
 export interface StorageLike {
   getItem(key: string): string | null;
@@ -75,8 +75,8 @@ export interface DisplayTrailLoopBinding {
 }
 
 export interface DisplayProjectionModeBinding {
-  readonly value: Ref<ProjectionMode> | ComputedRef<ProjectionMode>;
-  set: (value: ProjectionMode) => void;
+  readonly value: Ref<ProjectionModePreference> | ComputedRef<ProjectionModePreference>;
+  set: (value: ProjectionModePreference) => void;
 }
 
 export interface ExternalDisplaySettingBindings {
@@ -119,10 +119,16 @@ export interface ColorSettingRegistryEntry extends BaseSettingRegistryEntry {
   readonly kind: "color";
 }
 
+export interface SelectSettingRegistryEntry extends BaseSettingRegistryEntry {
+  readonly kind: "select";
+  readonly options: readonly string[];
+}
+
 export type SettingRegistryEntry =
   | RangeSettingRegistryEntry
   | BooleanSettingRegistryEntry
-  | ColorSettingRegistryEntry;
+  | ColorSettingRegistryEntry
+  | SelectSettingRegistryEntry;
 
 export const DISPLAY_SCALE_SETTING: RangeSettingRegistryEntry = {
   id: "displayScale",
@@ -316,10 +322,11 @@ export const EXTERNAL_DISPLAY_SETTINGS: readonly SettingRegistryEntry[] = [
   },
   {
     id: "projectionMode",
-    label: "Tilted Projection",
+    label: "Projection",
     group: "Projection",
-    kind: "boolean",
-    ownership: "external"
+    kind: "select",
+    ownership: "external",
+    options: ["auto", "orthographic", "tilted"]
   },
   {
     id: "projectionYawDeg",

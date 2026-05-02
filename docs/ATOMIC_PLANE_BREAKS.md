@@ -117,8 +117,8 @@ The implemented visual path stays on the existing 2D canvas:
 - current pose projection for `wall`, `wheel`, and `floor`,
 - projected trail sampling,
 - plane-aware trail loop continuity,
-- front orthographic projection by default,
-- configurable tilted orthographic projection with yaw and pitch controls.
+- automatic projection preference that keeps wall-only sequences front orthographic,
+- configurable tilted orthographic projection with yaw and pitch controls for non-wall planes or manual override.
 
 Phase atlases, stronger plane guides, and active plane highlighting are still visual follow-ups.
 

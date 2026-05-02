@@ -17,7 +17,7 @@ Plane-break support starts with three orthogonal atomic planes and compile-layer
 - Omitted placement `planeId` values resolve to `wall` during sequence preparation.
 - `Segment` remains plane-agnostic; plane context belongs to authored segments and engine placements.
 - Local pose evaluation remains 2D. Evaluated placements expose resolved `planeId` so visual consumers can project poses through an adapter.
-- Projection defaults to front orthographic so wall-plane output stays normal; visualizer display settings can switch to tilted orthographic projection with yaw and pitch controls.
+- Projection preference defaults to `auto`: wall-only sequences stay front orthographic, while any non-`wall` placement switches the effective view to tilted orthographic. Display settings can still force flat or tilted projection and adjust yaw/pitch.
 - Authored plane changes are valid only when the previous end pose lies on the source plane's shared axis and the head is collinear with the hand.
 - `wheel <-> floor` remaps both hand and head by the same absolute phase offset, preserving relative phase.
 - Explicit boundary mode fields, zero-point annotations, body-aware weaves, toroids, continuous plane bends, and WebGL remain future work.

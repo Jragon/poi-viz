@@ -10,11 +10,13 @@ import {
 } from "vue";
 
 import { createTransport, type TransportController } from "@/composables/useTransport";
+import type { PreparedMultiRigSequence } from "@/engine/multirig";
 import {
   DEFAULT_TILTED_PROJECTION_PITCH_DEG,
   DEFAULT_TILTED_PROJECTION_YAW_DEG,
   type PlaneProjectionSettings,
-  type ProjectionMode
+  type ProjectionMode,
+  type ProjectionModePreference
 } from "@/engine/planeProjection";
 import type { MultiRigSequence } from "@/engine/types";
 import {
@@ -48,7 +50,7 @@ export interface VisualizerSession {
   readonly currentTrails: ComputedRef<MultiRigTrailSamples>;
   readonly trailDecaySteps: Ref<number>;
   readonly trailLoopMode: Ref<TrailLoopMode>;
-  readonly projectionMode: Ref<ProjectionMode>;
+  readonly projectionMode: Ref<ProjectionModePreference>;
   readonly projectionYawDeg: Ref<number>;
   readonly projectionPitchDeg: Ref<number>;
   readonly projectionSettings: ComputedRef<PlaneProjectionSettings>;
@@ -56,7 +58,7 @@ export interface VisualizerSession {
   readonly isReady: ComputedRef<boolean>;
   setTrailDecaySteps: (value: number) => void;
   setTrailLoopMode: (value: TrailLoopMode) => void;
-  setProjectionMode: (value: ProjectionMode) => void;
+  setProjectionMode: (value: ProjectionModePreference) => void;
   setProjectionYawDeg: (value: number) => void;
   setProjectionPitchDeg: (value: number) => void;
   dispose: () => void;
@@ -72,6 +74,22 @@ function clampProjectionDegrees(value: number, min: number, max: number, fallbac
   return Math.min(Math.max(value, min), max);
 }
 
+function preparedUsesNonWallPlane(prepared: PreparedMultiRigSequence | null): boolean {
+  return (
+    prepared?.rigs.some((rig) =>
+      rig.prepared.placements.some((placement) => placement.planeId !== "wall")
+    ) ?? false
+  );
+}
+
+function resolveProjectionMode(
+  preference: ProjectionModePreference,
+  prepared: PreparedMultiRigSequence | null
+): ProjectionMode {
+  if (preference !== "auto") return preference;
+  return preparedUsesNonWallPlane(prepared) ? "tilted" : "orthographic";
+}
+
 function formatPrepareErrors(codes: readonly { code: string }[]): string {
   return codes.map((error) => error.code).join(", ");
 }
@@ -84,15 +102,17 @@ export function useVisualizerSession(
   const currentFrame = ref<PlaybackEvaluateResult | null>(null);
   const trailDecaySteps = ref<number>(TRAIL_DECAY_DEFAULT);
   const trailLoopMode = ref<TrailLoopMode>("auto");
-  const projectionMode = ref<ProjectionMode>("orthographic");
+  const projectionMode = ref<ProjectionModePreference>("auto");
   const projectionYawDeg = ref<number>(DEFAULT_TILTED_PROJECTION_YAW_DEG);
   const projectionPitchDeg = ref<number>(DEFAULT_TILTED_PROJECTION_PITCH_DEG);
+  const playbackRef: { current: MultiRigPlaybackController | null } = { current: null };
   const projectionSettings = computed<PlaneProjectionSettings>(() => ({
-    mode: projectionMode.value,
+    mode: resolveProjectionMode(projectionMode.value, playbackRef.current?.prepared.value ?? null),
     yawDeg: projectionYawDeg.value,
     pitchDeg: projectionPitchDeg.value
   }));
   const playback = useMultiRigPlayback(() => toValue(sequence), projectionSettings);
+  playbackRef.current = playback;
 
   const stopPreparedWatch = watch(
     () => playback.prepared.value,
@@ -150,8 +170,8 @@ export function useVisualizerSession(
     trailLoopMode.value = value === "auto" ? "auto" : "off";
   };
 
-  const setProjectionMode = (value: ProjectionMode) => {
-    projectionMode.value = value === "tilted" ? "tilted" : "orthographic";
+  const setProjectionMode = (value: ProjectionModePreference) => {
+    projectionMode.value = value === "tilted" || value === "orthographic" ? value : "auto";
   };
 
   const setProjectionYawDeg = (value: number) => {

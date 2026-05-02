@@ -15,6 +15,7 @@ type ProjectableEvaluatedPose = {
 };
 
 export type ProjectionMode = "orthographic" | "tilted";
+export type ProjectionModePreference = "auto" | ProjectionMode;
 
 export interface PlaneProjectionSettings {
   readonly mode: ProjectionMode;
