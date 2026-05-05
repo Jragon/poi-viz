@@ -2,37 +2,21 @@
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
 import type { Vec2 } from "@/engine/types";
+import { buildBodyRigConfigFromArmReach } from "./bodyRigConfig";
 import {
-  solveBodyRigFromHands,
-  solveStickArm,
-  type ArmSide,
-  type BodyRigSolveResult
-} from "./stickFigureGeometry";
+  buildBodyRigFrame,
+  getBodyRigArmDrawOrder,
+  getBodyRigArmPoints,
+  solveBodyRigFrame,
+  type BodyRigFrame,
+  type BodyRigPose
+} from "./bodyRigDemo";
+import { type ArmSide, type BodyRigSolveResult } from "./stickFigureGeometry";
 
 interface CanvasLayout {
   readonly cssWidth: number;
   readonly cssHeight: number;
   readonly dpr: number;
-}
-
-interface BodyFrame {
-  readonly headCenter: Vec2;
-  readonly headRadius: number;
-  readonly neck: Vec2;
-  readonly shoulderCenter: Vec2;
-  readonly shoulderY: number;
-  readonly baseShoulderSpan: number;
-  readonly pelvis: Vec2;
-  readonly hipLeft: Vec2;
-  readonly hipRight: Vec2;
-  readonly kneeLeft: Vec2;
-  readonly kneeRight: Vec2;
-  readonly footLeft: Vec2;
-  readonly footRight: Vec2;
-  readonly upperArmLength: number;
-  readonly forearmLength: number;
-  readonly defaultLeftHandTarget: Vec2;
-  readonly defaultRightHandTarget: Vec2;
 }
 
 type DragTarget = "leftHand" | "rightHand";
@@ -42,17 +26,10 @@ interface ActiveDrag {
   readonly target: DragTarget;
 }
 
-interface FigurePose {
-  readonly body: BodyFrame;
+interface FigurePose extends BodyRigPose {
   readonly shoulders: BodyRigSolveResult["shoulders"];
-  readonly leftArm: ReturnType<typeof solveStickArm>;
-  readonly rightArm: ReturnType<typeof solveStickArm>;
-  readonly yawDeg: number;
-  readonly solve: BodyRigSolveResult;
 }
 
-const MAX_TORSO_YAW_DEG = 70;
-const MAX_TORSO_YAW_RAD = (MAX_TORSO_YAW_DEG * Math.PI) / 180;
 const HAND_HIT_RADIUS = 18;
 
 const containerRef = ref<HTMLDivElement | null>(null);
@@ -74,61 +51,33 @@ function scalePoint(point: Vec2, xScale: number, yScale: number): Vec2 {
   return { x: point.x * xScale, y: point.y * yScale };
 }
 
-function buildBodyFrame(layout: CanvasLayout): BodyFrame {
+function buildBodyFrame(layout: CanvasLayout): BodyRigFrame {
   const width = layout.cssWidth;
   const height = layout.cssHeight;
   const centerX = width * 0.5;
   const scale = Math.min(width, height);
+  const rigConfig = buildBodyRigConfigFromArmReach(Math.min(scale * 0.32, 164));
   const shoulderY = Math.max(height * 0.27, 110);
-  const baseShoulderSpan = Math.min(scale * 0.34, 168);
   const torsoHeight = Math.min(scale * 0.29, 160);
-  const hipSpan = baseShoulderSpan * 0.6;
   const headRadius = Math.min(scale * 0.09, 38);
-  const headCenter = { x: centerX, y: shoulderY - headRadius - 26 };
-  const neck = { x: centerX, y: shoulderY - 16 };
   const shoulderCenter = { x: centerX, y: shoulderY };
-  const pelvis = { x: centerX, y: shoulderY + torsoHeight };
-  const hipLeft = { x: centerX - hipSpan * 0.5, y: pelvis.y };
-  const hipRight = { x: centerX + hipSpan * 0.5, y: pelvis.y };
   const thighLength = Math.min(scale * 0.2, 116);
   const shinLength = Math.min(scale * 0.19, 108);
-  const stanceWidth = baseShoulderSpan * 0.22;
-  const kneeLeft = { x: hipLeft.x - stanceWidth, y: hipLeft.y + thighLength };
-  const kneeRight = { x: hipRight.x + stanceWidth, y: hipRight.y + thighLength };
-  const footLeft = { x: kneeLeft.x - 10, y: kneeLeft.y + shinLength };
-  const footRight = { x: kneeRight.x + 10, y: kneeRight.y + shinLength };
-  const upperArmLength = Math.min(scale * 0.16, 82);
-  const forearmLength = upperArmLength;
-  const neutralLeftShoulder = { x: shoulderCenter.x - baseShoulderSpan * 0.5, y: shoulderY };
-  const neutralRightShoulder = { x: shoulderCenter.x + baseShoulderSpan * 0.5, y: shoulderY };
-  const defaultLeftHandTarget = {
-    x: neutralLeftShoulder.x - upperArmLength * 0.78,
-    y: neutralLeftShoulder.y + forearmLength * 1.05
-  };
-  const defaultRightHandTarget = {
-    x: neutralRightShoulder.x + upperArmLength * 0.78,
-    y: neutralRightShoulder.y + forearmLength * 1.05
-  };
-
-  return {
-    headCenter,
-    headRadius,
-    neck,
+  return buildBodyRigFrame({
     shoulderCenter,
-    shoulderY,
-    baseShoulderSpan,
-    pelvis,
-    hipLeft,
-    hipRight,
-    kneeLeft,
-    kneeRight,
-    footLeft,
-    footRight,
-    upperArmLength,
-    forearmLength,
-    defaultLeftHandTarget,
-    defaultRightHandTarget
-  };
+    rigConfig,
+    torsoHeight,
+    hipSpan: rigConfig.baseShoulderSpan * 0.6,
+    headRadius,
+    headGap: 26,
+    neckOffset: 16,
+    thighLength,
+    shinLength,
+    footOffset: 10,
+    stanceWidth: rigConfig.baseShoulderSpan * 0.22,
+    defaultHandTargetXRatio: 0.78,
+    defaultHandTargetYRatio: 1.05
+  });
 }
 
 function getFigurePose(): FigurePose | null {
@@ -141,26 +90,10 @@ function getFigurePose(): FigurePose | null {
   const leftHandTarget = leftHandTargetRef.value ?? body.defaultLeftHandTarget;
   const rightHandTarget = rightHandTargetRef.value ?? body.defaultRightHandTarget;
 
-  const solve = solveBodyRigFromHands({
-    torsoCenter: body.shoulderCenter,
-    shoulderY: body.shoulderY,
-    baseShoulderSpan: body.baseShoulderSpan,
-    maxYawRad: MAX_TORSO_YAW_RAD,
-    upperArmLength: body.upperArmLength,
-    forearmLength: body.forearmLength,
+  return solveBodyRigFrame(body, {
     leftHandTarget,
-    rightHandTarget,
-    minProjectedSpanRatio: 0.36
+    rightHandTarget
   });
-
-  return {
-    body,
-    shoulders: solve.shoulders,
-    leftArm: solve.leftArm,
-    rightArm: solve.rightArm,
-    yawDeg: (solve.yawRad * 180) / Math.PI,
-    solve
-  };
 }
 
 function drawJoint(
@@ -210,21 +143,8 @@ function drawReachGuide(ctx: CanvasRenderingContext2D, center: Vec2, radius: num
   ctx.restore();
 }
 
-function getArmPoints(pose: FigurePose, side: ArmSide): readonly Vec2[] {
-  const arm = side === "left" ? pose.leftArm : pose.rightArm;
-  return [arm.shoulder, arm.elbow, arm.hand];
-}
-
 function getArmStroke(side: ArmSide): string {
   return side === "left" ? "rgba(125, 211, 252, 0.9)" : "rgba(252, 211, 77, 0.92)";
-}
-
-function getArmDrawOrder(pose: FigurePose): readonly ArmSide[] {
-  if (pose.shoulders.nearSide === "left") {
-    return ["right", "left"];
-  }
-
-  return ["left", "right"];
 }
 
 function draw() {
@@ -267,8 +187,8 @@ function draw() {
   drawLimb(ctx, [pose.body.hipLeft, pose.body.kneeLeft, pose.body.footLeft], 12, limbStroke);
   drawLimb(ctx, [pose.body.hipRight, pose.body.kneeRight, pose.body.footRight], 12, limbStroke);
 
-  for (const side of getArmDrawOrder(pose)) {
-    drawLimb(ctx, getArmPoints(pose, side), 12, getArmStroke(side));
+  for (const side of getBodyRigArmDrawOrder(pose)) {
+    drawLimb(ctx, getBodyRigArmPoints(pose, side), 12, getArmStroke(side));
   }
 
   ctx.beginPath();

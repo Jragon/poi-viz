@@ -1,5 +1,12 @@
 import type { Vec2 } from "@/engine/types";
 
+import {
+  resolveBodyRigConfig,
+  type BodyRigConfig,
+  type BodyRigElbowPolicy,
+  type ResolvedBodyRigConfig
+} from "./bodyRigConfig";
+
 export type ArmSide = "left" | "right";
 
 export interface ArmReachRange {
@@ -13,6 +20,7 @@ export interface SolveStickArmInput {
   readonly upperArmLength: number;
   readonly forearmLength: number;
   readonly armSide: ArmSide;
+  readonly elbowPolicy?: BodyRigElbowPolicy;
 }
 
 export interface SolveStickArmResult {
@@ -45,22 +53,34 @@ export interface ProjectShoulderLineResult {
   readonly farSide: ArmSide | null;
 }
 
-export interface BodyRigSolveInput {
+export interface BodyRigRoot {
   readonly torsoCenter: Vec2;
   readonly shoulderY: number;
-  readonly baseShoulderSpan: number;
-  readonly maxYawRad: number;
-  readonly upperArmLength: number;
-  readonly forearmLength: number;
+}
+
+export interface RigGoals {
   readonly leftHandTarget: Vec2;
   readonly rightHandTarget: Vec2;
-  readonly minProjectedSpanRatio?: number;
-  readonly neutralDeadzonePx?: number;
+}
+
+export interface BodyRigSolveRequest {
+  readonly root: BodyRigRoot;
+  readonly config: BodyRigConfig;
+  readonly goals: RigGoals;
   readonly yawSearchSteps?: number;
 }
 
 export interface BodyRigSolveDiagnostics {
   readonly candidateCount: number;
+  readonly projectedLeftShoulder: Vec2;
+  readonly projectedRightShoulder: Vec2;
+  readonly effectiveLeftShoulder: Vec2;
+  readonly effectiveRightShoulder: Vec2;
+  readonly leftShoulderLift: number;
+  readonly rightShoulderLift: number;
+  readonly leftShoulderReach: number;
+  readonly rightShoulderReach: number;
+  readonly shoulderLimitHit: boolean;
   readonly leftTargetDistance: number;
   readonly rightTargetDistance: number;
   readonly leftReachError: number;
@@ -83,13 +103,8 @@ export interface BodyRigSolveResult {
 }
 
 export interface SharedHandOverlapCircleInput {
-  readonly torsoCenter: Vec2;
-  readonly shoulderY: number;
-  readonly baseShoulderSpan: number;
-  readonly maxYawRad: number;
-  readonly upperArmLength: number;
-  readonly forearmLength: number;
-  readonly minProjectedSpanRatio?: number;
+  readonly root: BodyRigRoot;
+  readonly config: BodyRigConfig;
   readonly useMaxYawCompression?: boolean;
 }
 
@@ -106,6 +121,20 @@ interface CandidateScore {
   readonly result: BodyRigSolveResult;
   readonly absYaw: number;
   readonly preferredSideDistance: number;
+}
+
+interface ShoulderOffset {
+  readonly lift: number;
+  readonly lateral: number;
+}
+
+interface ShoulderPassResult {
+  readonly shoulders: ProjectShoulderLineResult;
+  readonly projectedLeftShoulder: Vec2;
+  readonly projectedRightShoulder: Vec2;
+  readonly leftOffset: ShoulderOffset;
+  readonly rightOffset: ShoulderOffset;
+  readonly shoulderLimitHit: boolean;
 }
 
 const SCORE_EPSILON = 1e-9;
@@ -146,14 +175,24 @@ function getReachRange(upperArmLength: number, forearmLength: number): ArmReachR
   };
 }
 
-function getBendSign(armSide: ArmSide, shoulder: Vec2, handTarget: Vec2): 1 | -1 {
+function getElbowBendSign(
+  armSide: ArmSide,
+  shoulder: Vec2,
+  handTarget: Vec2,
+  elbowPolicy?: BodyRigElbowPolicy
+): 1 | -1 {
   const baseSign: 1 | -1 = armSide === "right" ? -1 : 1;
+  const preferOverheadOutward = elbowPolicy?.preferOverheadOutward ?? true;
 
   if (handTarget.y >= shoulder.y) {
     return baseSign;
   }
 
-  return baseSign === 1 ? -1 : 1;
+  if (preferOverheadOutward) {
+    return baseSign === 1 ? -1 : 1;
+  }
+
+  return baseSign;
 }
 
 function targetReachError(targetDistance: number, reach: ArmReachRange): number {
@@ -168,10 +207,112 @@ function targetReachError(targetDistance: number, reach: ArmReachRange): number 
   return 0;
 }
 
-function extensionCost(targetDistance: number, reach: ArmReachRange): number {
+function extensionCost(
+  targetDistance: number,
+  reach: ArmReachRange,
+  extensionComfortRatio: number
+): number {
   const extensionRatio = targetDistance / Math.max(reach.max, Number.EPSILON);
-  const overComfort = Math.max(0, extensionRatio - 0.86);
+  const overComfort = Math.max(0, extensionRatio - extensionComfortRatio);
   return overComfort ** 2;
+}
+
+function computeShoulderOffset(
+  armSide: ArmSide,
+  shoulder: Vec2,
+  handTarget: Vec2,
+  shoulderPolicy: ResolvedBodyRigConfig["shoulderPolicy"],
+  maxReach: number
+): ShoulderOffset {
+  const targetOffsetX = handTarget.x - shoulder.x;
+  const targetHeight = Math.max(0, shoulder.y - handTarget.y);
+  const targetDistance = Math.hypot(targetOffsetX, handTarget.y - shoulder.y);
+  const extensionRatio = targetDistance / Math.max(maxReach, Number.EPSILON);
+  const activation = clamp(
+    (extensionRatio - shoulderPolicy.activationExtensionRatio) /
+      Math.max(1 - shoulderPolicy.activationExtensionRatio, Number.EPSILON),
+    0,
+    1
+  );
+  const overheadFactor = clamp(targetHeight / Math.max(maxReach, Number.EPSILON), 0, 1);
+  const liftActivation = clamp(
+    activation * 0.6 + overheadFactor * shoulderPolicy.overheadLiftBias,
+    0,
+    1
+  );
+  const lateralRatio = clamp(Math.abs(targetOffsetX) / Math.max(maxReach, Number.EPSILON), 0, 1);
+  const outwardSign = armSide === "right" ? 1 : -1;
+  const isOutward = targetOffsetX === 0 ? true : Math.sign(targetOffsetX) === outwardSign;
+  const maxLateral = isOutward ? shoulderPolicy.maxOutwardReach : shoulderPolicy.maxCrossBodyReach;
+
+  return {
+    lift: shoulderPolicy.maxLift * liftActivation,
+    lateral: Math.sign(targetOffsetX) * maxLateral * activation * lateralRatio
+  };
+}
+
+function applyShoulderPolicy(
+  input: BodyRigSolveRequest,
+  config: ResolvedBodyRigConfig,
+  projectedShoulders: ProjectShoulderLineResult
+): ShoulderPassResult {
+  const maxReach = input.config.upperArmLength + input.config.forearmLength;
+  const leftOffset = computeShoulderOffset(
+    "left",
+    projectedShoulders.leftShoulder,
+    input.goals.leftHandTarget,
+    config.shoulderPolicy,
+    maxReach
+  );
+  const rightOffset = computeShoulderOffset(
+    "right",
+    projectedShoulders.rightShoulder,
+    input.goals.rightHandTarget,
+    config.shoulderPolicy,
+    maxReach
+  );
+
+  let effectiveLeftShoulder = {
+    x: projectedShoulders.leftShoulder.x + leftOffset.lateral,
+    y: projectedShoulders.leftShoulder.y - leftOffset.lift
+  };
+  let effectiveRightShoulder = {
+    x: projectedShoulders.rightShoulder.x + rightOffset.lateral,
+    y: projectedShoulders.rightShoulder.y - rightOffset.lift
+  };
+  let shoulderLimitHit = false;
+  const minEffectiveSpan = config.baseShoulderSpan * config.shoulderPolicy.minEffectiveSpanRatio;
+  const effectiveSpan = effectiveRightShoulder.x - effectiveLeftShoulder.x;
+
+  if (effectiveSpan < minEffectiveSpan) {
+    shoulderLimitHit = true;
+    const midpoint = (effectiveLeftShoulder.x + effectiveRightShoulder.x) * 0.5;
+    effectiveLeftShoulder = {
+      ...effectiveLeftShoulder,
+      x: midpoint - minEffectiveSpan * 0.5
+    };
+    effectiveRightShoulder = {
+      ...effectiveRightShoulder,
+      x: midpoint + minEffectiveSpan * 0.5
+    };
+  }
+
+  return {
+    shoulders: {
+      ...projectedShoulders,
+      leftShoulder: effectiveLeftShoulder,
+      rightShoulder: effectiveRightShoulder,
+      projectedShoulderSpan: Math.hypot(
+        effectiveRightShoulder.x - effectiveLeftShoulder.x,
+        effectiveRightShoulder.y - effectiveLeftShoulder.y
+      )
+    },
+    projectedLeftShoulder: projectedShoulders.leftShoulder,
+    projectedRightShoulder: projectedShoulders.rightShoulder,
+    leftOffset,
+    rightOffset,
+    shoulderLimitHit
+  };
 }
 
 function getPreferredYawSign(handMidpointOffsetX: number, neutralDeadzonePx: number): -1 | 0 | 1 {
@@ -183,59 +324,68 @@ function getPreferredYawSign(handMidpointOffsetX: number, neutralDeadzonePx: num
 }
 
 function scoreYawCandidate(
-  input: BodyRigSolveInput,
+  input: BodyRigSolveRequest,
   yawRad: number,
   candidateCount: number
 ): CandidateScore {
+  const config = resolveBodyRigConfig(input.config);
   const shoulderInput: ProjectShoulderLineInput = {
-    torsoCenter: input.torsoCenter,
-    shoulderY: input.shoulderY,
-    baseShoulderSpan: input.baseShoulderSpan,
+    torsoCenter: input.root.torsoCenter,
+    shoulderY: input.root.shoulderY,
+    baseShoulderSpan: config.baseShoulderSpan,
     yawRad,
-    maxYawRad: input.maxYawRad
+    maxYawRad: config.maxYawRad
   };
-  const shoulders = projectShoulderLine(
-    input.minProjectedSpanRatio === undefined
+  const projectedShoulders = projectShoulderLine(
+    config.minProjectedSpanRatio === undefined
       ? shoulderInput
-      : { ...shoulderInput, minProjectedSpanRatio: input.minProjectedSpanRatio }
+      : { ...shoulderInput, minProjectedSpanRatio: config.minProjectedSpanRatio }
   );
+  const shoulderPass = applyShoulderPolicy(input, config, projectedShoulders);
+  const shoulders = shoulderPass.shoulders;
   const leftArm = solveStickArm({
     shoulder: shoulders.leftShoulder,
-    handTarget: input.leftHandTarget,
-    upperArmLength: input.upperArmLength,
-    forearmLength: input.forearmLength,
-    armSide: "left"
+    handTarget: input.goals.leftHandTarget,
+    upperArmLength: config.upperArmLength,
+    forearmLength: config.forearmLength,
+    armSide: "left",
+    elbowPolicy: config.elbowPolicy
   });
   const rightArm = solveStickArm({
     shoulder: shoulders.rightShoulder,
-    handTarget: input.rightHandTarget,
-    upperArmLength: input.upperArmLength,
-    forearmLength: input.forearmLength,
-    armSide: "right"
+    handTarget: input.goals.rightHandTarget,
+    upperArmLength: config.upperArmLength,
+    forearmLength: config.forearmLength,
+    armSide: "right",
+    elbowPolicy: config.elbowPolicy
   });
   const leftTargetDistance = Math.hypot(
-    input.leftHandTarget.x - shoulders.leftShoulder.x,
-    input.leftHandTarget.y - shoulders.leftShoulder.y
+    input.goals.leftHandTarget.x - shoulders.leftShoulder.x,
+    input.goals.leftHandTarget.y - shoulders.leftShoulder.y
   );
   const rightTargetDistance = Math.hypot(
-    input.rightHandTarget.x - shoulders.rightShoulder.x,
-    input.rightHandTarget.y - shoulders.rightShoulder.y
+    input.goals.rightHandTarget.x - shoulders.rightShoulder.x,
+    input.goals.rightHandTarget.y - shoulders.rightShoulder.y
   );
   const leftReachError = targetReachError(leftTargetDistance, leftArm.reach);
   const rightReachError = targetReachError(rightTargetDistance, rightArm.reach);
-  const reachPenalty = (leftReachError ** 2 + rightReachError ** 2) * 24;
+  const reachPenalty =
+    (leftReachError ** 2 + rightReachError ** 2) * config.solverWeights.reachPenalty;
   const extensionPenalty =
-    (extensionCost(leftTargetDistance, leftArm.reach) +
-      extensionCost(rightTargetDistance, rightArm.reach)) *
-    180;
-  const normalizedYaw = yawRad / Math.max(Math.abs(input.maxYawRad), Number.EPSILON);
-  const yawPenalty = normalizedYaw ** 2 * 2.4;
+    (extensionCost(leftTargetDistance, leftArm.reach, config.limits.extensionComfortRatio) +
+      extensionCost(rightTargetDistance, rightArm.reach, config.limits.extensionComfortRatio)) *
+    config.solverWeights.extensionPenalty;
+  const normalizedYaw = yawRad / Math.max(Math.abs(config.maxYawRad), Number.EPSILON);
+  const yawPenalty = normalizedYaw ** 2 * config.solverWeights.yawPenalty;
   const handMidpointOffsetX =
-    (input.leftHandTarget.x + input.rightHandTarget.x) * 0.5 - input.torsoCenter.x;
-  const neutralDeadzonePx = input.neutralDeadzonePx ?? input.baseShoulderSpan * 0.08;
+    (input.goals.leftHandTarget.x + input.goals.rightHandTarget.x) * 0.5 - input.root.torsoCenter.x;
+  const neutralDeadzonePx = config.neutralDeadzonePx ?? config.baseShoulderSpan * 0.08;
   const preferredYawSign = getPreferredYawSign(handMidpointOffsetX, neutralDeadzonePx);
   const yawSign = Math.abs(yawRad) <= SCORE_EPSILON ? 0 : yawRad > 0 ? 1 : -1;
-  const sideBiasPenalty = preferredYawSign === 0 || yawSign === preferredYawSign ? 0 : 6;
+  const sideBiasPenalty =
+    preferredYawSign === 0 || yawSign === preferredYawSign
+      ? 0
+      : config.solverWeights.sideBiasPenalty;
   const cost = reachPenalty + extensionPenalty + yawPenalty + sideBiasPenalty;
 
   return {
@@ -247,6 +397,15 @@ function scoreYawCandidate(
       cost,
       diagnostics: {
         candidateCount,
+        projectedLeftShoulder: shoulderPass.projectedLeftShoulder,
+        projectedRightShoulder: shoulderPass.projectedRightShoulder,
+        effectiveLeftShoulder: shoulderPass.shoulders.leftShoulder,
+        effectiveRightShoulder: shoulderPass.shoulders.rightShoulder,
+        leftShoulderLift: shoulderPass.leftOffset.lift,
+        rightShoulderLift: shoulderPass.rightOffset.lift,
+        leftShoulderReach: shoulderPass.leftOffset.lateral,
+        rightShoulderReach: shoulderPass.rightOffset.lateral,
+        shoulderLimitHit: shoulderPass.shoulderLimitHit,
         leftTargetDistance,
         rightTargetDistance,
         leftReachError,
@@ -263,7 +422,7 @@ function scoreYawCandidate(
     preferredSideDistance:
       preferredYawSign === 0
         ? Math.abs(shoulders.yawRad)
-        : Math.abs(shoulders.yawRad - preferredYawSign * input.maxYawRad)
+        : Math.abs(shoulders.yawRad - preferredYawSign * config.maxYawRad)
   };
 }
 
@@ -303,7 +462,12 @@ export function solveStickArm(input: SolveStickArmInput): SolveStickArmResult {
     (input.upperArmLength ** 2 - input.forearmLength ** 2 + clampedDistance ** 2) /
     (2 * Math.max(clampedDistance, Number.EPSILON));
   const heightSquared = Math.max(input.upperArmLength ** 2 - baseDistance ** 2, 0);
-  const bendSign = getBendSign(input.armSide, input.shoulder, input.handTarget);
+  const bendSign = getElbowBendSign(
+    input.armSide,
+    input.shoulder,
+    input.handTarget,
+    input.elbowPolicy
+  );
   const normal = {
     x: bendSign * -direction.y,
     y: bendSign * direction.x
@@ -345,20 +509,21 @@ export function projectShoulderLine(input: ProjectShoulderLineInput): ProjectSho
 export function computeSharedHandOverlapCircle(
   input: SharedHandOverlapCircleInput
 ): SharedHandOverlapCircleResult {
+  const config = resolveBodyRigConfig(input.config);
   const usesMaxYawCompression = input.useMaxYawCompression ?? false;
   const shoulderInput: ProjectShoulderLineInput = {
-    torsoCenter: input.torsoCenter,
-    shoulderY: input.shoulderY,
-    baseShoulderSpan: input.baseShoulderSpan,
-    yawRad: usesMaxYawCompression ? Math.abs(input.maxYawRad) : 0,
-    maxYawRad: input.maxYawRad
+    torsoCenter: input.root.torsoCenter,
+    shoulderY: input.root.shoulderY,
+    baseShoulderSpan: config.baseShoulderSpan,
+    yawRad: usesMaxYawCompression ? Math.abs(config.maxYawRad) : 0,
+    maxYawRad: config.maxYawRad
   };
   const shoulders = projectShoulderLine(
-    input.minProjectedSpanRatio === undefined
+    config.minProjectedSpanRatio === undefined
       ? shoulderInput
-      : { ...shoulderInput, minProjectedSpanRatio: input.minProjectedSpanRatio }
+      : { ...shoulderInput, minProjectedSpanRatio: config.minProjectedSpanRatio }
   );
-  const reach = getReachRange(input.upperArmLength, input.forearmLength);
+  const reach = getReachRange(config.upperArmLength, config.forearmLength);
   const shoulderHalfSpan = shoulders.projectedShoulderSpan * 0.5;
   const outerBoundRadius = Math.max(0, reach.max - shoulderHalfSpan);
   const innerBoundRadius = Math.max(0, shoulderHalfSpan - reach.min);
@@ -372,7 +537,7 @@ export function computeSharedHandOverlapCircle(
   return {
     center: {
       x: (shoulders.leftShoulder.x + shoulders.rightShoulder.x) * 0.5,
-      y: input.shoulderY
+      y: input.root.shoulderY
     },
     radius,
     reach,
@@ -382,15 +547,16 @@ export function computeSharedHandOverlapCircle(
   };
 }
 
-export function solveBodyRigFromHands(input: BodyRigSolveInput): BodyRigSolveResult {
+export function solveBodyRig(input: BodyRigSolveRequest): BodyRigSolveResult {
+  const config = resolveBodyRigConfig(input.config);
   const searchSteps = Math.max(8, Math.floor(input.yawSearchSteps ?? 96));
   const candidateCount = searchSteps + 1;
   let bestCandidate: CandidateScore | null = null;
 
   for (let step = 0; step <= searchSteps; step++) {
     const t = step / searchSteps;
-    const yawRad = -input.maxYawRad + t * input.maxYawRad * 2;
-    const candidate = scoreYawCandidate(input, yawRad, candidateCount);
+    const yawRad = -config.maxYawRad + t * config.maxYawRad * 2;
+    const candidate = scoreYawCandidate({ ...input, config }, yawRad, candidateCount);
     if (isBetterCandidate(candidate, bestCandidate)) {
       bestCandidate = candidate;
     }

@@ -1,29 +1,47 @@
 import { describe, expect, it } from "vitest";
 
+import type { BodyRigConfig } from "@/lab/experiments/body-tracing/bodyRigConfig";
 import {
   computeSharedHandOverlapCircle,
   projectShoulderLine,
-  solveBodyRigFromHands,
+  solveBodyRig,
   solveStickArm,
-  type BodyRigSolveInput
+  type BodyRigRoot,
+  type BodyRigSolveRequest,
+  type RigGoals
 } from "@/lab/experiments/body-tracing/stickFigureGeometry";
 
 function distance(a: { x: number; y: number }, b: { x: number; y: number }) {
   return Math.hypot(b.x - a.x, b.y - a.y);
 }
 
-function getBaseRigInput(overrides: Partial<BodyRigSolveInput> = {}): BodyRigSolveInput {
+function getBaseRigRequest(
+  overrides: {
+    root?: Partial<BodyRigRoot>;
+    config?: Partial<BodyRigConfig>;
+    goals?: Partial<RigGoals>;
+    yawSearchSteps?: number;
+  } = {}
+): BodyRigSolveRequest {
   return {
-    torsoCenter: { x: 200, y: 120 },
-    shoulderY: 118,
-    baseShoulderSpan: 140,
-    maxYawRad: Math.PI / 3,
-    upperArmLength: 75,
-    forearmLength: 75,
-    leftHandTarget: { x: 80, y: 190 },
-    rightHandTarget: { x: 320, y: 190 },
-    yawSearchSteps: 72,
-    ...overrides
+    root: {
+      torsoCenter: { x: 200, y: 120 },
+      shoulderY: 118,
+      ...overrides.root
+    },
+    config: {
+      baseShoulderSpan: 140,
+      maxYawRad: Math.PI / 3,
+      upperArmLength: 75,
+      forearmLength: 75,
+      ...overrides.config
+    },
+    goals: {
+      leftHandTarget: { x: 80, y: 190 },
+      rightHandTarget: { x: 320, y: 190 },
+      ...overrides.goals
+    },
+    yawSearchSteps: overrides.yawSearchSteps ?? 72
   };
 }
 
@@ -224,12 +242,16 @@ describe("projectShoulderLine", () => {
 describe("computeSharedHandOverlapCircle", () => {
   it("computes the largest neutral shared-hand circle inside both arm reaches", () => {
     const result = computeSharedHandOverlapCircle({
-      torsoCenter: { x: 0, y: 0 },
-      shoulderY: 0,
-      baseShoulderSpan: 100,
-      maxYawRad: Math.PI / 3,
-      upperArmLength: 75,
-      forearmLength: 75
+      root: {
+        torsoCenter: { x: 0, y: 0 },
+        shoulderY: 0
+      },
+      config: {
+        baseShoulderSpan: 100,
+        maxYawRad: Math.PI / 3,
+        upperArmLength: 75,
+        forearmLength: 75
+      }
     });
 
     expect(result.center).toEqual({ x: 0, y: 0 });
@@ -240,12 +262,16 @@ describe("computeSharedHandOverlapCircle", () => {
 
   it("uses the compressed shoulder span when asked for the maximum yaw overlap circle", () => {
     const result = computeSharedHandOverlapCircle({
-      torsoCenter: { x: 0, y: 0 },
-      shoulderY: 0,
-      baseShoulderSpan: 100,
-      maxYawRad: Math.PI / 3,
-      upperArmLength: 75,
-      forearmLength: 75,
+      root: {
+        torsoCenter: { x: 0, y: 0 },
+        shoulderY: 0
+      },
+      config: {
+        baseShoulderSpan: 100,
+        maxYawRad: Math.PI / 3,
+        upperArmLength: 75,
+        forearmLength: 75
+      },
       useMaxYawCompression: true
     });
 
@@ -256,13 +282,17 @@ describe("computeSharedHandOverlapCircle", () => {
 
   it("keeps sampled boundary points reachable with both hands exactly overlapped", () => {
     const circle = computeSharedHandOverlapCircle({
-      torsoCenter: { x: 200, y: 120 },
-      shoulderY: 120,
-      baseShoulderSpan: 120,
-      maxYawRad: Math.PI / 3,
-      upperArmLength: 75,
-      forearmLength: 75,
-      minProjectedSpanRatio: 0.4,
+      root: {
+        torsoCenter: { x: 200, y: 120 },
+        shoulderY: 120
+      },
+      config: {
+        baseShoulderSpan: 120,
+        maxYawRad: Math.PI / 3,
+        upperArmLength: 75,
+        forearmLength: 75,
+        minProjectedSpanRatio: 0.4
+      },
       useMaxYawCompression: true
     });
 
@@ -272,16 +302,22 @@ describe("computeSharedHandOverlapCircle", () => {
         x: circle.center.x + Math.cos(angle) * circle.radius,
         y: circle.center.y + Math.sin(angle) * circle.radius
       };
-      const solve = solveBodyRigFromHands({
-        torsoCenter: { x: 200, y: 120 },
-        shoulderY: 120,
-        baseShoulderSpan: 120,
-        maxYawRad: Math.PI / 3,
-        upperArmLength: 75,
-        forearmLength: 75,
-        leftHandTarget: target,
-        rightHandTarget: target,
-        minProjectedSpanRatio: 0.4,
+      const solve = solveBodyRig({
+        root: {
+          torsoCenter: { x: 200, y: 120 },
+          shoulderY: 120
+        },
+        config: {
+          baseShoulderSpan: 120,
+          maxYawRad: Math.PI / 3,
+          upperArmLength: 75,
+          forearmLength: 75,
+          minProjectedSpanRatio: 0.4
+        },
+        goals: {
+          leftHandTarget: target,
+          rightHandTarget: target
+        },
         yawSearchSteps: 144
       });
 
@@ -293,28 +329,38 @@ describe("computeSharedHandOverlapCircle", () => {
     }
   });
 
-  it("marks at least one point just outside the shared circle as best effort", () => {
+  it("marks a sufficiently outside point as best effort even with shoulder contribution", () => {
     const circle = computeSharedHandOverlapCircle({
-      torsoCenter: { x: 200, y: 120 },
-      shoulderY: 120,
-      baseShoulderSpan: 120,
-      maxYawRad: Math.PI / 3,
-      upperArmLength: 75,
-      forearmLength: 75,
-      minProjectedSpanRatio: 0.4,
+      root: {
+        torsoCenter: { x: 200, y: 120 },
+        shoulderY: 120
+      },
+      config: {
+        baseShoulderSpan: 120,
+        maxYawRad: Math.PI / 3,
+        upperArmLength: 75,
+        forearmLength: 75,
+        minProjectedSpanRatio: 0.4
+      },
       useMaxYawCompression: true
     });
-    const target = { x: circle.center.x + circle.radius + 1, y: circle.center.y };
-    const solve = solveBodyRigFromHands({
-      torsoCenter: { x: 200, y: 120 },
-      shoulderY: 120,
-      baseShoulderSpan: 120,
-      maxYawRad: Math.PI / 3,
-      upperArmLength: 75,
-      forearmLength: 75,
-      leftHandTarget: target,
-      rightHandTarget: target,
-      minProjectedSpanRatio: 0.4,
+    const target = { x: circle.center.x + circle.radius + 32, y: circle.center.y };
+    const solve = solveBodyRig({
+      root: {
+        torsoCenter: { x: 200, y: 120 },
+        shoulderY: 120
+      },
+      config: {
+        baseShoulderSpan: 120,
+        maxYawRad: Math.PI / 3,
+        upperArmLength: 75,
+        forearmLength: 75,
+        minProjectedSpanRatio: 0.4
+      },
+      goals: {
+        leftHandTarget: target,
+        rightHandTarget: target
+      },
       yawSearchSteps: 144
     });
 
@@ -323,9 +369,9 @@ describe("computeSharedHandOverlapCircle", () => {
   });
 });
 
-describe("solveBodyRigFromHands", () => {
+describe("solveBodyRig", () => {
   it("infers neutral yaw for balanced hand targets", () => {
-    const result = solveBodyRigFromHands(getBaseRigInput());
+    const result = solveBodyRig(getBaseRigRequest());
 
     expect(result.yawRad).toBeCloseTo(0);
     expect(result.shoulders.nearSide).toBeNull();
@@ -333,10 +379,12 @@ describe("solveBodyRigFromHands", () => {
   });
 
   it("infers positive yaw when both hand targets are right-biased", () => {
-    const result = solveBodyRigFromHands(
-      getBaseRigInput({
-        leftHandTarget: { x: 230, y: 185 },
-        rightHandTarget: { x: 340, y: 185 }
+    const result = solveBodyRig(
+      getBaseRigRequest({
+        goals: {
+          leftHandTarget: { x: 230, y: 185 },
+          rightHandTarget: { x: 340, y: 185 }
+        }
       })
     );
 
@@ -345,10 +393,12 @@ describe("solveBodyRigFromHands", () => {
   });
 
   it("infers negative yaw when both hand targets are left-biased", () => {
-    const result = solveBodyRigFromHands(
-      getBaseRigInput({
-        leftHandTarget: { x: 60, y: 185 },
-        rightHandTarget: { x: 170, y: 185 }
+    const result = solveBodyRig(
+      getBaseRigRequest({
+        goals: {
+          leftHandTarget: { x: 60, y: 185 },
+          rightHandTarget: { x: 170, y: 185 }
+        }
       })
     );
 
@@ -357,16 +407,20 @@ describe("solveBodyRigFromHands", () => {
   });
 
   it("mirrors yaw sign for mirrored hand targets", () => {
-    const rightBiased = solveBodyRigFromHands(
-      getBaseRigInput({
-        leftHandTarget: { x: 230, y: 185 },
-        rightHandTarget: { x: 340, y: 185 }
+    const rightBiased = solveBodyRig(
+      getBaseRigRequest({
+        goals: {
+          leftHandTarget: { x: 230, y: 185 },
+          rightHandTarget: { x: 340, y: 185 }
+        }
       })
     );
-    const leftBiased = solveBodyRigFromHands(
-      getBaseRigInput({
-        leftHandTarget: { x: 60, y: 185 },
-        rightHandTarget: { x: 170, y: 185 }
+    const leftBiased = solveBodyRig(
+      getBaseRigRequest({
+        goals: {
+          leftHandTarget: { x: 60, y: 185 },
+          rightHandTarget: { x: 170, y: 185 }
+        }
       })
     );
 
@@ -374,32 +428,96 @@ describe("solveBodyRigFromHands", () => {
   });
 
   it("keeps tiny near-neutral offsets neutral", () => {
-    const result = solveBodyRigFromHands(
-      getBaseRigInput({
-        leftHandTarget: { x: 83, y: 190 },
-        rightHandTarget: { x: 321, y: 190 }
+    const result = solveBodyRig(
+      getBaseRigRequest({
+        goals: {
+          leftHandTarget: { x: 83, y: 190 },
+          rightHandTarget: { x: 321, y: 190 }
+        }
       })
     );
 
     expect(result.yawRad).toBeCloseTo(0);
   });
 
+  it("lifts both shoulders for a shared overhead target", () => {
+    const result = solveBodyRig(
+      getBaseRigRequest({
+        goals: {
+          leftHandTarget: { x: 165, y: 20 },
+          rightHandTarget: { x: 235, y: 20 }
+        }
+      })
+    );
+
+    expect(result.diagnostics.leftShoulderLift).toBeGreaterThan(0);
+    expect(result.diagnostics.rightShoulderLift).toBeGreaterThan(0);
+    expect(result.diagnostics.effectiveLeftShoulder.y).toBeLessThan(
+      result.diagnostics.projectedLeftShoulder.y
+    );
+    expect(result.diagnostics.effectiveRightShoulder.y).toBeLessThan(
+      result.diagnostics.projectedRightShoulder.y
+    );
+  });
+
+  it("allows asymmetric shoulder contribution when one arm is more constrained", () => {
+    const result = solveBodyRig(
+      getBaseRigRequest({
+        goals: {
+          leftHandTarget: { x: 85, y: 40 },
+          rightHandTarget: { x: 280, y: 190 }
+        }
+      })
+    );
+
+    expect(result.diagnostics.leftShoulderLift).toBeGreaterThan(
+      result.diagnostics.rightShoulderLift
+    );
+  });
+
+  it("keeps effective shoulder span above the configured floor", () => {
+    const result = solveBodyRig(
+      getBaseRigRequest({
+        config: {
+          shoulderPolicy: {
+            maxCrossBodyReach: 45,
+            minEffectiveSpanRatio: 0.5
+          }
+        },
+        goals: {
+          leftHandTarget: { x: 190, y: 170 },
+          rightHandTarget: { x: 210, y: 170 }
+        }
+      })
+    );
+
+    expect(
+      result.shoulders.rightShoulder.x - result.shoulders.leftShoulder.x
+    ).toBeGreaterThanOrEqual(getBaseRigRequest().config.baseShoulderSpan * 0.5);
+  });
+
   it("returns deterministic output for identical inputs", () => {
-    const input = getBaseRigInput({
-      leftHandTarget: { x: 235, y: 185 },
-      rightHandTarget: { x: 345, y: 185 }
+    const input = getBaseRigRequest({
+      goals: {
+        leftHandTarget: { x: 235, y: 185 },
+        rightHandTarget: { x: 345, y: 185 }
+      }
     });
 
-    expect(solveBodyRigFromHands(input)).toEqual(solveBodyRigFromHands(input));
+    expect(solveBodyRig(input)).toEqual(solveBodyRig(input));
   });
 
   it("returns a clamped best-effort pose for unreachable targets", () => {
-    const result = solveBodyRigFromHands(
-      getBaseRigInput({
-        upperArmLength: 40,
-        forearmLength: 40,
-        leftHandTarget: { x: -120, y: 190 },
-        rightHandTarget: { x: 520, y: 190 }
+    const result = solveBodyRig(
+      getBaseRigRequest({
+        config: {
+          upperArmLength: 40,
+          forearmLength: 40
+        },
+        goals: {
+          leftHandTarget: { x: -120, y: 190 },
+          rightHandTarget: { x: 520, y: 190 }
+        }
       })
     );
 

@@ -7,13 +7,16 @@ import { useAuthoringLibrary } from "@/authoring/useAuthoringLibrary";
 import type { CartesianMultiRigPose, MultiRigSequence, RigId, Vec2 } from "@/engine/types";
 import type { MultiRigTrailSamples } from "@/visualizer/useMultiRigPlayback";
 import { useVisualizerCore } from "@/visualizer/useVisualizerCore";
+import { buildBodyRigConfigFromArmReach } from "./bodyRigConfig";
 import {
-  computeSharedHandOverlapCircle,
-  solveBodyRigFromHands,
-  solveStickArm,
-  type ArmSide,
-  type BodyRigSolveResult
-} from "./stickFigureGeometry";
+  buildBodyRigFrame,
+  getBodyRigArmDrawOrder,
+  getBodyRigArmPoints,
+  solveBodyRigFrame,
+  type BodyRigFrame,
+  type BodyRigPose
+} from "./bodyRigDemo";
+import { computeSharedHandOverlapCircle, type BodyRigSolveResult } from "./stickFigureGeometry";
 
 interface CanvasLayout {
   readonly cssWidth: number;
@@ -23,31 +26,8 @@ interface CanvasLayout {
   readonly cameraCenterWorld: Vec2;
 }
 
-interface BodyFrame {
-  readonly headCenter: Vec2;
-  readonly headRadius: number;
-  readonly neck: Vec2;
-  readonly shoulderCenter: Vec2;
-  readonly shoulderY: number;
-  readonly baseShoulderSpan: number;
-  readonly pelvis: Vec2;
-  readonly hipLeft: Vec2;
-  readonly hipRight: Vec2;
-  readonly kneeLeft: Vec2;
-  readonly kneeRight: Vec2;
-  readonly footLeft: Vec2;
-  readonly footRight: Vec2;
-  readonly upperArmLength: number;
-  readonly forearmLength: number;
-}
-
-interface FigurePose {
-  readonly body: BodyFrame;
+interface FigurePose extends BodyRigPose {
   readonly shoulders: BodyRigSolveResult["shoulders"];
-  readonly leftArm: ReturnType<typeof solveStickArm>;
-  readonly rightArm: ReturnType<typeof solveStickArm>;
-  readonly yawDeg: number;
-  readonly solve: BodyRigSolveResult;
 }
 
 interface RigStyle {
@@ -60,13 +40,9 @@ interface RigStyle {
 
 const LEFT_RIG_ID = "left";
 const RIGHT_RIG_ID = "right";
-const MAX_TORSO_YAW_DEG = 70;
-const MAX_TORSO_YAW_RAD = (MAX_TORSO_YAW_DEG * Math.PI) / 180;
-const MIN_PROJECTED_SHOULDER_SPAN_RATIO = 0.36;
 const BODY_ARM_REACH_WORLD = 1.25;
-const BODY_UPPER_ARM_WORLD = BODY_ARM_REACH_WORLD * 0.5;
-const BODY_FOREARM_WORLD = BODY_ARM_REACH_WORLD * 0.5;
-const BODY_SHOULDER_SPAN_WORLD = BODY_ARM_REACH_WORLD * 1.0625;
+const BODY_RIG_CONFIG_WORLD = buildBodyRigConfigFromArmReach(BODY_ARM_REACH_WORLD);
+const BODY_SHOULDER_SPAN_WORLD = BODY_RIG_CONFIG_WORLD.baseShoulderSpan;
 const BODY_TORSO_HEIGHT_WORLD = BODY_ARM_REACH_WORLD * 0.90625;
 const BODY_HIP_SPAN_WORLD = BODY_SHOULDER_SPAN_WORLD * 0.6;
 const BODY_HEAD_RADIUS_WORLD = BODY_ARM_REACH_WORLD * 0.28125;
@@ -78,13 +54,11 @@ const BODY_FOOT_OFFSET_WORLD = BODY_ARM_REACH_WORLD * 0.0625;
 const BODY_CAMERA_CENTER_WORLD: Vec2 = { x: 0, y: -0.7 };
 
 const sharedHandOverlapCircle = computeSharedHandOverlapCircle({
-  torsoCenter: { x: 0, y: 0 },
-  shoulderY: 0,
-  baseShoulderSpan: BODY_SHOULDER_SPAN_WORLD,
-  maxYawRad: MAX_TORSO_YAW_RAD,
-  upperArmLength: BODY_UPPER_ARM_WORLD,
-  forearmLength: BODY_FOREARM_WORLD,
-  minProjectedSpanRatio: MIN_PROJECTED_SHOULDER_SPAN_RATIO,
+  root: {
+    torsoCenter: { x: 0, y: 0 },
+    shoulderY: 0
+  },
+  config: BODY_RIG_CONFIG_WORLD,
   useMaxYawCompression: true
 });
 
@@ -306,63 +280,24 @@ function drawLimb(
   ctx.stroke();
 }
 
-function buildBodyFrame(layout: CanvasLayout): BodyFrame {
+function buildBodyFrame(layout: CanvasLayout): BodyRigFrame {
+  const rigConfig = buildBodyRigConfigFromArmReach(
+    layout.pixelsPerWorldUnit * BODY_ARM_REACH_WORLD
+  );
   const shoulderCenter = worldToCanvas(layout, { x: 0, y: 0 });
-  const centerX = shoulderCenter.x;
-  const shoulderY = shoulderCenter.y;
-  const baseShoulderSpan = layout.pixelsPerWorldUnit * BODY_SHOULDER_SPAN_WORLD;
-  const torsoHeight = layout.pixelsPerWorldUnit * BODY_TORSO_HEIGHT_WORLD;
-  const hipSpan = layout.pixelsPerWorldUnit * BODY_HIP_SPAN_WORLD;
-  const headRadius = layout.pixelsPerWorldUnit * BODY_HEAD_RADIUS_WORLD;
-  const headCenter = {
-    x: centerX,
-    y: shoulderY - headRadius - layout.pixelsPerWorldUnit * BODY_HEAD_GAP_WORLD
-  };
-  const neck = { x: centerX, y: shoulderY - layout.pixelsPerWorldUnit * BODY_NECK_OFFSET_WORLD };
-  const pelvis = { x: centerX, y: shoulderY + torsoHeight };
-  const hipLeft = { x: centerX - hipSpan * 0.5, y: pelvis.y };
-  const hipRight = { x: centerX + hipSpan * 0.5, y: pelvis.y };
-  const thighLength = layout.pixelsPerWorldUnit * BODY_THIGH_LENGTH_WORLD;
-  const shinLength = layout.pixelsPerWorldUnit * BODY_SHIN_LENGTH_WORLD;
-  const stanceWidth = baseShoulderSpan * 0.2;
-  const kneeLeft = { x: hipLeft.x - stanceWidth, y: hipLeft.y + thighLength };
-  const kneeRight = { x: hipRight.x + stanceWidth, y: hipRight.y + thighLength };
-  const footOffset = layout.pixelsPerWorldUnit * BODY_FOOT_OFFSET_WORLD;
-  const footLeft = { x: kneeLeft.x - footOffset, y: kneeLeft.y + shinLength };
-  const footRight = { x: kneeRight.x + footOffset, y: kneeRight.y + shinLength };
-  const upperArmLength = layout.pixelsPerWorldUnit * BODY_UPPER_ARM_WORLD;
-  const forearmLength = layout.pixelsPerWorldUnit * BODY_FOREARM_WORLD;
-
-  return {
-    headCenter,
-    headRadius,
-    neck,
+  return buildBodyRigFrame({
     shoulderCenter,
-    shoulderY,
-    baseShoulderSpan,
-    pelvis,
-    hipLeft,
-    hipRight,
-    kneeLeft,
-    kneeRight,
-    footLeft,
-    footRight,
-    upperArmLength,
-    forearmLength
-  };
-}
-
-function getArmPoints(pose: FigurePose, side: ArmSide): readonly Vec2[] {
-  const arm = side === "left" ? pose.leftArm : pose.rightArm;
-  return [arm.shoulder, arm.elbow, arm.hand];
-}
-
-function getArmDrawOrder(pose: FigurePose): readonly ArmSide[] {
-  if (pose.shoulders.nearSide === "left") {
-    return ["right", "left"];
-  }
-
-  return ["left", "right"];
+    rigConfig,
+    torsoHeight: layout.pixelsPerWorldUnit * BODY_TORSO_HEIGHT_WORLD,
+    hipSpan: layout.pixelsPerWorldUnit * BODY_HIP_SPAN_WORLD,
+    headRadius: layout.pixelsPerWorldUnit * BODY_HEAD_RADIUS_WORLD,
+    headGap: layout.pixelsPerWorldUnit * BODY_HEAD_GAP_WORLD,
+    neckOffset: layout.pixelsPerWorldUnit * BODY_NECK_OFFSET_WORLD,
+    thighLength: layout.pixelsPerWorldUnit * BODY_THIGH_LENGTH_WORLD,
+    shinLength: layout.pixelsPerWorldUnit * BODY_SHIN_LENGTH_WORLD,
+    footOffset: layout.pixelsPerWorldUnit * BODY_FOOT_OFFSET_WORLD,
+    stanceWidth: rigConfig.baseShoulderSpan * 0.2
+  });
 }
 
 function getBodyPose(layout: CanvasLayout, poses: CartesianMultiRigPose): FigurePose | null {
@@ -375,26 +310,10 @@ function getBodyPose(layout: CanvasLayout, poses: CartesianMultiRigPose): Figure
   const body = buildBodyFrame(layout);
   const leftHandTarget = worldToCanvas(layout, sequencePointToBodyWorld(leftPose.handPosition));
   const rightHandTarget = worldToCanvas(layout, sequencePointToBodyWorld(rightPose.handPosition));
-  const solve = solveBodyRigFromHands({
-    torsoCenter: body.shoulderCenter,
-    shoulderY: body.shoulderY,
-    baseShoulderSpan: body.baseShoulderSpan,
-    maxYawRad: MAX_TORSO_YAW_RAD,
-    upperArmLength: body.upperArmLength,
-    forearmLength: body.forearmLength,
+  return solveBodyRigFrame(body, {
     leftHandTarget,
-    rightHandTarget,
-    minProjectedSpanRatio: MIN_PROJECTED_SHOULDER_SPAN_RATIO
+    rightHandTarget
   });
-
-  return {
-    body,
-    shoulders: solve.shoulders,
-    leftArm: solve.leftArm,
-    rightArm: solve.rightArm,
-    yawDeg: (solve.yawRad * 180) / Math.PI,
-    solve
-  };
 }
 
 function drawPoiRig(
@@ -458,8 +377,8 @@ function drawBodyOverlay(ctx: CanvasRenderingContext2D, pose: FigurePose) {
   drawLimb(ctx, [pose.body.hipLeft, pose.body.kneeLeft, pose.body.footLeft], 12, limbStroke);
   drawLimb(ctx, [pose.body.hipRight, pose.body.kneeRight, pose.body.footRight], 12, limbStroke);
 
-  for (const side of getArmDrawOrder(pose)) {
-    drawLimb(ctx, getArmPoints(pose, side), 12, side === "left" ? leftStroke : rightStroke);
+  for (const side of getBodyRigArmDrawOrder(pose)) {
+    drawLimb(ctx, getBodyRigArmPoints(pose, side), 12, side === "left" ? leftStroke : rightStroke);
   }
 
   ctx.beginPath();
