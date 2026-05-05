@@ -20,6 +20,11 @@ This page is to look in depth at Archer Fountains, which is actually the reason 
 
 ## Pro Trace & Anti Trace
 
+- alien jon vid
+- pro trace is like in spins around the arm.
+- anti trace with arm out to side it's box mode anti spin kind of, not really that noticable with full length poi
+- in opposites anti spin and in spin swich. if you focus on the in spin hand you can either pro trace or anti trace it. If you focus on the anti spin arm likewise. With the way we currently do the archer fountain we now do one pro trace one anti trace. Few beats would result in a different patter. Feel like it would be cool to get an animation to help make this more clear.
+
 ## Inspin vs Anti Spin Split Time Same Direction Fountains
 
 - 6 beats. In spin by default, anti trace by default
