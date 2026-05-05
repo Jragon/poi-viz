@@ -10,7 +10,7 @@ import {
   type ElementaryQuarterArcId,
   type ElementaryTimingMode,
   type ElementaryWorldAxis
-} from "@/experiments/quarterTime/elementaryQuarterTime";
+} from "@/lab/experiments/quarter-time/elementaryQuarterTime";
 import { describe, expect, it } from "vitest";
 
 const LOOP_DURATION_UNITS = 0.5;

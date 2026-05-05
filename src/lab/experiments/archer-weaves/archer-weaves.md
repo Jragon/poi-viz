@@ -49,3 +49,7 @@ Embed this youtube: https://youtu.be/KUjlI5AkDZAIs
 Below is an attempt to show how the hand path mutates the flowers - if we manage to keep the timing
 
 <PatternCell id="archer-weaves-five-beat-radius-shift" />
+
+<script setup>
+import PatternCell from "@/lab/components/PatternCell.vue";
+</script>

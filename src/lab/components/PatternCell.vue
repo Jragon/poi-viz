@@ -2,9 +2,9 @@
 import { computed } from "vue";
 
 import type { MultiRigSequence } from "@/engine/types";
-import { getFiveBeatSplitOppositeEarthHandRadiusShiftSequence } from "@/experiments/archerWeaves/archerWeavesPatterns";
-import EmbeddedVisualizer from "@/experiments/components/EmbeddedVisualizer.vue";
-import { getPastedQuarterTimeSequence } from "@/experiments/quarterTime/pastedQuarterTimePattern";
+import EmbeddedVisualizer from "@/lab/components/EmbeddedVisualizer.vue";
+import { getFiveBeatSplitOppositeEarthHandRadiusShiftSequence } from "@/lab/experiments/archer-weaves/archerWeavesPatterns";
+import { getPastedQuarterTimeSequence } from "@/lab/experiments/quarter-time/pastedQuarterTimePattern";
 
 const props = defineProps<{
   id: string;

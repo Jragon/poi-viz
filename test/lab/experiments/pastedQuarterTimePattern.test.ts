@@ -3,7 +3,7 @@ import { prepareMultiRigSequence } from "@/engine/multirig";
 import {
   getPastedQuarterTimeSequence,
   pastedQuarterTimePattern
-} from "@/experiments/quarterTime/pastedQuarterTimePattern";
+} from "@/lab/experiments/quarter-time/pastedQuarterTimePattern";
 import { describe, expect, it } from "vitest";
 
 describe("pastedQuarterTimePattern", () => {

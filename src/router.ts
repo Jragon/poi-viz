@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-import ArcherWeavesJournalPage from "@/experiments/archerWeaves/ArcherWeavesJournalPage.vue";
-import QuarterTimeJournalPage from "@/experiments/quarterTime/QuarterTimeJournalPage.vue";
+import ArcherWeavesJournalPage from "@/lab/experiments/archer-weaves/ArcherWeavesJournalPage.vue";
+import QuarterTimeJournalPage from "@/lab/experiments/quarter-time/QuarterTimeJournalPage.vue";
 import AuthoringPage from "@/pages/AuthoringPage.vue";
 import VisualizerPage from "@/pages/VisualizerPage.vue";
 

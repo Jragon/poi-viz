@@ -2,7 +2,7 @@
 import { computed, ref } from "vue";
 
 import type { PlaneId } from "@/engine/types";
-import EmbeddedVisualizer from "@/experiments/components/EmbeddedVisualizer.vue";
+import EmbeddedVisualizer from "@/lab/components/EmbeddedVisualizer.vue";
 import {
   buildElementaryQuarterTimeSequence,
   ELEMENTARY_PLANE_OPTIONS,
@@ -14,7 +14,7 @@ import {
   isElementaryTimingAvailable,
   type ElementaryQuarterArcId,
   type ElementaryTimingMode
-} from "@/experiments/quarterTime/elementaryQuarterTime";
+} from "./elementaryQuarterTime";
 
 type HandId = "left" | "right";
 
