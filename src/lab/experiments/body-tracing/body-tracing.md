@@ -13,6 +13,12 @@ This starts from a deliberately small body model: a basic stick figure on canvas
 
 <BodyTracingStickFigureCanvas />
 
+## Sequence-driven overlay POC
+
+This second canvas keeps the experiment separate from the main visualizer while reusing the visualizer backend for sequence timing and rig evaluation. It is wall-plane only: poi draws first, then the solved body overlays on top from the authored left and right hand tracks. In this POC, sequence radius 1 maps to the largest circle where both hands can occupy the exact same point, and the selector can load any authored sequence.
+
+<BodyTracingSequenceOverlayCanvas />
+
 ## Why start here?
 
 The visualizer already knows how to render poi paths, but body tracing needs a separate question answered first: what is the body surface we are tracing against? This experiment isolates that question so we can learn how much structure we actually need before adding poi heads, trails, or side-of-hand metadata.
@@ -21,12 +27,15 @@ The visualizer already knows how to render poi paths, but body tracing needs a s
 
 - Front-view stick figure only.
 - Both hands are draggable.
+- Separate wall-plane sequence POC with poi and body overlay.
+- Sequence radius 1 is normalized to the largest shared-hand overlap circle.
+- Authored sequences can be selected inside the POC.
 - The rig infers a best-fit torso yaw from the two hand targets.
 - Feet, hips, pelvis, torso center, and neck stay fixed.
 - The shoulder span compresses as a 2D proxy for torso rotation.
 - Both elbows move to satisfy fixed arm-length constraints.
 - Unreachable targets are clamped as best-effort poses with diagnostics.
-- Poi rendering and trails are still out of scope.
+- 3D projection, visualizer display settings, webcam, export, and fullscreen controls are still out of scope.
 
 ## Next obvious additions
 
@@ -37,4 +46,5 @@ The visualizer already knows how to render poi paths, but body tracing needs a s
 
 <script setup>
 import BodyTracingStickFigureCanvas from "./BodyTracingStickFigureCanvas.vue";
+import BodyTracingSequenceOverlayCanvas from "./BodyTracingSequenceOverlayCanvas.vue";
 </script>

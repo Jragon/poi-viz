@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  computeSharedHandOverlapCircle,
   projectShoulderLine,
   solveBodyRigFromHands,
   solveStickArm,
@@ -119,6 +120,29 @@ describe("solveStickArm", () => {
     expect(distance(leftArm.elbow, leftArm.hand)).toBeCloseTo(30);
   });
 
+  it("points both elbows outward for an overhead shared hand target", () => {
+    const sharedHandTarget = { x: 0, y: -80 };
+    const leftArm = solveStickArm({
+      shoulder: { x: -45, y: 0 },
+      handTarget: sharedHandTarget,
+      upperArmLength: 70,
+      forearmLength: 70,
+      armSide: "left"
+    });
+    const rightArm = solveStickArm({
+      shoulder: { x: 45, y: 0 },
+      handTarget: sharedHandTarget,
+      upperArmLength: 70,
+      forearmLength: 70,
+      armSide: "right"
+    });
+
+    expect(leftArm.elbow.x).toBeLessThan(leftArm.shoulder.x);
+    expect(rightArm.elbow.x).toBeGreaterThan(rightArm.shoulder.x);
+    expect(leftArm.elbow.y).toBeLessThan(leftArm.shoulder.y);
+    expect(rightArm.elbow.y).toBeLessThan(rightArm.shoulder.y);
+  });
+
   it("keeps geometry independent from device-pixel scaling concerns", () => {
     const result = solveStickArm({
       shoulder: { x: 240, y: 180 },
@@ -194,6 +218,108 @@ describe("projectShoulderLine", () => {
 
     expect(result.yawRad).toBeCloseTo(Math.PI / 2);
     expect(result.projectedShoulderSpan).toBeCloseTo(60);
+  });
+});
+
+describe("computeSharedHandOverlapCircle", () => {
+  it("computes the largest neutral shared-hand circle inside both arm reaches", () => {
+    const result = computeSharedHandOverlapCircle({
+      torsoCenter: { x: 0, y: 0 },
+      shoulderY: 0,
+      baseShoulderSpan: 100,
+      maxYawRad: Math.PI / 3,
+      upperArmLength: 75,
+      forearmLength: 75
+    });
+
+    expect(result.center).toEqual({ x: 0, y: 0 });
+    expect(result.projectedShoulderSpan).toBeCloseTo(100);
+    expect(result.radius).toBeCloseTo(100);
+    expect(result.usesMaxYawCompression).toBe(false);
+  });
+
+  it("uses the compressed shoulder span when asked for the maximum yaw overlap circle", () => {
+    const result = computeSharedHandOverlapCircle({
+      torsoCenter: { x: 0, y: 0 },
+      shoulderY: 0,
+      baseShoulderSpan: 100,
+      maxYawRad: Math.PI / 3,
+      upperArmLength: 75,
+      forearmLength: 75,
+      useMaxYawCompression: true
+    });
+
+    expect(result.projectedShoulderSpan).toBeCloseTo(50);
+    expect(result.radius).toBeCloseTo(125);
+    expect(result.usesMaxYawCompression).toBe(true);
+  });
+
+  it("keeps sampled boundary points reachable with both hands exactly overlapped", () => {
+    const circle = computeSharedHandOverlapCircle({
+      torsoCenter: { x: 200, y: 120 },
+      shoulderY: 120,
+      baseShoulderSpan: 120,
+      maxYawRad: Math.PI / 3,
+      upperArmLength: 75,
+      forearmLength: 75,
+      minProjectedSpanRatio: 0.4,
+      useMaxYawCompression: true
+    });
+
+    for (let index = 0; index < 64; index += 1) {
+      const angle = (index / 64) * Math.PI * 2;
+      const target = {
+        x: circle.center.x + Math.cos(angle) * circle.radius,
+        y: circle.center.y + Math.sin(angle) * circle.radius
+      };
+      const solve = solveBodyRigFromHands({
+        torsoCenter: { x: 200, y: 120 },
+        shoulderY: 120,
+        baseShoulderSpan: 120,
+        maxYawRad: Math.PI / 3,
+        upperArmLength: 75,
+        forearmLength: 75,
+        leftHandTarget: target,
+        rightHandTarget: target,
+        minProjectedSpanRatio: 0.4,
+        yawSearchSteps: 144
+      });
+
+      expect(solve.leftArm.hand.x).toBeCloseTo(solve.rightArm.hand.x);
+      expect(solve.leftArm.hand.y).toBeCloseTo(solve.rightArm.hand.y);
+      expect(solve.leftArm.isClamped).toBe(false);
+      expect(solve.rightArm.isClamped).toBe(false);
+      expect(solve.diagnostics.isBestEffort).toBe(false);
+    }
+  });
+
+  it("marks at least one point just outside the shared circle as best effort", () => {
+    const circle = computeSharedHandOverlapCircle({
+      torsoCenter: { x: 200, y: 120 },
+      shoulderY: 120,
+      baseShoulderSpan: 120,
+      maxYawRad: Math.PI / 3,
+      upperArmLength: 75,
+      forearmLength: 75,
+      minProjectedSpanRatio: 0.4,
+      useMaxYawCompression: true
+    });
+    const target = { x: circle.center.x + circle.radius + 1, y: circle.center.y };
+    const solve = solveBodyRigFromHands({
+      torsoCenter: { x: 200, y: 120 },
+      shoulderY: 120,
+      baseShoulderSpan: 120,
+      maxYawRad: Math.PI / 3,
+      upperArmLength: 75,
+      forearmLength: 75,
+      leftHandTarget: target,
+      rightHandTarget: target,
+      minProjectedSpanRatio: 0.4,
+      yawSearchSteps: 144
+    });
+
+    expect(solve.diagnostics.isBestEffort).toBe(true);
+    expect(solve.leftArm.isClamped || solve.rightArm.isClamped).toBe(true);
   });
 });
 

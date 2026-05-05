@@ -82,6 +82,26 @@ export interface BodyRigSolveResult {
   readonly cost: number;
 }
 
+export interface SharedHandOverlapCircleInput {
+  readonly torsoCenter: Vec2;
+  readonly shoulderY: number;
+  readonly baseShoulderSpan: number;
+  readonly maxYawRad: number;
+  readonly upperArmLength: number;
+  readonly forearmLength: number;
+  readonly minProjectedSpanRatio?: number;
+  readonly useMaxYawCompression?: boolean;
+}
+
+export interface SharedHandOverlapCircleResult {
+  readonly center: Vec2;
+  readonly radius: number;
+  readonly reach: ArmReachRange;
+  readonly shoulders: ProjectShoulderLineResult;
+  readonly projectedShoulderSpan: number;
+  readonly usesMaxYawCompression: boolean;
+}
+
 interface CandidateScore {
   readonly result: BodyRigSolveResult;
   readonly absYaw: number;
@@ -126,8 +146,14 @@ function getReachRange(upperArmLength: number, forearmLength: number): ArmReachR
   };
 }
 
-function getBendSign(armSide: ArmSide): 1 | -1 {
-  return armSide === "right" ? -1 : 1;
+function getBendSign(armSide: ArmSide, shoulder: Vec2, handTarget: Vec2): 1 | -1 {
+  const baseSign: 1 | -1 = armSide === "right" ? -1 : 1;
+
+  if (handTarget.y >= shoulder.y) {
+    return baseSign;
+  }
+
+  return baseSign === 1 ? -1 : 1;
 }
 
 function targetReachError(targetDistance: number, reach: ArmReachRange): number {
@@ -277,7 +303,7 @@ export function solveStickArm(input: SolveStickArmInput): SolveStickArmResult {
     (input.upperArmLength ** 2 - input.forearmLength ** 2 + clampedDistance ** 2) /
     (2 * Math.max(clampedDistance, Number.EPSILON));
   const heightSquared = Math.max(input.upperArmLength ** 2 - baseDistance ** 2, 0);
-  const bendSign = getBendSign(input.armSide);
+  const bendSign = getBendSign(input.armSide, input.shoulder, input.handTarget);
   const normal = {
     x: bendSign * -direction.y,
     y: bendSign * direction.x
@@ -313,6 +339,46 @@ export function projectShoulderLine(input: ProjectShoulderLineInput): ProjectSho
     rightShoulder: { x: input.torsoCenter.x + shoulderHalfSpan, y: input.shoulderY },
     nearSide: yawRad === 0 ? null : yawRad > 0 ? "right" : "left",
     farSide: yawRad === 0 ? null : yawRad > 0 ? "left" : "right"
+  };
+}
+
+export function computeSharedHandOverlapCircle(
+  input: SharedHandOverlapCircleInput
+): SharedHandOverlapCircleResult {
+  const usesMaxYawCompression = input.useMaxYawCompression ?? false;
+  const shoulderInput: ProjectShoulderLineInput = {
+    torsoCenter: input.torsoCenter,
+    shoulderY: input.shoulderY,
+    baseShoulderSpan: input.baseShoulderSpan,
+    yawRad: usesMaxYawCompression ? Math.abs(input.maxYawRad) : 0,
+    maxYawRad: input.maxYawRad
+  };
+  const shoulders = projectShoulderLine(
+    input.minProjectedSpanRatio === undefined
+      ? shoulderInput
+      : { ...shoulderInput, minProjectedSpanRatio: input.minProjectedSpanRatio }
+  );
+  const reach = getReachRange(input.upperArmLength, input.forearmLength);
+  const shoulderHalfSpan = shoulders.projectedShoulderSpan * 0.5;
+  const outerBoundRadius = Math.max(0, reach.max - shoulderHalfSpan);
+  const innerBoundRadius = Math.max(0, shoulderHalfSpan - reach.min);
+  const radius =
+    reach.min > SCORE_EPSILON &&
+    outerBoundRadius > innerBoundRadius &&
+    outerBoundRadius < shoulderHalfSpan + reach.min
+      ? innerBoundRadius
+      : outerBoundRadius;
+
+  return {
+    center: {
+      x: (shoulders.leftShoulder.x + shoulders.rightShoulder.x) * 0.5,
+      y: input.shoulderY
+    },
+    radius,
+    reach,
+    shoulders,
+    projectedShoulderSpan: shoulders.projectedShoulderSpan,
+    usesMaxYawCompression
   };
 }
 
