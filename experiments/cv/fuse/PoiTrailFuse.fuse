@@ -1,0 +1,360 @@
+-- PoiTrailFuse.fuse
+--
+-- v1 mask-driven poi trail tool.
+--
+-- Current behavior:
+-- - samples prior Source and Mask frames using Input:GetSource(time)
+-- - accumulates masked source pixels over time with fade
+-- - composites the trail over the current Source frame
+-- - can preview the Mask input to verify graph wiring
+--
+-- Intended next step:
+-- - refine output modes (composite vs trail only)
+-- - tune accumulation behavior if a different merge model reads better in Resolve
+-- - add stronger internal debugging if required
+
+local FUSE_VERSION = "2026-05-03-3"
+
+FuRegisterClass("PoiTrailFuse", CT_Tool, {
+    REGS_Name = "Poi Trail Fuse",
+    REGS_Category = "Fuses\\CV",
+    REGS_OpIconString = "PT",
+    REGS_OpDescription = "Mask-driven poi trail effect scaffold",
+
+    REG_OpNoMask = true,
+    REG_NoBlendCtrls = true,
+    REG_NoObjMatCtrls = true,
+    REG_NoMotionBlurCtrls = true,
+    REG_TimeVariant = true,
+})
+
+InSource = nil
+InMask = nil
+InPreviewMask = nil
+InDebugLogging = nil
+InMaskGain = nil
+InTrailFrames = nil
+InSampleStep = nil
+InFade = nil
+InBaseMix = nil
+InTrailMix = nil
+OutImage = nil
+
+local function clamp(value, low, high)
+    if value < low then
+        return low
+    end
+    if value > high then
+        return high
+    end
+    return value
+end
+
+local function number_input_value(input, req, fallback)
+    if not input then
+        return fallback
+    end
+
+    local value = input:GetValue(req)
+    if type(value) == "table" and value.Value ~= nil then
+        return value.Value
+    end
+
+    if type(value) == "number" then
+        return value
+    end
+
+    return fallback
+end
+
+local function format_number(value)
+    return string.format("%.3f", value)
+end
+
+local function log_debug(message)
+    print("PoiTrailFuse[" .. FUSE_VERSION .. "] debug: " .. message)
+end
+
+print("PoiTrailFuse[" .. FUSE_VERSION .. "] script loaded")
+
+local function create_black_like(img)
+    local out = Image({ IMG_Like = img })
+    out:Fill(Pixel({ R = 0.0, G = 0.0, B = 0.0, A = 0.0 }))
+    return out
+end
+
+local function scale_image(img, factor)
+    if not img then
+        return nil
+    end
+
+    if factor == 1.0 then
+        return img
+    end
+
+    return img:ChannelOpOf("Multiply", nil, {
+        R = factor,
+        G = factor,
+        B = factor,
+        A = factor,
+    })
+end
+
+local function copy_alpha_from(img, alpha_src)
+    if not img or not alpha_src then
+        return img
+    end
+
+    return img:ChannelOpOf("Copy", alpha_src, {
+        A = "fg.A",
+    })
+end
+
+local function apply_mask_with_map(src, mask, mask_gain)
+    if not src then
+        return nil
+    end
+
+    if not mask then
+        return src
+    end
+
+    local effective_mask = mask
+    if mask_gain ~= 1.0 then
+        effective_mask = mask:ChannelOpOf("Multiply", nil, {
+            R = mask_gain,
+            G = mask_gain,
+            B = mask_gain,
+            A = mask_gain,
+        })
+    end
+
+    local black = create_black_like(src)
+    return black:BlendOf(src, effective_mask)
+end
+
+local function build_trail_image(req, current_src, current_mask, trail_frames, sample_step, fade, mask_gain)
+    local accumulator = create_black_like(current_src)
+    local current_time = req.Time
+    local start_time = current_time - trail_frames + 1
+    local samples_requested = 0
+    local samples_resolved = 0
+    local mask_samples_resolved = 0
+
+    for sample_time = start_time, current_time, sample_step do
+        samples_requested = samples_requested + 1
+        local src_at_time = nil
+        local mask_at_time = nil
+
+        if sample_time == current_time then
+            src_at_time = current_src
+            mask_at_time = current_mask
+        else
+            src_at_time = InSource:GetSource(sample_time)
+            if InMask then
+                mask_at_time = InMask:GetSource(sample_time)
+            end
+        end
+
+        if src_at_time and mask_at_time then
+            samples_resolved = samples_resolved + 1
+            mask_samples_resolved = mask_samples_resolved + 1
+            local masked = apply_mask_with_map(src_at_time, mask_at_time, mask_gain)
+            local age = math.max(0.0, current_time - sample_time)
+            local weight = fade ^ age
+            local weighted = scale_image(masked, weight)
+            accumulator = accumulator:MergeOf(weighted, { MO_ApplyMode = "Lighten" })
+        end
+    end
+
+    return accumulator, {
+        samples_requested = samples_requested,
+        samples_resolved = samples_resolved,
+        mask_samples_resolved = mask_samples_resolved,
+    }
+end
+
+local function process_impl(req)
+    local src = InSource:GetValue(req)
+    if not src then
+        return
+    end
+
+    local mask = nil
+    if InMask then
+        mask = InMask:GetValue(req)
+    end
+
+    local preview_mask = number_input_value(InPreviewMask, req, 0)
+    local debug_logging = number_input_value(InDebugLogging, req, 0)
+    local mask_gain = math.max(0.0, number_input_value(InMaskGain, req, 1.0))
+    local trail_frames = math.max(1, math.floor(number_input_value(InTrailFrames, req, 8) + 0.5))
+    local sample_step = math.max(1, math.floor(number_input_value(InSampleStep, req, 2) + 0.5))
+    local fade = clamp(number_input_value(InFade, req, 0.92), 0.0, 1.0)
+    local base_mix = math.max(0.0, number_input_value(InBaseMix, req, 1.0))
+    local trail_mix = math.max(0.0, number_input_value(InTrailMix, req, 1.2))
+
+    if debug_logging >= 0.5 then
+        log_debug(
+            "time=" .. format_number(req.Time) ..
+            " preview_mask=" .. tostring(preview_mask) ..
+            " has_mask=" .. tostring(mask ~= nil) ..
+            " mask_gain=" .. format_number(mask_gain) ..
+            " trail_frames=" .. tostring(trail_frames) ..
+            " sample_step=" .. tostring(sample_step) ..
+            " fade=" .. format_number(fade) ..
+            " base_mix=" .. format_number(base_mix) ..
+            " trail_mix=" .. format_number(trail_mix)
+        )
+    end
+
+    if preview_mask >= 0.5 and mask then
+        if debug_logging >= 0.5 then
+            log_debug("branch=preview-mask")
+        end
+        OutImage:Set(req, mask)
+        return
+    end
+
+    if not mask then
+        if debug_logging >= 0.5 then
+            log_debug("branch=source-pass-through reason=no-mask")
+        end
+        OutImage:Set(req, src)
+        return
+    end
+
+    local trail, stats = build_trail_image(req, src, mask, trail_frames, sample_step, fade, mask_gain)
+    local base = scale_image(src, base_mix)
+    local trail_scaled = scale_image(trail, trail_mix)
+    local out = base:MergeOf(trail_scaled, { MO_ApplyMode = "Lighten" })
+
+    if debug_logging >= 0.5 then
+        log_debug(
+            "branch=trail samples_requested=" .. tostring(stats.samples_requested) ..
+            " samples_resolved=" .. tostring(stats.samples_resolved) ..
+            " mask_samples_resolved=" .. tostring(stats.mask_samples_resolved)
+        )
+    end
+
+    OutImage:Set(req, copy_alpha_from(out, src))
+end
+
+function Create()
+    print("PoiTrailFuse[" .. FUSE_VERSION .. "] Create()")
+
+    InSource = self:AddInput("Source", "Source", {
+        LINKID_DataType = "Image",
+        LINK_Main = 1,
+    })
+
+    InMask = self:AddInput("Mask", "Mask", {
+        LINKID_DataType = "Image",
+        LINK_Main = 2,
+        INP_Required = false,
+    })
+
+    InPreviewMask = self:AddInput("Preview Mask", "PreviewMask", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "CheckboxControl",
+        INP_Default = 0,
+        INP_Integer = true,
+        INPS_StatusText = "v0: output the Mask input instead of the Source input",
+    })
+
+    InDebugLogging = self:AddInput("Debug Logging", "DebugLogging", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "CheckboxControl",
+        INP_Default = 1,
+        INP_Integer = true,
+        INPS_StatusText = "Writes current control values and trail sampling stats to the Resolve log",
+    })
+
+    InMaskGain = self:AddInput("Mask Gain", "MaskGain", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "SliderControl",
+        INP_Default = 1.0,
+        INP_MinScale = 0.0,
+        INP_MaxScale = 4.0,
+        INP_MinAllowed = 0.0,
+        INP_MaxAllowed = 10.0,
+        INPS_StatusText = "Scales the incoming mask before it gates trail accumulation",
+    })
+
+    InTrailFrames = self:AddInput("Trail Frames", "TrailFrames", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "SliderControl",
+        INP_Default = 8,
+        INP_MinScale = 1,
+        INP_MaxScale = 32,
+        INP_MinAllowed = 1,
+        INP_MaxAllowed = 128,
+        INP_Integer = true,
+        INPS_StatusText = "How many frames of history to accumulate into the trail",
+    })
+
+    InSampleStep = self:AddInput("Sample Step", "SampleStep", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "SliderControl",
+        INP_Default = 2,
+        INP_MinScale = 1,
+        INP_MaxScale = 8,
+        INP_MinAllowed = 1,
+        INP_MaxAllowed = 16,
+        INP_Integer = true,
+        INPS_StatusText = "Samples every Nth frame of history to trade smoothness for speed",
+    })
+
+    InFade = self:AddInput("Fade", "Fade", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "SliderControl",
+        INP_Default = 0.92,
+        INP_MinScale = 0.0,
+        INP_MaxScale = 1.0,
+        INP_MinAllowed = 0.0,
+        INP_MaxAllowed = 1.0,
+        INPS_StatusText = "Fade applied between sampled history frames in the trail buffer",
+    })
+
+    InBaseMix = self:AddInput("Base Mix", "BaseMix", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "SliderControl",
+        INP_Default = 1.0,
+        INP_MinScale = 0.0,
+        INP_MaxScale = 2.0,
+        INP_MinAllowed = 0.0,
+        INP_MaxAllowed = 4.0,
+        INPS_StatusText = "Amount of the original source image preserved in the output",
+    })
+
+    InTrailMix = self:AddInput("Trail Mix", "TrailMix", {
+        LINKID_DataType = "Number",
+        INPID_InputControl = "SliderControl",
+        INP_Default = 1.2,
+        INP_MinScale = 0.0,
+        INP_MaxScale = 4.0,
+        INP_MinAllowed = 0.0,
+        INP_MaxAllowed = 8.0,
+        INPS_StatusText = "Gain applied to the accumulated trail before compositing",
+    })
+
+    OutImage = self:AddOutput("Output", "Output", {
+        LINKID_DataType = "Image",
+        LINK_Main = 1,
+        IMG_DeferAlloc = true,
+    })
+end
+
+function Process(req)
+    local ok, err = pcall(process_impl, req)
+    if ok then
+        return
+    end
+
+    print("PoiTrailFuse[" .. FUSE_VERSION .. "] Process error: " .. tostring(err))
+
+    local src = InSource:GetValue(req)
+    if src then
+        OutImage:Set(req, src)
+    end
+end
