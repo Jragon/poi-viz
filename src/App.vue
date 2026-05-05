@@ -15,6 +15,10 @@ const labLinks = [
   {
     label: "Archer Weaves",
     to: "/lab/archer-weaves"
+  },
+  {
+    label: "Body Tracing",
+    to: "/lab/body-tracing"
   }
 ];
 
