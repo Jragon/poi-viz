@@ -59,23 +59,41 @@ export type CartesianMultiRigPose = Record<RigId, CartesianRigPose>;
 
 export type WorldMultiRigPose = Record<RigId, WorldRigPose>;
 
-export type Driver = {
+export interface CircleDriver {
   kind: "circle";
   omega: AngularVelocityRadPerUnit;
-};
-
-export interface SegmentNodeMotion {
-  startPose: RelativeNodePose;
-  driver: Driver;
   radiusProfile?: RadiusProfile;
+}
+
+export interface PointToPointDriver {
+  kind: "point-to-point";
+  endPose: RelativeNodePose;
+}
+
+export type HandDriver = CircleDriver | PointToPointDriver;
+
+export type HeadDriver = CircleDriver;
+
+export type Driver = HandDriver;
+
+interface SegmentNodeMotionBase {
+  startPose: RelativeNodePose;
+}
+
+export interface HandSegmentNodeMotion extends SegmentNodeMotionBase {
+  driver: HandDriver;
+}
+
+export interface HeadSegmentNodeMotion extends SegmentNodeMotionBase {
+  driver: HeadDriver;
 }
 
 export interface Segment {
   durationUnits: TimeUnit;
   planeId?: PlaneId;
   planeSide?: PlaneSide;
-  hand: SegmentNodeMotion;
-  head: SegmentNodeMotion;
+  hand: HandSegmentNodeMotion;
+  head: HeadSegmentNodeMotion;
 }
 
 export interface SequenceSpec {

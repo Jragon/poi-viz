@@ -208,13 +208,21 @@ describe("compileAuthoredDocument", () => {
               durationUnits: 1,
               hand: {
                 startPose: { phaseDeg: 0, radius: 1 },
-                driver: { kind: "circle", omega: 0, omegaUnit: "radians-per-unit" },
-                radiusProfile: { kind: "time-keyed", keys: [{ t: 0.5, radius: 2 }] }
+                driver: {
+                  kind: "circle",
+                  omega: 0,
+                  omegaUnit: "radians-per-unit",
+                  radiusProfile: { kind: "time-keyed", keys: [{ t: 0.5, radius: 2 }] }
+                }
               },
               head: {
                 startPose: { phaseDeg: 0, radius: 1 },
-                driver: { kind: "circle", omega: 0, omegaUnit: "radians-per-unit" },
-                radiusProfile: { kind: "time-keyed", keys: [{ t: 1, radius: 0.25 }] }
+                driver: {
+                  kind: "circle",
+                  omega: 0,
+                  omegaUnit: "radians-per-unit",
+                  radiusProfile: { kind: "time-keyed", keys: [{ t: 1, radius: 0.25 }] }
+                }
               }
             },
             {
@@ -244,9 +252,12 @@ describe("compileAuthoredDocument", () => {
     expect(firstBoundary?.endPose.headPose.radius).toBe(0.25);
     expect(secondBoundary?.startPose.handPose.radius).toBe(2);
     expect(secondBoundary?.startPose.headPose.radius).toBe(0.25);
-    expect(result.sequence.rigs[0].sequence.segments[0].hand.radiusProfile?.keys).toEqual([
-      { t: 0.5, radius: 2 }
-    ]);
+    const handDriver = result.sequence.rigs[0].sequence.segments[0].hand.driver;
+    expect(handDriver.kind).toBe("circle");
+    if (handDriver.kind !== "circle") {
+      throw new Error("expected compiled authored hand driver to be circle");
+    }
+    expect(handDriver.radiusProfile?.keys).toEqual([{ t: 0.5, radius: 2 }]);
   });
 
   it("rejects radius profile keys outside the segment duration", () => {
@@ -261,8 +272,12 @@ describe("compileAuthoredDocument", () => {
               durationUnits: 0.5,
               hand: {
                 startPose: { phaseDeg: 0, radius: 1 },
-                driver: { kind: "circle", omega: 0, omegaUnit: "radians-per-unit" },
-                radiusProfile: { kind: "time-keyed", keys: [{ t: 0.75, radius: 1 }] }
+                driver: {
+                  kind: "circle",
+                  omega: 0,
+                  omegaUnit: "radians-per-unit",
+                  radiusProfile: { kind: "time-keyed", keys: [{ t: 0.75, radius: 1 }] }
+                }
               },
               head: {
                 startPose: { phaseDeg: 0, radius: 1 },
@@ -302,8 +317,12 @@ describe("compileAuthoredDocument", () => {
               },
               head: {
                 startPose: { phaseDeg: 0, radius: 1 },
-                driver: { kind: "circle", omega: 0, omegaUnit: "radians-per-unit" },
-                radiusProfile: { kind: "time-keyed", keys: [{ t: 0.5, radius: -0.25 }] }
+                driver: {
+                  kind: "circle",
+                  omega: 0,
+                  omegaUnit: "radians-per-unit",
+                  radiusProfile: { kind: "time-keyed", keys: [{ t: 0.5, radius: -0.25 }] }
+                }
               }
             }
           ]
@@ -556,5 +575,37 @@ describe("authoredDocumentFromMultiRigSequence", () => {
     });
 
     expect(document.tracks.left?.segments[0].planeId).toBe("wall");
+  });
+
+  it("fails explicitly when converting point-to-point engine segments to authored documents", () => {
+    const sequence: MultiRigSequence = {
+      rigs: [
+        {
+          rigId: "left",
+          sequence: {
+            segments: [
+              {
+                durationUnits: 1,
+                hand: {
+                  startPose: { phaseAbs: 0, radius: 1 },
+                  driver: { kind: "point-to-point", endPose: { phaseAbs: Math.PI / 2, radius: 1 } }
+                },
+                head: {
+                  startPose: { phaseAbs: 0, radius: 1 },
+                  driver: { kind: "circle", omega: 0 }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    };
+
+    expect(() =>
+      authoredDocumentFromMultiRigSequence(sequence, {
+        name: "Point-to-point",
+        description: null
+      })
+    ).toThrow(/cannot be represented as an authored circle driver/);
   });
 });

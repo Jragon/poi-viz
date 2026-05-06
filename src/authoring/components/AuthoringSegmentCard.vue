@@ -125,7 +125,7 @@ function displayStartRadius(node: EditableNode): number {
 }
 
 function radiusProfileKeys(node: EditableNode): readonly AuthoredRadiusProfileKey[] {
-  return props.segment[node].radiusProfile?.keys ?? [];
+  return props.segment[node].driver.radiusProfile?.keys ?? [];
 }
 
 function onUpdateOmega(node: EditableNode, displayValue: number) {

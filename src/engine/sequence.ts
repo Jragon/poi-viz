@@ -12,16 +12,20 @@ import type {
 const DEFAULT_PLANE_ID: PlaneId = "wall";
 const PLANE_IDS = new Set<PlaneId>(["wall", "wheel", "floor"]);
 
+type UnknownDriver = { kind?: unknown };
+
 export type SequenceValidationErrorCode =
   | "EMPTY_SEQUENCE"
   | "INVALID_DURATION_UNITS"
   | "NON_POSITIVE_DURATION"
   | "INVALID_PLANE_ID"
-  | "INVALID_PLANE_SIDE";
+  | "INVALID_PLANE_SIDE"
+  | "DRIVER_UNSUPPORTED_FOR_NODE";
 
 export type SequenceValidationError = {
   code: SequenceValidationErrorCode;
   index?: number;
+  node?: "hand" | "head";
 };
 export type SequenceValidationResult =
   | { ok: true }
@@ -81,6 +85,10 @@ export function validateSequenceStructure(sequence: SequenceSpec): SequenceValid
 
     if (segment.planeSide !== undefined && !isPlaneSide(segment.planeSide)) {
       errors.push({ code: "INVALID_PLANE_SIDE", index });
+    }
+
+    if ((segment.head.driver as UnknownDriver).kind === "point-to-point") {
+      errors.push({ code: "DRIVER_UNSUPPORTED_FOR_NODE", index, node: "head" });
     }
   });
 

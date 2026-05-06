@@ -42,6 +42,20 @@ function makeSequence(segments: Segment[]): MultiRigSequence {
   };
 }
 
+function makePointToPointHandSegment(headOmega: number): Segment {
+  return {
+    durationUnits: 1,
+    hand: {
+      startPose: { phaseAbs: 0, radius: 1 },
+      driver: { kind: "point-to-point", endPose: { phaseAbs: Math.PI / 2, radius: 1 } }
+    },
+    head: {
+      startPose: { phaseAbs: 0, radius: 1 },
+      driver: { kind: "circle", omega: headOmega }
+    }
+  };
+}
+
 function prepare(sequence: MultiRigSequence) {
   const result = prepareMultiRigSequence(sequence);
   if (!result.ok) {
@@ -338,6 +352,61 @@ describe("usePhaseMetronome", () => {
 
     expect(harness.controller.lastEvents.value).toHaveLength(1);
     expect(harness.controller.lastEvents.value[0].crossingTimeUnits).toBeCloseTo(0.5);
+
+    harness.controller.dispose();
+  });
+
+  it("does not emit hand-sourced events while the hand uses point-to-point", async () => {
+    const harness = createHarness(makeSequence([makePointToPointHandSegment(Math.PI * 2)]));
+    const rule: MetronomeRuleDraft = {
+      enabled: true,
+      source: { kind: "absolute", rigId: "left", node: "hand" },
+      targetRad: Math.PI / 4,
+      tone: "accent"
+    };
+
+    harness.controller.addRule(rule);
+    await harness.setSnapshot(0.2, false);
+    await harness.setSnapshot(0.8, true);
+
+    expect(harness.controller.lastEvents.value).toEqual([]);
+
+    harness.controller.dispose();
+  });
+
+  it("keeps absolute head events available when the hand uses point-to-point", async () => {
+    const harness = createHarness(makeSequence([makePointToPointHandSegment(Math.PI * 2)]));
+    const rule: MetronomeRuleDraft = {
+      enabled: true,
+      source: { kind: "absolute", rigId: "left", node: "head" },
+      targetRad: Math.PI / 2,
+      tone: "low"
+    };
+
+    harness.controller.addRule(rule);
+    await harness.setSnapshot(0.2, false);
+    await harness.setSnapshot(0.3, true);
+
+    expect(harness.controller.lastEvents.value).toHaveLength(1);
+    expect(harness.controller.lastEvents.value[0].crossingTimeUnits).toBeCloseTo(0.25);
+
+    harness.controller.dispose();
+  });
+
+  it("does not emit relative events when the hand uses point-to-point", async () => {
+    const harness = createHarness(makeSequence([makePointToPointHandSegment(Math.PI * 4)]));
+    const rule: MetronomeRuleDraft = {
+      enabled: true,
+      source: { kind: "relative-head-minus-hand", rigId: "left" },
+      targetRad: Math.PI,
+      tone: "accent"
+    };
+
+    harness.controller.addRule(rule);
+    await harness.setSnapshot(0.2, false);
+    await harness.setSnapshot(0.8, true);
+
+    expect(harness.controller.lastEvents.value).toEqual([]);
 
     harness.controller.dispose();
   });

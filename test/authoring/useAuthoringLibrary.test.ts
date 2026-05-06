@@ -86,6 +86,40 @@ describe("useAuthoringLibrary", () => {
     expect(library.selectedDocument.value?.document.name).toBe("Other");
   });
 
+  it("migrates stored node-level radius profiles into circle drivers", () => {
+    const storage = new MemoryStorage();
+    const entry = makeEntry("doc-1", "Stored");
+    const legacyDocument = JSON.parse(JSON.stringify(entry.document));
+    legacyDocument.tracks.left.segments[0].hand.radiusProfile = {
+      kind: "time-keyed",
+      keys: [{ t: 0.5, radius: 2 }]
+    };
+
+    storage.setItem(
+      "authoring",
+      JSON.stringify({
+        documents: [{ id: entry.id, document: legacyDocument }],
+        selectedDocumentId: entry.id
+      })
+    );
+
+    const library = useAuthoringLibrary({
+      storage,
+      storageKey: "authoring",
+      seedDocuments: [makeEntry("seed-1", "Seed")],
+      createId: () => "generated"
+    });
+
+    const hydratedSegment = library.documents.value[0].document.tracks.left!.segments[0];
+    expect(hydratedSegment.hand.driver.radiusProfile?.keys).toEqual([{ t: 0.5, radius: 2 }]);
+    expect("radiusProfile" in hydratedSegment.hand).toBe(false);
+
+    const persisted = JSON.parse(storage.getItem("authoring") ?? "null");
+    const persistedSegment = persisted.documents[0].document.tracks.left.segments[0];
+    expect(persistedSegment.hand.driver.radiusProfile.keys).toEqual([{ t: 0.5, radius: 2 }]);
+    expect("radiusProfile" in persistedSegment.hand).toBe(false);
+  });
+
   it("creates, updates, duplicates, and deletes documents while persisting selection", () => {
     const storage = new MemoryStorage();
     let nextId = 1;

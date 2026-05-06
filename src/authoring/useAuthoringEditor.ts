@@ -100,10 +100,12 @@ function toRadiansPerUnit(value: number, unit: AuthoredOmegaUnit): number {
 }
 
 function toCanonicalCircleDriver(driver: AuthoredCircleDriverInput): AuthoredCircleDriverInput {
+  const radiusProfile = cloneRadiusProfile(driver.radiusProfile);
   return {
     kind: "circle",
     omega: toRadiansPerUnit(driver.omega, driver.omegaUnit),
-    omegaUnit: "radians-per-unit"
+    omegaUnit: "radians-per-unit",
+    ...(radiusProfile ? { radiusProfile } : {})
   };
 }
 
@@ -121,8 +123,8 @@ function cloneRadiusProfile(
 }
 
 function ensureRadiusProfile(segment: AuthoredSegment, node: EditableNode) {
-  segment[node].radiusProfile ??= { kind: "time-keyed", keys: [] };
-  return segment[node].radiusProfile;
+  segment[node].driver.radiusProfile ??= { kind: "time-keyed", keys: [] };
+  return segment[node].driver.radiusProfile;
 }
 
 function normalizeDocumentOmegaUnits(document: AuthoredSequenceDocument) {
@@ -205,19 +207,15 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
       }
 
       const source = track.segments[track.segments.length - 1];
-      const handRadiusProfile = cloneRadiusProfile(source.hand.radiusProfile);
-      const headRadiusProfile = cloneRadiusProfile(source.head.radiusProfile);
       const continuation: AuthoredContinuationSegment = {
         kind: "continuation",
         durationUnits: source.durationUnits,
         planeId: source.planeId ?? DEFAULT_PLANE_ID,
         hand: {
-          driver: toCanonicalCircleDriver(source.hand.driver),
-          ...(handRadiusProfile ? { radiusProfile: handRadiusProfile } : {})
+          driver: toCanonicalCircleDriver(source.hand.driver)
         },
         head: {
-          driver: toCanonicalCircleDriver(source.head.driver),
-          ...(headRadiusProfile ? { radiusProfile: headRadiusProfile } : {})
+          driver: toCanonicalCircleDriver(source.head.driver)
         }
       };
 
@@ -236,19 +234,15 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
       }
 
       const source = track.segments[segmentIndex];
-      const handRadiusProfile = cloneRadiusProfile(source.hand.radiusProfile);
-      const headRadiusProfile = cloneRadiusProfile(source.head.radiusProfile);
       const duplicate: AuthoredContinuationSegment = {
         kind: "continuation",
         durationUnits: source.durationUnits,
         planeId: source.planeId ?? DEFAULT_PLANE_ID,
         hand: {
-          driver: toCanonicalCircleDriver(source.hand.driver),
-          ...(handRadiusProfile ? { radiusProfile: handRadiusProfile } : {})
+          driver: toCanonicalCircleDriver(source.hand.driver)
         },
         head: {
-          driver: toCanonicalCircleDriver(source.head.driver),
-          ...(headRadiusProfile ? { radiusProfile: headRadiusProfile } : {})
+          driver: toCanonicalCircleDriver(source.head.driver)
         }
       };
       track.segments.splice(segmentIndex + 1, 0, duplicate);
@@ -289,8 +283,6 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
         const nextSegment = track.segments[1];
         const promotedStartPose = boundaries[1]?.startPose;
         if (nextSegment && promotedStartPose) {
-          const handRadiusProfile = cloneRadiusProfile(nextSegment.hand.radiusProfile);
-          const headRadiusProfile = cloneRadiusProfile(nextSegment.head.radiusProfile);
           track.segments[1] = {
             kind: "first",
             durationUnits: nextSegment.durationUnits,
@@ -300,16 +292,14 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
                 phaseDeg: toPhaseDeg(promotedStartPose.handPose.phaseAbs),
                 radius: promotedStartPose.handPose.radius
               },
-              driver: toCanonicalCircleDriver(nextSegment.hand.driver),
-              ...(handRadiusProfile ? { radiusProfile: handRadiusProfile } : {})
+              driver: toCanonicalCircleDriver(nextSegment.hand.driver)
             },
             head: {
               startPose: {
                 phaseDeg: toPhaseDeg(promotedStartPose.headPose.phaseAbs),
                 radius: promotedStartPose.headPose.radius
               },
-              driver: toCanonicalCircleDriver(nextSegment.head.driver),
-              ...(headRadiusProfile ? { radiusProfile: headRadiusProfile } : {})
+              driver: toCanonicalCircleDriver(nextSegment.head.driver)
             }
           };
         }
@@ -393,7 +383,7 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
   ) {
     commitDocumentChange((nextDocument) => {
       const segment = nextDocument.tracks[trackId]?.segments[segmentIndex];
-      const radiusProfile = segment?.[node].radiusProfile;
+      const radiusProfile = segment?.[node].driver.radiusProfile;
       const key = radiusProfile?.keys[keyIndex];
       if (key) {
         key[field] = value;
@@ -411,11 +401,11 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
   ) {
     commitDocumentChange((nextDocument) => {
       const segment = nextDocument.tracks[trackId]?.segments[segmentIndex];
-      const radiusProfile = segment?.[node].radiusProfile;
+      const radiusProfile = segment?.[node].driver.radiusProfile;
       if (radiusProfile) {
         radiusProfile.keys.splice(keyIndex, 1);
         if (radiusProfile.keys.length === 0) {
-          delete segment[node].radiusProfile;
+          delete segment[node].driver.radiusProfile;
         }
       }
       return { trackId, segmentIndex };

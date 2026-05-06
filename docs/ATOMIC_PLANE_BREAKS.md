@@ -2,7 +2,7 @@
 
 ## Problem Statement
 
-The current engine evaluates deterministic local 2D poi motion: a body origin, a hand node, a head node, circular drivers, explicit segment durations, and half-open sequence boundaries.
+The current engine evaluates deterministic local 2D poi motion: a body origin, a hand node, a head node, driver-specific segment motion, explicit segment durations, and half-open sequence boundaries.
 
 The implemented POC is not arbitrary 3D motion. It is explicit support for atomic plane breaks: authored transitions where a pattern leaves one canonical plane and resumes in another at a derived boundary.
 
@@ -73,12 +73,23 @@ The implemented engine slice makes each segment an executable interval with plan
 type PlaneId = "wall" | "wheel" | "floor";
 type PlaneSide = "a" | "b";
 
+type CircleDriver = {
+  kind: "circle";
+  omega: number;
+  radiusProfile?: RadiusProfile;
+};
+
+type PointToPointDriver = {
+  kind: "point-to-point";
+  endPose: RelativeNodePose;
+};
+
 type Segment = {
   durationUnits: TimeUnit;
   planeId?: PlaneId;
   planeSide?: PlaneSide;
-  hand: SegmentNodeMotion;
-  head: SegmentNodeMotion;
+  hand: { startPose: RelativeNodePose; driver: CircleDriver | PointToPointDriver };
+  head: { startPose: RelativeNodePose; driver: CircleDriver };
 };
 ```
 
@@ -94,6 +105,7 @@ type Segment = {
 - Durations must be finite and positive.
 - `planeId`, when present, must be `wall`, `wheel`, or `floor`.
 - `planeSide`, when present, must be `a` or `b`.
+- Head drivers must be circle drivers; point-to-point is currently hand-only.
 - Omitted authored and engine segment planes resolve to `wall`.
 - Authored plane changes are valid only when the previous end pose is on the shared axis.
 - The hand must be on the source plane's shared-axis cardinal.
@@ -111,6 +123,7 @@ This phase one does not support:
 - body zones, arm gates, or collision checks,
 - automatic zero-point proof,
 - stall physics or non-uniform hand timing,
+- point-to-point authored controls,
 - WebGL or Three.js,
 - explicit boundary mode fields,
 - zero-point kind metadata.

@@ -67,3 +67,16 @@ Body-rig geometry uses normal y-up `Vec3` coordinates until projection, with pro
 - The body rig's anatomical elbow policy prefers forward depth first and native-side outward only as a secondary cue.
 - Left native outward is `-torsoRight`; right native outward is `+torsoRight`.
 - Native-side correction must not pull the elbow backward or inject a vertical snap near horizontal full extension; if a 2D projection would make that tempting, the elbow comes forward in `+Z` instead.
+
+## 2026-05-06: Driver-Specific Options and Hand Point-To-Point
+
+Driver selection owns the motion law and that driver's options.
+
+- Circle drivers own `omega` and optional time-keyed `radiusProfile`.
+- Generic node-level `radiusProfile` is removed from engine and authored document shapes.
+- Point-to-point is a hand-only engine driver in this slice; head drivers remain circle-only.
+- Point-to-point stores a polar `endPose` to match the existing pose model, but evaluates by local Cartesian interpolation between start and end points.
+- Endpoint evaluation is exact: `progress <= 0` returns `startPose`, and `progress >= 1` returns `endPose`.
+- Point-to-point output phase is geometric `atan2`, not a monotonic clock. Metronome hand and relative sources opt out while hand point-to-point is active; absolute head sources remain available.
+- Authored point-to-point controls are deferred. Engine-to-authored round-trip fails explicitly for point-to-point rather than losing endpoint data.
+- A temporary localStorage migration maps old authored `node.radiusProfile` fields to `node.driver.radiusProfile`; remove after 2026-05-27.

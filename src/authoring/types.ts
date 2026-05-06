@@ -13,6 +13,7 @@ export interface AuthoredCircleDriverInput {
   kind: "circle";
   omega: number;
   omegaUnit: AuthoredOmegaUnit;
+  radiusProfile?: AuthoredRadiusProfileInput;
 }
 
 export interface AuthoredRadiusProfileKey {
@@ -32,12 +33,10 @@ export interface AuthoredFirstSegment {
   hand: {
     startPose: AuthoredNodeStartPose;
     driver: AuthoredCircleDriverInput;
-    radiusProfile?: AuthoredRadiusProfileInput;
   };
   head: {
     startPose: AuthoredNodeStartPose;
     driver: AuthoredCircleDriverInput;
-    radiusProfile?: AuthoredRadiusProfileInput;
   };
 }
 
@@ -47,11 +46,9 @@ export interface AuthoredContinuationSegment {
   planeId?: PlaneId;
   hand: {
     driver: AuthoredCircleDriverInput;
-    radiusProfile?: AuthoredRadiusProfileInput;
   };
   head: {
     driver: AuthoredCircleDriverInput;
-    radiusProfile?: AuthoredRadiusProfileInput;
   };
 }
 

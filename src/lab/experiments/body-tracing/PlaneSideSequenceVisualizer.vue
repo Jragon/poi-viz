@@ -1,59 +1,163 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 import type { MultiRigSequence, Segment } from "@/engine/types";
 import { createDefaultOverlaySettings } from "@/visualizer/overlaySettings";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
 import { useVisualizerCore } from "@/visualizer/useVisualizerCore";
 
-const SEGMENT_DURATION_UNITS = 1;
-const SIDE_SEQUENCE_PHASE_STEP = Math.PI;
+type PatternId =
+  | "carry-wraps"
+  | "reverse-carry-wraps"
+  | "driven-transfer"
+  | "half-turn-transfer"
+  | "snap-transfer"
+  | "three-circle-phrase";
 
-function makeAlignedSegment(startPhase: number): Segment {
+type PatternDefinition = {
+  id: PatternId;
+  name: string;
+  description: string;
+  segments: Segment[];
+};
+
+const TAU = Math.PI * 2;
+const RIGHT = 0;
+const LEFT = Math.PI;
+const UP = Math.PI / 2;
+const DOWN = (3 / 2) * Math.PI;
+const HAND_RADIUS = 1;
+const HEAD_RADIUS = 0.6;
+
+function sideWrap(
+  handPhase: number,
+  headStartPhase: number,
+  turns: number,
+  durationUnits: number,
+  planeSide: "a" | "b"
+): Segment {
   return {
-    durationUnits: SEGMENT_DURATION_UNITS,
+    durationUnits,
+    planeId: "wall",
+    planeSide,
     hand: {
-      startPose: { phaseAbs: startPhase, radius: 1 },
-      driver: { kind: "circle", omega: SIDE_SEQUENCE_PHASE_STEP }
+      startPose: { phaseAbs: handPhase, radius: HAND_RADIUS },
+      driver: { kind: "circle", omega: 0 }
     },
     head: {
-      startPose: { phaseAbs: startPhase, radius: 0.6 },
-      driver: { kind: "circle", omega: SIDE_SEQUENCE_PHASE_STEP }
+      startPose: { phaseAbs: headStartPhase, radius: HEAD_RADIUS },
+      driver: { kind: "circle", omega: (turns * TAU) / durationUnits }
     }
   };
 }
 
-const sideSequence: MultiRigSequence = {
+function transfer(
+  fromHandPhase: number,
+  toHandPhase: number,
+  headPhase: number,
+  durationUnits: number,
+  headTurns = 0
+): Segment {
+  return {
+    durationUnits,
+    planeId: "wall",
+    hand: {
+      startPose: { phaseAbs: fromHandPhase, radius: HAND_RADIUS },
+      driver: {
+        kind: "point-to-point",
+        endPose: { phaseAbs: toHandPhase, radius: HAND_RADIUS }
+      }
+    },
+    head: {
+      startPose: { phaseAbs: headPhase, radius: HEAD_RADIUS },
+      driver: { kind: "circle", omega: (headTurns * TAU) / durationUnits }
+    }
+  };
+}
+
+const patterns: readonly PatternDefinition[] = [
+  {
+    id: "carry-wraps",
+    name: "Side wraps with top/bottom carries",
+    description: "1.5 circles parked on each side; transfers carry the poi vector across.",
+    segments: [
+      sideWrap(RIGHT, DOWN, 1.5, 1.5, "a"),
+      transfer(RIGHT, LEFT, UP, 1),
+      sideWrap(LEFT, UP, 1.5, 1.5, "b"),
+      transfer(LEFT, RIGHT, DOWN, 1)
+    ]
+  },
+  {
+    id: "reverse-carry-wraps",
+    name: "Reverse side wraps",
+    description: "Same hand path, opposite poi direction on the parked side circles.",
+    segments: [
+      sideWrap(RIGHT, DOWN, -1.5, 1.5, "a"),
+      transfer(RIGHT, LEFT, UP, 1),
+      sideWrap(LEFT, UP, -1.5, 1.5, "b"),
+      transfer(LEFT, RIGHT, DOWN, 1)
+    ]
+  },
+  {
+    id: "driven-transfer",
+    name: "Driven transfer beat",
+    description: "One head circle per beat, including the point-to-point crossing beats.",
+    segments: [
+      sideWrap(RIGHT, DOWN, 1, 1, "a"),
+      transfer(RIGHT, LEFT, DOWN, 1, 1),
+      sideWrap(LEFT, DOWN, 1, 1, "b"),
+      transfer(LEFT, RIGHT, DOWN, 1, 1)
+    ]
+  },
+  {
+    id: "half-turn-transfer",
+    name: "Half-turn transfers",
+    description: "The crossing beats rotate the poi halfway between top and bottom carries.",
+    segments: [
+      sideWrap(RIGHT, DOWN, 1.5, 1.5, "a"),
+      transfer(RIGHT, LEFT, UP, 1, 0.5),
+      sideWrap(LEFT, DOWN, 1.5, 1.5, "b"),
+      transfer(LEFT, RIGHT, UP, 1, 0.5)
+    ]
+  },
+  {
+    id: "snap-transfer",
+    name: "Slow wraps, fast transfers",
+    description: "Slower side circles with quick hand snaps between the two stations.",
+    segments: [
+      sideWrap(RIGHT, DOWN, 1.5, 2, "a"),
+      transfer(RIGHT, LEFT, UP, 0.5),
+      sideWrap(LEFT, UP, 1.5, 2, "b"),
+      transfer(LEFT, RIGHT, DOWN, 0.5)
+    ]
+  },
+  {
+    id: "three-circle-phrase",
+    name: "Three-circle phrase only",
+    description: "Right wrap, top carry, left wrap; no return transfer reset segment.",
+    segments: [
+      sideWrap(RIGHT, DOWN, 1.5, 1.5, "a"),
+      transfer(RIGHT, LEFT, UP, 1),
+      sideWrap(LEFT, UP, 1.5, 1.5, "b")
+    ]
+  }
+];
+
+const selectedPatternId = ref<PatternId>("carry-wraps");
+const selectedPattern = computed(
+  () => patterns.find((pattern) => pattern.id === selectedPatternId.value) ?? patterns[0]
+);
+
+const sideSequence = computed<MultiRigSequence>(() => ({
   rigs: [
     {
       rigId: "right",
       sequence: {
-        segments: [
-          {
-            ...makeAlignedSegment(0),
-            planeId: "wall",
-            planeSide: "a"
-          },
-          {
-            ...makeAlignedSegment(Math.PI),
-            planeId: "wall",
-            planeSide: "b"
-          },
-          {
-            ...makeAlignedSegment(0),
-            planeId: "wall",
-            planeSide: "a"
-          },
-          {
-            ...makeAlignedSegment(Math.PI),
-            planeId: "wall",
-            planeSide: "b"
-          }
-        ]
+        segments: selectedPattern.value.segments
       }
     }
   ]
-};
+}));
 
 const core = useVisualizerCore(sideSequence, {
   autoplay: true,
@@ -82,6 +186,10 @@ const activeMetadata = computed(() => {
     .join(" / ");
 });
 
+function onPatternChange(event: Event) {
+  selectedPatternId.value = (event.target as HTMLSelectElement).value as PatternId;
+}
+
 function togglePlayback() {
   core.transport.toggle();
 }
@@ -98,13 +206,30 @@ function onScrub(event: Event) {
     >
       <div class="min-w-0">
         <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Engine Playback</p>
-        <h2 class="mt-1 text-lg font-semibold text-slate-100">Wall side boundary sequence</h2>
+        <h2 class="mt-1 text-lg font-semibold text-slate-100">{{ selectedPattern.name }}</h2>
         <p class="mt-1 text-sm leading-6 text-slate-400">
-          Side changes occur only at right/left aligned boundary poses.
+          {{ selectedPattern.description }}
         </p>
       </div>
 
-      <dl class="grid grid-cols-2 gap-x-5 gap-y-1 text-xs text-slate-400 md:text-right">
+      <div class="grid gap-3 md:min-w-72">
+        <label class="grid gap-1 text-xs uppercase tracking-[0.18em] text-slate-500">
+          Pattern
+          <select
+            class="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm normal-case tracking-normal text-slate-100 outline-none transition focus:border-sky-400"
+            :value="selectedPatternId"
+            @change="onPatternChange"
+          >
+            <option v-for="pattern in patterns" :key="pattern.id" :value="pattern.id">
+              {{ pattern.name }}
+            </option>
+          </select>
+        </label>
+      </div>
+
+      <dl
+        class="grid grid-cols-2 gap-x-5 gap-y-1 text-xs text-slate-400 md:col-span-2 md:text-right"
+      >
         <div>
           <dt class="uppercase tracking-[0.18em] text-slate-600">Time</dt>
           <dd class="font-mono text-slate-300">{{ currentTimeLabel }} / {{ durationLabel }}</dd>

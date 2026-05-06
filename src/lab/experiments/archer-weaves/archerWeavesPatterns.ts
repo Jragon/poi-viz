@@ -92,28 +92,28 @@ export const sixBeatArcherRadiusShift: AuthoredDocumentEntry = {
               driver: {
                 kind: "circle",
                 omega: -6.283185307179586,
-                omegaUnit: "radians-per-unit"
-              },
-              radiusProfile: {
-                kind: "time-keyed",
-                keys: [
-                  {
-                    t: 0.25,
-                    radius: 1
-                  },
-                  {
-                    t: 0.5,
-                    radius: 0.5
-                  },
-                  {
-                    t: 0.75,
-                    radius: 1
-                  },
-                  {
-                    t: 1,
-                    radius: 1
-                  }
-                ]
+                omegaUnit: "radians-per-unit",
+                radiusProfile: {
+                  kind: "time-keyed",
+                  keys: [
+                    {
+                      t: 0.25,
+                      radius: 1
+                    },
+                    {
+                      t: 0.5,
+                      radius: 0.5
+                    },
+                    {
+                      t: 0.75,
+                      radius: 1
+                    },
+                    {
+                      t: 1,
+                      radius: 1
+                    }
+                  ]
+                }
               }
             },
             head: {
@@ -143,24 +143,24 @@ export const sixBeatArcherRadiusShift: AuthoredDocumentEntry = {
               driver: {
                 kind: "circle",
                 omega: -6.283185307179586,
-                omegaUnit: "radians-per-unit"
-              },
-              radiusProfile: {
-                kind: "time-keyed",
-                keys: [
-                  {
-                    t: 0.25,
-                    radius: 1
-                  },
-                  {
-                    t: 0.75,
-                    radius: 1
-                  },
-                  {
-                    t: 1,
-                    radius: 0.5
-                  }
-                ]
+                omegaUnit: "radians-per-unit",
+                radiusProfile: {
+                  kind: "time-keyed",
+                  keys: [
+                    {
+                      t: 0.25,
+                      radius: 1
+                    },
+                    {
+                      t: 0.75,
+                      radius: 1
+                    },
+                    {
+                      t: 1,
+                      radius: 0.5
+                    }
+                  ]
+                }
               }
             },
             head: {
@@ -201,28 +201,28 @@ export const fiveBeatSplitOppositeEarthHandRadiusShiftPattern: AuthoredDocumentE
               driver: {
                 kind: "circle",
                 omega: -6.283185307179586,
-                omegaUnit: "radians-per-unit"
-              },
-              radiusProfile: {
-                kind: "time-keyed",
-                keys: [
-                  {
-                    t: 0.25,
-                    radius: 1
-                  },
-                  {
-                    t: 0.5,
-                    radius: 0.5
-                  },
-                  {
-                    t: 0.75,
-                    radius: 1
-                  },
-                  {
-                    t: 1,
-                    radius: 1
-                  }
-                ]
+                omegaUnit: "radians-per-unit",
+                radiusProfile: {
+                  kind: "time-keyed",
+                  keys: [
+                    {
+                      t: 0.25,
+                      radius: 1
+                    },
+                    {
+                      t: 0.5,
+                      radius: 0.5
+                    },
+                    {
+                      t: 0.75,
+                      radius: 1
+                    },
+                    {
+                      t: 1,
+                      radius: 1
+                    }
+                  ]
+                }
               }
             },
             head: {
@@ -252,24 +252,24 @@ export const fiveBeatSplitOppositeEarthHandRadiusShiftPattern: AuthoredDocumentE
               driver: {
                 kind: "circle",
                 omega: -6.283185307179586,
-                omegaUnit: "radians-per-unit"
-              },
-              radiusProfile: {
-                kind: "time-keyed",
-                keys: [
-                  {
-                    t: 0.25,
-                    radius: 1
-                  },
-                  {
-                    t: 0.75,
-                    radius: 1
-                  },
-                  {
-                    t: 1,
-                    radius: 0.5
-                  }
-                ]
+                omegaUnit: "radians-per-unit",
+                radiusProfile: {
+                  kind: "time-keyed",
+                  keys: [
+                    {
+                      t: 0.25,
+                      radius: 1
+                    },
+                    {
+                      t: 0.75,
+                      radius: 1
+                    },
+                    {
+                      t: 1,
+                      radius: 0.5
+                    }
+                  ]
+                }
               }
             },
             head: {

@@ -1,7 +1,7 @@
 import { computed, ref, watch, type ComputedRef, type Ref } from "vue";
 
 import type { PreparedMultiRigSequence, PreparedRigSequenceEntry } from "@/engine/multirig";
-import type { RigId, TimeUnit } from "@/engine/types";
+import type { Driver, RigId, TimeUnit } from "@/engine/types";
 import type { PlaybackEvalSuccess, PlaybackEvaluateResult } from "@/visualizer/useMultiRigPlayback";
 
 const TAU = Math.PI * 2;
@@ -166,9 +166,36 @@ function getLastSegmentIndex(prepared: PreparedRigSequenceEntry | null): number 
   return prepared.prepared.segments.length - 1;
 }
 
-function resolveSourcePhase(source: MetronomeSource, frame: PlaybackEvalSuccess): number | null {
+function resolveCircleOmega(driver: Driver): number | null {
+  return driver.kind === "circle" ? driver.omega : null;
+}
+
+function sourceTouchesPointToPoint(
+  source: MetronomeSource,
+  preparedRig: PreparedRigSequenceEntry | null,
+  segmentIndex: number
+): boolean {
+  if (!preparedRig) return true;
+
+  const segment = preparedRig.prepared.segments[segmentIndex];
+  if (!segment) return true;
+
+  switch (source.kind) {
+    case "absolute":
+      return source.node === "hand" && segment.hand.driver.kind === "point-to-point";
+    case "relative-head-minus-hand":
+      return segment.hand.driver.kind === "point-to-point";
+  }
+}
+
+function resolveSourcePhase(
+  source: MetronomeSource,
+  frame: PlaybackEvalSuccess,
+  preparedRig: PreparedRigSequenceEntry | null
+): number | null {
   const rig = frame.evaluatedPoses[source.rigId];
   if (!rig) return null;
+  if (sourceTouchesPointToPoint(source, preparedRig, rig.segmentIndex)) return null;
 
   switch (source.kind) {
     case "absolute":
@@ -189,10 +216,14 @@ function resolveSourceOmega(
   if (!segment) return null;
 
   switch (source.kind) {
-    case "absolute":
-      return source.node === "hand" ? segment.hand.driver.omega : segment.head.driver.omega;
-    case "relative-head-minus-hand":
-      return segment.head.driver.omega - segment.hand.driver.omega;
+    case "absolute": {
+      return resolveCircleOmega(source.node === "hand" ? segment.hand.driver : segment.head.driver);
+    }
+    case "relative-head-minus-hand": {
+      const handOmega = resolveCircleOmega(segment.hand.driver);
+      const headOmega = resolveCircleOmega(segment.head.driver);
+      return handOmega === null || headOmega === null ? null : headOmega - handOmega;
+    }
   }
 }
 
@@ -346,7 +377,8 @@ export function usePhaseMetronome(options: PhaseMetronomeOptions): PhaseMetronom
     previousTime = frameTime;
 
     for (const rule of rules.value) {
-      const phase = resolveSourcePhase(rule.source, frame);
+      const preparedRig = getPreparedRigById(options.prepared.value, getRuleRigId(rule.source));
+      const phase = resolveSourcePhase(rule.source, frame, preparedRig);
       if (phase === null) {
         previousRulePhases.delete(rule.id);
         continue;
@@ -425,7 +457,8 @@ export function usePhaseMetronome(options: PhaseMetronomeOptions): PhaseMetronom
           continue;
         }
 
-        const currentPhase = resolveSourcePhase(rule.source, frameResult);
+        const preparedRig = getPreparedRigById(options.prepared.value, rigId);
+        const currentPhase = resolveSourcePhase(rule.source, frameResult, preparedRig);
         if (currentPhase === null) {
           continue;
         }
@@ -436,7 +469,6 @@ export function usePhaseMetronome(options: PhaseMetronomeOptions): PhaseMetronom
         }
 
         const prevSegmentIndex = previousRigSegmentIndex.get(rigId);
-        const preparedRig = getPreparedRigById(options.prepared.value, rigId);
         const prevWrappedTime = previousRigWrappedTime.get(rigId);
         const currentWrappedTime = getWrappedRigTime(
           preparedRig,

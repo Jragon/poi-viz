@@ -125,6 +125,30 @@ describe("validateSequenceStructure", () => {
       expect(result.errors).toContainEqual({ code: "INVALID_PLANE_SIDE", index: 0 });
     }
   });
+  it("rejects point-to-point drivers on head nodes from imported data", () => {
+    const seq = {
+      segments: [
+        {
+          ...base,
+          head: {
+            ...base.head,
+            driver: { kind: "point-to-point", endPose: { phaseAbs: 0, radius: 1 } }
+          }
+        }
+      ]
+    } as unknown as SequenceSpec;
+
+    const result = validateSequenceStructure(seq);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContainEqual({
+        code: "DRIVER_UNSUPPORTED_FOR_NODE",
+        index: 0,
+        node: "head"
+      });
+    }
+  });
   it("reports invalid plane side errors in stable segment order", () => {
     const seq = {
       segments: [

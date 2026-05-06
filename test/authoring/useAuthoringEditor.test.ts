@@ -383,17 +383,17 @@ describe("useAuthoringEditor", () => {
       harness.editor.addSegmentRadiusProfileKey("left", 1, "head", { t: 1, radius: 0.25 });
 
       let segment = harness.currentDocument().tracks.left!.segments[1];
-      expect(segment.head.radiusProfile?.keys).toEqual([{ t: 1, radius: 0.25 }]);
+      expect(segment.head.driver.radiusProfile?.keys).toEqual([{ t: 1, radius: 0.25 }]);
 
       harness.editor.updateSegmentRadiusProfileKey("left", 1, "head", 0, "radius", 0.75);
 
       segment = harness.currentDocument().tracks.left!.segments[1];
-      expect(segment.head.radiusProfile?.keys).toEqual([{ t: 1, radius: 0.75 }]);
+      expect(segment.head.driver.radiusProfile?.keys).toEqual([{ t: 1, radius: 0.75 }]);
 
       harness.editor.deleteSegmentRadiusProfileKey("left", 1, "head", 0);
 
       segment = harness.currentDocument().tracks.left!.segments[1];
-      expect(segment.head.radiusProfile).toBeUndefined();
+      expect(segment.head.driver.radiusProfile).toBeUndefined();
     });
 
     it("does not persist radius profile keys beyond the segment duration", () => {
@@ -408,7 +408,7 @@ describe("useAuthoringEditor", () => {
 
     it("copies radius profiles when duplicating a segment", () => {
       const document = makeBaseDocument();
-      document.tracks.left!.segments[0].hand.radiusProfile = {
+      document.tracks.left!.segments[0].hand.driver.radiusProfile = {
         kind: "time-keyed",
         keys: [{ t: 0.5, radius: 2 }]
       };
@@ -418,7 +418,7 @@ describe("useAuthoringEditor", () => {
 
       const duplicate = harness.currentDocument().tracks.left!.segments[1];
       expect(duplicate.kind).toBe("continuation");
-      expect(duplicate.hand.radiusProfile?.keys).toEqual([{ t: 0.5, radius: 2 }]);
+      expect(duplicate.hand.driver.radiusProfile?.keys).toEqual([{ t: 0.5, radius: 2 }]);
     });
   });
 

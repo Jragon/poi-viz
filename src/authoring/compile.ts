@@ -1,6 +1,7 @@
 import { PI } from "@/engine/constants";
 import { evalSegment } from "@/engine/engine";
 import type {
+  CircleDriver,
   Driver,
   MultiRigSequence,
   PlaneId,
@@ -64,10 +65,12 @@ function toRelativeNodePose(
   };
 }
 
-function toDriver(driver: AuthoredCircleDriverInput): Driver {
+function toDriver(driver: AuthoredCircleDriverInput): CircleDriver {
+  const radiusProfile = toRadiusProfile(driver.radiusProfile);
   return {
     kind: "circle",
-    omega: toOmegaRadiansPerUnit(driver)
+    omega: toOmegaRadiansPerUnit(driver),
+    ...(radiusProfile ? { radiusProfile } : {})
   };
 }
 
@@ -93,6 +96,21 @@ function toAuthoredRadiusProfile(
     kind: "time-keyed",
     keys: radiusProfile.keys.map((key) => ({ t: key.t, radius: key.radius }))
   };
+}
+
+function assertAuthoredCircleDriver(
+  driver: Driver,
+  rigId: string,
+  segmentIndex: number,
+  node: "hand" | "head"
+): CircleDriver {
+  if (driver.kind !== "circle") {
+    throw new Error(
+      `Rig ${rigId} segment ${segmentIndex} ${node} driver cannot be represented as an authored circle driver`
+    );
+  }
+
+  return driver;
 }
 
 function isPlaneId(value: unknown): value is PlaneId {
@@ -188,10 +206,6 @@ function makeFirstSegment(segment: AuthoredFirstSegment): SegmentMotion {
       driver: toDriver(segment.head.driver)
     }
   };
-  const handRadiusProfile = toRadiusProfile(segment.hand.radiusProfile);
-  const headRadiusProfile = toRadiusProfile(segment.head.radiusProfile);
-  if (handRadiusProfile) nextSegment.hand.radiusProfile = handRadiusProfile;
-  if (headRadiusProfile) nextSegment.head.radiusProfile = headRadiusProfile;
   return nextSegment;
 }
 
@@ -213,10 +227,6 @@ function makeContinuationSegment(
       driver: toDriver(segment.head.driver)
     }
   };
-  const handRadiusProfile = toRadiusProfile(segment.hand.radiusProfile);
-  const headRadiusProfile = toRadiusProfile(segment.head.radiusProfile);
-  if (handRadiusProfile) nextSegment.hand.radiusProfile = handRadiusProfile;
-  if (headRadiusProfile) nextSegment.head.radiusProfile = headRadiusProfile;
   return nextSegment;
 }
 
@@ -273,7 +283,7 @@ function validateRadiusProfileValues(
   segment: AuthoredSegment,
   errors: AuthoredDocumentValidationError[]
 ) {
-  const radiusProfile = segment[node].radiusProfile;
+  const radiusProfile = segment[node].driver.radiusProfile;
   if (!radiusProfile) {
     return;
   }
@@ -513,10 +523,22 @@ export function authoredDocumentFromMultiRigSequence(
     tracks[rig.rigId as AuthoredTrackId] = {
       segments: rig.sequence.segments.map((segment, segmentIndex) => {
         const planeId = segment.planeId ?? DEFAULT_PLANE_ID;
+        const handDriver = assertAuthoredCircleDriver(
+          segment.hand.driver,
+          rig.rigId,
+          segmentIndex,
+          "hand"
+        );
+        const headDriver = assertAuthoredCircleDriver(
+          segment.head.driver,
+          rig.rigId,
+          segmentIndex,
+          "head"
+        );
 
         if (segmentIndex === 0) {
-          const handRadiusProfile = toAuthoredRadiusProfile(segment.hand.radiusProfile);
-          const headRadiusProfile = toAuthoredRadiusProfile(segment.head.radiusProfile);
+          const handRadiusProfile = toAuthoredRadiusProfile(handDriver.radiusProfile);
+          const headRadiusProfile = toAuthoredRadiusProfile(headDriver.radiusProfile);
           const firstSegment: AuthoredFirstSegment = {
             kind: "first",
             durationUnits: segment.durationUnits,
@@ -528,10 +550,10 @@ export function authoredDocumentFromMultiRigSequence(
               },
               driver: {
                 kind: "circle",
-                omega: segment.hand.driver.omega,
-                omegaUnit: "radians-per-unit"
-              },
-              ...(handRadiusProfile ? { radiusProfile: handRadiusProfile } : {})
+                omega: handDriver.omega,
+                omegaUnit: "radians-per-unit",
+                ...(handRadiusProfile ? { radiusProfile: handRadiusProfile } : {})
+              }
             },
             head: {
               startPose: {
@@ -540,10 +562,10 @@ export function authoredDocumentFromMultiRigSequence(
               },
               driver: {
                 kind: "circle",
-                omega: segment.head.driver.omega,
-                omegaUnit: "radians-per-unit"
-              },
-              ...(headRadiusProfile ? { radiusProfile: headRadiusProfile } : {})
+                omega: headDriver.omega,
+                omegaUnit: "radians-per-unit",
+                ...(headRadiusProfile ? { radiusProfile: headRadiusProfile } : {})
+              }
             }
           };
           previousEndPose = evalSegment(segment, segment.durationUnits);
@@ -568,8 +590,8 @@ export function authoredDocumentFromMultiRigSequence(
 
         previousEndPose = evalSegment(segment, segment.durationUnits);
         previousPlaneId = planeId;
-        const handRadiusProfile = toAuthoredRadiusProfile(segment.hand.radiusProfile);
-        const headRadiusProfile = toAuthoredRadiusProfile(segment.head.radiusProfile);
+        const handRadiusProfile = toAuthoredRadiusProfile(handDriver.radiusProfile);
+        const headRadiusProfile = toAuthoredRadiusProfile(headDriver.radiusProfile);
         return {
           kind: "continuation",
           durationUnits: segment.durationUnits,
@@ -577,18 +599,18 @@ export function authoredDocumentFromMultiRigSequence(
           hand: {
             driver: {
               kind: "circle",
-              omega: segment.hand.driver.omega,
-              omegaUnit: "radians-per-unit"
-            },
-            ...(handRadiusProfile ? { radiusProfile: handRadiusProfile } : {})
+              omega: handDriver.omega,
+              omegaUnit: "radians-per-unit",
+              ...(handRadiusProfile ? { radiusProfile: handRadiusProfile } : {})
+            }
           },
           head: {
             driver: {
               kind: "circle",
-              omega: segment.head.driver.omega,
-              omegaUnit: "radians-per-unit"
-            },
-            ...(headRadiusProfile ? { radiusProfile: headRadiusProfile } : {})
+              omega: headDriver.omega,
+              omegaUnit: "radians-per-unit",
+              ...(headRadiusProfile ? { radiusProfile: headRadiusProfile } : {})
+            }
           }
         };
       })

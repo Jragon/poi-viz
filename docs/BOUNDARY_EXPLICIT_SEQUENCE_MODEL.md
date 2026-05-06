@@ -52,12 +52,36 @@ type TimeUnit = number;
 type PlaneId = "wall" | "wheel" | "floor";
 type PlaneSide = "a" | "b";
 
+type CircleDriver = {
+  kind: "circle";
+  omega: number;
+  radiusProfile?: RadiusProfile;
+};
+
+type PointToPointDriver = {
+  kind: "point-to-point";
+  endPose: RelativeNodePose;
+};
+
+type HandDriver = CircleDriver | PointToPointDriver;
+type HeadDriver = CircleDriver;
+
+type HandSegmentNodeMotion = {
+  startPose: RelativeNodePose;
+  driver: HandDriver;
+};
+
+type HeadSegmentNodeMotion = {
+  startPose: RelativeNodePose;
+  driver: HeadDriver;
+};
+
 type Segment = {
   durationUnits: TimeUnit;
   planeId?: PlaneId;
   planeSide?: PlaneSide;
-  hand: SegmentNodeMotion;
-  head: SegmentNodeMotion;
+  hand: HandSegmentNodeMotion;
+  head: HeadSegmentNodeMotion;
 };
 
 type SequenceSpec = {
@@ -159,6 +183,7 @@ Trail rendering may use continuity-aware wraparound at the transport boundary as
 - Each `durationUnits` must be strictly positive.
 - Engine segment `planeId`, when present, must be `wall`, `wheel`, or `floor`.
 - Engine segment `planeSide`, when present, must be `a` or `b`.
+- Engine head drivers cannot be `point-to-point`.
 
 ## Additional Implemented Validation Rules
 
