@@ -1,51 +1,13 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 
 import { compileAuthoredDocument } from "@/authoring/compile";
 import type { AuthoredDocumentEntry } from "@/authoring/types";
 import { useAuthoringLibrary } from "@/authoring/useAuthoringLibrary";
-import {
-  buildBodyRigFrame,
-  buildDefaultBodyRigDimensions,
-  getBodyRigArmDrawOrder,
-  getBodyRigArmPoints,
-  solveBodyRigFrame,
-  type BodyRigFrame,
-  type BodyRigPose
-} from "@/body-rig";
-import type {
-  CartesianMultiRigPose,
-  MultiRigSequence,
-  RigId,
-  Vec2,
-  Vec3,
-  WorldMultiRigPose
-} from "@/engine/types";
-import type { MultiRigTrailSamples } from "@/visualizer/useMultiRigPlayback";
+import type { MultiRigSequence } from "@/engine/types";
+import { createDefaultOverlaySettings } from "@/visualizer/overlaySettings";
+import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
 import { useVisualizerCore } from "@/visualizer/useVisualizerCore";
-
-interface CanvasLayout {
-  readonly cssWidth: number;
-  readonly cssHeight: number;
-  readonly dpr: number;
-  readonly pixelsPerWorldUnit: number;
-  readonly cameraCenterWorld: Vec2;
-}
-
-type FigurePose = BodyRigPose;
-
-interface RigStyle {
-  readonly hand: string;
-  readonly head: string;
-  readonly chain: string;
-  readonly handTrail: string;
-  readonly headTrail: string;
-}
-
-const LEFT_RIG_ID = "left";
-const RIGHT_RIG_ID = "right";
-const BODY_DIMENSIONS = buildDefaultBodyRigDimensions();
-const sharedHandOverlapCircle = BODY_DIMENSIONS.sharedHandOverlapCircle;
 
 function compileAuthoredSequence(entry: AuthoredDocumentEntry): MultiRigSequence | null {
   const result = compileAuthoredDocument(entry.document);
@@ -85,23 +47,6 @@ const selectedSequence = computed<MultiRigSequence>(() => {
   return { rigs: [] };
 });
 
-const rigStyles: Record<string, RigStyle> = {
-  [LEFT_RIG_ID]: {
-    hand: "rgba(45, 212, 191, 0.98)",
-    head: "rgba(125, 211, 252, 0.98)",
-    chain: "rgba(103, 232, 249, 0.65)",
-    handTrail: "rgba(45, 212, 191, 0)",
-    headTrail: "rgba(125, 211, 252, 0.8)"
-  },
-  [RIGHT_RIG_ID]: {
-    hand: "rgba(251, 191, 36, 0.98)",
-    head: "rgba(251, 113, 133, 0.98)",
-    chain: "rgba(253, 186, 116, 0.68)",
-    handTrail: "rgba(251, 191, 36, 0)",
-    headTrail: "rgba(251, 113, 133, 0.8)"
-  }
-};
-
 const core = useVisualizerCore(selectedSequence, {
   autoplay: true,
   resumeOnSequenceChange: true,
@@ -110,373 +55,31 @@ const core = useVisualizerCore(selectedSequence, {
   }
 });
 const transport = core.transport;
-const containerRef = ref<HTMLDivElement | null>(null);
-const canvasRef = ref<HTMLCanvasElement | null>(null);
-const canvasContextRef = ref<CanvasRenderingContext2D | null>(null);
-const layoutRef = ref<CanvasLayout | null>(null);
-const statusText = ref("Preparing sequence canvas");
 
-let resizeObserver: ResizeObserver | null = null;
+const overlaySettings = computed(() => {
+  const settings = createDefaultOverlaySettings(core.rigOrder.value);
+  settings.visibility.showBodyRig = true;
+  settings.visibility.showHandTrails = true;
+  settings.visibility.showHeadTrails = true;
+  settings.visibility.showChainLines = true;
+  settings.visibility.showNodeMarkers = true;
+  return settings;
+});
 
 const durationLabel = computed(() => transport.duration.value.toFixed(2));
 const timeLabel = computed(() => transport.currentTime.value.toFixed(2));
 const speedLabel = computed(() => `${transport.speed.value.toFixed(2)}x`);
-
-function getRigStyle(rigId: RigId): RigStyle {
-  return rigStyles[rigId] ?? rigStyles[LEFT_RIG_ID];
-}
-
-function sequencePointToBodyWorld(point: Vec2): Vec2 {
-  return {
-    x: sharedHandOverlapCircle.center.x + point.x * sharedHandOverlapCircle.radius,
-    y: sharedHandOverlapCircle.center.y + point.y * sharedHandOverlapCircle.radius
-  };
-}
-
-function sequenceWorldPointToBodyWorld(point: Vec3): Vec3 {
-  return {
-    x: sharedHandOverlapCircle.center.x + point.x * sharedHandOverlapCircle.radius,
-    y: sharedHandOverlapCircle.center.y + point.y * sharedHandOverlapCircle.radius,
-    z: point.z * sharedHandOverlapCircle.radius
-  };
-}
-
-function createLayout(cssWidth: number, cssHeight: number): CanvasLayout {
-  const bodyVerticalRadius =
-    BODY_DIMENSIONS.torsoHeight + BODY_DIMENSIONS.thighLength + BODY_DIMENSIONS.shinLength;
-  const sequenceRadius = core.sceneWorldRadius.value * sharedHandOverlapCircle.radius;
-  const sceneRadius = Math.max(
-    sequenceRadius + BODY_DIMENSIONS.shoulderSpan * 0.5,
-    bodyVerticalRadius,
-    2.45
-  );
-  const pixelsPerWorldUnit = Math.min(cssWidth, cssHeight) / (2 * (sceneRadius + 0.45));
-
-  return {
-    cssWidth,
-    cssHeight,
-    dpr: window.devicePixelRatio || 1,
-    pixelsPerWorldUnit,
-    cameraCenterWorld: BODY_DIMENSIONS.cameraCenterWorld
-  };
-}
-
-function worldToCanvas(layout: CanvasLayout, point: Vec2): Vec2 {
-  return {
-    x: layout.cssWidth / 2 + (point.x - layout.cameraCenterWorld.x) * layout.pixelsPerWorldUnit,
-    y: layout.cssHeight / 2 - (point.y - layout.cameraCenterWorld.y) * layout.pixelsPerWorldUnit
-  };
-}
-
-function clearCanvas(ctx: CanvasRenderingContext2D, layout: CanvasLayout) {
-  ctx.clearRect(0, 0, layout.cssWidth, layout.cssHeight);
-  const gradient = ctx.createLinearGradient(0, 0, 0, layout.cssHeight);
-  gradient.addColorStop(0, "rgba(15, 23, 42, 0.96)");
-  gradient.addColorStop(1, "rgba(2, 6, 23, 1)");
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, layout.cssWidth, layout.cssHeight);
-
-  ctx.save();
-  ctx.strokeStyle = "rgba(148, 163, 184, 0.12)";
-  ctx.lineWidth = 1;
-  const center = worldToCanvas(layout, { x: 0, y: 0 });
-  ctx.beginPath();
-  ctx.moveTo(0, center.y);
-  ctx.lineTo(layout.cssWidth, center.y);
-  ctx.moveTo(center.x, 0);
-  ctx.lineTo(center.x, layout.cssHeight);
-  ctx.stroke();
-  ctx.restore();
-}
-
-function drawLine(
-  ctx: CanvasRenderingContext2D,
-  start: Vec2,
-  end: Vec2,
-  color: string,
-  lineWidth: number
-) {
-  ctx.beginPath();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = lineWidth;
-  ctx.moveTo(start.x, start.y);
-  ctx.lineTo(end.x, end.y);
-  ctx.stroke();
-}
-
-function drawNode(
-  ctx: CanvasRenderingContext2D,
-  center: Vec2,
-  radius: number,
-  fill: string,
-  stroke = "rgba(15, 23, 42, 0.96)",
-  strokeWidth = 2
-) {
-  ctx.beginPath();
-  ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
-  ctx.fillStyle = fill;
-  ctx.fill();
-  ctx.strokeStyle = stroke;
-  ctx.lineWidth = strokeWidth;
-  ctx.stroke();
-}
-
-function drawFadingPolyline(
-  ctx: CanvasRenderingContext2D,
-  points: readonly Vec2[],
-  color: string,
-  width: number,
-  minOpacity = 0.14
-) {
-  if (points.length < 2) {
-    return;
+const statusText = computed(() => {
+  if (core.errorMessage.value) {
+    return core.errorMessage.value;
   }
 
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = width;
-  const segmentCount = points.length - 1;
-
-  for (let index = 1; index < points.length; index += 1) {
-    const progress = index / segmentCount;
-    ctx.globalAlpha = minOpacity + (1 - minOpacity) * progress;
-    ctx.beginPath();
-    ctx.moveTo(points[index - 1].x, points[index - 1].y);
-    ctx.lineTo(points[index].x, points[index].y);
-    ctx.stroke();
+  if (!core.worldPoses.value.left || !core.worldPoses.value.right) {
+    return `${selectedDocumentName.value} / body solve waiting for left/right tracks`;
   }
 
-  ctx.restore();
-}
-
-function drawJoint(ctx: CanvasRenderingContext2D, point: Vec2, radius: number, fill: string) {
-  drawNode(ctx, point, radius, fill, "rgba(226, 232, 240, 0.5)", 1.25);
-}
-
-function drawLimb(
-  ctx: CanvasRenderingContext2D,
-  points: readonly Vec2[],
-  lineWidth: number,
-  stroke: string
-) {
-  if (points.length < 2) {
-    return;
-  }
-
-  ctx.beginPath();
-  ctx.moveTo(points[0].x, points[0].y);
-  for (const point of points.slice(1)) {
-    ctx.lineTo(point.x, point.y);
-  }
-  ctx.lineWidth = lineWidth;
-  ctx.strokeStyle = stroke;
-  ctx.stroke();
-}
-
-function buildBodyFrame(): BodyRigFrame {
-  return buildBodyRigFrame({
-    shoulderCenter: BODY_DIMENSIONS.rootShoulderCenter,
-    rigConfig: BODY_DIMENSIONS.config,
-    torsoHeight: BODY_DIMENSIONS.torsoHeight,
-    hipSpan: BODY_DIMENSIONS.hipSpan,
-    headRadius: BODY_DIMENSIONS.headRadius,
-    headGap: BODY_DIMENSIONS.headGap,
-    neckOffset: BODY_DIMENSIONS.neckOffset,
-    thighLength: BODY_DIMENSIONS.thighLength,
-    shinLength: BODY_DIMENSIONS.shinLength,
-    footOffset: BODY_DIMENSIONS.footOffset,
-    stanceWidth: BODY_DIMENSIONS.stanceWidth
-  });
-}
-
-function getBodyPose(poses: WorldMultiRigPose): FigurePose | null {
-  const leftPose = poses[LEFT_RIG_ID];
-  const rightPose = poses[RIGHT_RIG_ID];
-  if (!leftPose || !rightPose) {
-    return null;
-  }
-
-  const body = buildBodyFrame();
-  return solveBodyRigFrame(
-    body,
-    {
-      leftHandTarget: sequenceWorldPointToBodyWorld(leftPose.handPosition),
-      rightHandTarget: sequenceWorldPointToBodyWorld(rightPose.handPosition)
-    },
-    core.session.projectionSettings.value
-  );
-}
-
-function drawPoiRig(
-  ctx: CanvasRenderingContext2D,
-  layout: CanvasLayout,
-  rigId: RigId,
-  poses: CartesianMultiRigPose,
-  trails: MultiRigTrailSamples
-) {
-  const pose = poses[rigId];
-  if (!pose) {
-    return;
-  }
-
-  const style = getRigStyle(rigId);
-  const hand = worldToCanvas(layout, sequencePointToBodyWorld(pose.handPosition));
-  const head = worldToCanvas(layout, sequencePointToBodyWorld(pose.headPosition));
-  const trail = trails[rigId];
-
-  if (trail?.hand && trail.hand.length > 1) {
-    drawFadingPolyline(
-      ctx,
-      trail.hand.map((point) => worldToCanvas(layout, sequencePointToBodyWorld(point))),
-      style.handTrail,
-      3,
-      0.2
-    );
-  }
-
-  if (trail?.head && trail.head.length > 1) {
-    drawFadingPolyline(
-      ctx,
-      trail.head.map((point) => worldToCanvas(layout, sequencePointToBodyWorld(point))),
-      style.headTrail,
-      3,
-      0.2
-    );
-  }
-
-  drawLine(ctx, hand, head, style.chain, 3);
-  drawNode(ctx, hand, 7.5, style.hand);
-  drawNode(ctx, head, 9, style.head);
-}
-
-function drawBodyOverlay(ctx: CanvasRenderingContext2D, layout: CanvasLayout, pose: FigurePose) {
-  const limbStroke = "rgba(226, 232, 240, 0.5)";
-  const secondaryStroke = "rgba(148, 163, 184, 0.42)";
-  const leftStroke = "rgba(45, 212, 191, 0.62)";
-  const rightStroke = "rgba(251, 191, 36, 0.62)";
-  const nodeFill = "rgba(15, 23, 42, 0.62)";
-  const toCanvas = (point: Vec2) => worldToCanvas(layout, point);
-  const body = pose.projectedBody;
-
-  ctx.save();
-  ctx.globalCompositeOperation = "source-over";
-  ctx.lineJoin = "round";
-  ctx.lineCap = "round";
-
-  drawLimb(ctx, [toCanvas(body.headCenter), toCanvas(body.neck)], 6, secondaryStroke);
-  drawLimb(
-    ctx,
-    [toCanvas(pose.shoulders.leftShoulder), toCanvas(pose.shoulders.rightShoulder)],
-    12,
-    limbStroke
-  );
-  drawLimb(ctx, [toCanvas(body.neck), toCanvas(body.pelvis)], 14, limbStroke);
-  drawLimb(ctx, [toCanvas(body.hipLeft), toCanvas(body.hipRight)], 12, secondaryStroke);
-  drawLimb(
-    ctx,
-    [toCanvas(body.hipLeft), toCanvas(body.kneeLeft), toCanvas(body.footLeft)],
-    12,
-    limbStroke
-  );
-  drawLimb(
-    ctx,
-    [toCanvas(body.hipRight), toCanvas(body.kneeRight), toCanvas(body.footRight)],
-    12,
-    limbStroke
-  );
-
-  for (const side of getBodyRigArmDrawOrder(pose)) {
-    drawLimb(
-      ctx,
-      getBodyRigArmPoints(pose, side).map(toCanvas),
-      12,
-      side === "left" ? leftStroke : rightStroke
-    );
-  }
-
-  const headCenter = toCanvas(body.headCenter);
-  ctx.beginPath();
-  ctx.arc(headCenter.x, headCenter.y, body.headRadius * layout.pixelsPerWorldUnit, 0, Math.PI * 2);
-  ctx.lineWidth = 9;
-  ctx.strokeStyle = limbStroke;
-  ctx.stroke();
-
-  const staticNodes = [
-    body.neck,
-    pose.shoulders.leftShoulder,
-    pose.shoulders.rightShoulder,
-    pose.leftArm.elbow,
-    pose.rightArm.elbow,
-    body.pelvis,
-    body.hipLeft,
-    body.hipRight,
-    body.kneeLeft,
-    body.kneeRight,
-    body.footLeft,
-    body.footRight
-  ];
-
-  for (const point of staticNodes) {
-    drawJoint(ctx, toCanvas(point), 5.5, nodeFill);
-  }
-
-  drawJoint(ctx, toCanvas(pose.leftArm.hand), 8.5, "rgba(45, 212, 191, 0.78)");
-  drawJoint(ctx, toCanvas(pose.rightArm.hand), 8.5, "rgba(251, 191, 36, 0.78)");
-  ctx.restore();
-}
-
-function drawFrame() {
-  const layout = layoutRef.value;
-  const canvas = canvasRef.value;
-  const ctx = canvasContextRef.value;
-  if (!layout || !canvas || !ctx) {
-    return;
-  }
-
-  if (canvas.width !== Math.round(layout.cssWidth * layout.dpr)) {
-    canvas.width = Math.round(layout.cssWidth * layout.dpr);
-  }
-  if (canvas.height !== Math.round(layout.cssHeight * layout.dpr)) {
-    canvas.height = Math.round(layout.cssHeight * layout.dpr);
-  }
-  canvas.style.width = `${layout.cssWidth}px`;
-  canvas.style.height = `${layout.cssHeight}px`;
-
-  ctx.setTransform(layout.dpr, 0, 0, layout.dpr, 0, 0);
-  ctx.lineJoin = "round";
-  ctx.lineCap = "round";
-  clearCanvas(ctx, layout);
-
-  const poses = core.cartesianPoses.value;
-  const trails = core.trails.value;
-  for (const rigId of core.rigOrder.value) {
-    drawPoiRig(ctx, layout, rigId, poses, trails);
-  }
-
-  const bodyPose = getBodyPose(core.worldPoses.value);
-  if (!bodyPose) {
-    statusText.value = `${selectedDocumentName.value} / body solve waiting for left/right tracks`;
-    return;
-  }
-
-  drawBodyOverlay(ctx, layout, bodyPose);
-  statusText.value = `${selectedDocumentName.value} / r ${sharedHandOverlapCircle.radius.toFixed(2)} / yaw ${Math.round(bodyPose.yawDeg)}deg / cost ${bodyPose.solve.cost.toFixed(1)}${bodyPose.solve.diagnostics.isBestEffort ? " / clamped" : ""}`;
-}
-
-function updateLayout() {
-  const container = containerRef.value;
-  if (!container) {
-    return;
-  }
-
-  const rect = container.getBoundingClientRect();
-  if (rect.width <= 0 || rect.height <= 0) {
-    return;
-  }
-
-  layoutRef.value = createLayout(rect.width, rect.height);
-  drawFrame();
-}
+  return `${selectedDocumentName.value} / main visualizer body overlay / shared r 1.00`;
+});
 
 function setSpeed(nextSpeed: number) {
   transport.setSpeed(nextSpeed);
@@ -484,12 +87,10 @@ function setSpeed(nextSpeed: number) {
 
 function resetPlayback() {
   transport.reset();
-  drawFrame();
 }
 
 watch(selectedSequenceId, () => {
   transport.reset();
-  updateLayout();
 });
 
 watch(
@@ -506,52 +107,6 @@ watch(
   },
   { flush: "sync" }
 );
-
-watch(
-  () => [
-    core.cartesianPoses.value,
-    core.worldPoses.value,
-    core.trails.value,
-    core.rigOrder.value,
-    core.sceneWorldRadius.value,
-    core.session.projectionSettings.value,
-    core.errorMessage.value
-  ],
-  () => {
-    if (core.errorMessage.value) {
-      statusText.value = core.errorMessage.value;
-    }
-    drawFrame();
-  },
-  { deep: true }
-);
-
-watch(
-  () => core.sceneWorldRadius.value,
-  () => updateLayout()
-);
-
-onMounted(() => {
-  const canvas = canvasRef.value;
-  if (!canvas) {
-    return;
-  }
-
-  canvasContextRef.value = canvas.getContext("2d");
-  updateLayout();
-
-  if (typeof ResizeObserver === "function" && containerRef.value) {
-    resizeObserver = new ResizeObserver(() => updateLayout());
-    resizeObserver.observe(containerRef.value);
-  }
-});
-
-onBeforeUnmount(() => {
-  resizeObserver?.disconnect();
-  resizeObserver = null;
-  canvasContextRef.value = null;
-  core.dispose();
-});
 </script>
 
 <template>
@@ -565,8 +120,8 @@ onBeforeUnmount(() => {
             Sequence-driven body overlay
           </p>
           <p class="max-w-2xl text-sm leading-6 text-slate-300">
-            Authored wall-plane sequences drive the poi. Sequence radius 1 maps to the largest
-            circle where both hands can occupy the same point.
+            Authored wall-plane sequences drive the poi through the main visualizer body overlay.
+            Sequence radius 1 maps to the largest circle where both hands can occupy the same point.
           </p>
         </div>
         <div class="grid gap-2 md:min-w-80">
@@ -625,22 +180,25 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <div
-        ref="containerRef"
-        class="relative min-h-112 overflow-hidden rounded-lg border border-slate-800 bg-slate-950 md:min-h-136"
-      >
-        <div
-          class="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 py-3 text-[0.68rem] uppercase tracking-[0.2em] text-slate-500"
-        >
-          <span>Wall plane only</span>
-          <span>Body over poi</span>
-        </div>
-        <canvas ref="canvasRef" class="absolute inset-0 z-0 block h-full w-full" />
-      </div>
+      <PoiCanvasViewport
+        class="min-h-112! rounded-lg md:min-h-136!"
+        :display-scale="1"
+        :is-fullscreen="false"
+        :overlay-settings="overlaySettings"
+        :poses="core.cartesianPoses.value"
+        :projection-drag="null"
+        :projection-settings="core.session.projectionSettings.value"
+        :rig-order="core.rigOrder.value"
+        :scene-world-radius="core.sceneWorldRadius.value"
+        :trails="core.trails.value"
+        :webcam-active="false"
+        :webcam-stream="null"
+        :world-poses="core.worldPoses.value"
+      />
 
       <p class="text-sm leading-6 text-slate-400">
-        This duplicates only the small wall-plane renderer needed for the experiment while
-        preserving the original stick-figure proportions separately from sequence normalization.
+        This demo now exercises the main visualizer body overlay path instead of a custom POC
+        canvas.
       </p>
     </section>
   </div>

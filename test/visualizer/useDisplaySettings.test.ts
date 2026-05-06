@@ -53,6 +53,8 @@ describe("useDisplaySettings", () => {
     expect(controller.overlaySettings.value.geometry.trailLineWidth).toBe(8);
     expect(controller.overlaySettings.value.geometry.chainLineWidth).toBe(3);
     expect(controller.overlaySettings.value.visibility.showHeadTrails).toBe(true);
+    expect(controller.overlaySettings.value.visibility.showBodyRig).toBe(false);
+    expect(controller.overlaySettings.value.geometry.bodyLineWidth).toBe(12);
   });
 
   it("persists normal overrides and deletes overrides that match inherited defaults", () => {
@@ -61,15 +63,17 @@ describe("useDisplaySettings", () => {
 
     controller.setDisplayScale(2);
     controller.setOverlayGeometry("trailLineWidth", 7);
+    controller.setOverlayGeometry("bodyLineWidth", 14);
     controller.setOverlayVisibility("showHandTrails", true);
+    controller.setOverlayVisibility("showBodyRig", true);
 
     expect(storedSnapshot(storage)).toMatchObject({
       presets: {
         normal: {
           displayScale: 2,
           overlaySettings: {
-            visibility: { showHandTrails: true },
-            geometry: { trailLineWidth: 7 }
+            visibility: { showHandTrails: true, showBodyRig: true },
+            geometry: { trailLineWidth: 7, bodyLineWidth: 14 }
           }
         }
       }
@@ -77,7 +81,9 @@ describe("useDisplaySettings", () => {
 
     controller.setDisplayScale(1);
     controller.setOverlayGeometry("trailLineWidth", 3);
+    controller.setOverlayGeometry("bodyLineWidth", 12);
     controller.setOverlayVisibility("showHandTrails", false);
+    controller.setOverlayVisibility("showBodyRig", false);
 
     expect(storedSnapshot(storage)).toMatchObject({
       presets: {
@@ -257,6 +263,8 @@ describe("useDisplaySettings", () => {
     expect(ownershipById.projectionMode).toBe("external");
     expect(ownershipById.projectionYawDeg).toBe("external");
     expect(ownershipById.projectionPitchDeg).toBe("external");
+    expect(ownershipById["overlay.visibility.showBodyRig"]).toBe("preset");
+    expect(ownershipById["overlay.geometry.bodyLineWidth"]).toBe("preset");
   });
 
   it("registers projection preference as a select setting", () => {

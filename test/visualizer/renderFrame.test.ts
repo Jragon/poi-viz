@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { CartesianMultiRigPose } from "@/engine/types";
+import { computeBodyOverlay } from "@/visualizer/bodyOverlay";
 import {
   DEFAULT_RENDER_FRAME_GEOMETRY,
   WEBCAM_RENDER_FRAME_GEOMETRY,
@@ -322,7 +323,12 @@ describe("renderFrame", () => {
         handRadius: 11,
         headRadius: 13,
         nodeStrokeWidth: 3.5,
-        trailMinOpacity: 0.25
+        trailMinOpacity: 0.25,
+        bodyLineWidth: 12,
+        bodySecondaryLineWidth: 6,
+        bodyArmLineWidth: 12,
+        bodyJointRadius: 5.5,
+        bodyHeadLineWidth: 9
       }
     });
 
@@ -379,5 +385,71 @@ describe("renderFrame", () => {
     expect(operations).toContain("lineTo:150.0,170.0");
     expect(operations).toContain("lineTo:250.0,100.0");
     expect(operations.some((operation) => operation.startsWith("arc:"))).toBe(false);
+  });
+
+  it("draws prepared body overlay between trails and poi chains", () => {
+    const { layout, poses, trails } = createSingleRigRenderInput();
+    const bodyOverlay = computeBodyOverlay({
+      layout,
+      worldPoses: {
+        left: {
+          handPosition: { x: -0.5, y: 0.25, z: 0 },
+          headPosition: { x: -0.25, y: 0.25, z: 0 },
+          planeId: "wall"
+        },
+        right: {
+          handPosition: { x: 0.5, y: 0.25, z: 0 },
+          headPosition: { x: 0.75, y: 0.25, z: 0 },
+          planeId: "wall"
+        }
+      }
+    });
+    const { ctx, operations } = createMockContext();
+
+    renderFrame(ctx, layout, poses, {
+      trails,
+      bodyOverlay,
+      showBodyRig: true
+    });
+
+    const handTrailIndex = operations.indexOf("lineTo:150.0,150.0");
+    const bodyIndex = operations.indexOf("lineWidth:12.0");
+    const chainLineIndex = operations.indexOf("lineTo:250.0,100.0");
+
+    expect(bodyOverlay).not.toBeNull();
+    expect(bodyIndex).toBeGreaterThan(handTrailIndex);
+    expect(chainLineIndex).toBeGreaterThan(bodyIndex);
+  });
+
+  it("does not draw provided body overlay when the body layer is disabled", () => {
+    const { layout, poses } = createSingleRigRenderInput();
+    const bodyOverlay = computeBodyOverlay({
+      layout,
+      worldPoses: {
+        left: {
+          handPosition: { x: -0.5, y: 0.25, z: 0 },
+          headPosition: { x: -0.25, y: 0.25, z: 0 },
+          planeId: "wall"
+        },
+        right: {
+          handPosition: { x: 0.5, y: 0.25, z: 0 },
+          headPosition: { x: 0.75, y: 0.25, z: 0 },
+          planeId: "wall"
+        }
+      }
+    });
+    const { ctx, operations } = createMockContext();
+
+    renderFrame(ctx, layout, poses, { bodyOverlay });
+
+    expect(operations).not.toContain("lineWidth:12.0");
+  });
+
+  it("tolerates enabled body layer with no prepared body data", () => {
+    const { layout, poses } = createSingleRigRenderInput();
+    const { ctx, operations } = createMockContext();
+
+    expect(() => renderFrame(ctx, layout, poses, { showBodyRig: true })).not.toThrow();
+    expect(operations).toContain("lineTo:250.0,100.0");
   });
 });

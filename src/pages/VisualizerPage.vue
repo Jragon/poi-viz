@@ -44,6 +44,7 @@ const core = useVisualizerCore(activeSequence, {
 });
 const {
   rigOrder,
+  worldPoses,
   cartesianPoses,
   trails,
   sceneWorldRadius,
@@ -232,11 +233,13 @@ async function toggleWebcam() {
                 :overlay-settings="overlaySettings"
                 :poses="cartesianPoses"
                 :projection-drag="projectionDrag"
+                :projection-settings="core.session.projectionSettings.value"
                 :rig-order="rigOrder"
                 :scene-world-radius="sceneWorldRadius"
                 :trails="trails"
                 :webcam-active="webcamActive"
                 :webcam-stream="webcamStream"
+                :world-poses="worldPoses"
                 @update:projection-yaw-deg="core.session.setProjectionYawDeg"
                 @update:projection-pitch-deg="core.session.setProjectionPitchDeg"
               />

@@ -15,6 +15,7 @@ export interface OverlayLayerVisibility {
   showHeadTrails: boolean;
   showChainLines: boolean;
   showNodeMarkers: boolean;
+  showBodyRig: boolean;
 }
 
 export type OverlayGeometrySettings = {
@@ -38,7 +39,8 @@ export const DEFAULT_OVERLAY_VISIBILITY: OverlayLayerVisibility = {
   showHandTrails: false,
   showHeadTrails: true,
   showChainLines: true,
-  showNodeMarkers: true
+  showNodeMarkers: true,
+  showBodyRig: false
 };
 
 export function cloneOverlayGeometry(

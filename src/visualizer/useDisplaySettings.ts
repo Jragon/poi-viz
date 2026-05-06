@@ -176,6 +176,14 @@ export const OVERLAY_VISIBILITY_SETTINGS: readonly (BooleanSettingRegistryEntry 
     group: "Layers",
     kind: "boolean",
     ownership: "preset"
+  },
+  {
+    id: "overlay.visibility.showBodyRig",
+    key: "showBodyRig",
+    label: "Body Rig",
+    group: "Layers",
+    kind: "boolean",
+    ownership: "preset"
   }
 ];
 
@@ -253,6 +261,66 @@ export const OVERLAY_GEOMETRY_SETTINGS: readonly (RangeSettingRegistryEntry & {
     max: 1,
     step: 0.05,
     digits: 2
+  },
+  {
+    id: "overlay.geometry.bodyLineWidth",
+    key: "bodyLineWidth",
+    label: "Body Thickness",
+    group: "Geometry",
+    kind: "range",
+    ownership: "preset",
+    min: 1,
+    max: 24,
+    step: 0.5,
+    digits: 1
+  },
+  {
+    id: "overlay.geometry.bodySecondaryLineWidth",
+    key: "bodySecondaryLineWidth",
+    label: "Body Detail Thickness",
+    group: "Geometry",
+    kind: "range",
+    ownership: "preset",
+    min: 1,
+    max: 18,
+    step: 0.5,
+    digits: 1
+  },
+  {
+    id: "overlay.geometry.bodyArmLineWidth",
+    key: "bodyArmLineWidth",
+    label: "Arm Thickness",
+    group: "Geometry",
+    kind: "range",
+    ownership: "preset",
+    min: 1,
+    max: 24,
+    step: 0.5,
+    digits: 1
+  },
+  {
+    id: "overlay.geometry.bodyJointRadius",
+    key: "bodyJointRadius",
+    label: "Body Joint Size",
+    group: "Geometry",
+    kind: "range",
+    ownership: "preset",
+    min: 0,
+    max: 16,
+    step: 0.5,
+    digits: 1
+  },
+  {
+    id: "overlay.geometry.bodyHeadLineWidth",
+    key: "bodyHeadLineWidth",
+    label: "Body Head Thickness",
+    group: "Geometry",
+    kind: "range",
+    ownership: "preset",
+    min: 1,
+    max: 20,
+    step: 0.5,
+    digits: 1
   }
 ];
 

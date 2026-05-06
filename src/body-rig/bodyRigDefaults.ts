@@ -69,3 +69,10 @@ export function buildDefaultBodyRigDimensions(
     sharedHandOverlapCircle
   };
 }
+
+export function buildBodyRigDimensionsForSharedHandRadius(targetRadius = 1): BodyRigDimensions {
+  const base = buildDefaultBodyRigDimensions(1);
+  const radius = Number.isFinite(targetRadius) && targetRadius > 0 ? targetRadius : 1;
+
+  return buildDefaultBodyRigDimensions(radius / base.sharedHandOverlapCircle.radius);
+}

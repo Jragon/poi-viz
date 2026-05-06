@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   DEFAULT_BODY_ARM_REACH,
+  buildBodyRigDimensionsForSharedHandRadius,
   buildBodyRigFrame,
   buildDefaultBodyRigDimensions,
   getBodyRigArmPoints,
@@ -26,6 +27,16 @@ describe("bodyRigFrame", () => {
     expect(dimensions.hipSpan).toBeCloseTo(dimensions.shoulderSpan * 0.6);
     expect(dimensions.headRadius).toBeCloseTo(DEFAULT_BODY_ARM_REACH * 0.28125);
     expect(dimensions.sharedHandOverlapCircle.radius).toBeGreaterThan(0);
+  });
+
+  it("scales default body dimensions to a target shared hand radius", () => {
+    const dimensions = buildBodyRigDimensionsForSharedHandRadius(1);
+
+    expect(dimensions.sharedHandOverlapCircle.radius).toBeCloseTo(1);
+    expect(dimensions.config.upperArmLength + dimensions.config.forearmLength).toBeCloseTo(
+      dimensions.armReach
+    );
+    expect(dimensions.torsoHeight / dimensions.armReach).toBeCloseTo(0.90625);
   });
 
   it("solves a y-up world-space body frame before projection", () => {

@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch, type PropType } from "vue";
 
-import type { ProjectionMode } from "@/engine/planeProjection";
-import type { CartesianMultiRigPose, RigId } from "@/engine/types";
+import {
+  DEFAULT_PLANE_PROJECTION_SETTINGS,
+  type PlaneProjectionSettings,
+  type ProjectionMode
+} from "@/engine/planeProjection";
+import type { CartesianMultiRigPose, RigId, WorldMultiRigPose } from "@/engine/types";
+import { computeBodyOverlay, getBodyOverlaySceneExtent } from "@/visualizer/bodyOverlay";
 import { computeDisplayPixelsPerWorldUnit } from "@/visualizer/displayScale";
 import type { VisualizerOverlaySettings } from "@/visualizer/overlaySettings";
 import { computeDragProjection, createProjectionDragState } from "@/visualizer/projectionDrag";
@@ -19,6 +24,10 @@ const props = defineProps({
   poses: {
     type: Object as PropType<CartesianMultiRigPose>,
     required: true
+  },
+  worldPoses: {
+    type: Object as PropType<WorldMultiRigPose>,
+    default: () => ({})
   },
   sceneWorldRadius: {
     type: Number,
@@ -55,6 +64,10 @@ const props = defineProps({
   projectionDrag: {
     type: Object as PropType<ProjectionDragSettings | null>,
     default: null
+  },
+  projectionSettings: {
+    type: Object as PropType<PlaneProjectionSettings>,
+    default: () => DEFAULT_PLANE_PROJECTION_SETTINGS
   }
 });
 
@@ -91,16 +104,26 @@ const draw = () => {
   }
 
   ctx.setTransform(layout.dpr, 0, 0, layout.dpr, 0, 0);
+  const bodyOverlay = props.overlaySettings.visibility.showBodyRig
+    ? computeBodyOverlay({
+        worldPoses: props.worldPoses,
+        layout,
+        projectionSettings: props.projectionSettings
+      })
+    : null;
+
   renderFrame(ctx, layout, props.poses, {
     geometry: props.overlaySettings.geometry,
     rigStyles: props.overlaySettings.rigStyles,
     rigOrder: props.rigOrder,
     trails: props.trails,
+    bodyOverlay,
     transparentBackground: props.webcamActive,
     showHandTrails: props.overlaySettings.visibility.showHandTrails,
     showHeadTrails: props.overlaySettings.visibility.showHeadTrails,
     showChainLines: props.overlaySettings.visibility.showChainLines,
     showNodeMarkers: props.overlaySettings.visibility.showNodeMarkers,
+    showBodyRig: props.overlaySettings.visibility.showBodyRig,
     showLabels: false
   });
 };
@@ -116,15 +139,21 @@ const updateLayout = () => {
     return;
   }
 
+  const sceneExtent = props.overlaySettings.visibility.showBodyRig
+    ? getBodyOverlaySceneExtent({ sequenceRadiusWorld: props.sceneWorldRadius })
+    : null;
+  const effectiveSceneWorldRadius = sceneExtent?.sceneRadiusWorld ?? props.sceneWorldRadius;
+
   layoutRef.value = createSceneLayout({
     cssWidth: rect.width,
     cssHeight: rect.height,
     dpr: window.devicePixelRatio || 1,
-    sceneRadiusWorld: props.sceneWorldRadius,
+    sceneRadiusWorld: effectiveSceneWorldRadius,
+    ...(sceneExtent ? { cameraCenterWorld: sceneExtent.cameraCenterWorld } : {}),
     pixelsPerWorldUnit: computeDisplayPixelsPerWorldUnit({
       cssWidth: rect.width,
       cssHeight: rect.height,
-      sceneRadiusWorld: props.sceneWorldRadius,
+      sceneRadiusWorld: effectiveSceneWorldRadius,
       displayScale: props.displayScale
     })
   });
@@ -132,7 +161,15 @@ const updateLayout = () => {
 };
 
 watch(
-  () => [props.poses, props.rigOrder, props.trails, props.overlaySettings, props.webcamActive],
+  () => [
+    props.poses,
+    props.worldPoses,
+    props.rigOrder,
+    props.trails,
+    props.overlaySettings,
+    props.webcamActive,
+    props.projectionSettings
+  ],
   () => {
     draw();
   },
@@ -140,7 +177,7 @@ watch(
 );
 
 watch(
-  () => [props.sceneWorldRadius, props.displayScale],
+  () => [props.sceneWorldRadius, props.displayScale, props.overlaySettings.visibility.showBodyRig],
   () => {
     updateLayout();
   }
