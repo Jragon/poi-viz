@@ -38,7 +38,7 @@ describe("pastedQuarterTimePattern", () => {
     );
     const planes = new Set(
       sequence.rigs.flatMap((rig) =>
-        rig.sequence.segments.map((placement) => placement.planeId ?? "wall")
+        rig.sequence.segments.map((segment) => segment.planeId ?? "wall")
       )
     );
 

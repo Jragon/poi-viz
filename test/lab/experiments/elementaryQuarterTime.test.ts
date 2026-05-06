@@ -83,7 +83,7 @@ describe("buildElementaryQuarterTimeSequence", () => {
 
               expect(prepared.maxSequenceDuration).toBe(LOOP_DURATION_UNITS);
               expect(prepared.rigs.map((rig) => rig.rigId)).toEqual(["left", "right"]);
-              expect(prepared.rigs.flatMap((rig) => rig.prepared.placements)).toHaveLength(4);
+              expect(prepared.rigs.flatMap((rig) => rig.prepared.segments)).toHaveLength(4);
             }
           }
         }
@@ -91,7 +91,7 @@ describe("buildElementaryQuarterTimeSequence", () => {
     }
   });
 
-  it("preserves independent per-hand planes in generated placements", () => {
+  it("preserves independent per-hand planes in generated segments", () => {
     const sequence = buildElementaryQuarterTimeSequence({
       leftPlaneId: "wheel",
       leftArcId: "0-90",
@@ -100,11 +100,11 @@ describe("buildElementaryQuarterTimeSequence", () => {
       timingMode: "quarter"
     });
 
-    expect(sequence.rigs[0].sequence.segments.map((placement) => placement.planeId)).toEqual([
+    expect(sequence.rigs[0].sequence.segments.map((segment) => segment.planeId)).toEqual([
       "wheel",
       "wheel"
     ]);
-    expect(sequence.rigs[1].sequence.segments.map((placement) => placement.planeId)).toEqual([
+    expect(sequence.rigs[1].sequence.segments.map((segment) => segment.planeId)).toEqual([
       "floor",
       "floor"
     ]);

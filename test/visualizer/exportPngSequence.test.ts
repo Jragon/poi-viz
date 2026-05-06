@@ -30,15 +30,13 @@ const sequence: MultiRigSequence = {
         segments: [
           {
             durationUnits: 1,
-            segment: {
-              hand: {
-                startPose: { phaseAbs: 0, radius: 1 },
-                driver: { kind: "circle", omega: 1 }
-              },
-              head: {
-                startPose: { phaseAbs: 0, radius: 1 },
-                driver: { kind: "circle", omega: 1 }
-              }
+            hand: {
+              startPose: { phaseAbs: 0, radius: 1 },
+              driver: { kind: "circle", omega: 1 }
+            },
+            head: {
+              startPose: { phaseAbs: 0, radius: 1 },
+              driver: { kind: "circle", omega: 1 }
             }
           }
         ]

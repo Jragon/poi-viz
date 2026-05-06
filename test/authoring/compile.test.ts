@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
 
 function makeStaticSegment(): Segment {
   return {
+    durationUnits: 1,
     hand: {
       startPose: { phaseAbs: 0, radius: 1 },
       driver: { kind: "circle", omega: 0 }
@@ -182,10 +183,10 @@ describe("compileAuthoredDocument", () => {
     expect(leftBoundaries[1].planeId).toBe("wall");
     expect(leftBoundaries[0].endPose).toEqual(expectedFirstEnd);
     expect(leftBoundaries[1].startPose).toEqual(expectedFirstEnd);
-    expect(result.sequence.rigs[0].sequence.segments[1].segment.hand.startPose).toEqual(
+    expect(result.sequence.rigs[0].sequence.segments[1].hand.startPose).toEqual(
       expectedFirstEnd.handPose
     );
-    expect(result.sequence.rigs[0].sequence.segments[1].segment.head.startPose).toEqual(
+    expect(result.sequence.rigs[0].sequence.segments[1].head.startPose).toEqual(
       expectedFirstEnd.headPose
     );
     expect(result.sequence.rigs[0].sequence.segments[0].planeId).toBe("wall");
@@ -243,7 +244,7 @@ describe("compileAuthoredDocument", () => {
     expect(firstBoundary?.endPose.headPose.radius).toBe(0.25);
     expect(secondBoundary?.startPose.handPose.radius).toBe(2);
     expect(secondBoundary?.startPose.headPose.radius).toBe(0.25);
-    expect(result.sequence.rigs[0].sequence.segments[0].segment.hand.radiusProfile?.keys).toEqual([
+    expect(result.sequence.rigs[0].sequence.segments[0].hand.radiusProfile?.keys).toEqual([
       { t: 0.5, radius: 2 }
     ]);
   });
@@ -328,7 +329,7 @@ describe("compileAuthoredDocument", () => {
     }
   });
 
-  it("preserves authored plane ids in derived boundaries and compiled placements", () => {
+  it("preserves authored plane ids in derived boundaries and compiled segments", () => {
     const document: AuthoredSequenceDocument = {
       name: "Planes",
       description: null,
@@ -374,9 +375,10 @@ describe("compileAuthoredDocument", () => {
       "wheel",
       "floor"
     ]);
-    expect(result.sequence.rigs[0].sequence.segments.map((placement) => placement.planeId)).toEqual(
-      ["wheel", "floor"]
-    );
+    expect(result.sequence.rigs[0].sequence.segments.map((segment) => segment.planeId)).toEqual([
+      "wheel",
+      "floor"
+    ]);
   });
 
   it("allows wall to floor breaks at the shared X axis with a collinear head", () => {
@@ -494,7 +496,7 @@ describe("compileAuthoredDocument", () => {
 });
 
 describe("authoredDocumentFromMultiRigSequence", () => {
-  it("round-trips placement plane ids into authored segments", () => {
+  it("round-trips segment plane ids into authored segments", () => {
     const segment = makeStaticSegment();
     const sequence: MultiRigSequence = {
       rigs: [
@@ -502,8 +504,8 @@ describe("authoredDocumentFromMultiRigSequence", () => {
           rigId: "left",
           sequence: {
             segments: [
-              { segment, durationUnits: 1, planeId: "wall" },
-              { segment, durationUnits: 1, planeId: "floor" }
+              { ...segment, durationUnits: 1, planeId: "wall" },
+              { ...segment, durationUnits: 1, planeId: "floor" }
             ]
           }
         }
@@ -537,13 +539,13 @@ describe("authoredDocumentFromMultiRigSequence", () => {
     ).toEqual(["wheel", "floor"]);
   });
 
-  it("defaults omitted placement plane ids to wall when converting to authored documents", () => {
+  it("defaults omitted segment plane ids to wall when converting to authored documents", () => {
     const segment = makeStaticSegment();
     const sequence: MultiRigSequence = {
       rigs: [
         {
           rigId: "left",
-          sequence: { segments: [{ segment, durationUnits: 1 }] }
+          sequence: { segments: [{ ...segment, durationUnits: 1 }] }
         }
       ]
     };

@@ -71,19 +71,15 @@ export interface SegmentNodeMotion {
 }
 
 export interface Segment {
+  durationUnits: TimeUnit;
+  planeId?: PlaneId;
+  planeSide?: PlaneSide;
   hand: SegmentNodeMotion;
   head: SegmentNodeMotion;
 }
 
-export interface SegmentPlacement {
-  segment: Segment;
-  durationUnits: TimeUnit;
-  planeId?: PlaneId;
-  planeSide?: PlaneSide;
-}
-
 export interface SequenceSpec {
-  segments: SegmentPlacement[];
+  segments: Segment[];
 }
 
 export interface RigSequenceEntry {

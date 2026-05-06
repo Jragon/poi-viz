@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 function makeSegment(handOmega: number, headOmega: number): Segment {
   return {
+    durationUnits: 1,
     hand: {
       startPose: { phaseAbs: 0, radius: 1 },
       driver: { kind: "circle", omega: handOmega }
@@ -20,7 +21,7 @@ function makeSequence(durations: number[], handOmega: number, headOmega: number)
   const segment = makeSegment(handOmega, headOmega);
   return {
     segments: durations.map((durationUnits) => ({
-      segment,
+      ...segment,
       durationUnits
     }))
   };
@@ -120,12 +121,12 @@ describe("evalPreparedMultiRigSequenceAt", () => {
         {
           rigId: "left",
           sequence: {
-            segments: [{ segment: makeSegment(1, 2), durationUnits: 2, planeId: "floor" }]
+            segments: [{ ...makeSegment(1, 2), durationUnits: 2, planeId: "floor" }]
           }
         },
         {
           rigId: "right",
-          sequence: { segments: [{ segment: makeSegment(3, 4), durationUnits: 2 }] }
+          sequence: { segments: [{ ...makeSegment(3, 4), durationUnits: 2 }] }
         }
       ]
     });
@@ -147,12 +148,12 @@ describe("evalPreparedMultiRigSequenceAt", () => {
         {
           rigId: "left",
           sequence: {
-            segments: [{ segment: makeSegment(1, 2), durationUnits: 2, planeSide: "b" }]
+            segments: [{ ...makeSegment(1, 2), durationUnits: 2, planeSide: "b" }]
           }
         },
         {
           rigId: "right",
-          sequence: { segments: [{ segment: makeSegment(3, 4), durationUnits: 2 }] }
+          sequence: { segments: [{ ...makeSegment(3, 4), durationUnits: 2 }] }
         }
       ]
     });

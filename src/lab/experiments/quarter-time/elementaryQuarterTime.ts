@@ -1,5 +1,5 @@
 import { PI } from "@/engine/constants";
-import type { MultiRigSequence, PlaneId, SegmentPlacement } from "@/engine/types";
+import type { MultiRigSequence, PlaneId, Segment } from "@/engine/types";
 
 export type ElementaryQuarterArcId = "0-90" | "90-180" | "180-270" | "270-0";
 
@@ -288,45 +288,41 @@ export function isElementaryTimingAvailable({
   }
 }
 
-function makeBackAndForthPlacements(
+function makeBackAndForthSegments(
   arcId: ElementaryQuarterArcId,
   planeId: PlaneId,
   startsAt: ElementaryEndpoint
-): SegmentPlacement[] {
+): Segment[] {
   const arc = requireArc(arcId);
   const startPhase = toRadians(arc.startDeg);
   const endPhase = toRadians(arc.endDeg);
 
-  const forward: SegmentPlacement = {
+  const forward: Segment = {
     durationUnits: QUARTER_DURATION_UNITS,
     planeId,
-    segment: {
-      hand: {
-        startPose: { phaseAbs: startPhase, radius: HAND_RADIUS },
-        driver: { kind: "circle", omega: HAND_OMEGA }
-      },
-      head: {
-        startPose: { phaseAbs: startPhase, radius: HEAD_RADIUS },
-        driver: { kind: "circle", omega: HEAD_OMEGA }
-      }
+    hand: {
+      startPose: { phaseAbs: startPhase, radius: HAND_RADIUS },
+      driver: { kind: "circle", omega: HAND_OMEGA }
+    },
+    head: {
+      startPose: { phaseAbs: startPhase, radius: HEAD_RADIUS },
+      driver: { kind: "circle", omega: HEAD_OMEGA }
     }
   };
-  const returnPlacement: SegmentPlacement = {
+  const returnSegment: Segment = {
     durationUnits: QUARTER_DURATION_UNITS,
     planeId,
-    segment: {
-      hand: {
-        startPose: { phaseAbs: endPhase, radius: HAND_RADIUS },
-        driver: { kind: "circle", omega: -HAND_OMEGA }
-      },
-      head: {
-        startPose: { phaseAbs: endPhase, radius: HEAD_RADIUS },
-        driver: { kind: "circle", omega: -HEAD_OMEGA }
-      }
+    hand: {
+      startPose: { phaseAbs: endPhase, radius: HAND_RADIUS },
+      driver: { kind: "circle", omega: -HAND_OMEGA }
+    },
+    head: {
+      startPose: { phaseAbs: endPhase, radius: HEAD_RADIUS },
+      driver: { kind: "circle", omega: -HEAD_OMEGA }
     }
   };
 
-  return startsAt === "start" ? [forward, returnPlacement] : [returnPlacement, forward];
+  return startsAt === "start" ? [forward, returnSegment] : [returnSegment, forward];
 }
 
 export function buildElementaryQuarterTimeSequence({
@@ -349,13 +345,13 @@ export function buildElementaryQuarterTimeSequence({
       {
         rigId: "left",
         sequence: {
-          segments: makeBackAndForthPlacements(leftArcId, leftPlaneId, leftStartsAt)
+          segments: makeBackAndForthSegments(leftArcId, leftPlaneId, leftStartsAt)
         }
       },
       {
         rigId: "right",
         sequence: {
-          segments: makeBackAndForthPlacements(rightArcId, rightPlaneId, rightStartsAt)
+          segments: makeBackAndForthSegments(rightArcId, rightPlaneId, rightStartsAt)
         }
       }
     ]

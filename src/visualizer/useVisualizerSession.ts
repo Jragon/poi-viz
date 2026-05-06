@@ -77,7 +77,7 @@ function clampProjectionDegrees(value: number, min: number, max: number, fallbac
 function preparedUsesNonWallPlane(prepared: PreparedMultiRigSequence | null): boolean {
   return (
     prepared?.rigs.some((rig) =>
-      rig.prepared.placements.some((placement) => placement.planeId !== "wall")
+      rig.prepared.segments.some((segment) => segment.planeId !== "wall")
     ) ?? false
   );
 }

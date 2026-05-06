@@ -7,6 +7,7 @@ import { isContinuousAtLoopBoundary, sampleMultiRigTrailGrid } from "@/visualize
 
 function makeSegment(handOmega: number, headOmega: number, handPhase = 0, headPhase = 0): Segment {
   return {
+    durationUnits: 1,
     hand: {
       startPose: { phaseAbs: handPhase, radius: 1 },
       driver: { kind: "circle", omega: handOmega }
@@ -36,7 +37,7 @@ function singleRigSequence(segment: Segment, durationUnits: number): MultiRigSeq
     rigs: [
       {
         rigId: "left",
-        sequence: { segments: [{ segment, durationUnits }] }
+        sequence: { segments: [{ ...segment, durationUnits }] }
       }
     ]
   };
@@ -72,28 +73,24 @@ describe("trailSampling", () => {
             segments: [
               {
                 durationUnits,
-                segment: {
-                  hand: {
-                    startPose: { phaseAbs: degrees(240), radius: 1 },
-                    driver: { kind: "circle", omega: Math.PI * 2 }
-                  },
-                  head: {
-                    startPose: { phaseAbs: degrees(60), radius: 0.75 },
-                    driver: { kind: "circle", omega: Math.PI * 8 }
-                  }
+                hand: {
+                  startPose: { phaseAbs: degrees(240), radius: 1 },
+                  driver: { kind: "circle", omega: Math.PI * 2 }
+                },
+                head: {
+                  startPose: { phaseAbs: degrees(60), radius: 0.75 },
+                  driver: { kind: "circle", omega: Math.PI * 8 }
                 }
               },
               {
                 durationUnits,
-                segment: {
-                  hand: {
-                    startPose: { phaseAbs: degrees(120), radius: 1 },
-                    driver: { kind: "circle", omega: -Math.PI * 2 }
-                  },
-                  head: {
-                    startPose: { phaseAbs: degrees(300), radius: 0.75 },
-                    driver: { kind: "circle", omega: Math.PI * 4 }
-                  }
+                hand: {
+                  startPose: { phaseAbs: degrees(120), radius: 1 },
+                  driver: { kind: "circle", omega: -Math.PI * 2 }
+                },
+                head: {
+                  startPose: { phaseAbs: degrees(300), radius: 0.75 },
+                  driver: { kind: "circle", omega: Math.PI * 4 }
                 }
               }
             ]
@@ -119,8 +116,8 @@ describe("trailSampling", () => {
           rigId: "left",
           sequence: {
             segments: [
-              { segment, durationUnits: 1, planeId: "wall" },
-              { segment, durationUnits: 1, planeId: "floor" }
+              { ...segment, durationUnits: 1, planeId: "wall" },
+              { ...segment, durationUnits: 1, planeId: "floor" }
             ]
           }
         }
@@ -138,8 +135,8 @@ describe("trailSampling", () => {
           rigId: "left",
           sequence: {
             segments: [
-              { segment, durationUnits: 1, planeId: "wall", planeSide: "a" },
-              { segment, durationUnits: 1, planeId: "wall", planeSide: "b" }
+              { ...segment, durationUnits: 1, planeId: "wall", planeSide: "a" },
+              { ...segment, durationUnits: 1, planeId: "wall", planeSide: "b" }
             ]
           }
         }
@@ -158,15 +155,15 @@ describe("trailSampling", () => {
     expect(isContinuousAtLoopBoundary(prepared, 1)).toBe(true);
   });
 
-  it("uses the previous placement at internal boundaries", () => {
+  it("uses the previous segment at internal boundaries", () => {
     const prepared = prepare({
       rigs: [
         {
           rigId: "left",
           sequence: {
             segments: [
-              { segment: makeSegment(Math.PI, Math.PI), durationUnits: 1 },
-              { segment: makeSegment(0, 0), durationUnits: 1 }
+              { ...makeSegment(Math.PI, Math.PI), durationUnits: 1 },
+              { ...makeSegment(0, 0), durationUnits: 1 }
             ]
           }
         }
@@ -181,12 +178,12 @@ describe("trailSampling", () => {
       rigs: [
         {
           rigId: "left",
-          sequence: { segments: [{ segment: makeSegment(Math.PI, Math.PI), durationUnits: 1 }] }
+          sequence: { segments: [{ ...makeSegment(Math.PI, Math.PI), durationUnits: 1 }] }
         },
         {
           rigId: "right",
           sequence: {
-            segments: [{ segment: makeSegment(Math.PI * 2, Math.PI * 2), durationUnits: 2 }]
+            segments: [{ ...makeSegment(Math.PI * 2, Math.PI * 2), durationUnits: 2 }]
           }
         }
       ]
@@ -215,7 +212,7 @@ describe("trailSampling", () => {
         {
           rigId: "left",
           sequence: {
-            segments: [{ segment: makeSegment(0, 0), durationUnits: 1, planeId: "wheel" }]
+            segments: [{ ...makeSegment(0, 0), durationUnits: 1, planeId: "wheel" }]
           }
         }
       ]
@@ -232,7 +229,7 @@ describe("trailSampling", () => {
         {
           rigId: "left",
           sequence: {
-            segments: [{ segment: makeSegment(0, 0), durationUnits: 1, planeId: "wheel" }]
+            segments: [{ ...makeSegment(0, 0), durationUnits: 1, planeId: "wheel" }]
           }
         }
       ]

@@ -4,7 +4,7 @@ import type {
   PlaneId,
   PlaneSide,
   RelativeRigPose,
-  SegmentPlacement,
+  Segment,
   SequenceSpec,
   TimeUnit
 } from "@/engine/types";
@@ -27,14 +27,14 @@ export type SequenceValidationResult =
   | { ok: true }
   | { ok: false; errors: SequenceValidationError[] };
 
-export type PreparedPlacement = SegmentPlacement & {
+export type PreparedSegment = Omit<Segment, "planeId"> & {
   readonly planeId: PlaneId;
   readonly startUnit: TimeUnit;
   readonly endUnit: TimeUnit;
 };
 
 export type PreparedSequence = {
-  readonly placements: readonly PreparedPlacement[];
+  readonly segments: readonly PreparedSegment[];
   readonly totalDuration: TimeUnit;
 };
 
@@ -63,8 +63,8 @@ export function validateSequenceStructure(sequence: SequenceSpec): SequenceValid
     errors.push({ code: "EMPTY_SEQUENCE" });
   }
 
-  sequence.segments.forEach((placement, index) => {
-    const duration = placement.durationUnits;
+  sequence.segments.forEach((segment, index) => {
+    const duration = segment.durationUnits;
 
     if (!Number.isFinite(duration)) {
       errors.push({ code: "INVALID_DURATION_UNITS", index });
@@ -75,11 +75,11 @@ export function validateSequenceStructure(sequence: SequenceSpec): SequenceValid
       errors.push({ code: "NON_POSITIVE_DURATION", index });
     }
 
-    if (placement.planeId !== undefined && !PLANE_IDS.has(placement.planeId)) {
+    if (segment.planeId !== undefined && !PLANE_IDS.has(segment.planeId)) {
       errors.push({ code: "INVALID_PLANE_ID", index });
     }
 
-    if (placement.planeSide !== undefined && !isPlaneSide(placement.planeSide)) {
+    if (segment.planeSide !== undefined && !isPlaneSide(segment.planeSide)) {
       errors.push({ code: "INVALID_PLANE_SIDE", index });
     }
   });
@@ -91,15 +91,17 @@ export function prepareSequence(sequence: SequenceSpec): PrepareSequenceResult {
   const validateResult = validateSequenceStructure(sequence);
   if (!validateResult.ok) return validateResult;
 
-  const placements: PreparedPlacement[] = [];
+  const segments: PreparedSegment[] = [];
   let cursor: TimeUnit = 0;
-  for (const placement of sequence.segments) {
+  for (const segment of sequence.segments) {
     const startUnit = cursor;
-    const endUnit = startUnit + placement.durationUnits;
+    const endUnit = startUnit + segment.durationUnits;
+    const { planeId, planeSide, ...segmentMotion } = segment;
 
-    placements.push({
-      ...placement,
-      planeId: placement.planeId ?? DEFAULT_PLANE_ID,
+    segments.push({
+      ...segmentMotion,
+      planeId: planeId ?? DEFAULT_PLANE_ID,
+      ...(planeSide !== undefined ? { planeSide } : {}),
       startUnit,
       endUnit
     });
@@ -109,7 +111,7 @@ export function prepareSequence(sequence: SequenceSpec): PrepareSequenceResult {
   return {
     ok: true,
     prepared: {
-      placements,
+      segments,
       totalDuration: cursor
     }
   };
@@ -124,22 +126,22 @@ export function evalPreparedSequenceAt(
 
   const wrappedTime = wrapSequenceTime(sequence.totalDuration, tGlobal);
 
-  for (const [index, placement] of sequence.placements.entries()) {
-    if (!(placement.startUnit <= wrappedTime && wrappedTime < placement.endUnit)) continue;
-    const tLocal = wrappedTime - placement.startUnit;
-    const pose = evalSegment(placement.segment, tLocal);
+  for (const [index, segment] of sequence.segments.entries()) {
+    if (!(segment.startUnit <= wrappedTime && wrappedTime < segment.endUnit)) continue;
+    const tLocal = wrappedTime - segment.startUnit;
+    const pose = evalSegment(segment, tLocal);
 
     return {
       ok: true,
       pose,
-      planeId: placement.planeId,
-      ...(placement.planeSide !== undefined ? { planeSide: placement.planeSide } : {}),
+      planeId: segment.planeId,
+      ...(segment.planeSide !== undefined ? { planeSide: segment.planeSide } : {}),
       tLocal,
       segmentIndex: index
     };
   }
 
-  throw new Error("Invariant violated: no placement found for wrapped global time");
+  throw new Error("Invariant violated: no segment found for wrapped global time");
 }
 
 export function samplePreparedSequence(

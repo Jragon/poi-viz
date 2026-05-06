@@ -156,14 +156,14 @@ function getWrappedRigTime(
   tLocal: TimeUnit
 ): TimeUnit | null {
   if (!prepared) return null;
-  const placement = prepared.prepared.placements[segmentIndex];
-  if (!placement) return null;
-  return placement.startUnit + tLocal;
+  const segment = prepared.prepared.segments[segmentIndex];
+  if (!segment) return null;
+  return segment.startUnit + tLocal;
 }
 
 function getLastSegmentIndex(prepared: PreparedRigSequenceEntry | null): number | null {
-  if (!prepared || prepared.prepared.placements.length === 0) return null;
-  return prepared.prepared.placements.length - 1;
+  if (!prepared || prepared.prepared.segments.length === 0) return null;
+  return prepared.prepared.segments.length - 1;
 }
 
 function resolveSourcePhase(source: MetronomeSource, frame: PlaybackEvalSuccess): number | null {
@@ -185,16 +185,14 @@ function resolveSourceOmega(
 ): number | null {
   if (!preparedRig) return null;
 
-  const placement = preparedRig.prepared.placements[segmentIndex];
-  if (!placement) return null;
+  const segment = preparedRig.prepared.segments[segmentIndex];
+  if (!segment) return null;
 
   switch (source.kind) {
     case "absolute":
-      return source.node === "hand"
-        ? placement.segment.hand.driver.omega
-        : placement.segment.head.driver.omega;
+      return source.node === "hand" ? segment.hand.driver.omega : segment.head.driver.omega;
     case "relative-head-minus-hand":
-      return placement.segment.head.driver.omega - placement.segment.hand.driver.omega;
+      return segment.head.driver.omega - segment.hand.driver.omega;
   }
 }
 

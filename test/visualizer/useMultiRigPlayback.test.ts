@@ -6,6 +6,7 @@ import { useMultiRigPlayback } from "@/visualizer/useMultiRigPlayback";
 
 function makeSegment(handOmega: number, headOmega: number): Segment {
   return {
+    durationUnits: 1,
     hand: {
       startPose: { phaseAbs: 0, radius: 1 },
       driver: { kind: "circle", omega: handOmega }
@@ -23,13 +24,13 @@ function makeSequence(durationUnits: number): MultiRigSequence {
       {
         rigId: "left",
         sequence: {
-          segments: [{ segment: makeSegment(1, 2), durationUnits }]
+          segments: [{ ...makeSegment(1, 2), durationUnits }]
         }
       },
       {
         rigId: "right",
         sequence: {
-          segments: [{ segment: makeSegment(2, 3), durationUnits: durationUnits * 2 }]
+          segments: [{ ...makeSegment(2, 3), durationUnits: durationUnits * 2 }]
         }
       }
     ]
@@ -42,7 +43,7 @@ function makeSingleRigSequence(segment: Segment, durationUnits: number): MultiRi
       {
         rigId: "left",
         sequence: {
-          segments: [{ segment, durationUnits }]
+          segments: [{ ...segment, durationUnits }]
         }
       }
     ]
@@ -82,7 +83,7 @@ describe("useMultiRigPlayback", () => {
         {
           rigId: "left",
           sequence: {
-            segments: [{ segment: makeSegment(0, 0), durationUnits: 1, planeId: "wheel" }]
+            segments: [{ ...makeSegment(0, 0), durationUnits: 1, planeId: "wheel" }]
           }
         }
       ]
@@ -105,7 +106,7 @@ describe("useMultiRigPlayback", () => {
           {
             rigId: "left",
             sequence: {
-              segments: [{ segment: makeSegment(0, 0), durationUnits: 1, planeId: "wheel" }]
+              segments: [{ ...makeSegment(0, 0), durationUnits: 1, planeId: "wheel" }]
             }
           }
         ]
@@ -128,7 +129,7 @@ describe("useMultiRigPlayback", () => {
         {
           rigId: "left",
           sequence: {
-            segments: [{ segment, durationUnits: 1, planeId: "wall", planeSide: "b" }]
+            segments: [{ ...segment, durationUnits: 1, planeId: "wall", planeSide: "b" }]
           }
         }
       ]
@@ -138,7 +139,7 @@ describe("useMultiRigPlayback", () => {
         {
           rigId: "left",
           sequence: {
-            segments: [{ segment, durationUnits: 1, planeId: "wall" }]
+            segments: [{ ...segment, durationUnits: 1, planeId: "wall" }]
           }
         }
       ]
@@ -220,7 +221,7 @@ describe("useMultiRigPlayback.sampleTrails", () => {
         {
           rigId: "left",
           sequence: {
-            segments: [{ segment: makeSegment(0, 0), durationUnits: 1, planeId: "wheel" }]
+            segments: [{ ...makeSegment(0, 0), durationUnits: 1, planeId: "wheel" }]
           }
         }
       ]
@@ -238,7 +239,7 @@ describe("useMultiRigPlayback.sampleTrails", () => {
           {
             rigId: "left",
             sequence: {
-              segments: [{ segment: makeSegment(0, 0), durationUnits: 1, planeId: "wheel" }]
+              segments: [{ ...makeSegment(0, 0), durationUnits: 1, planeId: "wheel" }]
             }
           }
         ]

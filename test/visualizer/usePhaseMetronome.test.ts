@@ -4,7 +4,7 @@ import { nextTick, ref } from "vue";
 import { toCartesianMultiRigPose } from "@/engine/cartesian";
 import { evalPreparedMultiRigSequenceAt, prepareMultiRigSequence } from "@/engine/multirig";
 import { toWorldMultiRigPose } from "@/engine/planeProjection";
-import type { MultiRigSequence, Segment, SegmentPlacement, TimeUnit } from "@/engine/types";
+import type { MultiRigSequence, Segment, TimeUnit } from "@/engine/types";
 import type { PlaybackEvalSuccess, PlaybackEvaluateResult } from "@/visualizer/useMultiRigPlayback";
 import {
   createDefaultMetronomeRule,
@@ -19,6 +19,7 @@ function makeSegment(
   startHeadPhase = 0
 ): Segment {
   return {
+    durationUnits: 1,
     hand: {
       startPose: { phaseAbs: startHandPhase, radius: 1 },
       driver: { kind: "circle", omega: handOmega }
@@ -30,7 +31,7 @@ function makeSegment(
   };
 }
 
-function makeSequence(segments: SegmentPlacement[]): MultiRigSequence {
+function makeSequence(segments: Segment[]): MultiRigSequence {
   return {
     rigs: [
       {
@@ -122,9 +123,7 @@ function createHarness(sequence: MultiRigSequence) {
 
 describe("usePhaseMetronome", () => {
   it("adds a default rule and rewinds transport via the add callback", async () => {
-    const harness = createHarness(
-      makeSequence([{ segment: makeSegment(0, Math.PI), durationUnits: 1 }])
-    );
+    const harness = createHarness(makeSequence([{ ...makeSegment(0, Math.PI), durationUnits: 1 }]));
 
     await harness.setSnapshot(0.4, false);
     harness.controller.addRule();
@@ -140,7 +139,7 @@ describe("usePhaseMetronome", () => {
 
   it("emits an absolute crossing event during forward motion", async () => {
     const harness = createHarness(
-      makeSequence([{ segment: makeSegment(0, Math.PI * 2), durationUnits: 1 }])
+      makeSequence([{ ...makeSegment(0, Math.PI * 2), durationUnits: 1 }])
     );
     const rule: MetronomeRuleDraft = {
       enabled: true,
@@ -162,7 +161,7 @@ describe("usePhaseMetronome", () => {
 
   it("emits an absolute crossing event during reverse phase motion", async () => {
     const harness = createHarness(
-      makeSequence([{ segment: makeSegment(0, -Math.PI * 2), durationUnits: 1 }])
+      makeSequence([{ ...makeSegment(0, -Math.PI * 2), durationUnits: 1 }])
     );
     const rule: MetronomeRuleDraft = {
       enabled: true,
@@ -183,7 +182,7 @@ describe("usePhaseMetronome", () => {
 
   it("preserves ordering for multiple crossings in one frame", async () => {
     const harness = createHarness(
-      makeSequence([{ segment: makeSegment(0, Math.PI * 40), durationUnits: 1 }])
+      makeSequence([{ ...makeSegment(0, Math.PI * 40), durationUnits: 1 }])
     );
     const rule: MetronomeRuleDraft = {
       enabled: true,
@@ -209,7 +208,7 @@ describe("usePhaseMetronome", () => {
 
   it("emits distinct events for multiple enabled rules in the same frame", async () => {
     const harness = createHarness(
-      makeSequence([{ segment: makeSegment(0, Math.PI * 2), durationUnits: 1 }])
+      makeSequence([{ ...makeSegment(0, Math.PI * 2), durationUnits: 1 }])
     );
 
     harness.controller.addRule({
@@ -238,7 +237,7 @@ describe("usePhaseMetronome", () => {
 
   it("does not emit while paused during scrubbing", async () => {
     const harness = createHarness(
-      makeSequence([{ segment: makeSegment(0, Math.PI * 2), durationUnits: 1 }])
+      makeSequence([{ ...makeSegment(0, Math.PI * 2), durationUnits: 1 }])
     );
     const rule: MetronomeRuleDraft = {
       enabled: true,
@@ -259,8 +258,8 @@ describe("usePhaseMetronome", () => {
   it("suppresses crossings across a segment boundary jump", async () => {
     const harness = createHarness(
       makeSequence([
-        { segment: makeSegment(0, Math.PI * 2), durationUnits: 0.5 },
-        { segment: makeSegment(0, 0, 0, Math.PI * 10), durationUnits: 0.5 }
+        { ...makeSegment(0, Math.PI * 2), durationUnits: 0.5 },
+        { ...makeSegment(0, 0, 0, Math.PI * 10), durationUnits: 0.5 }
       ])
     );
     const rule: MetronomeRuleDraft = {
@@ -281,7 +280,7 @@ describe("usePhaseMetronome", () => {
 
   it("emits tail crossings when outer transport wraps to zero", async () => {
     const harness = createHarness(
-      makeSequence([{ segment: makeSegment(0, Math.PI * 2), durationUnits: 1 }])
+      makeSequence([{ ...makeSegment(0, Math.PI * 2), durationUnits: 1 }])
     );
     const rule: MetronomeRuleDraft = {
       enabled: true,
@@ -302,7 +301,7 @@ describe("usePhaseMetronome", () => {
 
   it("clears rules and samples when the prepared sequence changes", async () => {
     const harness = createHarness(
-      makeSequence([{ segment: makeSegment(0, Math.PI * 2), durationUnits: 1 }])
+      makeSequence([{ ...makeSegment(0, Math.PI * 2), durationUnits: 1 }])
     );
     const rule: MetronomeRuleDraft = {
       enabled: true,
@@ -314,9 +313,7 @@ describe("usePhaseMetronome", () => {
     harness.controller.addRule(rule);
     await harness.setSnapshot(0.2, false);
 
-    await harness.replacePrepared(
-      makeSequence([{ segment: makeSegment(0, Math.PI), durationUnits: 2 }])
-    );
+    await harness.replacePrepared(makeSequence([{ ...makeSegment(0, Math.PI), durationUnits: 2 }]));
 
     expect(harness.controller.rules.value).toEqual([]);
     expect(harness.controller.lastEvents.value).toEqual([]);
@@ -326,7 +323,7 @@ describe("usePhaseMetronome", () => {
 
   it("emits relative head-minus-hand events for flower timing targets", async () => {
     const harness = createHarness(
-      makeSequence([{ segment: makeSegment(Math.PI * 2, Math.PI * 4), durationUnits: 1 }])
+      makeSequence([{ ...makeSegment(Math.PI * 2, Math.PI * 4), durationUnits: 1 }])
     );
     const rule: MetronomeRuleDraft = {
       enabled: true,

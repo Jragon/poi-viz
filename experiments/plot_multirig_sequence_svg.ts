@@ -67,8 +67,9 @@ function styleForRig(index: number): RigStyle {
   return RIG_STYLES[index % RIG_STYLES.length];
 }
 
-function makeSegment(handOmega: number, headOmega: number): Segment {
+function makeSegment(durationUnits: number, handOmega: number, headOmega: number): Segment {
   return {
+    durationUnits,
     hand: {
       startPose: { phaseAbs: 0, radius: 1 },
       driver: { kind: "circle", omega: handOmega }
@@ -86,19 +87,13 @@ async function main() {
       {
         rigId: "left",
         sequence: {
-          segments: [
-            { segment: makeSegment(1, 1), durationUnits: 2 * PI },
-            { segment: makeSegment(1, -2), durationUnits: 2 * PI }
-          ]
+          segments: [makeSegment(2 * PI, 1, 1), makeSegment(2 * PI, 1, -2)]
         }
       },
       {
         rigId: "right",
         sequence: {
-          segments: [
-            { segment: makeSegment(1, 1), durationUnits: 2 * PI },
-            { segment: makeSegment(1, 2), durationUnits: 4 * PI }
-          ]
+          segments: [makeSegment(2 * PI, 1, 1), makeSegment(4 * PI, 1, 2)]
         }
       }
     ]
@@ -145,8 +140,8 @@ async function main() {
   for (const [rigIndex, rig] of prepared.rigs.entries()) {
     const style = styleForRig(rigIndex);
 
-    for (let i = 1; i < rig.prepared.placements.length; i += 1) {
-      const boundaryTime = rig.prepared.placements[i].startUnit;
+    for (let i = 1; i < rig.prepared.segments.length; i += 1) {
+      const boundaryTime = rig.prepared.segments[i].startUnit;
       const res = evalPreparedSequenceAt(rig.prepared, boundaryTime);
       if (!res.ok) {
         throw new Error(

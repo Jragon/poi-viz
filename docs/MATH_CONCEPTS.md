@@ -62,7 +62,7 @@ The 3D body rig treats elbow bend direction as anatomical state, not a canvas ar
 
 - Segment defines local motion laws and start state.
 - Sequence places segments on a global timeline in time units.
-- Local time is derived from global time and segment placement.
+- Local time is derived from global time and the segment's prepared timeline interval.
 
 ## Boundary Behavior (Part 1)
 

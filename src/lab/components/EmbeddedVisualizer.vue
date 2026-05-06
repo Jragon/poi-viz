@@ -53,7 +53,7 @@ const durationLabel = computed(() => core.transport.duration.value.toFixed(2));
 const activePlanesLabel = computed(() => {
   const planes = new Set(
     props.sequence.rigs.flatMap((rig) =>
-      rig.sequence.segments.map((placement) => placement.planeId ?? "wall")
+      rig.sequence.segments.map((segment) => segment.planeId ?? "wall")
     )
   );
   return Array.from(planes).join(" / ");

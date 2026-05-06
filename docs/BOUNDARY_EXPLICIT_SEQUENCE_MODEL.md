@@ -16,20 +16,21 @@ Provide deterministic sequence evaluation over global time with explicit boundar
 
 ### Segment
 
-Reusable motion law for one interval:
+Executable motion interval:
 
+- duration in time units
+- optional atomic plane metadata
 - hand start pose + hand driver
 - head start pose + head driver
 
 ### SequenceSpec
 
-Ordered list of placements:
+Ordered list of executable segments:
 
-- each placement has `segment`
-- each placement has `durationUnits`
-- each placement may have `planeId`
-- each placement may have `planeSide`
-- future extension: each placement after the first may have `entryBoundary`
+- each segment has `durationUnits`
+- each segment may have `planeId`
+- each segment may have `planeSide`
+- future extension: each segment after the first may have `entryBoundary`
 
 There is no authored `startUnit` in `SequenceSpec`.
 
@@ -37,8 +38,8 @@ There is no authored `startUnit` in `SequenceSpec`.
 
 Validated + derived runtime representation:
 
-- `placements[]` with derived `startUnit` / `endUnit`
-- resolved `planeId` on every placement
+- `segments[]` with derived `startUnit` / `endUnit`
+- resolved `planeId` on every segment
 - optional `planeSide` preserved exactly as authored
 - `totalDuration`
 
@@ -51,25 +52,26 @@ type TimeUnit = number;
 type PlaneId = "wall" | "wheel" | "floor";
 type PlaneSide = "a" | "b";
 
-type SegmentPlacement = {
-  segment: Segment;
+type Segment = {
   durationUnits: TimeUnit;
   planeId?: PlaneId;
   planeSide?: PlaneSide;
+  hand: SegmentNodeMotion;
+  head: SegmentNodeMotion;
 };
 
 type SequenceSpec = {
-  segments: SegmentPlacement[];
+  segments: Segment[];
 };
 
-type PreparedPlacement = SegmentPlacement & {
+type PreparedSegment = Omit<Segment, "planeId"> & {
   readonly planeId: PlaneId;
   readonly startUnit: TimeUnit;
   readonly endUnit: TimeUnit;
 };
 
 type PreparedSequence = {
-  readonly placements: readonly PreparedPlacement[];
+  readonly segments: readonly PreparedSegment[];
   readonly totalDuration: TimeUnit;
 };
 ```
@@ -87,15 +89,16 @@ type SegmentEntryBoundary = {
   zeroPointKind?: ZeroPointKind;
 };
 
-type SegmentPlacement = {
-  segment: Segment;
+type Segment = {
   durationUnits: TimeUnit;
   planeId?: PlaneId;
   planeSide?: PlaneSide;
+  hand: SegmentNodeMotion;
+  head: SegmentNodeMotion;
   entryBoundary?: SegmentEntryBoundary;
 };
 
-type PreparedPlacement = Omit<SegmentPlacement, "planeId"> & {
+type PreparedSegment = Omit<Segment, "planeId"> & {
   readonly planeId: PlaneId;
   readonly startUnit: TimeUnit;
   readonly endUnit: TimeUnit;
@@ -126,8 +129,8 @@ type PreparedPlacement = Omit<SegmentPlacement, "planeId"> & {
 ## Atomic Plane Semantics
 
 - Omitted `planeId` resolves to `wall` during preparation.
-- A placement's `planeId` describes the local plane context for that segment's 2D motion.
-- A placement's optional `planeSide` describes which generic side (`a` or `b`) of the active atomic plane the segment occupies.
+- A segment's `planeId` describes the local plane context for that segment's 2D motion.
+- A segment's optional `planeSide` describes which generic side (`a` or `b`) of the active atomic plane the segment occupies.
 - Omitted `planeSide` remains unspecified; the engine does not default it to `a`.
 - `planeSide` does not affect local segment evaluation.
 - `wall`, `wheel`, and `floor` are atomic planes. A segment does not occupy an in-between plane in this model.
@@ -154,8 +157,8 @@ Trail rendering may use continuity-aware wraparound at the transport boundary as
 - Sequence cannot be empty.
 - Each `durationUnits` must be finite.
 - Each `durationUnits` must be strictly positive.
-- Engine placement `planeId`, when present, must be `wall`, `wheel`, or `floor`.
-- Engine placement `planeSide`, when present, must be `a` or `b`.
+- Engine segment `planeId`, when present, must be `wall`, `wheel`, or `floor`.
+- Engine segment `planeSide`, when present, must be `a` or `b`.
 
 ## Additional Implemented Validation Rules
 

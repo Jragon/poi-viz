@@ -11,6 +11,7 @@ const SIDE_SEQUENCE_PHASE_STEP = Math.PI;
 
 function makeAlignedSegment(startPhase: number): Segment {
   return {
+    durationUnits: SEGMENT_DURATION_UNITS,
     hand: {
       startPose: { phaseAbs: startPhase, radius: 1 },
       driver: { kind: "circle", omega: SIDE_SEQUENCE_PHASE_STEP }
@@ -29,26 +30,22 @@ const sideSequence: MultiRigSequence = {
       sequence: {
         segments: [
           {
-            segment: makeAlignedSegment(0),
-            durationUnits: SEGMENT_DURATION_UNITS,
+            ...makeAlignedSegment(0),
             planeId: "wall",
             planeSide: "a"
           },
           {
-            segment: makeAlignedSegment(Math.PI),
-            durationUnits: SEGMENT_DURATION_UNITS,
+            ...makeAlignedSegment(Math.PI),
             planeId: "wall",
             planeSide: "b"
           },
           {
-            segment: makeAlignedSegment(0),
-            durationUnits: SEGMENT_DURATION_UNITS,
+            ...makeAlignedSegment(0),
             planeId: "wall",
             planeSide: "a"
           },
           {
-            segment: makeAlignedSegment(Math.PI),
-            durationUnits: SEGMENT_DURATION_UNITS,
+            ...makeAlignedSegment(Math.PI),
             planeId: "wall",
             planeSide: "b"
           }

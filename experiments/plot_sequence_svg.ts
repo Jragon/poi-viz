@@ -30,8 +30,9 @@ function polyline(points: Vec2[], color: string, width = 2): string {
   return `<polyline points="${toPolylinePoints(points)}" fill="none" stroke="${color}" stroke-width="${width}" />`;
 }
 
-function makeSegment(handOmega: number, headOmega: number): Segment {
+function makeSegment(durationUnits: number, handOmega: number, headOmega: number): Segment {
   return {
+    durationUnits,
     hand: {
       startPose: { phaseAbs: 0, radius: 1 },
       driver: { kind: "circle", omega: handOmega }
@@ -45,11 +46,7 @@ function makeSegment(handOmega: number, headOmega: number): Segment {
 
 async function main() {
   const sequence: SequenceSpec = {
-    segments: [
-      { segment: makeSegment(1, 1), durationUnits: 2 * PI },
-      { segment: makeSegment(1, 2), durationUnits: 2 * PI },
-      { segment: makeSegment(1, -2), durationUnits: 2 * PI }
-    ]
+    segments: [makeSegment(2 * PI, 1, 1), makeSegment(2 * PI, 1, 2), makeSegment(2 * PI, 1, -2)]
   };
 
   const preparedSequenceResult = prepareSequence(sequence);
@@ -76,8 +73,8 @@ async function main() {
   }
 
   const boundaryMarkers: string[] = [];
-  for (let i = 1; i < prepared.placements.length; i += 1) {
-    const boundaryTime = prepared.placements[i].startUnit;
+  for (let i = 1; i < prepared.segments.length; i += 1) {
+    const boundaryTime = prepared.segments[i].startUnit;
     const res = evalPreparedSequenceAt(prepared, boundaryTime);
     if (!res.ok) {
       throw new Error(`Boundary evaluation failed at t=${boundaryTime.toFixed(6)} (${res.reason})`);

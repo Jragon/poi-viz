@@ -145,33 +145,33 @@ function evalRigSequenceFromLeft(
   if (!Number.isFinite(tGlobal) || tGlobal < 0 || sequence.totalDuration <= 0) return null;
 
   const wrappedTime = normalizeLoopTime(tGlobal, sequence.totalDuration);
-  const placements = sequence.placements;
+  const segments = sequence.segments;
 
   if (timeMatches(wrappedTime, 0)) {
-    const placement = placements[placements.length - 1];
+    const segment = segments[segments.length - 1];
     return {
-      pose: evalSegment(placement.segment, placement.endUnit - placement.startUnit),
-      planeId: placement.planeId,
-      ...(placement.planeSide !== undefined ? { planeSide: placement.planeSide } : {})
+      pose: evalSegment(segment, segment.endUnit - segment.startUnit),
+      planeId: segment.planeId,
+      ...(segment.planeSide !== undefined ? { planeSide: segment.planeSide } : {})
     };
   }
 
-  for (let index = 0; index < placements.length; index += 1) {
-    const placement = placements[index];
-    if (timeMatches(wrappedTime, placement.startUnit) && index > 0) {
-      const previous = placements[index - 1];
+  for (let index = 0; index < segments.length; index += 1) {
+    const segment = segments[index];
+    if (timeMatches(wrappedTime, segment.startUnit) && index > 0) {
+      const previous = segments[index - 1];
       return {
-        pose: evalSegment(previous.segment, previous.endUnit - previous.startUnit),
+        pose: evalSegment(previous, previous.endUnit - previous.startUnit),
         planeId: previous.planeId,
         ...(previous.planeSide !== undefined ? { planeSide: previous.planeSide } : {})
       };
     }
 
-    if (placement.startUnit < wrappedTime && wrappedTime <= placement.endUnit) {
+    if (segment.startUnit < wrappedTime && wrappedTime <= segment.endUnit) {
       return {
-        pose: evalSegment(placement.segment, wrappedTime - placement.startUnit),
-        planeId: placement.planeId,
-        ...(placement.planeSide !== undefined ? { planeSide: placement.planeSide } : {})
+        pose: evalSegment(segment, wrappedTime - segment.startUnit),
+        planeId: segment.planeId,
+        ...(segment.planeSide !== undefined ? { planeSide: segment.planeSide } : {})
       };
     }
   }

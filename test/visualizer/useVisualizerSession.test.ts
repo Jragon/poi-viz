@@ -35,6 +35,7 @@ function createScheduler() {
 
 function makeSegment(handOmega: number, headOmega: number): Segment {
   return {
+    durationUnits: 1,
     hand: {
       startPose: { phaseAbs: 0, radius: 1 },
       driver: { kind: "circle", omega: handOmega }
@@ -52,7 +53,7 @@ function makeSequence(durationUnits: number): MultiRigSequence {
       {
         rigId: "left",
         sequence: {
-          segments: [{ segment: makeSegment(1, 2), durationUnits }]
+          segments: [{ ...makeSegment(1, 2), durationUnits }]
         }
       }
     ]
@@ -65,7 +66,7 @@ function makeSinglePlaneSequence(durationUnits: number, planeId: "wall" | "wheel
       {
         rigId: "left",
         sequence: {
-          segments: [{ segment: makeSegment(0, 0), durationUnits, planeId }]
+          segments: [{ ...makeSegment(0, 0), durationUnits, planeId }]
         }
       }
     ]
@@ -80,7 +81,7 @@ function makeContinuousSequence(durationUnits: number): MultiRigSequence {
         sequence: {
           segments: [
             {
-              segment: makeSegment((Math.PI * 2) / durationUnits, (Math.PI * 2) / durationUnits),
+              ...makeSegment((Math.PI * 2) / durationUnits, (Math.PI * 2) / durationUnits),
               durationUnits
             }
           ]
@@ -140,7 +141,7 @@ describe("useVisualizerSession", () => {
           sequence: {
             segments: [
               {
-                segment: makeSegment(5, 6),
+                ...makeSegment(5, 6),
                 durationUnits: 2
               }
             ]
@@ -285,7 +286,7 @@ describe("useVisualizerSession", () => {
     expect(session.projectionSettings.value.mode).toBe("orthographic");
   });
 
-  it("auto projection tilts when any placement is non-wall", async () => {
+  it("auto projection tilts when any segment is non-wall", async () => {
     const { session, transport } = createSession(makeSinglePlaneSequence(2, "wheel"));
 
     transport.setCurrentTime(TRAIL_STEP_FIXED * 0.5);

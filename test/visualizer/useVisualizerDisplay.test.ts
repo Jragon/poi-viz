@@ -43,15 +43,13 @@ function makeSequence(): MultiRigSequence {
         sequence: {
           segments: [
             {
-              segment: {
-                hand: {
-                  startPose: { phaseAbs: 0, radius: 1 },
-                  driver: { kind: "circle", omega: 1 }
-                },
-                head: {
-                  startPose: { phaseAbs: 0, radius: 1 },
-                  driver: { kind: "circle", omega: 2 }
-                }
+              hand: {
+                startPose: { phaseAbs: 0, radius: 1 },
+                driver: { kind: "circle", omega: 1 }
+              },
+              head: {
+                startPose: { phaseAbs: 0, radius: 1 },
+                driver: { kind: "circle", omega: 2 }
               },
               durationUnits: 2
             }

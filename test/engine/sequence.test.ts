@@ -9,6 +9,7 @@ import { describe, expect, it } from "vitest";
 
 function makeSegment(handOmega: number, headOmega: number): Segment {
   return {
+    durationUnits: 1,
     hand: {
       startPose: { phaseAbs: 0, radius: 1 },
       driver: { kind: "circle", omega: handOmega }
@@ -25,8 +26,8 @@ describe("validateSequenceStructure", () => {
   it("accepts a valid contiguous sequence", () => {
     const seq: SequenceSpec = {
       segments: [
-        { segment: base, durationUnits: 2 },
-        { segment: base, durationUnits: 3 }
+        { ...base, durationUnits: 2 },
+        { ...base, durationUnits: 3 }
       ]
     };
     const result = validateSequenceStructure(seq);
@@ -45,8 +46,8 @@ describe("validateSequenceStructure", () => {
   it("rejects non-positive durations", () => {
     const seq: SequenceSpec = {
       segments: [
-        { segment: base, durationUnits: 0 },
-        { segment: base, durationUnits: -1 }
+        { ...base, durationUnits: 0 },
+        { ...base, durationUnits: -1 }
       ]
     };
     const result = validateSequenceStructure(seq);
@@ -59,8 +60,8 @@ describe("validateSequenceStructure", () => {
   it("rejects non-finite durations", () => {
     const seq: SequenceSpec = {
       segments: [
-        { segment: base, durationUnits: Number.POSITIVE_INFINITY },
-        { segment: base, durationUnits: Number.NaN }
+        { ...base, durationUnits: Number.POSITIVE_INFINITY },
+        { ...base, durationUnits: Number.NaN }
       ]
     };
     const result = validateSequenceStructure(seq);
@@ -73,10 +74,10 @@ describe("validateSequenceStructure", () => {
   it("reports errors in stable index order", () => {
     const seq: SequenceSpec = {
       segments: [
-        { segment: base, durationUnits: Number.NaN },
-        { segment: base, durationUnits: 0 },
-        { segment: base, durationUnits: Number.POSITIVE_INFINITY },
-        { segment: base, durationUnits: -10 }
+        { ...base, durationUnits: Number.NaN },
+        { ...base, durationUnits: 0 },
+        { ...base, durationUnits: Number.POSITIVE_INFINITY },
+        { ...base, durationUnits: -10 }
       ]
     };
     const result = validateSequenceStructure(seq);
@@ -90,9 +91,9 @@ describe("validateSequenceStructure", () => {
       ]);
     }
   });
-  it("rejects invalid placement plane ids", () => {
+  it("rejects invalid segment plane ids", () => {
     const seq = {
-      segments: [{ segment: base, durationUnits: 1, planeId: "diagonal" }]
+      segments: [{ ...base, durationUnits: 1, planeId: "diagonal" }]
     } as unknown as SequenceSpec;
     const result = validateSequenceStructure(seq);
 
@@ -101,21 +102,21 @@ describe("validateSequenceStructure", () => {
       expect(result.errors).toContainEqual({ code: "INVALID_PLANE_ID", index: 0 });
     }
   });
-  it("accepts valid placement plane sides", () => {
+  it("accepts valid segment plane sides", () => {
     const seq: SequenceSpec = {
       segments: [
-        { segment: base, durationUnits: 1, planeSide: "a" },
-        { segment: base, durationUnits: 1, planeSide: "b" },
-        { segment: base, durationUnits: 1 }
+        { ...base, durationUnits: 1, planeSide: "a" },
+        { ...base, durationUnits: 1, planeSide: "b" },
+        { ...base, durationUnits: 1 }
       ]
     };
 
     const result = validateSequenceStructure(seq);
     expect(result.ok).toBe(true);
   });
-  it("rejects invalid placement plane sides", () => {
+  it("rejects invalid segment plane sides", () => {
     const seq = {
-      segments: [{ segment: base, durationUnits: 1, planeSide: "front" }]
+      segments: [{ ...base, durationUnits: 1, planeSide: "front" }]
     } as unknown as SequenceSpec;
     const result = validateSequenceStructure(seq);
 
@@ -124,11 +125,11 @@ describe("validateSequenceStructure", () => {
       expect(result.errors).toContainEqual({ code: "INVALID_PLANE_SIDE", index: 0 });
     }
   });
-  it("reports invalid plane side errors in stable placement order", () => {
+  it("reports invalid plane side errors in stable segment order", () => {
     const seq = {
       segments: [
-        { segment: base, durationUnits: 1, planeSide: "front" },
-        { segment: base, durationUnits: 1, planeId: "diagonal", planeSide: "back" }
+        { ...base, durationUnits: 1, planeSide: "front" },
+        { ...base, durationUnits: 1, planeId: "diagonal", planeSide: "back" }
       ]
     } as unknown as SequenceSpec;
     const result = validateSequenceStructure(seq);
@@ -148,7 +149,7 @@ describe("prepareSequence", () => {
   const segB = makeSegment(10, 20);
   it("returns validation errors for invalid sequence", () => {
     const seq: SequenceSpec = {
-      segments: [{ segment: segA, durationUnits: 0 }]
+      segments: [{ ...segA, durationUnits: 0 }]
     };
     const prepared = prepareSequence(seq);
     expect(prepared.ok).toBe(false);
@@ -159,49 +160,49 @@ describe("prepareSequence", () => {
   it("returns prepared sequence for valid input", () => {
     const seq: SequenceSpec = {
       segments: [
-        { segment: segA, durationUnits: 2 },
-        { segment: segB, durationUnits: 3 }
+        { ...segA, durationUnits: 2 },
+        { ...segB, durationUnits: 3 }
       ]
     };
     const prepared = prepareSequence(seq);
     expect(prepared.ok).toBe(true);
     if (prepared.ok) {
       expect(prepared.prepared.totalDuration).toBe(5);
-      expect(prepared.prepared.placements.length).toBe(2);
+      expect(prepared.prepared.segments.length).toBe(2);
     }
   });
-  it("defaults omitted placement planes to wall", () => {
+  it("defaults omitted segment planes to wall", () => {
     const seq: SequenceSpec = {
-      segments: [{ segment: segA, durationUnits: 2 }]
+      segments: [{ ...segA, durationUnits: 2 }]
     };
     const prepared = prepareSequence(seq);
     expect(prepared.ok).toBe(true);
     if (prepared.ok) {
-      expect(prepared.prepared.placements[0].planeId).toBe("wall");
+      expect(prepared.prepared.segments[0].planeId).toBe("wall");
     }
   });
-  it("preserves explicit placement planes", () => {
+  it("preserves explicit segment planes", () => {
     const seq: SequenceSpec = {
-      segments: [{ segment: segA, durationUnits: 2, planeId: "wheel" }]
+      segments: [{ ...segA, durationUnits: 2, planeId: "wheel" }]
     };
     const prepared = prepareSequence(seq);
     expect(prepared.ok).toBe(true);
     if (prepared.ok) {
-      expect(prepared.prepared.placements[0].planeId).toBe("wheel");
+      expect(prepared.prepared.segments[0].planeId).toBe("wheel");
     }
   });
-  it("preserves explicit placement sides and leaves omitted sides unspecified", () => {
+  it("preserves explicit segment sides and leaves omitted sides unspecified", () => {
     const seq: SequenceSpec = {
       segments: [
-        { segment: segA, durationUnits: 2, planeSide: "a" },
-        { segment: segB, durationUnits: 3 }
+        { ...segA, durationUnits: 2, planeSide: "a" },
+        { ...segB, durationUnits: 3 }
       ]
     };
     const prepared = prepareSequence(seq);
     expect(prepared.ok).toBe(true);
     if (prepared.ok) {
-      expect(prepared.prepared.placements[0].planeSide).toBe("a");
-      expect(prepared.prepared.placements[1].planeSide).toBeUndefined();
+      expect(prepared.prepared.segments[0].planeSide).toBe("a");
+      expect(prepared.prepared.segments[1].planeSide).toBeUndefined();
     }
   });
 });
@@ -210,8 +211,8 @@ describe("evalPreparedSequenceAt", () => {
   const segB = makeSegment(10, 20);
   const seq: SequenceSpec = {
     segments: [
-      { segment: segA, durationUnits: 2 },
-      { segment: segB, durationUnits: 3 }
+      { ...segA, durationUnits: 2 },
+      { ...segB, durationUnits: 3 }
     ]
   };
   const preparedResult = prepareSequence(seq);
@@ -255,9 +256,9 @@ describe("evalPreparedSequenceAt", () => {
     expect(result.tLocal).toBeCloseTo(1.25, 12);
     expect(result.pose).toEqual(evalSegment(segA, 1.25));
   });
-  it("returns the active plane for explicit placement planes", () => {
+  it("returns the active plane for explicit segment planes", () => {
     const explicitPlanePrepared = prepareSequence({
-      segments: [{ segment: segA, durationUnits: 2, planeId: "floor" }]
+      segments: [{ ...segA, durationUnits: 2, planeId: "floor" }]
     });
     if (!explicitPlanePrepared.ok) {
       throw new Error("Test fixture sequence must be valid");
@@ -270,9 +271,9 @@ describe("evalPreparedSequenceAt", () => {
 
     expect(result.planeId).toBe("floor");
   });
-  it("returns the active side for explicit placement sides", () => {
+  it("returns the active side for explicit segment sides", () => {
     const explicitSidePrepared = prepareSequence({
-      segments: [{ segment: segA, durationUnits: 2, planeId: "wall", planeSide: "b" }]
+      segments: [{ ...segA, durationUnits: 2, planeId: "wall", planeSide: "b" }]
     });
     if (!explicitSidePrepared.ok) {
       throw new Error("Test fixture sequence must be valid");
@@ -285,7 +286,7 @@ describe("evalPreparedSequenceAt", () => {
 
     expect(result.planeSide).toBe("b");
   });
-  it("leaves active side unspecified when placement side is omitted", () => {
+  it("leaves active side unspecified when segment side is omitted", () => {
     const result = evalPreparedSequenceAt(prepared, 1);
     if (!result.ok) {
       throw new Error(`expected ok result, got ${result.reason}`);
@@ -307,8 +308,8 @@ describe("evalPreparedSequenceAt", () => {
   it("uses half-open boundary semantics for active side", () => {
     const sidePrepared = prepareSequence({
       segments: [
-        { segment: segA, durationUnits: 2, planeSide: "a" },
-        { segment: segB, durationUnits: 3, planeSide: "b" }
+        { ...segA, durationUnits: 2, planeSide: "a" },
+        { ...segB, durationUnits: 3, planeSide: "b" }
       ]
     });
     if (!sidePrepared.ok) {

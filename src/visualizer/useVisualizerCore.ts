@@ -86,10 +86,9 @@ export function useVisualizerCore(
     }
 
     return prepared.rigs.reduce((maxRadius, rig) => {
-      const rigMaxRadius = rig.prepared.placements.reduce((maxPlacementRadius, placement) => {
-        const chainRadius =
-          placement.segment.hand.startPose.radius + placement.segment.head.startPose.radius;
-        return Math.max(maxPlacementRadius, chainRadius);
+      const rigMaxRadius = rig.prepared.segments.reduce((maxSegmentRadius, segment) => {
+        const chainRadius = segment.hand.startPose.radius + segment.head.startPose.radius;
+        return Math.max(maxSegmentRadius, chainRadius);
       }, 0);
 
       return Math.max(maxRadius, rigMaxRadius);

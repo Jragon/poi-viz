@@ -26,6 +26,7 @@ function polyline(points: Vec2[], color: string, width = 2): string {
 }
 async function main() {
   const segment: Segment = {
+    durationUnits: 2 * PI,
     hand: {
       startPose: { phaseAbs: 0, radius: 1 },
       driver: { kind: "circle", omega: 1 }

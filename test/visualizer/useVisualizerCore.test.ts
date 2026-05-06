@@ -24,6 +24,7 @@ function createScheduler() {
 
 function makeSegment(handRadius: number, headRadius: number): Segment {
   return {
+    durationUnits: 1,
     hand: {
       startPose: { phaseAbs: 0, radius: handRadius },
       driver: { kind: "circle", omega: 1 }
@@ -41,7 +42,7 @@ function makeSequence(durationUnits: number, handRadius = 1, headRadius = 1): Mu
       {
         rigId: "left",
         sequence: {
-          segments: [{ segment: makeSegment(handRadius, headRadius), durationUnits }]
+          segments: [{ ...makeSegment(handRadius, headRadius), durationUnits }]
         }
       }
     ]

@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 describe("evalSegment", () => {
   it("evaluates circle driver deterministically at time t", () => {
     const segment: Segment = {
+      durationUnits: 1,
       hand: {
         startPose: {
           phaseAbs: 0,

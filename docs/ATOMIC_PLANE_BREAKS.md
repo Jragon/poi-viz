@@ -11,7 +11,7 @@ This is intentionally narrower than weaves, toroids, back planes, crosspoints, o
 ## Core Thesis
 
 - Keep segment motion local and planar.
-- Add atomic plane context to sequence placements.
+- Add atomic plane context to executable segments.
 - Treat plane changes as explicit boundary events.
 - Preserve existing 2D evaluation and rendering behavior by default.
 - Add 3D embedding, projected plane views, and body-aware motion later.
@@ -24,7 +24,7 @@ The first plane-break implementation supports three orthogonal atomic planes thr
 - `wheel`: a vertical depth plane that shares the world-up axis with `wall`.
 - `floor`: a horizontal plane.
 
-Every segment placement lies exactly in one atomic plane. A segment does not drift between planes or continuously bend its plane.
+Every segment lies exactly in one atomic plane. A segment does not drift between planes or continuously bend its plane.
 
 ## Phase Semantics
 
@@ -43,8 +43,8 @@ For local plane diagrams, use a common protractor convention:
 
 A plane break is a composite-pattern join:
 
-1. A placement ends in one atomic plane.
-2. The next placement starts in another atomic plane.
+1. A segment ends in one atomic plane.
+2. The next segment starts in another atomic plane.
 3. Authoring compile validates that the boundary lies on the shared axis.
 4. Relative head-to-hand phase is preserved. `wheel <-> floor` applies an absolute phase remap to both hand and head.
 
@@ -67,21 +67,22 @@ Drex's lobe/antilobe vocabulary is useful because it is based on the velocity re
 
 ## Engine Model
 
-The implemented engine slice adds placement metadata and resolved active plane state:
+The implemented engine slice makes each segment an executable interval with plane metadata and resolved active plane state:
 
 ```ts
 type PlaneId = "wall" | "wheel" | "floor";
 type PlaneSide = "a" | "b";
 
-type SegmentPlacement = {
-  segment: Segment;
+type Segment = {
   durationUnits: TimeUnit;
   planeId?: PlaneId;
   planeSide?: PlaneSide;
+  hand: SegmentNodeMotion;
+  head: SegmentNodeMotion;
 };
 ```
 
-`prepareSequence` resolves omitted `planeId` values to `wall`. Prepared placements expose the resolved plane so consumers can inspect active plane state without changing local pose evaluation.
+`prepareSequence` resolves omitted `planeId` values to `wall`. Prepared segments expose the resolved plane so consumers can inspect active plane state without changing local pose evaluation.
 
 `planeSide` is optional generic metadata. It is valid on every atomic plane and is preserved through preparation and evaluation, but the engine does not default it or apply any visual offset to local pose evaluation. Rendering layers may choose to display side `a` and side `b` as offsets along the active plane normal.
 
@@ -93,7 +94,7 @@ type SegmentPlacement = {
 - Durations must be finite and positive.
 - `planeId`, when present, must be `wall`, `wheel`, or `floor`.
 - `planeSide`, when present, must be `a` or `b`.
-- Omitted authored and engine placement planes resolve to `wall`.
+- Omitted authored and engine segment planes resolve to `wall`.
 - Authored plane changes are valid only when the previous end pose is on the shared axis.
 - The hand must be on the source plane's shared-axis cardinal.
 - The head must be collinear with the hand: relative phase `0` or `PI`.

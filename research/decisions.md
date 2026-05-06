@@ -14,10 +14,10 @@ Trail continuity is handled in the visualizer, not the engine. Engine sequence e
 Plane-break support starts with three orthogonal atomic planes and compile-layer boundary validation, not arbitrary 3D motion.
 
 - Atomic plane ids are `wall`, `wheel`, and `floor`.
-- Omitted placement `planeId` values resolve to `wall` during sequence preparation.
-- `Segment` remains plane-agnostic; plane context belongs to authored segments and engine placements.
-- Local pose evaluation remains 2D. Evaluated placements expose resolved `planeId` so visual consumers can project poses through an adapter.
-- Projection preference defaults to `auto`: wall-only sequences stay front orthographic, while any non-`wall` placement switches the effective view to tilted orthographic. Display settings can still force flat or tilted projection and adjust yaw/pitch.
+- Omitted segment `planeId` values resolve to `wall` during sequence preparation.
+- `Segment` owns duration and plane context; authored segments compile to engine segments.
+- Local pose evaluation remains 2D. Evaluated segments expose resolved `planeId` so visual consumers can project poses through an adapter.
+- Projection preference defaults to `auto`: wall-only sequences stay front orthographic, while any non-`wall` segment switches the effective view to tilted orthographic. Display settings can still force flat or tilted projection and adjust yaw/pitch.
 - Authored plane changes are valid only when the previous end pose lies on the source plane's shared axis and the head is collinear with the hand.
 - `wheel <-> floor` remaps both hand and head by the same absolute phase offset, preserving relative phase.
 - Explicit boundary mode fields, zero-point annotations, body-aware weaves, toroids, continuous plane bends, and WebGL remain future work.
@@ -39,12 +39,22 @@ Radius variation is modeled as an optional per-node profile layered onto the exi
 Body-tracing side concepts start as generic engine metadata, not Mel/body vocabulary in runtime.
 
 - `PlaneSide` values are `a` and `b`.
-- `SegmentPlacement.planeSide` is optional and remains optional through preparation/evaluation; the engine does not default it to `a`.
+- `Segment.planeSide` is optional and remains optional through preparation/evaluation; the engine does not default it to `a`.
 - `planeSide` is valid for every atomic plane.
 - Local segment evaluation remains unchanged. Side offsets are visualization-layer choices, not engine pose behavior.
 - Trail continuity compares `planeSide` so visual loop wrapping does not hide side-state boundaries.
 - Authoring controls and authored document compile support are deferred.
 - Crosspoint and side-transition legality is future engine boundary-validation work. Keep it separate from structural sequence validation and do not implement it in Vue components.
+
+## 2026-05-06: Self-Contained Engine Segments
+
+Engine `Segment` is the executable interval. The `SegmentPlacement` wrapper is removed rather than kept as a compatibility alias.
+
+- `Segment` owns `durationUnits`, optional `planeId`, optional `planeSide`, and the hand/head node motion.
+- `SequenceSpec.segments` and `PreparedSequence.segments` are flat segment arrays.
+- `prepareSequence` derives `startUnit` and `endUnit` onto prepared segments and resolves omitted `planeId` to `wall`.
+- `planeSide` remains optional and is only included in evaluated/world pose metadata when authored.
+- This avoids a hollow wrapper type and lets segments execute independently in tests, experiments, and visualizer code.
 
 ## 2026-05-06: Body Rig World-Space Convention
 

@@ -31,6 +31,8 @@ const DEFAULT_PLANE_ID: PlaneId = "wall";
 const TAU = 2 * PI;
 const PLANE_BREAK_EPSILON = 1e-9;
 
+type SegmentMotion = Omit<Segment, "durationUnits" | "planeId" | "planeSide">;
+
 type PlaneBreakRule = {
   allowedSourceHandPhases: readonly number[];
   targetPhaseOffset: number;
@@ -175,8 +177,8 @@ function posesMatchModuloTurns(a: RelativeNodePose, b: RelativeNodePose, epsilon
   );
 }
 
-function makeFirstSegment(segment: AuthoredFirstSegment): Segment {
-  const nextSegment: Segment = {
+function makeFirstSegment(segment: AuthoredFirstSegment): SegmentMotion {
+  const nextSegment: SegmentMotion = {
     hand: {
       startPose: toRelativeNodePose(segment.hand.startPose),
       driver: toDriver(segment.hand.driver)
@@ -193,12 +195,15 @@ function makeFirstSegment(segment: AuthoredFirstSegment): Segment {
   return nextSegment;
 }
 
-function makeContinuationSegment(segment: AuthoredSegment, startPose: RelativeRigPose): Segment {
+function makeContinuationSegment(
+  segment: AuthoredSegment,
+  startPose: RelativeRigPose
+): SegmentMotion {
   if (segment.kind !== "continuation") {
     return makeFirstSegment(segment);
   }
 
-  const nextSegment: Segment = {
+  const nextSegment: SegmentMotion = {
     hand: {
       startPose: startPose.handPose,
       driver: toDriver(segment.hand.driver)
@@ -418,18 +423,23 @@ function deriveTrackBoundariesWithValidation(
           );
     startPose = remappedStartPose ?? startPose;
 
-    const segment =
+    const segmentMotion =
       segmentIndex === 0
         ? makeFirstSegment(authoredSegment as AuthoredFirstSegment)
         : makeContinuationSegment(authoredSegment, startPose as RelativeRigPose);
+    const segment: Segment = {
+      ...segmentMotion,
+      durationUnits: authoredSegment.durationUnits,
+      planeId
+    };
 
     const resolvedStartPose: RelativeRigPose = {
       handPose: { ...segment.hand.startPose },
       headPose: { ...segment.head.startPose }
     };
-    const endPose = evalSegment(segment, authoredSegment.durationUnits);
+    const endPose = evalSegment(segment, segment.durationUnits);
     const startUnit = cursor;
-    const endUnit = startUnit + authoredSegment.durationUnits;
+    const endUnit = startUnit + segment.durationUnits;
 
     boundaries.push({
       trackId,
@@ -475,11 +485,7 @@ export function compileAuthoredDocument(
     return {
       rigId: trackId,
       sequence: {
-        segments: boundaries.map((boundary) => ({
-          segment: boundary.segment,
-          durationUnits: boundary.endUnit - boundary.startUnit,
-          planeId: boundary.planeId
-        }))
+        segments: boundaries.map((boundary) => boundary.segment)
       }
     };
   });
@@ -505,42 +511,42 @@ export function authoredDocumentFromMultiRigSequence(
     let previousEndPose: RelativeRigPose | null = null;
     let previousPlaneId: PlaneId | null = null;
     tracks[rig.rigId as AuthoredTrackId] = {
-      segments: rig.sequence.segments.map((placement, segmentIndex) => {
-        const planeId = placement.planeId ?? DEFAULT_PLANE_ID;
+      segments: rig.sequence.segments.map((segment, segmentIndex) => {
+        const planeId = segment.planeId ?? DEFAULT_PLANE_ID;
 
         if (segmentIndex === 0) {
-          const handRadiusProfile = toAuthoredRadiusProfile(placement.segment.hand.radiusProfile);
-          const headRadiusProfile = toAuthoredRadiusProfile(placement.segment.head.radiusProfile);
+          const handRadiusProfile = toAuthoredRadiusProfile(segment.hand.radiusProfile);
+          const headRadiusProfile = toAuthoredRadiusProfile(segment.head.radiusProfile);
           const firstSegment: AuthoredFirstSegment = {
             kind: "first",
-            durationUnits: placement.durationUnits,
+            durationUnits: segment.durationUnits,
             planeId,
             hand: {
               startPose: {
-                phaseDeg: toDegrees(placement.segment.hand.startPose.phaseAbs),
-                radius: placement.segment.hand.startPose.radius
+                phaseDeg: toDegrees(segment.hand.startPose.phaseAbs),
+                radius: segment.hand.startPose.radius
               },
               driver: {
                 kind: "circle",
-                omega: placement.segment.hand.driver.omega,
+                omega: segment.hand.driver.omega,
                 omegaUnit: "radians-per-unit"
               },
               ...(handRadiusProfile ? { radiusProfile: handRadiusProfile } : {})
             },
             head: {
               startPose: {
-                phaseDeg: toDegrees(placement.segment.head.startPose.phaseAbs),
-                radius: placement.segment.head.startPose.radius
+                phaseDeg: toDegrees(segment.head.startPose.phaseAbs),
+                radius: segment.head.startPose.radius
               },
               driver: {
                 kind: "circle",
-                omega: placement.segment.head.driver.omega,
+                omega: segment.head.driver.omega,
                 omegaUnit: "radians-per-unit"
               },
               ...(headRadiusProfile ? { radiusProfile: headRadiusProfile } : {})
             }
           };
-          previousEndPose = evalSegment(placement.segment, placement.durationUnits);
+          previousEndPose = evalSegment(segment, segment.durationUnits);
           previousPlaneId = planeId;
           return firstSegment;
         }
@@ -552,26 +558,26 @@ export function authoredDocumentFromMultiRigSequence(
 
         if (
           !expectedStartPose ||
-          !posesMatchModuloTurns(expectedStartPose.handPose, placement.segment.hand.startPose) ||
-          !posesMatchModuloTurns(expectedStartPose.headPose, placement.segment.head.startPose)
+          !posesMatchModuloTurns(expectedStartPose.handPose, segment.hand.startPose) ||
+          !posesMatchModuloTurns(expectedStartPose.headPose, segment.head.startPose)
         ) {
           throw new Error(
             `Rig ${rig.rigId} segment ${segmentIndex} cannot be represented as a continuity-first authored segment`
           );
         }
 
-        previousEndPose = evalSegment(placement.segment, placement.durationUnits);
+        previousEndPose = evalSegment(segment, segment.durationUnits);
         previousPlaneId = planeId;
-        const handRadiusProfile = toAuthoredRadiusProfile(placement.segment.hand.radiusProfile);
-        const headRadiusProfile = toAuthoredRadiusProfile(placement.segment.head.radiusProfile);
+        const handRadiusProfile = toAuthoredRadiusProfile(segment.hand.radiusProfile);
+        const headRadiusProfile = toAuthoredRadiusProfile(segment.head.radiusProfile);
         return {
           kind: "continuation",
-          durationUnits: placement.durationUnits,
+          durationUnits: segment.durationUnits,
           planeId,
           hand: {
             driver: {
               kind: "circle",
-              omega: placement.segment.hand.driver.omega,
+              omega: segment.hand.driver.omega,
               omegaUnit: "radians-per-unit"
             },
             ...(handRadiusProfile ? { radiusProfile: handRadiusProfile } : {})
@@ -579,7 +585,7 @@ export function authoredDocumentFromMultiRigSequence(
           head: {
             driver: {
               kind: "circle",
-              omega: placement.segment.head.driver.omega,
+              omega: segment.head.driver.omega,
               omegaUnit: "radians-per-unit"
             },
             ...(headRadiusProfile ? { radiusProfile: headRadiusProfile } : {})
