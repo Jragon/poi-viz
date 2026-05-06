@@ -5,7 +5,9 @@ import {
   embedPlanePoint,
   getPlaneNormal,
   projectWorldPoint,
-  toProjectedRigPose
+  projectWorldRigPose,
+  toProjectedRigPose,
+  toWorldRigPose
 } from "@/engine/planeProjection";
 import type { RelativeRigPose } from "@/engine/types";
 
@@ -21,6 +23,33 @@ describe("planeProjection", () => {
     const relative = pose(Math.PI / 3, Math.PI);
 
     expect(toProjectedRigPose(relative, "wall")).toEqual(toCartesianRigPose(relative));
+  });
+
+  it("exposes deterministic world-space rig poses before projection", () => {
+    const relative = pose(0, Math.PI / 2);
+
+    expect(toWorldRigPose(relative, "wall")).toEqual({
+      handPosition: { x: 1, y: 0, z: 0 },
+      headPosition: { x: 1, y: 1, z: 0 },
+      planeId: "wall"
+    });
+    expect(toWorldRigPose(relative, "wheel")).toEqual({
+      handPosition: { x: 0, y: 0, z: 1 },
+      headPosition: { x: 0, y: 1, z: 1 },
+      planeId: "wheel"
+    });
+    expect(toWorldRigPose(relative, "floor")).toEqual({
+      handPosition: { x: 1, y: 0, z: 0 },
+      headPosition: { x: 1, y: 0, z: 1 },
+      planeId: "floor"
+    });
+  });
+
+  it("projects a world rig pose through the same output path", () => {
+    const relative = pose(Math.PI / 3, Math.PI);
+    const world = toWorldRigPose(relative, "wall");
+
+    expect(projectWorldRigPose(world)).toEqual(toProjectedRigPose(relative, "wall"));
   });
 
   it("embeds plane-local axes into the chosen world bases", () => {

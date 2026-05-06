@@ -5,7 +5,7 @@ import {
   type BodyRigConfig,
   type BodyRigElbowPolicy,
   type ResolvedBodyRigConfig
-} from "@/body-rig/bodyRigConfig";
+} from "./bodyRigConfig";
 
 export type ArmSide = "left" | "right";
 

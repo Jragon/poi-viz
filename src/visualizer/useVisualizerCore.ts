@@ -13,7 +13,12 @@ import {
   type TransportController,
   type TransportOptions
 } from "@/composables/useTransport";
-import type { CartesianMultiRigPose, MultiRigSequence, RigId } from "@/engine/types";
+import type {
+  CartesianMultiRigPose,
+  MultiRigSequence,
+  RigId,
+  WorldMultiRigPose
+} from "@/engine/types";
 import type { MultiRigTrailSamples } from "@/visualizer/useMultiRigPlayback";
 import {
   useVisualizerSession,
@@ -32,6 +37,7 @@ export interface VisualizerCoreController {
   readonly transport: TransportController;
   readonly session: VisualizerSession;
   readonly rigOrder: ComputedRef<RigId[]>;
+  readonly worldPoses: ComputedRef<WorldMultiRigPose>;
   readonly cartesianPoses: ComputedRef<CartesianMultiRigPose>;
   readonly trails: ComputedRef<MultiRigTrailSamples>;
   readonly sceneWorldRadius: ComputedRef<number>;
@@ -66,6 +72,9 @@ export function useVisualizerCore(
   const { currentFrame, currentTrails, playback, errorMessage, isReady } = session;
 
   const rigOrder = computed(() => sequenceRef.value.rigs.map((rig) => rig.rigId));
+  const worldPoses = computed<WorldMultiRigPose>(() =>
+    currentFrame.value?.ok ? currentFrame.value.worldPoses : {}
+  );
   const cartesianPoses = computed<CartesianMultiRigPose>(() =>
     currentFrame.value?.ok ? currentFrame.value.cartesianPoses : {}
   );
@@ -113,6 +122,7 @@ export function useVisualizerCore(
     transport,
     session,
     rigOrder,
+    worldPoses,
     cartesianPoses,
     trails,
     sceneWorldRadius,

@@ -2,16 +2,23 @@ import type {
   CartesianMultiRigPose,
   CartesianRigPose,
   PlaneId,
+  PlaneSide,
   Radius,
   RelativeRigPose,
   RigId,
+  TimeUnit,
   Vec2,
-  Vec3
+  Vec3,
+  WorldMultiRigPose,
+  WorldRigPose
 } from "@/engine/types";
 
 type ProjectableEvaluatedPose = {
   pose: RelativeRigPose;
   planeId: PlaneId;
+  planeSide?: PlaneSide;
+  segmentIndex?: number;
+  tLocal?: TimeUnit;
 };
 
 export type ProjectionMode = "orthographic" | "tilted";
@@ -63,6 +70,14 @@ function projectTiltedWorldPoint(point: Vec3, settings: PlaneProjectionSettings)
   };
 }
 
+function getTiltedCameraDepth(point: Vec3, settings: PlaneProjectionSettings): number {
+  const yaw = toRadians(settings.yawDeg);
+  const cosYaw = Math.cos(yaw);
+  const sinYaw = Math.sin(yaw);
+
+  return -point.x * sinYaw + point.z * cosYaw;
+}
+
 export function embedPlanePoint(planeId: PlaneId, local: Vec2): Vec3 {
   switch (planeId) {
     case "wall":
@@ -96,11 +111,22 @@ export function projectWorldPoint(
   return { x: point.x, y: point.y };
 }
 
-export function toProjectedRigPose(
+export function getCameraDepth(
+  point: Vec3,
+  settings: PlaneProjectionSettings = DEFAULT_PLANE_PROJECTION_SETTINGS
+): number {
+  if (settings.mode === "tilted") {
+    return getTiltedCameraDepth(point, settings);
+  }
+
+  return point.z;
+}
+
+export function toWorldRigPose(
   relative: RelativeRigPose,
   planeId: PlaneId,
-  settings: PlaneProjectionSettings = DEFAULT_PLANE_PROJECTION_SETTINGS
-): CartesianRigPose {
+  metadata: Omit<WorldRigPose, "handPosition" | "headPosition" | "planeId"> = {}
+): WorldRigPose {
   const handWorld = embedPlanePoint(
     planeId,
     localPolarToPlanePoint(relative.handPose.radius, relative.handPose.phaseAbs)
@@ -114,9 +140,44 @@ export function toProjectedRigPose(
   );
 
   return {
-    handPosition: projectWorldPoint(handWorld, settings),
-    headPosition: projectWorldPoint(headWorld, settings)
+    handPosition: handWorld,
+    headPosition: headWorld,
+    planeId,
+    ...metadata
   };
+}
+
+export function projectWorldRigPose(
+  world: WorldRigPose,
+  settings: PlaneProjectionSettings = DEFAULT_PLANE_PROJECTION_SETTINGS
+): CartesianRigPose {
+  return {
+    handPosition: projectWorldPoint(world.handPosition, settings),
+    headPosition: projectWorldPoint(world.headPosition, settings)
+  };
+}
+
+export function toProjectedRigPose(
+  relative: RelativeRigPose,
+  planeId: PlaneId,
+  settings: PlaneProjectionSettings = DEFAULT_PLANE_PROJECTION_SETTINGS
+): CartesianRigPose {
+  return projectWorldRigPose(toWorldRigPose(relative, planeId), settings);
+}
+
+export function toWorldMultiRigPose(
+  poses: Record<RigId, ProjectableEvaluatedPose>
+): WorldMultiRigPose {
+  return Object.fromEntries(
+    Object.entries(poses).map(([rigId, value]) => [
+      rigId,
+      toWorldRigPose(value.pose, value.planeId, {
+        ...(value.planeSide === undefined ? {} : { planeSide: value.planeSide }),
+        ...(value.segmentIndex === undefined ? {} : { segmentIndex: value.segmentIndex }),
+        ...(value.tLocal === undefined ? {} : { tLocal: value.tLocal })
+      })
+    ])
+  );
 }
 
 export function toProjectedMultiRigPose(
@@ -126,7 +187,7 @@ export function toProjectedMultiRigPose(
   return Object.fromEntries(
     Object.entries(poses).map(([rigId, value]) => [
       rigId,
-      toProjectedRigPose(value.pose, value.planeId, settings)
+      projectWorldRigPose(toWorldRigPose(value.pose, value.planeId), settings)
     ])
   );
 }

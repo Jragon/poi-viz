@@ -170,6 +170,13 @@ function createPlayback(
     ok: true,
     evaluatedPoses: {},
     relativePoses: {},
+    worldPoses: {
+      left: {
+        handPosition: { x: 0.5 + t, y: 0, z: 0 },
+        headPosition: { x: 1 + t, y: 0, z: 0 },
+        planeId: "wall"
+      }
+    },
     cartesianPoses: {
       left: {
         handPosition: { x: 0.5 + t, y: 0 },

@@ -4,10 +4,10 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { compileAuthoredDocument } from "@/authoring/compile";
 import type { AuthoredDocumentEntry } from "@/authoring/types";
 import { useAuthoringLibrary } from "@/authoring/useAuthoringLibrary";
+import { buildBodyRigConfigFromArmReach } from "@/body-rig/bodyRigConfig";
 import type { CartesianMultiRigPose, MultiRigSequence, RigId, Vec2 } from "@/engine/types";
 import type { MultiRigTrailSamples } from "@/visualizer/useMultiRigPlayback";
 import { useVisualizerCore } from "@/visualizer/useVisualizerCore";
-import { buildBodyRigConfigFromArmReach } from "./bodyRigConfig";
 import {
   buildBodyRigFrame,
   getBodyRigArmDrawOrder,
@@ -16,7 +16,7 @@ import {
   type BodyRigFrame,
   type BodyRigPose
 } from "./bodyRigDemo";
-import { computeSharedHandOverlapCircle, type BodyRigSolveResult } from "./stickFigureGeometry";
+import { computeSharedHandOverlapCircle } from "./stickFigureGeometry";
 
 interface CanvasLayout {
   readonly cssWidth: number;
@@ -26,9 +26,7 @@ interface CanvasLayout {
   readonly cameraCenterWorld: Vec2;
 }
 
-interface FigurePose extends BodyRigPose {
-  readonly shoulders: BodyRigSolveResult["shoulders"];
-}
+type FigurePose = BodyRigPose;
 
 interface RigStyle {
   readonly hand: string;

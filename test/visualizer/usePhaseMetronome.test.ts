@@ -3,6 +3,7 @@ import { nextTick, ref } from "vue";
 
 import { toCartesianMultiRigPose } from "@/engine/cartesian";
 import { evalPreparedMultiRigSequenceAt, prepareMultiRigSequence } from "@/engine/multirig";
+import { toWorldMultiRigPose } from "@/engine/planeProjection";
 import type { MultiRigSequence, Segment, SegmentPlacement, TimeUnit } from "@/engine/types";
 import type { PlaybackEvalSuccess, PlaybackEvaluateResult } from "@/visualizer/useMultiRigPlayback";
 import {
@@ -63,6 +64,7 @@ function createFrame(prepared: ReturnType<typeof prepare>, t: TimeUnit): Playbac
     ok: true,
     evaluatedPoses: result.poses,
     relativePoses,
+    worldPoses: toWorldMultiRigPose(result.poses),
     cartesianPoses: toCartesianMultiRigPose(relativePoses)
   };
 }

@@ -6,6 +6,8 @@ import {
   projectShoulderLine,
   solveBodyRig,
   solveStickArm,
+  solveWorldBodyRig,
+  solveWorldStickArm,
   type BodyRigRoot,
   type BodyRigSolveRequest,
   type RigGoals
@@ -13,6 +15,10 @@ import {
 
 function distance(a: { x: number; y: number }, b: { x: number; y: number }) {
   return Math.hypot(b.x - a.x, b.y - a.y);
+}
+
+function distance3(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) {
+  return Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
 }
 
 function getBaseRigRequest(
@@ -236,6 +242,46 @@ describe("projectShoulderLine", () => {
 
     expect(result.yawRad).toBeCloseTo(Math.PI / 2);
     expect(result.projectedShoulderSpan).toBeCloseTo(60);
+  });
+});
+
+describe("solveWorldStickArm", () => {
+  it("solves a 3D two-bone arm with forward elbow depth", () => {
+    const result = solveWorldStickArm({
+      shoulder: { x: 0, y: 0, z: 0 },
+      handTarget: { x: 60, y: 40, z: 20 },
+      upperArmLength: 55,
+      forearmLength: 45,
+      armSide: "right",
+      torsoRight: { x: 1, y: 0, z: 0 },
+      torsoForward: { x: 0, y: 0, z: 1 },
+      worldUp: { x: 0, y: -1, z: 0 }
+    });
+
+    expect(result.isClamped).toBe(false);
+    expect(result.hand.x).toBeCloseTo(result.handTarget.x);
+    expect(result.hand.y).toBeCloseTo(result.handTarget.y);
+    expect(result.hand.z).toBeCloseTo(result.handTarget.z);
+    expect(distance3(result.shoulder, result.elbow)).toBeCloseTo(55);
+    expect(distance3(result.elbow, result.hand)).toBeCloseTo(45);
+    expect(result.elbow.z).toBeGreaterThan(0);
+  });
+
+  it("clamps unreachable world targets deterministically", () => {
+    const result = solveWorldStickArm({
+      shoulder: { x: 0, y: 0, z: 0 },
+      handTarget: { x: 300, y: 0, z: 0 },
+      upperArmLength: 40,
+      forearmLength: 50,
+      armSide: "right",
+      torsoRight: { x: 1, y: 0, z: 0 },
+      torsoForward: { x: 0, y: 0, z: 1 },
+      worldUp: { x: 0, y: -1, z: 0 }
+    });
+
+    expect(result.isClamped).toBe(true);
+    expect(result.hand).toEqual({ x: 90, y: 0, z: 0 });
+    expect(result.reachError).toBeCloseTo(210);
   });
 });
 
@@ -529,5 +575,56 @@ describe("solveBodyRig", () => {
     expect(result.leftArm.isClamped).toBe(true);
     expect(result.rightArm.isClamped).toBe(true);
     expect(result.cost).toBeGreaterThan(0);
+  });
+});
+
+describe("solveWorldBodyRig", () => {
+  it("keeps a balanced wall-plane pose neutral while solving in Vec3", () => {
+    const result = solveWorldBodyRig({
+      root: {
+        shoulderCenter: { x: 200, y: 118, z: 0 },
+        worldUp: { x: 0, y: -1, z: 0 },
+        neutralForward: { x: 0, y: 0, z: 1 },
+        scale: 1
+      },
+      config: getBaseRigRequest().config,
+      goals: {
+        leftHandTarget: { x: 80, y: 190, z: 0 },
+        rightHandTarget: { x: 320, y: 190, z: 0 }
+      },
+      yawSearchSteps: 72
+    });
+
+    expect(result.yawRad).toBeCloseTo(0);
+    expect(result.diagnostics.isBestEffort).toBe(false);
+    expect(result.leftArm.elbow.z).toBeGreaterThan(0);
+    expect(result.rightArm.elbow.z).toBeGreaterThan(0);
+    expect(distance3(result.leftArm.shoulder, result.leftArm.elbow)).toBeCloseTo(
+      getBaseRigRequest().config.upperArmLength
+    );
+    expect(distance3(result.leftArm.elbow, result.leftArm.hand)).toBeCloseTo(
+      getBaseRigRequest().config.forearmLength
+    );
+  });
+
+  it("lifts shoulders in world space for overhead targets", () => {
+    const result = solveWorldBodyRig({
+      root: {
+        shoulderCenter: { x: 200, y: 118, z: 0 },
+        worldUp: { x: 0, y: -1, z: 0 },
+        neutralForward: { x: 0, y: 0, z: 1 },
+        scale: 1
+      },
+      config: getBaseRigRequest().config,
+      goals: {
+        leftHandTarget: { x: 165, y: 20, z: 0 },
+        rightHandTarget: { x: 235, y: 20, z: 0 }
+      }
+    });
+
+    expect(result.diagnostics.leftShoulderLift).toBeGreaterThan(0);
+    expect(result.diagnostics.rightShoulderLift).toBeGreaterThan(0);
+    expect(result.shoulders.leftShoulder.y).toBeLessThan(118);
+    expect(result.shoulders.rightShoulder.y).toBeLessThan(118);
   });
 });

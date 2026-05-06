@@ -19,6 +19,7 @@ import {
 import {
   DEFAULT_PLANE_PROJECTION_SETTINGS,
   toProjectedMultiRigPose,
+  toWorldMultiRigPose,
   type PlaneProjectionSettings,
   type ProjectionMode
 } from "@/engine/planeProjection";
@@ -27,7 +28,8 @@ import type {
   MultiRigSequence,
   RelativeRigPose,
   RigId,
-  TimeUnit
+  TimeUnit,
+  WorldMultiRigPose
 } from "@/engine/types";
 import {
   appendCurrentPoseToTrails,
@@ -52,6 +54,7 @@ export type PlaybackEvalSuccess = {
   ok: true;
   evaluatedPoses: EvaluatedMultiRigPose;
   relativePoses: Record<RigId, RelativeRigPose>;
+  worldPoses: WorldMultiRigPose;
   cartesianPoses: CartesianMultiRigPose;
 };
 
@@ -141,6 +144,7 @@ export function useMultiRigPlayback(
       ok: true,
       evaluatedPoses: evalResult.poses,
       relativePoses,
+      worldPoses: toWorldMultiRigPose(evalResult.poses),
       cartesianPoses: toProjectedMultiRigPose(evalResult.poses, currentProjectionSettings)
     };
     lastEvaluation.value = result;

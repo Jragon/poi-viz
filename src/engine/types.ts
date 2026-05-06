@@ -44,9 +44,20 @@ export interface CartesianRigPose {
   headPosition: Vec2;
 }
 
+export interface WorldRigPose {
+  handPosition: Vec3;
+  headPosition: Vec3;
+  planeId: PlaneId;
+  planeSide?: PlaneSide;
+  segmentIndex?: number;
+  tLocal?: TimeUnit;
+}
+
 export type MultiRigPose = Record<RigId, RelativeRigPose>;
 
 export type CartesianMultiRigPose = Record<RigId, CartesianRigPose>;
+
+export type WorldMultiRigPose = Record<RigId, WorldRigPose>;
 
 export type Driver = {
   kind: "circle";

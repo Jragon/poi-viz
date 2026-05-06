@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
+import { buildBodyRigConfigFromArmReach } from "@/body-rig/bodyRigConfig";
 import type { Vec2 } from "@/engine/types";
-import { buildBodyRigConfigFromArmReach } from "./bodyRigConfig";
 import {
   buildBodyRigFrame,
   getBodyRigArmDrawOrder,
@@ -11,7 +11,7 @@ import {
   type BodyRigFrame,
   type BodyRigPose
 } from "./bodyRigDemo";
-import { type ArmSide, type BodyRigSolveResult } from "./stickFigureGeometry";
+import { type ArmSide } from "./stickFigureGeometry";
 
 interface CanvasLayout {
   readonly cssWidth: number;
@@ -26,9 +26,7 @@ interface ActiveDrag {
   readonly target: DragTarget;
 }
 
-interface FigurePose extends BodyRigPose {
-  readonly shoulders: BodyRigSolveResult["shoulders"];
-}
+type FigurePose = BodyRigPose;
 
 const HAND_HIT_RADIUS = 18;
 

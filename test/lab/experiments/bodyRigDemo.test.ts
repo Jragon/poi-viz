@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { Vec2 } from "@/engine/types";
+import type { Vec2, Vec3 } from "@/engine/types";
 import { buildBodyRigConfigFromArmReach } from "@/lab/experiments/body-tracing/bodyRigConfig";
 import {
   buildBodyRigFrame,
@@ -11,6 +11,10 @@ import {
 
 function distance(a: Vec2, b: Vec2): number {
   return Math.hypot(b.x - a.x, b.y - a.y);
+}
+
+function distance3(a: Vec3, b: Vec3): number {
+  return Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
 }
 
 describe("bodyRigDemo", () => {
@@ -67,7 +71,15 @@ describe("bodyRigDemo", () => {
     expect(getBodyRigArmDrawOrder(pose)).toEqual(["left", "right"]);
     expect(leftArmPoints).toHaveLength(3);
     expect(rightArmPoints).toHaveLength(3);
-    expect(distance(leftArmPoints[0], leftArmPoints[1])).toBeCloseTo(rigConfig.upperArmLength);
-    expect(distance(leftArmPoints[1], leftArmPoints[2])).toBeCloseTo(rigConfig.forearmLength);
+    expect(distance(leftArmPoints[0], leftArmPoints[1])).toBeLessThanOrEqual(
+      rigConfig.upperArmLength
+    );
+    expect(distance3(pose.solve.leftArm.shoulder, pose.solve.leftArm.elbow)).toBeCloseTo(
+      rigConfig.upperArmLength
+    );
+    expect(distance3(pose.solve.leftArm.elbow, pose.solve.leftArm.hand)).toBeCloseTo(
+      rigConfig.forearmLength
+    );
+    expect(pose.projected.leftArm.depth).toBeGreaterThan(0);
   });
 });

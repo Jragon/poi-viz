@@ -66,6 +66,13 @@ describe("useMultiRigPlayback", () => {
     expect(Object.keys(result.evaluatedPoses)).toEqual(["left", "right"]);
     expect(result.evaluatedPoses.left.segmentIndex).toBe(0);
     expect(result.relativePoses.left).toEqual(result.evaluatedPoses.left.pose);
+    expect(result.worldPoses.left.handPosition).toEqual({
+      x: Math.cos(1),
+      y: Math.sin(1),
+      z: 0
+    });
+    expect(result.worldPoses.left.planeId).toBe("wall");
+    expect(result.worldPoses.left.segmentIndex).toBe(0);
     expect(result.cartesianPoses.left.handPosition.x).toBeCloseTo(Math.cos(1));
   });
 
@@ -87,6 +94,8 @@ describe("useMultiRigPlayback", () => {
 
     expect(result.cartesianPoses.left.handPosition).toEqual({ x: 0, y: 0 });
     expect(result.cartesianPoses.left.headPosition).toEqual({ x: 0, y: 0 });
+    expect(result.worldPoses.left.handPosition).toEqual({ x: 0, y: 0, z: 1 });
+    expect(result.worldPoses.left.headPosition).toEqual({ x: 0, y: 0, z: 2 });
   });
 
   it("projects current poses through tilted settings", () => {
@@ -142,8 +151,11 @@ describe("useMultiRigPlayback", () => {
 
     if (!withSideResult.ok || !withoutSideResult.ok) return;
     expect(withSideResult.evaluatedPoses.left.planeSide).toBe("b");
+    expect(withSideResult.worldPoses.left.planeSide).toBe("b");
     expect(withoutSideResult.evaluatedPoses.left.planeSide).toBeUndefined();
+    expect(withoutSideResult.worldPoses.left.planeSide).toBeUndefined();
     expect("planeSide" in withoutSideResult.evaluatedPoses.left).toBe(false);
+    expect("planeSide" in withoutSideResult.worldPoses.left).toBe(false);
     expect(withSideResult.cartesianPoses).toEqual(withoutSideResult.cartesianPoses);
   });
 
