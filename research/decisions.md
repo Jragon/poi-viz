@@ -45,3 +45,15 @@ Body-tracing side concepts start as generic engine metadata, not Mel/body vocabu
 - Trail continuity compares `planeSide` so visual loop wrapping does not hide side-state boundaries.
 - Authoring controls and authored document compile support are deferred.
 - Crosspoint and side-transition legality is future engine boundary-validation work. Keep it separate from structural sequence validation and do not implement it in Vue components.
+
+## 2026-05-06: Body Rig World-Space Convention
+
+Body-rig geometry uses normal y-up `Vec3` coordinates until projection, with projection and canvas conversion kept as explicit boundary steps.
+
+- `+X` is the performer's right side and screen-right in the neutral wall view.
+- `+Y` is up.
+- `+Z` is forward from the torso toward the viewer/camera, out of the neutral wall plane.
+- Neutral torso basis derives `torsoRight` as `cross(worldUp, torsoForward)`, so `worldUp = +Y` and `torsoForward = +Z` produce `torsoRight = +X`.
+- The body rig's anatomical elbow policy prefers forward depth first and native-side outward only as a secondary cue.
+- Left native outward is `-torsoRight`; right native outward is `+torsoRight`.
+- Native-side correction must not pull the elbow backward or inject a vertical snap near horizontal full extension; if a 2D projection would make that tempting, the elbow comes forward in `+Z` instead.

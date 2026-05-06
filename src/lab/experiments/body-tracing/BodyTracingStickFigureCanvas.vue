@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
-import { buildBodyRigConfigFromArmReach } from "@/body-rig/bodyRigConfig";
-import type { Vec2 } from "@/engine/types";
 import {
+  buildBodyRigConfigFromArmReach,
   buildBodyRigFrame,
+  computeSharedHandOverlapCircle,
   getBodyRigArmDrawOrder,
   getBodyRigArmPoints,
   solveBodyRigFrame,
+  type ArmSide,
   type BodyRigFrame,
   type BodyRigPose
-} from "./bodyRigDemo";
-import { type ArmSide } from "./stickFigureGeometry";
+} from "@/body-rig";
+import { DEFAULT_PLANE_PROJECTION_SETTINGS } from "@/engine/planeProjection";
+import type { Vec2, Vec3 } from "@/engine/types";
 
 interface CanvasLayout {
   readonly cssWidth: number;
@@ -34,8 +36,8 @@ const containerRef = ref<HTMLDivElement | null>(null);
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const canvasContextRef = ref<CanvasRenderingContext2D | null>(null);
 const layoutRef = ref<CanvasLayout | null>(null);
-const leftHandTargetRef = ref<Vec2 | null>(null);
-const rightHandTargetRef = ref<Vec2 | null>(null);
+const leftHandTargetRef = ref<Vec3 | null>(null);
+const rightHandTargetRef = ref<Vec3 | null>(null);
 const activeDragRef = ref<ActiveDrag | null>(null);
 const hoveredDragTarget = ref<DragTarget | null>(null);
 
@@ -45,8 +47,16 @@ function distance(a: Vec2, b: Vec2): number {
   return Math.hypot(b.x - a.x, b.y - a.y);
 }
 
-function scalePoint(point: Vec2, xScale: number, yScale: number): Vec2 {
-  return { x: point.x * xScale, y: point.y * yScale };
+function scaleWorldPoint(point: Vec3, xScale: number, yScale: number): Vec3 {
+  return { x: point.x * xScale, y: point.y * yScale, z: point.z };
+}
+
+function canvasPointToBodyWorld(point: Vec2): Vec3 {
+  return { x: point.x, y: -point.y, z: 0 };
+}
+
+function projectedPointToCanvas(point: Vec2): Vec2 {
+  return { x: point.x, y: -point.y };
 }
 
 function buildBodyFrame(layout: CanvasLayout): BodyRigFrame {
@@ -58,7 +68,7 @@ function buildBodyFrame(layout: CanvasLayout): BodyRigFrame {
   const shoulderY = Math.max(height * 0.27, 110);
   const torsoHeight = Math.min(scale * 0.29, 160);
   const headRadius = Math.min(scale * 0.09, 38);
-  const shoulderCenter = { x: centerX, y: shoulderY };
+  const shoulderCenter = { x: centerX, y: -shoulderY, z: 0 };
   const thighLength = Math.min(scale * 0.2, 116);
   const shinLength = Math.min(scale * 0.19, 108);
   return buildBodyRigFrame({
@@ -88,10 +98,14 @@ function getFigurePose(): FigurePose | null {
   const leftHandTarget = leftHandTargetRef.value ?? body.defaultLeftHandTarget;
   const rightHandTarget = rightHandTargetRef.value ?? body.defaultRightHandTarget;
 
-  return solveBodyRigFrame(body, {
-    leftHandTarget,
-    rightHandTarget
-  });
+  return solveBodyRigFrame(
+    body,
+    {
+      leftHandTarget,
+      rightHandTarget
+    },
+    DEFAULT_PLANE_PROJECTION_SETTINGS
+  );
 }
 
 function drawJoint(
@@ -130,7 +144,18 @@ function drawLimb(
   ctx.stroke();
 }
 
-function drawReachGuide(ctx: CanvasRenderingContext2D, center: Vec2, radius: number) {
+function getSharedHandGuide(body: BodyRigFrame) {
+  return computeSharedHandOverlapCircle({
+    root: {
+      torsoCenter: { x: body.shoulderCenter.x, y: body.shoulderCenter.y },
+      shoulderY: body.shoulderCenter.y
+    },
+    config: body.rigConfig,
+    useMaxYawCompression: true
+  });
+}
+
+function drawSharedHandGuide(ctx: CanvasRenderingContext2D, center: Vec2, radius: number) {
   ctx.save();
   ctx.setLineDash([8, 8]);
   ctx.beginPath();
@@ -176,46 +201,65 @@ function draw() {
   const leftStroke = "rgba(186, 230, 253, 1)";
   const rightFill = "rgba(245, 158, 11, 0.96)";
   const rightStroke = "rgba(254, 240, 138, 1)";
+  const body = pose.projectedBody;
+  const sharedHandGuide = getSharedHandGuide(pose.body);
+  const toCanvas = projectedPointToCanvas;
 
-  drawReachGuide(ctx, pose.body.shoulderCenter, pose.leftArm.reach.max);
-  drawLimb(ctx, [pose.body.headCenter, pose.body.neck], 6, secondaryStroke);
-  drawLimb(ctx, [pose.shoulders.leftShoulder, pose.shoulders.rightShoulder], 12, limbStroke);
-  drawLimb(ctx, [pose.body.neck, pose.body.pelvis], 14, limbStroke);
-  drawLimb(ctx, [pose.body.hipLeft, pose.body.hipRight], 12, secondaryStroke);
-  drawLimb(ctx, [pose.body.hipLeft, pose.body.kneeLeft, pose.body.footLeft], 12, limbStroke);
-  drawLimb(ctx, [pose.body.hipRight, pose.body.kneeRight, pose.body.footRight], 12, limbStroke);
+  drawSharedHandGuide(ctx, toCanvas(sharedHandGuide.center), sharedHandGuide.radius);
+  drawLimb(ctx, [toCanvas(body.headCenter), toCanvas(body.neck)], 6, secondaryStroke);
+  drawLimb(
+    ctx,
+    [toCanvas(pose.shoulders.leftShoulder), toCanvas(pose.shoulders.rightShoulder)],
+    12,
+    limbStroke
+  );
+  drawLimb(ctx, [toCanvas(body.neck), toCanvas(body.pelvis)], 14, limbStroke);
+  drawLimb(ctx, [toCanvas(body.hipLeft), toCanvas(body.hipRight)], 12, secondaryStroke);
+  drawLimb(
+    ctx,
+    [toCanvas(body.hipLeft), toCanvas(body.kneeLeft), toCanvas(body.footLeft)],
+    12,
+    limbStroke
+  );
+  drawLimb(
+    ctx,
+    [toCanvas(body.hipRight), toCanvas(body.kneeRight), toCanvas(body.footRight)],
+    12,
+    limbStroke
+  );
 
   for (const side of getBodyRigArmDrawOrder(pose)) {
-    drawLimb(ctx, getBodyRigArmPoints(pose, side), 12, getArmStroke(side));
+    drawLimb(ctx, getBodyRigArmPoints(pose, side).map(toCanvas), 12, getArmStroke(side));
   }
 
+  const headCenter = toCanvas(body.headCenter);
   ctx.beginPath();
-  ctx.arc(pose.body.headCenter.x, pose.body.headCenter.y, pose.body.headRadius, 0, Math.PI * 2);
+  ctx.arc(headCenter.x, headCenter.y, body.headRadius, 0, Math.PI * 2);
   ctx.lineWidth = 10;
   ctx.strokeStyle = limbStroke;
   ctx.stroke();
 
   const staticNodes = [
-    pose.body.neck,
+    body.neck,
     pose.shoulders.leftShoulder,
     pose.shoulders.rightShoulder,
     pose.leftArm.elbow,
     pose.rightArm.elbow,
-    pose.body.pelvis,
-    pose.body.hipLeft,
-    pose.body.hipRight,
-    pose.body.kneeLeft,
-    pose.body.kneeRight,
-    pose.body.footLeft,
-    pose.body.footRight
+    body.pelvis,
+    body.hipLeft,
+    body.hipRight,
+    body.kneeLeft,
+    body.kneeRight,
+    body.footLeft,
+    body.footRight
   ];
 
   for (const point of staticNodes) {
-    drawJoint(ctx, point, 5.5, nodeFill, nodeStroke);
+    drawJoint(ctx, toCanvas(point), 5.5, nodeFill, nodeStroke);
   }
 
-  drawJoint(ctx, pose.leftArm.hand, 8.5, leftFill, leftStroke);
-  drawJoint(ctx, pose.rightArm.hand, 8.5, rightFill, rightStroke);
+  drawJoint(ctx, toCanvas(pose.leftArm.hand), 8.5, leftFill, leftStroke);
+  drawJoint(ctx, toCanvas(pose.rightArm.hand), 8.5, rightFill, rightStroke);
 }
 
 function getCanvasPoint(event: PointerEvent): Vec2 | null {
@@ -233,15 +277,15 @@ function getCanvasPoint(event: PointerEvent): Vec2 | null {
 
 function updateHandTarget(target: DragTarget, point: Vec2) {
   if (target === "leftHand") {
-    leftHandTargetRef.value = point;
+    leftHandTargetRef.value = canvasPointToBodyWorld(point);
     return;
   }
 
-  rightHandTargetRef.value = point;
+  rightHandTargetRef.value = canvasPointToBodyWorld(point);
 }
 
 function getHandPoint(pose: FigurePose, target: DragTarget): Vec2 {
-  return target === "leftHand" ? pose.leftArm.hand : pose.rightArm.hand;
+  return projectedPointToCanvas(target === "leftHand" ? pose.leftArm.hand : pose.rightArm.hand);
 }
 
 function getDragTargetAt(point: Vec2, pose: FigurePose): DragTarget | null {
@@ -295,10 +339,10 @@ function updateLayout() {
     const xScale = nextLayout.cssWidth / layoutRef.value.cssWidth;
     const yScale = nextLayout.cssHeight / layoutRef.value.cssHeight;
     if (leftHandTargetRef.value) {
-      leftHandTargetRef.value = scalePoint(leftHandTargetRef.value, xScale, yScale);
+      leftHandTargetRef.value = scaleWorldPoint(leftHandTargetRef.value, xScale, yScale);
     }
     if (rightHandTargetRef.value) {
-      rightHandTargetRef.value = scalePoint(rightHandTargetRef.value, xScale, yScale);
+      rightHandTargetRef.value = scaleWorldPoint(rightHandTargetRef.value, xScale, yScale);
     }
   }
 
@@ -395,8 +439,13 @@ function getStatusText(): string {
   }
 
   const diagnostics = ` / cost ${pose.solve.cost.toFixed(1)}${pose.solve.diagnostics.isBestEffort ? " / clamped" : ""}`;
+  const leftHand = projectedPointToCanvas(pose.leftArm.hand);
+  const rightHand = projectedPointToCanvas(pose.rightArm.hand);
+  const projectedShoulderSpan = Math.abs(
+    pose.shoulders.rightShoulder.x - pose.shoulders.leftShoulder.x
+  );
 
-  return `left ${Math.round(pose.leftArm.hand.x)},${Math.round(pose.leftArm.hand.y)} / right ${Math.round(pose.rightArm.hand.x)},${Math.round(pose.rightArm.hand.y)} / yaw ${Math.round(pose.yawDeg)}deg / shoulders ${Math.round(pose.shoulders.projectedShoulderSpan)}px${diagnostics}`;
+  return `left ${Math.round(leftHand.x)},${Math.round(leftHand.y)} / right ${Math.round(rightHand.x)},${Math.round(rightHand.y)} / yaw ${Math.round(pose.yawDeg)}deg / shoulders ${Math.round(projectedShoulderSpan)}px${diagnostics}`;
 }
 
 onMounted(() => {

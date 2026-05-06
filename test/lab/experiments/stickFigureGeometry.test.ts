@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { BodyRigConfig } from "@/lab/experiments/body-tracing/bodyRigConfig";
+import { buildBodyRigConfigFromArmReach, type BodyRigConfig } from "@/body-rig/bodyRigConfig";
 import {
   computeSharedHandOverlapCircle,
   projectShoulderLine,
@@ -11,7 +11,7 @@ import {
   type BodyRigRoot,
   type BodyRigSolveRequest,
   type RigGoals
-} from "@/lab/experiments/body-tracing/stickFigureGeometry";
+} from "@/body-rig/stickFigureGeometry";
 
 function distance(a: { x: number; y: number }, b: { x: number; y: number }) {
   return Math.hypot(b.x - a.x, b.y - a.y);
@@ -19,6 +19,10 @@ function distance(a: { x: number; y: number }, b: { x: number; y: number }) {
 
 function distance3(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) {
   return Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
+}
+
+function dot3(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) {
+  return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
 function getBaseRigRequest(
@@ -255,7 +259,7 @@ describe("solveWorldStickArm", () => {
       armSide: "right",
       torsoRight: { x: 1, y: 0, z: 0 },
       torsoForward: { x: 0, y: 0, z: 1 },
-      worldUp: { x: 0, y: -1, z: 0 }
+      worldUp: { x: 0, y: 1, z: 0 }
     });
 
     expect(result.isClamped).toBe(false);
@@ -267,6 +271,133 @@ describe("solveWorldStickArm", () => {
     expect(result.elbow.z).toBeGreaterThan(0);
   });
 
+  it("keeps elbow bend poles native-side and forward for shared overhead targets", () => {
+    const leftArm = solveWorldStickArm({
+      shoulder: { x: -45, y: 0, z: 0 },
+      handTarget: { x: 0, y: 80, z: 0 },
+      upperArmLength: 70,
+      forearmLength: 70,
+      armSide: "left",
+      torsoRight: { x: 1, y: 0, z: 0 },
+      torsoForward: { x: 0, y: 0, z: 1 },
+      worldUp: { x: 0, y: 1, z: 0 }
+    });
+    const rightArm = solveWorldStickArm({
+      shoulder: { x: 45, y: 0, z: 0 },
+      handTarget: { x: 0, y: 80, z: 0 },
+      upperArmLength: 70,
+      forearmLength: 70,
+      armSide: "right",
+      torsoRight: { x: 1, y: 0, z: 0 },
+      torsoForward: { x: 0, y: 0, z: 1 },
+      worldUp: { x: 0, y: 1, z: 0 }
+    });
+
+    expect(leftArm.elbowPole.x).toBeLessThanOrEqual(0);
+    expect(rightArm.elbowPole.x).toBeGreaterThanOrEqual(0);
+    expect(leftArm.elbowPole.z).toBeGreaterThan(0);
+    expect(rightArm.elbowPole.z).toBeGreaterThan(0);
+    expect(leftArm.elbow.z).toBeGreaterThan(0);
+    expect(rightArm.elbow.z).toBeGreaterThan(0);
+  });
+
+  it("keeps forward elbow depth stable when a hand target crosses shoulder height", () => {
+    const belowShoulder = solveWorldStickArm({
+      shoulder: { x: 45, y: 0, z: 0 },
+      handTarget: { x: 0, y: -8, z: 0 },
+      upperArmLength: 70,
+      forearmLength: 70,
+      armSide: "right",
+      torsoRight: { x: 1, y: 0, z: 0 },
+      torsoForward: { x: 0, y: 0, z: 1 },
+      worldUp: { x: 0, y: 1, z: 0 }
+    });
+    const aboveShoulder = solveWorldStickArm({
+      shoulder: { x: 45, y: 0, z: 0 },
+      handTarget: { x: 0, y: 8, z: 0 },
+      upperArmLength: 70,
+      forearmLength: 70,
+      armSide: "right",
+      torsoRight: { x: 1, y: 0, z: 0 },
+      torsoForward: { x: 0, y: 0, z: 1 },
+      worldUp: { x: 0, y: 1, z: 0 }
+    });
+
+    expect(belowShoulder.elbowPole.z).toBeGreaterThan(0);
+    expect(aboveShoulder.elbowPole.z).toBeGreaterThan(0);
+    expect(Math.abs(aboveShoulder.elbowPole.y - belowShoulder.elbowPole.y)).toBeLessThan(0.35);
+  });
+
+  it("does not inject vertical elbow flips near horizontal full extension", () => {
+    const belowHorizontal = solveWorldStickArm({
+      shoulder: { x: 0, y: 0, z: 0 },
+      handTarget: { x: 139.8, y: -0.25, z: 0 },
+      upperArmLength: 70,
+      forearmLength: 70,
+      armSide: "right",
+      torsoRight: { x: 1, y: 0, z: 0 },
+      torsoForward: { x: 0, y: 0, z: 1 },
+      worldUp: { x: 0, y: 1, z: 0 }
+    });
+    const aboveHorizontal = solveWorldStickArm({
+      shoulder: { x: 0, y: 0, z: 0 },
+      handTarget: { x: 139.8, y: 0.25, z: 0 },
+      upperArmLength: 70,
+      forearmLength: 70,
+      armSide: "right",
+      torsoRight: { x: 1, y: 0, z: 0 },
+      torsoForward: { x: 0, y: 0, z: 1 },
+      worldUp: { x: 0, y: 1, z: 0 }
+    });
+
+    expect(belowHorizontal.elbowPole.z).toBeGreaterThan(0);
+    expect(aboveHorizontal.elbowPole.z).toBeGreaterThan(0);
+    expect(Math.abs(belowHorizontal.elbowPole.y)).toBeLessThan(1e-9);
+    expect(Math.abs(aboveHorizontal.elbowPole.y)).toBeLessThan(1e-9);
+    expect(Math.sign(belowHorizontal.elbow.y)).toBe(Math.sign(belowHorizontal.handTarget.y));
+    expect(Math.sign(aboveHorizontal.elbow.y)).toBe(Math.sign(aboveHorizontal.handTarget.y));
+  });
+
+  it("keeps a yawed full-body horizontal crossing forward instead of snapping backward", () => {
+    const config = buildBodyRigConfigFromArmReach(1.25);
+    const sharedHandOverlapCircle = computeSharedHandOverlapCircle({
+      root: {
+        torsoCenter: { x: 0, y: 0 },
+        shoulderY: 0
+      },
+      config,
+      useMaxYawCompression: true
+    });
+    const solveAtY = (y: number) =>
+      solveWorldBodyRig({
+        root: {
+          shoulderCenter: { x: 0, y: 0, z: 0 },
+          worldUp: { x: 0, y: 1, z: 0 },
+          neutralForward: { x: 0, y: 0, z: 1 },
+          scale: 1
+        },
+        config,
+        goals: {
+          leftHandTarget: { x: 0, y: y * sharedHandOverlapCircle.radius, z: 0 },
+          rightHandTarget: {
+            x: sharedHandOverlapCircle.radius,
+            y: y * sharedHandOverlapCircle.radius,
+            z: 0
+          }
+        }
+      });
+
+    const below = solveAtY(-0.01);
+    const horizontal = solveAtY(0);
+    const above = solveAtY(0.01);
+
+    for (const solve of [below, horizontal, above]) {
+      expect(dot3(solve.rightArm.elbowPole, solve.shoulders.torsoForward)).toBeGreaterThan(0.95);
+      expect(Math.abs(dot3(solve.rightArm.elbowPole, solve.shoulders.worldUp))).toBeLessThan(0.05);
+    }
+    expect(horizontal.rightArm.elbow.z).toBeGreaterThan(0);
+  });
+
   it("clamps unreachable world targets deterministically", () => {
     const result = solveWorldStickArm({
       shoulder: { x: 0, y: 0, z: 0 },
@@ -276,7 +407,7 @@ describe("solveWorldStickArm", () => {
       armSide: "right",
       torsoRight: { x: 1, y: 0, z: 0 },
       torsoForward: { x: 0, y: 0, z: 1 },
-      worldUp: { x: 0, y: -1, z: 0 }
+      worldUp: { x: 0, y: 1, z: 0 }
     });
 
     expect(result.isClamped).toBe(true);
@@ -583,20 +714,26 @@ describe("solveWorldBodyRig", () => {
     const result = solveWorldBodyRig({
       root: {
         shoulderCenter: { x: 200, y: 118, z: 0 },
-        worldUp: { x: 0, y: -1, z: 0 },
+        worldUp: { x: 0, y: 1, z: 0 },
         neutralForward: { x: 0, y: 0, z: 1 },
         scale: 1
       },
       config: getBaseRigRequest().config,
       goals: {
-        leftHandTarget: { x: 80, y: 190, z: 0 },
-        rightHandTarget: { x: 320, y: 190, z: 0 }
+        leftHandTarget: { x: 80, y: 46, z: 0 },
+        rightHandTarget: { x: 320, y: 46, z: 0 }
       },
       yawSearchSteps: 72
     });
 
     expect(result.yawRad).toBeCloseTo(0);
+    expect(result.shoulders.leftShoulder.x).toBeLessThan(200);
+    expect(result.shoulders.rightShoulder.x).toBeGreaterThan(200);
     expect(result.diagnostics.isBestEffort).toBe(false);
+    expect(result.leftArm.elbowPole.x).toBeLessThanOrEqual(0);
+    expect(result.rightArm.elbowPole.x).toBeGreaterThanOrEqual(0);
+    expect(result.leftArm.elbowPole.z).toBeGreaterThan(0);
+    expect(result.rightArm.elbowPole.z).toBeGreaterThan(0);
     expect(result.leftArm.elbow.z).toBeGreaterThan(0);
     expect(result.rightArm.elbow.z).toBeGreaterThan(0);
     expect(distance3(result.leftArm.shoulder, result.leftArm.elbow)).toBeCloseTo(
@@ -611,20 +748,20 @@ describe("solveWorldBodyRig", () => {
     const result = solveWorldBodyRig({
       root: {
         shoulderCenter: { x: 200, y: 118, z: 0 },
-        worldUp: { x: 0, y: -1, z: 0 },
+        worldUp: { x: 0, y: 1, z: 0 },
         neutralForward: { x: 0, y: 0, z: 1 },
         scale: 1
       },
       config: getBaseRigRequest().config,
       goals: {
-        leftHandTarget: { x: 165, y: 20, z: 0 },
-        rightHandTarget: { x: 235, y: 20, z: 0 }
+        leftHandTarget: { x: 165, y: 216, z: 0 },
+        rightHandTarget: { x: 235, y: 216, z: 0 }
       }
     });
 
     expect(result.diagnostics.leftShoulderLift).toBeGreaterThan(0);
     expect(result.diagnostics.rightShoulderLift).toBeGreaterThan(0);
-    expect(result.shoulders.leftShoulder.y).toBeLessThan(118);
-    expect(result.shoulders.rightShoulder.y).toBeLessThan(118);
+    expect(result.shoulders.leftShoulder.y).toBeGreaterThan(118);
+    expect(result.shoulders.rightShoulder.y).toBeGreaterThan(118);
   });
 });

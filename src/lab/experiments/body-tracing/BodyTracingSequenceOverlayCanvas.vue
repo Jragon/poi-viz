@@ -4,19 +4,25 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { compileAuthoredDocument } from "@/authoring/compile";
 import type { AuthoredDocumentEntry } from "@/authoring/types";
 import { useAuthoringLibrary } from "@/authoring/useAuthoringLibrary";
-import { buildBodyRigConfigFromArmReach } from "@/body-rig/bodyRigConfig";
-import type { CartesianMultiRigPose, MultiRigSequence, RigId, Vec2 } from "@/engine/types";
-import type { MultiRigTrailSamples } from "@/visualizer/useMultiRigPlayback";
-import { useVisualizerCore } from "@/visualizer/useVisualizerCore";
 import {
   buildBodyRigFrame,
+  buildDefaultBodyRigDimensions,
   getBodyRigArmDrawOrder,
   getBodyRigArmPoints,
   solveBodyRigFrame,
   type BodyRigFrame,
   type BodyRigPose
-} from "./bodyRigDemo";
-import { computeSharedHandOverlapCircle } from "./stickFigureGeometry";
+} from "@/body-rig";
+import type {
+  CartesianMultiRigPose,
+  MultiRigSequence,
+  RigId,
+  Vec2,
+  Vec3,
+  WorldMultiRigPose
+} from "@/engine/types";
+import type { MultiRigTrailSamples } from "@/visualizer/useMultiRigPlayback";
+import { useVisualizerCore } from "@/visualizer/useVisualizerCore";
 
 interface CanvasLayout {
   readonly cssWidth: number;
@@ -38,27 +44,8 @@ interface RigStyle {
 
 const LEFT_RIG_ID = "left";
 const RIGHT_RIG_ID = "right";
-const BODY_ARM_REACH_WORLD = 1.25;
-const BODY_RIG_CONFIG_WORLD = buildBodyRigConfigFromArmReach(BODY_ARM_REACH_WORLD);
-const BODY_SHOULDER_SPAN_WORLD = BODY_RIG_CONFIG_WORLD.baseShoulderSpan;
-const BODY_TORSO_HEIGHT_WORLD = BODY_ARM_REACH_WORLD * 0.90625;
-const BODY_HIP_SPAN_WORLD = BODY_SHOULDER_SPAN_WORLD * 0.6;
-const BODY_HEAD_RADIUS_WORLD = BODY_ARM_REACH_WORLD * 0.28125;
-const BODY_HEAD_GAP_WORLD = BODY_ARM_REACH_WORLD * 0.1625;
-const BODY_NECK_OFFSET_WORLD = BODY_ARM_REACH_WORLD * 0.1;
-const BODY_THIGH_LENGTH_WORLD = BODY_ARM_REACH_WORLD * 0.625;
-const BODY_SHIN_LENGTH_WORLD = BODY_ARM_REACH_WORLD * 0.59375;
-const BODY_FOOT_OFFSET_WORLD = BODY_ARM_REACH_WORLD * 0.0625;
-const BODY_CAMERA_CENTER_WORLD: Vec2 = { x: 0, y: -0.7 };
-
-const sharedHandOverlapCircle = computeSharedHandOverlapCircle({
-  root: {
-    torsoCenter: { x: 0, y: 0 },
-    shoulderY: 0
-  },
-  config: BODY_RIG_CONFIG_WORLD,
-  useMaxYawCompression: true
-});
+const BODY_DIMENSIONS = buildDefaultBodyRigDimensions();
+const sharedHandOverlapCircle = BODY_DIMENSIONS.sharedHandOverlapCircle;
 
 function compileAuthoredSequence(entry: AuthoredDocumentEntry): MultiRigSequence | null {
   const result = compileAuthoredDocument(entry.document);
@@ -146,12 +133,20 @@ function sequencePointToBodyWorld(point: Vec2): Vec2 {
   };
 }
 
+function sequenceWorldPointToBodyWorld(point: Vec3): Vec3 {
+  return {
+    x: sharedHandOverlapCircle.center.x + point.x * sharedHandOverlapCircle.radius,
+    y: sharedHandOverlapCircle.center.y + point.y * sharedHandOverlapCircle.radius,
+    z: point.z * sharedHandOverlapCircle.radius
+  };
+}
+
 function createLayout(cssWidth: number, cssHeight: number): CanvasLayout {
   const bodyVerticalRadius =
-    BODY_TORSO_HEIGHT_WORLD + BODY_THIGH_LENGTH_WORLD + BODY_SHIN_LENGTH_WORLD;
+    BODY_DIMENSIONS.torsoHeight + BODY_DIMENSIONS.thighLength + BODY_DIMENSIONS.shinLength;
   const sequenceRadius = core.sceneWorldRadius.value * sharedHandOverlapCircle.radius;
   const sceneRadius = Math.max(
-    sequenceRadius + BODY_SHOULDER_SPAN_WORLD * 0.5,
+    sequenceRadius + BODY_DIMENSIONS.shoulderSpan * 0.5,
     bodyVerticalRadius,
     2.45
   );
@@ -162,7 +157,7 @@ function createLayout(cssWidth: number, cssHeight: number): CanvasLayout {
     cssHeight,
     dpr: window.devicePixelRatio || 1,
     pixelsPerWorldUnit,
-    cameraCenterWorld: BODY_CAMERA_CENTER_WORLD
+    cameraCenterWorld: BODY_DIMENSIONS.cameraCenterWorld
   };
 }
 
@@ -278,40 +273,38 @@ function drawLimb(
   ctx.stroke();
 }
 
-function buildBodyFrame(layout: CanvasLayout): BodyRigFrame {
-  const rigConfig = buildBodyRigConfigFromArmReach(
-    layout.pixelsPerWorldUnit * BODY_ARM_REACH_WORLD
-  );
-  const shoulderCenter = worldToCanvas(layout, { x: 0, y: 0 });
+function buildBodyFrame(): BodyRigFrame {
   return buildBodyRigFrame({
-    shoulderCenter,
-    rigConfig,
-    torsoHeight: layout.pixelsPerWorldUnit * BODY_TORSO_HEIGHT_WORLD,
-    hipSpan: layout.pixelsPerWorldUnit * BODY_HIP_SPAN_WORLD,
-    headRadius: layout.pixelsPerWorldUnit * BODY_HEAD_RADIUS_WORLD,
-    headGap: layout.pixelsPerWorldUnit * BODY_HEAD_GAP_WORLD,
-    neckOffset: layout.pixelsPerWorldUnit * BODY_NECK_OFFSET_WORLD,
-    thighLength: layout.pixelsPerWorldUnit * BODY_THIGH_LENGTH_WORLD,
-    shinLength: layout.pixelsPerWorldUnit * BODY_SHIN_LENGTH_WORLD,
-    footOffset: layout.pixelsPerWorldUnit * BODY_FOOT_OFFSET_WORLD,
-    stanceWidth: rigConfig.baseShoulderSpan * 0.2
+    shoulderCenter: BODY_DIMENSIONS.rootShoulderCenter,
+    rigConfig: BODY_DIMENSIONS.config,
+    torsoHeight: BODY_DIMENSIONS.torsoHeight,
+    hipSpan: BODY_DIMENSIONS.hipSpan,
+    headRadius: BODY_DIMENSIONS.headRadius,
+    headGap: BODY_DIMENSIONS.headGap,
+    neckOffset: BODY_DIMENSIONS.neckOffset,
+    thighLength: BODY_DIMENSIONS.thighLength,
+    shinLength: BODY_DIMENSIONS.shinLength,
+    footOffset: BODY_DIMENSIONS.footOffset,
+    stanceWidth: BODY_DIMENSIONS.stanceWidth
   });
 }
 
-function getBodyPose(layout: CanvasLayout, poses: CartesianMultiRigPose): FigurePose | null {
+function getBodyPose(poses: WorldMultiRigPose): FigurePose | null {
   const leftPose = poses[LEFT_RIG_ID];
   const rightPose = poses[RIGHT_RIG_ID];
   if (!leftPose || !rightPose) {
     return null;
   }
 
-  const body = buildBodyFrame(layout);
-  const leftHandTarget = worldToCanvas(layout, sequencePointToBodyWorld(leftPose.handPosition));
-  const rightHandTarget = worldToCanvas(layout, sequencePointToBodyWorld(rightPose.handPosition));
-  return solveBodyRigFrame(body, {
-    leftHandTarget,
-    rightHandTarget
-  });
+  const body = buildBodyFrame();
+  return solveBodyRigFrame(
+    body,
+    {
+      leftHandTarget: sequenceWorldPointToBodyWorld(leftPose.handPosition),
+      rightHandTarget: sequenceWorldPointToBodyWorld(rightPose.handPosition)
+    },
+    core.session.projectionSettings.value
+  );
 }
 
 function drawPoiRig(
@@ -356,56 +349,79 @@ function drawPoiRig(
   drawNode(ctx, head, 9, style.head);
 }
 
-function drawBodyOverlay(ctx: CanvasRenderingContext2D, pose: FigurePose) {
+function drawBodyOverlay(ctx: CanvasRenderingContext2D, layout: CanvasLayout, pose: FigurePose) {
   const limbStroke = "rgba(226, 232, 240, 0.5)";
   const secondaryStroke = "rgba(148, 163, 184, 0.42)";
   const leftStroke = "rgba(45, 212, 191, 0.62)";
   const rightStroke = "rgba(251, 191, 36, 0.62)";
   const nodeFill = "rgba(15, 23, 42, 0.62)";
+  const toCanvas = (point: Vec2) => worldToCanvas(layout, point);
+  const body = pose.projectedBody;
 
   ctx.save();
   ctx.globalCompositeOperation = "source-over";
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
 
-  drawLimb(ctx, [pose.body.headCenter, pose.body.neck], 6, secondaryStroke);
-  drawLimb(ctx, [pose.shoulders.leftShoulder, pose.shoulders.rightShoulder], 12, limbStroke);
-  drawLimb(ctx, [pose.body.neck, pose.body.pelvis], 14, limbStroke);
-  drawLimb(ctx, [pose.body.hipLeft, pose.body.hipRight], 12, secondaryStroke);
-  drawLimb(ctx, [pose.body.hipLeft, pose.body.kneeLeft, pose.body.footLeft], 12, limbStroke);
-  drawLimb(ctx, [pose.body.hipRight, pose.body.kneeRight, pose.body.footRight], 12, limbStroke);
+  drawLimb(ctx, [toCanvas(body.headCenter), toCanvas(body.neck)], 6, secondaryStroke);
+  drawLimb(
+    ctx,
+    [toCanvas(pose.shoulders.leftShoulder), toCanvas(pose.shoulders.rightShoulder)],
+    12,
+    limbStroke
+  );
+  drawLimb(ctx, [toCanvas(body.neck), toCanvas(body.pelvis)], 14, limbStroke);
+  drawLimb(ctx, [toCanvas(body.hipLeft), toCanvas(body.hipRight)], 12, secondaryStroke);
+  drawLimb(
+    ctx,
+    [toCanvas(body.hipLeft), toCanvas(body.kneeLeft), toCanvas(body.footLeft)],
+    12,
+    limbStroke
+  );
+  drawLimb(
+    ctx,
+    [toCanvas(body.hipRight), toCanvas(body.kneeRight), toCanvas(body.footRight)],
+    12,
+    limbStroke
+  );
 
   for (const side of getBodyRigArmDrawOrder(pose)) {
-    drawLimb(ctx, getBodyRigArmPoints(pose, side), 12, side === "left" ? leftStroke : rightStroke);
+    drawLimb(
+      ctx,
+      getBodyRigArmPoints(pose, side).map(toCanvas),
+      12,
+      side === "left" ? leftStroke : rightStroke
+    );
   }
 
+  const headCenter = toCanvas(body.headCenter);
   ctx.beginPath();
-  ctx.arc(pose.body.headCenter.x, pose.body.headCenter.y, pose.body.headRadius, 0, Math.PI * 2);
+  ctx.arc(headCenter.x, headCenter.y, body.headRadius * layout.pixelsPerWorldUnit, 0, Math.PI * 2);
   ctx.lineWidth = 9;
   ctx.strokeStyle = limbStroke;
   ctx.stroke();
 
   const staticNodes = [
-    pose.body.neck,
+    body.neck,
     pose.shoulders.leftShoulder,
     pose.shoulders.rightShoulder,
     pose.leftArm.elbow,
     pose.rightArm.elbow,
-    pose.body.pelvis,
-    pose.body.hipLeft,
-    pose.body.hipRight,
-    pose.body.kneeLeft,
-    pose.body.kneeRight,
-    pose.body.footLeft,
-    pose.body.footRight
+    body.pelvis,
+    body.hipLeft,
+    body.hipRight,
+    body.kneeLeft,
+    body.kneeRight,
+    body.footLeft,
+    body.footRight
   ];
 
   for (const point of staticNodes) {
-    drawJoint(ctx, point, 5.5, nodeFill);
+    drawJoint(ctx, toCanvas(point), 5.5, nodeFill);
   }
 
-  drawJoint(ctx, pose.leftArm.hand, 8.5, "rgba(45, 212, 191, 0.78)");
-  drawJoint(ctx, pose.rightArm.hand, 8.5, "rgba(251, 191, 36, 0.78)");
+  drawJoint(ctx, toCanvas(pose.leftArm.hand), 8.5, "rgba(45, 212, 191, 0.78)");
+  drawJoint(ctx, toCanvas(pose.rightArm.hand), 8.5, "rgba(251, 191, 36, 0.78)");
   ctx.restore();
 }
 
@@ -437,13 +453,13 @@ function drawFrame() {
     drawPoiRig(ctx, layout, rigId, poses, trails);
   }
 
-  const bodyPose = getBodyPose(layout, poses);
+  const bodyPose = getBodyPose(core.worldPoses.value);
   if (!bodyPose) {
     statusText.value = `${selectedDocumentName.value} / body solve waiting for left/right tracks`;
     return;
   }
 
-  drawBodyOverlay(ctx, bodyPose);
+  drawBodyOverlay(ctx, layout, bodyPose);
   statusText.value = `${selectedDocumentName.value} / r ${sharedHandOverlapCircle.radius.toFixed(2)} / yaw ${Math.round(bodyPose.yawDeg)}deg / cost ${bodyPose.solve.cost.toFixed(1)}${bodyPose.solve.diagnostics.isBestEffort ? " / clamped" : ""}`;
 }
 
@@ -494,9 +510,11 @@ watch(
 watch(
   () => [
     core.cartesianPoses.value,
+    core.worldPoses.value,
     core.trails.value,
     core.rigOrder.value,
     core.sceneWorldRadius.value,
+    core.session.projectionSettings.value,
     core.errorMessage.value
   ],
   () => {

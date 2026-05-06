@@ -236,6 +236,7 @@ interface WorldShoulderPassResult {
 }
 
 const SCORE_EPSILON = 1e-9;
+const MIN_FORWARD_ELBOW_POLE_DOT = 0.85;
 
 function add(a: Vec2, b: Vec2): Vec2 {
   return { x: a.x + b.x, y: a.y + b.y };
@@ -288,6 +289,14 @@ function normalize3OrFallback(vector: Vec3, fallback: Vec3): Vec3 {
 
 function reject3(vector: Vec3, normal: Vec3): Vec3 {
   return subtract3(vector, scale3(normal, dot3(vector, normal)));
+}
+
+function negate3(vector: Vec3): Vec3 {
+  return scale3(vector, -1);
+}
+
+function orient3Toward(vector: Vec3, target: Vec3): Vec3 {
+  return dot3(vector, target) < 0 ? negate3(vector) : vector;
 }
 
 function rotateAroundAxis(vector: Vec3, axis: Vec3, angleRad: number): Vec3 {
@@ -380,7 +389,7 @@ function getWorldBasis(root: BodyRigWorldRoot, yawRad: number) {
     y: 0,
     z: 1
   });
-  const torsoRight = normalize3OrFallback(cross3(torsoForward, worldUp), { x: 1, y: 0, z: 0 });
+  const torsoRight = normalize3OrFallback(cross3(worldUp, torsoForward), { x: 1, y: 0, z: 0 });
 
   return { worldUp, torsoForward, torsoRight };
 }
@@ -516,13 +525,22 @@ function applyWorldShoulderPolicy(
 
 function getWorldElbowPole(input: WorldStickArmInput, direction: Vec3): Vec3 {
   const outward = input.armSide === "right" ? input.torsoRight : scale3(input.torsoRight, -1);
-  const rawPole = normalize3OrFallback(
-    add3(scale3(outward, 0.78), scale3(input.torsoForward, 0.62)),
-    outward
+  const forwardPole = orient3Toward(reject3(input.torsoForward, direction), input.torsoForward);
+  const outwardPole = orient3Toward(reject3(outward, direction), outward);
+  const upPole = orient3Toward(reject3(input.worldUp, direction), input.worldUp);
+  const stableForwardPole = normalize3OrFallback(
+    forwardPole,
+    normalize3OrFallback(upPole, outwardPole)
   );
-  const pole = reject3(rawPole, direction);
+  const stableOutwardPole = normalize3OrFallback(outwardPole, stableForwardPole);
 
-  return normalize3OrFallback(pole, reject3(outward, direction));
+  if (dot3(stableForwardPole, input.torsoForward) >= MIN_FORWARD_ELBOW_POLE_DOT) {
+    return stableForwardPole;
+  }
+
+  return dot3(stableOutwardPole, input.torsoForward) < -SCORE_EPSILON
+    ? stableForwardPole
+    : stableOutwardPole;
 }
 
 export function solveWorldStickArm(input: WorldStickArmInput): WorldStickArmResult {
@@ -538,9 +556,10 @@ export function solveWorldStickArm(input: WorldStickArmInput): WorldStickArmResu
     (input.upperArmLength ** 2 - input.forearmLength ** 2 + clampedDistance ** 2) /
     (2 * Math.max(clampedDistance, Number.EPSILON));
   const heightSquared = Math.max(input.upperArmLength ** 2 - baseDistance ** 2, 0);
+  const elbowHeight = Math.sqrt(heightSquared);
   const elbowPole = getWorldElbowPole(input, direction);
   const elbowBase = add3(input.shoulder, scale3(direction, baseDistance));
-  const elbow = add3(elbowBase, scale3(elbowPole, Math.sqrt(heightSquared)));
+  const elbow = add3(elbowBase, scale3(elbowPole, elbowHeight));
   const reachError = targetReachError(targetDistance, reach);
 
   return {

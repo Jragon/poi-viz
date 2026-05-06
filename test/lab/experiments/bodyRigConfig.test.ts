@@ -6,7 +6,7 @@ import {
   DEFAULT_MIN_PROJECTED_SHOULDER_SPAN_RATIO,
   buildBodyRigConfigFromArmReach,
   resolveBodyRigConfig
-} from "@/lab/experiments/body-tracing/bodyRigConfig";
+} from "@/body-rig/bodyRigConfig";
 
 describe("buildBodyRigConfigFromArmReach", () => {
   it("builds the shared default rig proportions from arm reach", () => {
