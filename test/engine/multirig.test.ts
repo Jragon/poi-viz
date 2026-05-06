@@ -107,6 +107,7 @@ describe("evalPreparedMultiRigSequenceAt", () => {
       expect(multiResult.poses.left).toEqual({
         pose: singleResult.pose,
         planeId: singleResult.planeId,
+        ...(singleResult.planeSide !== undefined ? { planeSide: singleResult.planeSide } : {}),
         segmentIndex: singleResult.segmentIndex,
         tLocal: singleResult.tLocal
       });
@@ -137,6 +138,34 @@ describe("evalPreparedMultiRigSequenceAt", () => {
     if (result.ok) {
       expect(result.poses.left.planeId).toBe("floor");
       expect(result.poses.right.planeId).toBe("wall");
+    }
+  });
+
+  it("passes active plane sides through evaluated rig poses", () => {
+    const preparedResult = prepareMultiRigSequence({
+      rigs: [
+        {
+          rigId: "left",
+          sequence: {
+            segments: [{ segment: makeSegment(1, 2), durationUnits: 2, planeSide: "b" }]
+          }
+        },
+        {
+          rigId: "right",
+          sequence: { segments: [{ segment: makeSegment(3, 4), durationUnits: 2 }] }
+        }
+      ]
+    });
+    if (!preparedResult.ok) {
+      throw new Error("Fixture must prepare successfully");
+    }
+
+    const result = evalPreparedMultiRigSequenceAt(preparedResult.prepared, 1);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.poses.left.planeSide).toBe("b");
+      expect(result.poses.right.planeSide).toBeUndefined();
+      expect("planeSide" in result.poses.right).toBe(false);
     }
   });
 

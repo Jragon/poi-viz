@@ -28,6 +28,7 @@ Ordered list of placements:
 - each placement has `segment`
 - each placement has `durationUnits`
 - each placement may have `planeId`
+- each placement may have `planeSide`
 - future extension: each placement after the first may have `entryBoundary`
 
 There is no authored `startUnit` in `SequenceSpec`.
@@ -38,6 +39,7 @@ Validated + derived runtime representation:
 
 - `placements[]` with derived `startUnit` / `endUnit`
 - resolved `planeId` on every placement
+- optional `planeSide` preserved exactly as authored
 - `totalDuration`
 
 `PreparedSequence` is created once via `prepareSequence` and evaluated many times.
@@ -47,11 +49,13 @@ Validated + derived runtime representation:
 ```ts
 type TimeUnit = number;
 type PlaneId = "wall" | "wheel" | "floor";
+type PlaneSide = "a" | "b";
 
 type SegmentPlacement = {
   segment: Segment;
   durationUnits: TimeUnit;
   planeId?: PlaneId;
+  planeSide?: PlaneSide;
 };
 
 type SequenceSpec = {
@@ -74,6 +78,7 @@ type PreparedSequence = {
 
 ```ts
 type PlaneId = "wall" | "wheel" | "floor";
+type PlaneSide = "a" | "b";
 type BoundaryMode = "jump" | "plane-break";
 type ZeroPointKind = "lobe" | "antilobe" | "antispin" | "stall" | "pendulum" | "authored";
 
@@ -86,6 +91,7 @@ type SegmentPlacement = {
   segment: Segment;
   durationUnits: TimeUnit;
   planeId?: PlaneId;
+  planeSide?: PlaneSide;
   entryBoundary?: SegmentEntryBoundary;
 };
 
@@ -105,7 +111,7 @@ type PreparedPlacement = Omit<SegmentPlacement, "planeId"> & {
 
 `EvalPreparedAtResult` is structured:
 
-- success: `{ ok: true, pose, planeId, segmentIndex, tLocal }`
+- success: `{ ok: true, pose, planeId, planeSide?, segmentIndex, tLocal }`
 - miss/error: `{ ok: false, reason: "INVALID_TIME" | "NEGATIVE_TIME" }`
 
 ## Boundary Semantics
@@ -121,6 +127,9 @@ type PreparedPlacement = Omit<SegmentPlacement, "planeId"> & {
 
 - Omitted `planeId` resolves to `wall` during preparation.
 - A placement's `planeId` describes the local plane context for that segment's 2D motion.
+- A placement's optional `planeSide` describes which generic side (`a` or `b`) of the active atomic plane the segment occupies.
+- Omitted `planeSide` remains unspecified; the engine does not default it to `a`.
+- `planeSide` does not affect local segment evaluation.
 - `wall`, `wheel`, and `floor` are atomic planes. A segment does not occupy an in-between plane in this model.
 - Authored plane changes are validated by the compile layer from evaluated boundary poses.
 - Local segment evaluation remains unchanged.
@@ -146,6 +155,7 @@ Trail rendering may use continuity-aware wraparound at the transport boundary as
 - Each `durationUnits` must be finite.
 - Each `durationUnits` must be strictly positive.
 - Engine placement `planeId`, when present, must be `wall`, `wheel`, or `floor`.
+- Engine placement `planeSide`, when present, must be `a` or `b`.
 
 ## Additional Implemented Validation Rules
 
@@ -158,4 +168,5 @@ Trail rendering may use continuity-aware wraparound at the transport boundary as
 - Keep contiguous timing as Part 1 base model.
 - If sparse timing is needed later, add a new explicit model/type instead of mutating current semantics.
 - Keep proposed boundary modes explicit (`jump` / `plane-break` first; continuity modes later).
+- Keep future side/crosspoint legality separate from structural validation. Add a pose-dependent boundary validator over prepared/evaluated boundaries rather than overloading `validateSequenceStructure`.
 - Continuous plane bends, weaves, toroids, and body-aware 3D paths need separate future models.

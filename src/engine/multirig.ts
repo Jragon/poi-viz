@@ -5,7 +5,14 @@ import {
   type PreparedSequence,
   type SequenceValidationError
 } from "@/engine/sequence";
-import type { MultiRigPose, MultiRigSequence, PlaneId, RigId, TimeUnit } from "@/engine/types";
+import type {
+  MultiRigPose,
+  MultiRigSequence,
+  PlaneId,
+  PlaneSide,
+  RigId,
+  TimeUnit
+} from "@/engine/types";
 
 export type MultiRigSequenceValidationErrorCode =
   | "EMPTY_MULTI_RIG_SEQUENCE"
@@ -32,7 +39,13 @@ export type EvalMultiRigAtResult =
 
 export type EvaluatedMultiRigPose = Record<
   RigId,
-  { pose: MultiRigPose[RigId]; planeId: PlaneId; segmentIndex: number; tLocal: TimeUnit }
+  {
+    pose: MultiRigPose[RigId];
+    planeId: PlaneId;
+    planeSide?: PlaneSide;
+    segmentIndex: number;
+    tLocal: TimeUnit;
+  }
 >;
 
 export interface PreparedRigSequenceEntry {
@@ -113,6 +126,7 @@ export function evalPreparedMultiRigSequenceAt(
     poses[rig.rigId] = {
       pose: result.pose,
       planeId: result.planeId,
+      ...(result.planeSide !== undefined ? { planeSide: result.planeSide } : {}),
       segmentIndex: result.segmentIndex,
       tLocal: result.tLocal
     };

@@ -8,6 +8,7 @@ import {
 import type {
   CartesianMultiRigPose,
   PlaneId,
+  PlaneSide,
   RelativeRigPose,
   RigId,
   TimeUnit,
@@ -17,6 +18,7 @@ import type {
 type EvaluatedTrailPose = {
   pose: RelativeRigPose;
   planeId: PlaneId;
+  planeSide?: PlaneSide;
 };
 
 export type TrailLoopMode = "auto" | "off";
@@ -149,7 +151,8 @@ function evalRigSequenceFromLeft(
     const placement = placements[placements.length - 1];
     return {
       pose: evalSegment(placement.segment, placement.endUnit - placement.startUnit),
-      planeId: placement.planeId
+      planeId: placement.planeId,
+      ...(placement.planeSide !== undefined ? { planeSide: placement.planeSide } : {})
     };
   }
 
@@ -159,14 +162,16 @@ function evalRigSequenceFromLeft(
       const previous = placements[index - 1];
       return {
         pose: evalSegment(previous.segment, previous.endUnit - previous.startUnit),
-        planeId: previous.planeId
+        planeId: previous.planeId,
+        ...(previous.planeSide !== undefined ? { planeSide: previous.planeSide } : {})
       };
     }
 
     if (placement.startUnit < wrappedTime && wrappedTime <= placement.endUnit) {
       return {
         pose: evalSegment(placement.segment, wrappedTime - placement.startUnit),
-        planeId: placement.planeId
+        planeId: placement.planeId,
+        ...(placement.planeSide !== undefined ? { planeSide: placement.planeSide } : {})
       };
     }
   }
@@ -204,6 +209,7 @@ function relativePoseMatches(
     const other = b[rigId];
     if (!other) return false;
     if (value.planeId !== other.planeId) return false;
+    if (value.planeSide !== other.planeSide) return false;
     if (!nodePoseMatches(value.pose.handPose, other.pose.handPose)) return false;
     if (!nodePoseMatches(value.pose.headPose, other.pose.headPose)) return false;
   }

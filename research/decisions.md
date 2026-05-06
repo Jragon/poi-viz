@@ -33,3 +33,15 @@ Radius variation is modeled as an optional per-node profile layered onto the exi
 - Radius interpolation is linear between the implicit start anchor and keyed values. After the final key, the final keyed radius is held through segment end.
 - Radius values are nonnegative. Radius `0` is allowed; signed radius is excluded because it is phase-equivalent to a nonnegative radius plus a phase offset.
 - The editor should keep the default large-screen segment layout dense. Radius profile rows are progressive per-node controls, not a segment-level path selector.
+
+## 2026-05-06: Generic Plane-Side Metadata
+
+Body-tracing side concepts start as generic engine metadata, not Mel/body vocabulary in runtime.
+
+- `PlaneSide` values are `a` and `b`.
+- `SegmentPlacement.planeSide` is optional and remains optional through preparation/evaluation; the engine does not default it to `a`.
+- `planeSide` is valid for every atomic plane.
+- Local segment evaluation remains unchanged. Side offsets are visualization-layer choices, not engine pose behavior.
+- Trail continuity compares `planeSide` so visual loop wrapping does not hide side-state boundaries.
+- Authoring controls and authored document compile support are deferred.
+- Crosspoint and side-transition legality is future engine boundary-validation work. Keep it separate from structural sequence validation and do not implement it in Vue components.

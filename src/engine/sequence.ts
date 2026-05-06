@@ -1,6 +1,8 @@
 import { evalSegment } from "@/engine/engine";
+import { isPlaneSide } from "@/engine/planeSide";
 import type {
   PlaneId,
+  PlaneSide,
   RelativeRigPose,
   SegmentPlacement,
   SequenceSpec,
@@ -14,7 +16,8 @@ export type SequenceValidationErrorCode =
   | "EMPTY_SEQUENCE"
   | "INVALID_DURATION_UNITS"
   | "NON_POSITIVE_DURATION"
-  | "INVALID_PLANE_ID";
+  | "INVALID_PLANE_ID"
+  | "INVALID_PLANE_SIDE";
 
 export type SequenceValidationError = {
   code: SequenceValidationErrorCode;
@@ -40,7 +43,14 @@ export type PrepareSequenceResult =
   | { ok: false; errors: SequenceValidationError[] };
 
 export type EvalPreparedAtResult =
-  | { ok: true; pose: RelativeRigPose; planeId: PlaneId; segmentIndex: number; tLocal: TimeUnit }
+  | {
+      ok: true;
+      pose: RelativeRigPose;
+      planeId: PlaneId;
+      planeSide?: PlaneSide;
+      segmentIndex: number;
+      tLocal: TimeUnit;
+    }
   | { ok: false; reason: "INVALID_TIME" | "NEGATIVE_TIME" };
 
 function wrapSequenceTime(totalDuration: TimeUnit, tGlobal: TimeUnit): TimeUnit {
@@ -67,6 +77,10 @@ export function validateSequenceStructure(sequence: SequenceSpec): SequenceValid
 
     if (placement.planeId !== undefined && !PLANE_IDS.has(placement.planeId)) {
       errors.push({ code: "INVALID_PLANE_ID", index });
+    }
+
+    if (placement.planeSide !== undefined && !isPlaneSide(placement.planeSide)) {
+      errors.push({ code: "INVALID_PLANE_SIDE", index });
     }
   });
 
@@ -115,7 +129,14 @@ export function evalPreparedSequenceAt(
     const tLocal = wrappedTime - placement.startUnit;
     const pose = evalSegment(placement.segment, tLocal);
 
-    return { ok: true, pose, planeId: placement.planeId, tLocal, segmentIndex: index };
+    return {
+      ok: true,
+      pose,
+      planeId: placement.planeId,
+      ...(placement.planeSide !== undefined ? { planeSide: placement.planeSide } : {}),
+      tLocal,
+      segmentIndex: index
+    };
   }
 
   throw new Error("Invariant violated: no placement found for wrapped global time");

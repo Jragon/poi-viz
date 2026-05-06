@@ -6,6 +6,8 @@ export type RigId = string;
 
 export type PlaneId = "wall" | "wheel" | "floor";
 
+export type PlaneSide = "a" | "b";
+
 export type AngularVelocityRadPerUnit = number;
 
 export type Radius = number;
@@ -66,6 +68,7 @@ export interface SegmentPlacement {
   segment: Segment;
   durationUnits: TimeUnit;
   planeId?: PlaneId;
+  planeSide?: PlaneSide;
 }
 
 export interface SequenceSpec {

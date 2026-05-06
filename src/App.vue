@@ -19,6 +19,10 @@ const labLinks = [
   {
     label: "Body Tracing",
     to: "/lab/body-tracing"
+  },
+  {
+    label: "Body Tracing Planes",
+    to: "/lab/body-tracing/planes"
   }
 ];
 

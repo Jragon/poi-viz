@@ -112,6 +112,41 @@ describe("useMultiRigPlayback", () => {
     expect(result.cartesianPoses.left.handPosition.y).toBeCloseTo(-0.280065, 6);
   });
 
+  it("exposes evaluated plane side metadata without changing projection", () => {
+    const segment = makeSegment(0, 0);
+    const withSide = useMultiRigPlayback({
+      rigs: [
+        {
+          rigId: "left",
+          sequence: {
+            segments: [{ segment, durationUnits: 1, planeId: "wall", planeSide: "b" }]
+          }
+        }
+      ]
+    });
+    const withoutSide = useMultiRigPlayback({
+      rigs: [
+        {
+          rigId: "left",
+          sequence: {
+            segments: [{ segment, durationUnits: 1, planeId: "wall" }]
+          }
+        }
+      ]
+    });
+
+    const withSideResult = withSide.evaluate(0);
+    const withoutSideResult = withoutSide.evaluate(0);
+    expect(withSideResult.ok).toBe(true);
+    expect(withoutSideResult.ok).toBe(true);
+
+    if (!withSideResult.ok || !withoutSideResult.ok) return;
+    expect(withSideResult.evaluatedPoses.left.planeSide).toBe("b");
+    expect(withoutSideResult.evaluatedPoses.left.planeSide).toBeUndefined();
+    expect("planeSide" in withoutSideResult.evaluatedPoses.left).toBe(false);
+    expect(withSideResult.cartesianPoses).toEqual(withoutSideResult.cartesianPoses);
+  });
+
   it("reports unprepared state when the input sequence fails validation", async () => {
     const sequence = ref<MultiRigSequence>({ rigs: [] });
     const playback = useMultiRigPlayback(sequence);

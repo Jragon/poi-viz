@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { toCartesianRigPose } from "@/engine/cartesian";
-import { embedPlanePoint, projectWorldPoint, toProjectedRigPose } from "@/engine/planeProjection";
+import {
+  embedPlanePoint,
+  getPlaneNormal,
+  projectWorldPoint,
+  toProjectedRigPose
+} from "@/engine/planeProjection";
 import type { RelativeRigPose } from "@/engine/types";
 
 function pose(handPhase = 0, headPhase = 0): RelativeRigPose {
@@ -22,6 +27,12 @@ describe("planeProjection", () => {
     expect(embedPlanePoint("wall", { x: 2, y: 3 })).toEqual({ x: 2, y: 3, z: 0 });
     expect(embedPlanePoint("wheel", { x: 2, y: 3 })).toEqual({ x: 0, y: 3, z: 2 });
     expect(embedPlanePoint("floor", { x: 2, y: 3 })).toEqual({ x: 2, y: 0, z: 3 });
+  });
+
+  it("returns deterministic normals for each atomic plane", () => {
+    expect(getPlaneNormal("wall")).toEqual({ x: 0, y: 0, z: 1 });
+    expect(getPlaneNormal("wheel")).toEqual({ x: 1, y: 0, z: 0 });
+    expect(getPlaneNormal("floor")).toEqual({ x: 0, y: 1, z: 0 });
   });
 
   it("uses front orthographic projection by default", () => {

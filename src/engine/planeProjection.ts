@@ -74,6 +74,17 @@ export function embedPlanePoint(planeId: PlaneId, local: Vec2): Vec3 {
   }
 }
 
+export function getPlaneNormal(planeId: PlaneId): Vec3 {
+  switch (planeId) {
+    case "wall":
+      return { x: 0, y: 0, z: 1 };
+    case "wheel":
+      return { x: 1, y: 0, z: 0 };
+    case "floor":
+      return { x: 0, y: 1, z: 0 };
+  }
+}
+
 export function projectWorldPoint(
   point: Vec3,
   settings: PlaneProjectionSettings = DEFAULT_PLANE_PROJECTION_SETTINGS

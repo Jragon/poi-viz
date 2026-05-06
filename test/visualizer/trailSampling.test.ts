@@ -130,6 +130,25 @@ describe("trailSampling", () => {
     expect(isContinuousAtLoopBoundary(prepared, prepared.maxSequenceDuration)).toBe(false);
   });
 
+  it("requires plane side match for loop continuity", () => {
+    const segment = makeSegment(0, 0);
+    const prepared = prepare({
+      rigs: [
+        {
+          rigId: "left",
+          sequence: {
+            segments: [
+              { segment, durationUnits: 1, planeId: "wall", planeSide: "a" },
+              { segment, durationUnits: 1, planeId: "wall", planeSide: "b" }
+            ]
+          }
+        }
+      ]
+    });
+
+    expect(isContinuousAtLoopBoundary(prepared, prepared.maxSequenceDuration)).toBe(false);
+  });
+
   it("does not use D minus dt as the continuity source", () => {
     const prepared = prepare(singleRigSequence(makeSegment(Math.PI * 2, Math.PI * 2), 1));
     const nearEnd = cartesianAt(prepared, 0.9);

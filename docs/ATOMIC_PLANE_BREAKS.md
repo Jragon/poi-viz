@@ -71,15 +71,19 @@ The implemented engine slice adds placement metadata and resolved active plane s
 
 ```ts
 type PlaneId = "wall" | "wheel" | "floor";
+type PlaneSide = "a" | "b";
 
 type SegmentPlacement = {
   segment: Segment;
   durationUnits: TimeUnit;
   planeId?: PlaneId;
+  planeSide?: PlaneSide;
 };
 ```
 
 `prepareSequence` resolves omitted `planeId` values to `wall`. Prepared placements expose the resolved plane so consumers can inspect active plane state without changing local pose evaluation.
+
+`planeSide` is optional generic metadata. It is valid on every atomic plane and is preserved through preparation and evaluation, but the engine does not default it or apply any visual offset to local pose evaluation. Rendering layers may choose to display side `a` and side `b` as offsets along the active plane normal.
 
 `evalSegment` still returns local `RelativeRigPose`. Projection to the existing canvas happens in a separate plane adapter.
 
@@ -88,6 +92,7 @@ type SegmentPlacement = {
 - Sequence cannot be empty.
 - Durations must be finite and positive.
 - `planeId`, when present, must be `wall`, `wheel`, or `floor`.
+- `planeSide`, when present, must be `a` or `b`.
 - Omitted authored and engine placement planes resolve to `wall`.
 - Authored plane changes are valid only when the previous end pose is on the shared axis.
 - The hand must be on the source plane's shared-axis cardinal.
@@ -101,6 +106,7 @@ This phase one does not support:
 - arbitrary 3D paths,
 - continuous plane bends,
 - weaves, back planes, crosspoints, or toroids,
+- side-transition or crosspoint legality,
 - body zones, arm gates, or collision checks,
 - automatic zero-point proof,
 - stall physics or non-uniform hand timing,
@@ -126,7 +132,7 @@ WebGL becomes useful later for body-aware 3D motion, camera orbit, occlusion, an
 
 ## Iteration Path
 
-1. Engine metadata and validation. Done for `planeId` defaulting and active-plane eval state.
+1. Engine metadata and validation. Done for `planeId` defaulting, `planeSide` preservation, and active-plane eval state.
 2. Authoring metadata support. Done for authored segments, compile, and editor selection.
 3. Canvas projected atomic-plane output. Done with orthographic and tilted projection modes.
 4. Optional phase atlas and stronger visual plane guides.
