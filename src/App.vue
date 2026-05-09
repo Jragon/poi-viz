@@ -23,6 +23,10 @@ const labLinks = [
   {
     label: "Body Tracing Planes",
     to: "/lab/body-tracing/planes"
+  },
+  {
+    label: "Poi Beat Graph",
+    to: "/lab/poi-beat-graph"
   }
 ];
 
