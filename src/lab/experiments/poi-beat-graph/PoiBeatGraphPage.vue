@@ -9,8 +9,6 @@ import {
 import {
   appendPoiBeatGraphRow,
   deletePoiBeatGraphLastRow,
-  deriveLoopIntervals,
-  deriveRowStates,
   filterPoiBeatGraphTracks,
   movePoiBeatGraphRowLane,
   setPoiBeatGraphTrackDirection,
@@ -32,9 +30,6 @@ const visibleTrackIds = ref(graph.value.tracks.map((track) => track.id));
 const visibleGraph = computed(() => filterPoiBeatGraphTracks(graph.value, visibleTrackIds.value));
 const compiled = computed(() => compilePoiBeatGraph(visibleGraph.value, compilerOptions));
 const tracks = computed(() => graph.value.tracks);
-const visibleTracks = computed(() =>
-  graph.value.tracks.filter((track) => visibleTrackIds.value.includes(track.id))
-);
 const editingTrack = computed(() => {
   const track = graph.value.tracks.find((candidate) => candidate.id === editingTrackId.value);
   if (!track) {
@@ -42,11 +37,6 @@ const editingTrack = computed(() => {
   }
   return track;
 });
-const rowStates = computed(() => deriveRowStates(editingTrack.value));
-const intervals = computed(() =>
-  deriveLoopIntervals(editingTrack.value, compilerOptions.halfBeatDuration)
-);
-
 function moveActiveLane(step: number, laneId: PoiBeatLaneId) {
   graph.value = movePoiBeatGraphRowLane(graph.value, editingTrack.value.id, step, laneId);
 }
@@ -226,27 +216,6 @@ function phaseButtonClass(track: PoiBeatTrack, phase: PoiBeatPhaseLabel): string
                 </button>
               </div>
             </div>
-
-            <dl class="grid grid-cols-2 gap-3 border-t border-slate-800 pt-3 text-sm">
-              <div>
-                <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Editing</dt>
-                <dd class="mt-1 capitalize text-slate-200">{{ editingTrack.hand }}</dd>
-              </div>
-              <div>
-                <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Visible</dt>
-                <dd class="mt-1 font-mono text-slate-200">{{ visibleTracks.length }}</dd>
-              </div>
-              <div>
-                <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Initial Phase</dt>
-                <dd class="mt-1 uppercase text-slate-200">{{ editingTrack.initialPhase }}</dd>
-              </div>
-              <div>
-                <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Half Beat</dt>
-                <dd class="mt-1 font-mono text-slate-200">
-                  {{ compilerOptions.halfBeatDuration }}
-                </dd>
-              </div>
-            </dl>
           </div>
         </section>
 
@@ -259,62 +228,6 @@ function phaseButtonClass(track: PoiBeatTrack, phase: PoiBeatPhaseLabel): string
           @append-row="appendRow"
           @delete-row="deleteRow"
         />
-
-        <section class="overflow-hidden rounded-lg border border-slate-800 bg-slate-900/60">
-          <div class="border-b border-slate-800 px-4 py-3">
-            <h2 class="text-sm font-semibold text-slate-200">Rows · {{ editingTrack.id }}</h2>
-          </div>
-          <table class="w-full text-left text-sm">
-            <thead class="bg-slate-950/70 text-xs uppercase tracking-[0.16em] text-slate-500">
-              <tr>
-                <th class="px-4 py-2">Step</th>
-                <th class="px-4 py-2">Lane</th>
-                <th class="px-4 py-2">Phase</th>
-                <th class="px-4 py-2">Side</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-800">
-              <tr v-for="state in rowStates" :key="state.row.step">
-                <td class="px-4 py-2 font-mono text-slate-300">{{ state.row.step }}</td>
-                <td class="px-4 py-2 text-slate-200">{{ state.row.laneId }}</td>
-                <td class="px-4 py-2 uppercase text-slate-300">{{ state.phaseLabel }}</td>
-                <td class="px-4 py-2 font-mono text-slate-300">{{ state.planeSide }}</td>
-              </tr>
-              <tr class="bg-slate-950/50 text-slate-400">
-                <td class="px-4 py-2 font-mono">loop</td>
-                <td class="px-4 py-2">{{ rowStates[0]?.row.laneId }}</td>
-                <td class="px-4 py-2 uppercase">{{ rowStates[0]?.phaseLabel }}</td>
-                <td class="px-4 py-2 font-mono">{{ rowStates[0]?.planeSide }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </section>
-
-        <section class="overflow-hidden rounded-lg border border-slate-800 bg-slate-900/60">
-          <div class="border-b border-slate-800 px-4 py-3">
-            <h2 class="text-sm font-semibold text-slate-200">Intervals · {{ editingTrack.id }}</h2>
-          </div>
-          <table class="w-full text-left text-sm">
-            <thead class="bg-slate-950/70 text-xs uppercase tracking-[0.16em] text-slate-500">
-              <tr>
-                <th class="px-4 py-2">Index</th>
-                <th class="px-4 py-2">Steps</th>
-                <th class="px-4 py-2">Kind</th>
-                <th class="px-4 py-2">Side</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-800">
-              <tr v-for="interval in intervals" :key="interval.index">
-                <td class="px-4 py-2 font-mono text-slate-300">{{ interval.index }}</td>
-                <td class="px-4 py-2 font-mono text-slate-300">
-                  {{ interval.fromRow.step }} -> {{ interval.toRow.step }}
-                </td>
-                <td class="px-4 py-2 text-slate-200">{{ interval.kind }}</td>
-                <td class="px-4 py-2 font-mono text-slate-300">{{ interval.planeSide }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </section>
 
         <section
           v-if="compiled.diagnostics.length > 0"
