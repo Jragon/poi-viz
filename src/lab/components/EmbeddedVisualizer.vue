@@ -18,13 +18,15 @@ const props = withDefaults(
     size?: EmbeddedVisualizerSize;
     projectionMode?: ProjectionModePreference;
     projectionDragEnabled?: boolean;
+    showBodyRig?: boolean;
   }>(),
   {
     title: "Embedded visualizer",
     autoplay: true,
     size: "normal",
     projectionMode: "auto",
-    projectionDragEnabled: true
+    projectionDragEnabled: true,
+    showBodyRig: false
   }
 );
 
@@ -45,6 +47,7 @@ const overlaySettings = computed(() => {
   const settings = createDefaultOverlaySettings(core.rigOrder.value);
   settings.visibility.showHandTrails = false;
   settings.visibility.showHeadTrails = true;
+  settings.visibility.showBodyRig = props.showBodyRig;
   return settings;
 });
 
@@ -127,6 +130,7 @@ function setSpeed(value: number) {
       :is-fullscreen="false"
       :overlay-settings="overlaySettings"
       :poses="core.cartesianPoses.value"
+      :world-poses="core.worldPoses.value"
       :projection-drag="projectionDrag"
       :projection-settings="core.session.projectionSettings.value"
       :rig-order="core.rigOrder.value"

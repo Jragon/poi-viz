@@ -23,6 +23,7 @@ const leftArcId = ref<ElementaryQuarterArcId>("0-90");
 const rightPlaneId = ref<PlaneId>("wall");
 const rightArcId = ref<ElementaryQuarterArcId>("180-270");
 const timingMode = ref<ElementaryTimingMode>("same");
+const showStickFigure = ref(true);
 
 const activeTiming = computed(() => getElementaryTimingOption(timingMode.value));
 const sequence = computed(() =>
@@ -121,6 +122,10 @@ function selectTiming(nextTimingMode: ElementaryTimingMode) {
   }
 
   timingMode.value = nextTimingMode;
+}
+
+function setShowStickFigure(event: Event) {
+  showStickFigure.value = (event.target as HTMLInputElement).checked;
 }
 
 function timingButtonClass(timing: ElementaryTimingMode) {
@@ -275,6 +280,17 @@ function arcStrokeClass(handId: HandId, arcId: ElementaryQuarterArcId) {
               {{ option.label }}
             </button>
           </div>
+          <label
+            class="flex items-center justify-center gap-2 text-xs font-medium text-slate-400 transition hover:text-slate-100"
+          >
+            <input
+              type="checkbox"
+              :checked="showStickFigure"
+              class="h-3.5 w-3.5 accent-amber-400"
+              @change="setShowStickFigure"
+            />
+            Stick figure
+          </label>
         </div>
 
         <div class="grid gap-1.5">
@@ -351,6 +367,7 @@ function arcStrokeClass(handId: HandId, arcId: ElementaryQuarterArcId) {
       title="Elementary quarter-time loop"
       :summary="summary"
       :sequence="sequence"
+      :show-body-rig="showStickFigure"
       size="mini"
     />
   </div>
