@@ -3,7 +3,14 @@ import { computed } from "vue";
 
 import { evalPreparedMultiRigSequenceAt } from "@/engine/multirig";
 import { toWorldMultiRigPose } from "@/engine/planeProjection";
-import type { MultiRigSequence, RelativeNodePose, Segment, Vec2, Vec3 } from "@/engine/types";
+import type {
+  DriverEvalContext,
+  MultiRigSequence,
+  RelativeNodePose,
+  Segment,
+  Vec2,
+  Vec3
+} from "@/engine/types";
 import { createDefaultOverlaySettings } from "@/visualizer/overlaySettings";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
 import { useVisualizerCore } from "@/visualizer/useVisualizerCore";
@@ -77,8 +84,37 @@ function distance2(a: Vec2, b: Vec2): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, value));
+}
+
+function smoothstep(value: number): number {
+  const t = clamp01(value);
+  return t * t * (3 - 2 * t);
+}
+
+function lerp2(a: Vec2, b: Vec2, progress: number): Vec2 {
+  return {
+    x: a.x + (b.x - a.x) * progress,
+    y: a.y + (b.y - a.y) * progress
+  };
+}
+
 function worldPointToPose(point: Vec2): RelativeNodePose {
   return cartesianToPolar(point, 0);
+}
+
+function evalSmoothTransferHand(
+  startPose: RelativeNodePose,
+  start: Vec2,
+  end: Vec2,
+  context: DriverEvalContext
+) {
+  const progress = smoothstep(context.tLocal / context.durationUnits);
+  if (progress <= 0) return worldPointToPose(start);
+  if (progress >= 1) return worldPointToPose(end);
+
+  return cartesianToPolar(lerp2(start, end, progress), startPose.phaseAbs);
 }
 
 function makePhaseSegment(input: PhaseSegmentInput): Segment {
@@ -95,8 +131,10 @@ function makePhaseSegment(input: PhaseSegmentInput): Segment {
         : {
             startPose: worldPointToPose(input.handStart),
             driver: {
-              kind: "point-to-point",
-              endPose: worldPointToPose(input.handEnd)
+              kind: "runtime",
+              label: "smooth transfer",
+              evalPose: (startPose, context) =>
+                evalSmoothTransferHand(startPose, input.handStart, input.handEnd, context)
             }
           },
     head: {
@@ -150,6 +188,10 @@ function makeLandmarkPhaseScheduleWrap(): Segment[] {
 }
 
 function getSegmentHandKind(segment: Segment): string {
+  if (segment.hand.driver.kind === "runtime") {
+    return segment.hand.driver.label;
+  }
+
   if (segment.hand.driver.kind === "point-to-point") {
     return "transfer";
   }
@@ -195,7 +237,8 @@ function formatPhaseCardinal(phaseAbs: number): string {
 const selectedPattern: PatternDefinition = {
   id: "landmark-phase-schedule",
   name: "Landmark phase schedule",
-  description: "Four-segment schedule: circles on back side b, transfer arcs on front side a.",
+  description:
+    "Four-segment schedule: circles on back side b, runtime-eased transfer arcs on front side a.",
   segments: makeLandmarkPhaseScheduleWrap()
 };
 

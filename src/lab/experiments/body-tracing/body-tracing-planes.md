@@ -34,7 +34,7 @@ The schedule is:
 
 This means the full side circles and the top/bottom arcs are produced by a continuous poi phase clock around the moving hand. The hand transfer is not the primitive shape; it is the support motion that makes the scheduled poi landmarks possible.
 
-The current implementation is the minimal engine form of that schedule: four segments total. The intermediate numbered points are not separate segments; they occur inside the continuous circle/transfer segments.
+The current implementation is the minimal engine form of that schedule: four segments total. The intermediate numbered points are not separate segments; they occur inside the continuous circle/transfer segments. The transfer hand motion uses a runtime-only sandbox driver so we can tune easing without promoting the profile into a serializable engine primitive yet.
 
 - right-side full circle, back side `b`: `0.5 -> 2.5`
 - top transfer, front side `a`: `2.5 -> 3.5`
