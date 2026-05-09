@@ -113,6 +113,39 @@ export function movePoiBeatGraphRowLane(
   };
 }
 
+export function setPoiBeatGraphTrackDirection(
+  graph: PoiBeatGraph,
+  trackId: string,
+  poiDirection: PoiBeatDirection
+): PoiBeatGraph {
+  return {
+    ...graph,
+    tracks: graph.tracks.map((track) => (track.id === trackId ? { ...track, poiDirection } : track))
+  };
+}
+
+export function setPoiBeatGraphTrackInitialPhase(
+  graph: PoiBeatGraph,
+  trackId: string,
+  initialPhase: PoiBeatPhaseLabel
+): PoiBeatGraph {
+  return {
+    ...graph,
+    tracks: graph.tracks.map((track) => (track.id === trackId ? { ...track, initialPhase } : track))
+  };
+}
+
+export function filterPoiBeatGraphTracks(
+  graph: PoiBeatGraph,
+  trackIds: readonly string[]
+): PoiBeatGraph {
+  const visibleTrackIds = new Set(trackIds);
+  return {
+    ...graph,
+    tracks: graph.tracks.filter((track) => visibleTrackIds.has(track.id))
+  };
+}
+
 export function appendPoiBeatGraphRow(graph: PoiBeatGraph): PoiBeatGraph {
   const nextStep = graph.cycleSteps;
   return {

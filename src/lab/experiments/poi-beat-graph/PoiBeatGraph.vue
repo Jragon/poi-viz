@@ -17,6 +17,7 @@ import type {
 const props = defineProps<{
   graph: PoiBeatGraph;
   trackId?: string;
+  visibleTrackIds?: readonly string[];
   halfBeatDuration: number;
 }>();
 
@@ -28,7 +29,7 @@ const emit = defineEmits<{
 
 const layout = {
   leftPad: 50,
-  rightPad: 58,
+  rightPad: 28,
   topPad: 34,
   bottomPad: 30,
   laneGap: 58,
@@ -45,27 +46,35 @@ interface DisplayRowState extends PoiBeatDerivedRowState {
 }
 
 interface ActivePointView {
+  readonly key: string;
+  readonly track: PoiBeatTrack;
   readonly row: DisplayRowState;
   readonly x: number;
   readonly y: number;
 }
 
-interface LaneNodeView {
+interface ClickTargetView {
   readonly key: string;
   readonly lane: PoiBeatLane;
   readonly row: DisplayRowState;
   readonly x: number;
   readonly y: number;
-  readonly active: boolean;
 }
 
 interface ConnectorView {
   readonly key: string;
+  readonly track: PoiBeatTrack;
   readonly interval: PoiBeatInterval;
   readonly x1: number;
   readonly y1: number;
   readonly x2: number;
   readonly y2: number;
+}
+
+interface TrackPathView {
+  readonly track: PoiBeatTrack;
+  readonly points: readonly ActivePointView[];
+  readonly connectors: readonly ConnectorView[];
 }
 
 const track = computed<PoiBeatTrack>(() => {
@@ -84,11 +93,46 @@ const lanes = computed(() => props.graph.lanes);
 const laneX = computed(
   () => new Map(lanes.value.map((lane, index) => [lane.id, xForLaneIndex(index)]))
 );
-const rowStates = computed(() => deriveRowStates(track.value));
-const displayRows = computed<readonly DisplayRowState[]>(() => {
-  const states = rowStates.value.map((state) => ({
+const visibleTrackIds = computed(
+  () => new Set(props.visibleTrackIds ?? props.graph.tracks.map((candidate) => candidate.id))
+);
+const visibleTracks = computed<readonly PoiBeatTrack[]>(() => {
+  const tracks = props.graph.tracks.filter((candidate) => visibleTrackIds.value.has(candidate.id));
+  if (tracks.length === 0) return [track.value];
+
+  return [...tracks].sort((a, b) => {
+    if (a.id === track.value.id) return 1;
+    if (b.id === track.value.id) return -1;
+    return 0;
+  });
+});
+const displayRows = computed(() => makeDisplayRows(track.value));
+const canDeleteRow = computed(() => props.graph.cycleSteps > 2);
+const svgWidth = computed(
+  () => layout.leftPad + layout.rightPad + layout.laneGap * Math.max(lanes.value.length - 1, 0)
+);
+const svgHeight = computed(
+  () => layout.topPad + layout.bottomPad + layout.rowGap * Math.max(displayRows.value.length - 1, 0)
+);
+const trackPaths = computed<readonly TrackPathView[]>(() =>
+  visibleTracks.value.map((visibleTrack) => makeTrackPath(visibleTrack))
+);
+const clickTargets = computed<readonly ClickTargetView[]>(() =>
+  displayRows.value.flatMap((row, rowIndex) =>
+    lanes.value.map((lane, laneIndex) => ({
+      key: `${row.key}-${lane.id}`,
+      lane,
+      row,
+      x: xForLaneIndex(laneIndex),
+      y: yForRowIndex(rowIndex)
+    }))
+  )
+);
+
+function makeDisplayRows(pathTrack: PoiBeatTrack): readonly DisplayRowState[] {
+  const states = deriveRowStates(pathTrack).map((state) => ({
     ...state,
-    key: `step-${state.row.step}`,
+    key: `${pathTrack.id}-step-${state.row.step}`,
     label: String(state.row.step),
     isLoopClosure: false,
     sourceStep: state.row.step
@@ -100,58 +144,51 @@ const displayRows = computed<readonly DisplayRowState[]>(() => {
     ...states,
     {
       ...first,
-      key: "loop",
+      key: `${pathTrack.id}-loop`,
       label: "loop",
       isLoopClosure: true,
       sourceStep: first.row.step
     }
   ];
-});
-const intervals = computed(() => deriveLoopIntervals(track.value, props.halfBeatDuration));
-const canDeleteRow = computed(() => track.value.rows.length > 2);
-const svgWidth = computed(
-  () => layout.leftPad + layout.rightPad + layout.laneGap * Math.max(lanes.value.length - 1, 0)
-);
-const svgHeight = computed(
-  () => layout.topPad + layout.bottomPad + layout.rowGap * Math.max(displayRows.value.length - 1, 0)
-);
-const activePoints = computed<readonly ActivePointView[]>(() =>
-  displayRows.value.map((row, index) => ({
+}
+
+function makeActivePoints(
+  pathTrack: PoiBeatTrack,
+  rows: readonly DisplayRowState[]
+): readonly ActivePointView[] {
+  return rows.map((row, index) => ({
+    key: `${pathTrack.id}-${row.key}`,
+    track: pathTrack,
     row,
     x: xForLane(row.row.laneId),
     y: yForRowIndex(index)
-  }))
-);
-const laneNodes = computed<readonly LaneNodeView[]>(() =>
-  displayRows.value.flatMap((row, rowIndex) =>
-    lanes.value.map((lane, laneIndex) => ({
-      key: `${row.key}-${lane.id}`,
-      lane,
-      row,
-      x: xForLaneIndex(laneIndex),
-      y: yForRowIndex(rowIndex),
-      active: lane.id === row.row.laneId
-    }))
-  )
-);
-const connectors = computed<readonly ConnectorView[]>(() =>
-  intervals.value.map((interval, index) => {
-    const fromPoint = activePoints.value[index];
-    const toPoint = activePoints.value[index + 1];
+  }));
+}
+
+function makeTrackPath(pathTrack: PoiBeatTrack): TrackPathView {
+  const rows = makeDisplayRows(pathTrack);
+  const points = makeActivePoints(pathTrack, rows);
+  const pathIntervals = deriveLoopIntervals(pathTrack, props.halfBeatDuration);
+  const connectors = pathIntervals.map((interval, index) => {
+    const fromPoint = points[index];
+    const toPoint = points[index + 1];
     if (!fromPoint || !toPoint) {
       throw new Error("PoiBeatGraph connector invariant failed");
     }
 
     return {
-      key: `${interval.fromRow.step}-${interval.toRow.step}`,
+      key: `${pathTrack.id}-${interval.fromRow.step}-${interval.toRow.step}`,
+      track: pathTrack,
       interval,
       x1: fromPoint.x,
       y1: fromPoint.y,
       x2: toPoint.x,
       y2: toPoint.y
     };
-  })
-);
+  });
+
+  return { track: pathTrack, points, connectors };
+}
 
 function xForLaneIndex(index: number): number {
   return layout.leftPad + index * layout.laneGap;
@@ -169,14 +206,14 @@ function yForRowIndex(index: number): number {
   return layout.topPad + index * layout.rowGap;
 }
 
-function nodeClass(node: LaneNodeView): string {
-  if (node.active) return "fill-sky-300 stroke-sky-100";
-  return "fill-slate-950 stroke-slate-600 hover:fill-slate-800 hover:stroke-slate-400";
+function trackNodeClass(pathTrack: PoiBeatTrack): string {
+  if (pathTrack.hand === "left") return "fill-slate-950 stroke-cyan-300";
+  return "fill-slate-950 stroke-pink-300";
 }
 
 function connectorClass(connector: ConnectorView): string {
-  if (connector.interval.planeSide === "a") return "stroke-amber-300";
-  return "stroke-sky-300";
+  if (connector.track.hand === "left") return "stroke-cyan-300";
+  return "stroke-pink-300";
 }
 
 function laneHeaderLabel(lane: PoiBeatLane): string {
@@ -195,7 +232,7 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
   <section class="overflow-hidden rounded-lg border border-slate-800 bg-slate-900/60">
     <div class="border-b border-slate-800 px-4 py-2.5">
       <p class="text-xs uppercase tracking-[0.16em] text-slate-500">Graph</p>
-      <h2 class="mt-1 text-sm font-semibold text-slate-200">{{ track.id }} beat graph</h2>
+      <h2 class="mt-1 text-sm font-semibold text-slate-200">{{ track.id }} edit graph</h2>
     </div>
 
     <div class="px-3 py-3">
@@ -255,7 +292,7 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
 
         <g>
           <line
-            v-for="connector in connectors"
+            v-for="connector in trackPaths.flatMap((path) => path.connectors)"
             :key="connector.key"
             :x1="connector.x1"
             :y1="connector.y1"
@@ -268,8 +305,20 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
         </g>
 
         <g>
+          <circle
+            v-for="point in trackPaths.flatMap((path) => path.points)"
+            :key="point.key"
+            :cx="point.x"
+            :cy="point.y"
+            :r="layout.activeRadius"
+            :class="trackNodeClass(point.track)"
+            stroke-width="2"
+          />
+        </g>
+
+        <g>
           <foreignObject
-            v-for="node in laneNodes"
+            v-for="node in clickTargets"
             :key="node.key"
             :x="node.x - 10"
             :y="node.y - 10"
@@ -279,33 +328,13 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
             <button
               type="button"
               class="grid h-5 w-5 place-items-center rounded-full bg-transparent"
-              :aria-label="`${node.row.label} ${node.lane.label}`"
+              :aria-label="`${track.hand} hand step ${node.row.label} ${node.lane.label}`"
               :disabled="node.row.isLoopClosure"
               @click="selectLane(node.row, node.lane.id)"
             >
-              <svg viewBox="0 0 20 20" class="h-5 w-5 overflow-visible">
-                <circle
-                  cx="10"
-                  cy="10"
-                  :r="node.active ? layout.activeRadius : layout.inactiveRadius"
-                  :class="nodeClass(node)"
-                  stroke-width="1.6"
-                />
-              </svg>
+              <span class="sr-only">{{ node.lane.label }}</span>
             </button>
           </foreignObject>
-        </g>
-
-        <g>
-          <text
-            v-for="point in activePoints"
-            :key="`meta-${point.row.key}`"
-            :x="svgWidth - layout.rightPad + 8"
-            :y="point.y + 3"
-            class="fill-slate-400 text-[9px] uppercase"
-          >
-            {{ point.row.phaseLabel }} {{ point.row.planeSide }}
-          </text>
         </g>
       </svg>
     </div>
