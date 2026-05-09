@@ -27,6 +27,7 @@ const graph = ref(createTwoHandLowWrapBeatGraph());
 const compilerOptions = DEFAULT_POI_BEAT_COMPILER_OPTIONS;
 const editingTrackId = ref(graph.value.tracks[0]?.id ?? "");
 const visibleTrackIds = ref(graph.value.tracks.map((track) => track.id));
+const showStickFigure = ref(false);
 const visibleGraph = computed(() => filterPoiBeatGraphTracks(graph.value, visibleTrackIds.value));
 const compiled = computed(() => compilePoiBeatGraph(visibleGraph.value, compilerOptions));
 const tracks = computed(() => graph.value.tracks);
@@ -72,6 +73,10 @@ function setTrackDirection(trackId: string, direction: PoiBeatDirection) {
 
 function setTrackInitialPhase(trackId: string, phase: PoiBeatPhaseLabel) {
   graph.value = setPoiBeatGraphTrackInitialPhase(graph.value, trackId, phase);
+}
+
+function setShowStickFigure(event: Event) {
+  showStickFigure.value = (event.target as HTMLInputElement).checked;
 }
 
 function appendRow() {
@@ -251,10 +256,23 @@ function phaseButtonClass(track: PoiBeatTrack, phase: PoiBeatPhaseLabel): string
       </div>
 
       <div class="grid content-start gap-6">
+        <label
+          class="ml-auto flex items-center gap-2 text-xs font-medium text-slate-400 transition hover:text-slate-100"
+        >
+          <input
+            type="checkbox"
+            :checked="showStickFigure"
+            class="h-3.5 w-3.5 accent-amber-400"
+            @change="setShowStickFigure"
+          />
+          Stick figure
+        </label>
+
         <EmbeddedVisualizer
           :sequence="compiled.sequence"
           title="Compiled two-hand low wrap"
           summary="Visible hand tracks compile into separate rigs while the graph data stays intact."
+          :show-body-rig="showStickFigure"
           size="normal"
           projection-mode="orthographic"
           :projection-drag-enabled="false"
