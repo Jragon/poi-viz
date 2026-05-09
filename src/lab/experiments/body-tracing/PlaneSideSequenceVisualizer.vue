@@ -22,7 +22,7 @@ type PatternDefinition = {
   segments: Segment[];
 };
 
-type PhaseSegmentInput = {
+type WrapSegmentInput = {
   readonly durationUnits: number;
   readonly handStart: Vec2;
   readonly handEnd: Vec2;
@@ -35,9 +35,7 @@ type SpeedAggregate = {
   readonly segmentIndex: number;
   readonly label: string;
   readonly durationUnits: number;
-  readonly durationShare: number;
   readonly headStartLabel: string;
-  readonly handKind: string;
   handSpeedSum: number;
   handSpeedMax: number;
   headSpeedSum: number;
@@ -59,14 +57,29 @@ type SpeedDiagnostics = {
 };
 
 const TAU = Math.PI * 2;
-const RIGHT = 0;
-const LEFT = Math.PI;
-const UP = Math.PI / 2;
-const DOWN = (3 / 2) * Math.PI;
-const HEAD_RADIUS = 0.6;
-const LANDMARK_HAND_OFFSET = 0.78;
-const DIAGNOSTIC_SAMPLE_COUNT = 180;
-const DIAGNOSTIC_RIG_ID = "right";
+
+const PHASE = {
+  right: 0,
+  up: Math.PI / 2,
+  left: Math.PI,
+  down: (3 / 2) * Math.PI
+} as const;
+
+const WRAP_PARAMS = {
+  handOffset: 0.5,
+  headRadius: 0.6,
+  circleDuration: 1,
+  transferDuration: 0.5,
+  circleSide: "b" as const,
+  transferSide: "a" as const,
+  transferLabel: "smooth transfer",
+  diagnosticSampleCount: 180,
+  diagnosticRigId: "right",
+  playbackSpeed: 1,
+  playbackUnitsPerSecond: 1
+} as const;
+
+// === Geometry and Easing Helpers ===
 
 function cartesianToPolar(point: Vec2, fallbackPhaseAbs: number): RelativeNodePose {
   const radius = Math.hypot(point.x, point.y);
@@ -117,7 +130,9 @@ function evalSmoothTransferHand(
   return cartesianToPolar(lerp2(start, end, progress), startPose.phaseAbs);
 }
 
-function makePhaseSegment(input: PhaseSegmentInput): Segment {
+// === Wrap Segment Builders ===
+
+function makeWrapSegment(input: WrapSegmentInput): Segment {
   return {
     durationUnits: input.durationUnits,
     planeId: "wall",
@@ -132,13 +147,13 @@ function makePhaseSegment(input: PhaseSegmentInput): Segment {
             startPose: worldPointToPose(input.handStart),
             driver: {
               kind: "runtime",
-              label: "smooth transfer",
+              label: WRAP_PARAMS.transferLabel,
               evalPose: (startPose, context) =>
                 evalSmoothTransferHand(startPose, input.handStart, input.handEnd, context)
             }
           },
     head: {
-      startPose: { phaseAbs: input.phaseStart, radius: HEAD_RADIUS },
+      startPose: { phaseAbs: input.phaseStart, radius: WRAP_PARAMS.headRadius },
       driver: {
         kind: "circle",
         omega: (input.phaseEnd - input.phaseStart) / input.durationUnits
@@ -147,45 +162,47 @@ function makePhaseSegment(input: PhaseSegmentInput): Segment {
   };
 }
 
-function makeLandmarkPhaseScheduleWrap(): Segment[] {
-  const rightHand = { x: LANDMARK_HAND_OFFSET, y: 0 };
-  const leftHand = { x: -LANDMARK_HAND_OFFSET, y: 0 };
+function makeBasicWrapSegments(): Segment[] {
+  const rightHand = { x: WRAP_PARAMS.handOffset, y: 0 };
+  const leftHand = { x: -WRAP_PARAMS.handOffset, y: 0 };
 
   return [
-    makePhaseSegment({
-      durationUnits: 1,
+    makeWrapSegment({
+      durationUnits: WRAP_PARAMS.circleDuration,
       handStart: rightHand,
       handEnd: rightHand,
-      phaseStart: 0,
+      phaseStart: PHASE.right,
       phaseEnd: TAU,
-      planeSide: "b"
+      planeSide: WRAP_PARAMS.circleSide
     }),
-    makePhaseSegment({
-      durationUnits: 0.5,
+    makeWrapSegment({
+      durationUnits: WRAP_PARAMS.transferDuration,
       handStart: rightHand,
       handEnd: leftHand,
       phaseStart: TAU,
-      phaseEnd: TAU + LEFT,
-      planeSide: "a"
+      phaseEnd: TAU + PHASE.left,
+      planeSide: WRAP_PARAMS.transferSide
     }),
-    makePhaseSegment({
-      durationUnits: 1,
+    makeWrapSegment({
+      durationUnits: WRAP_PARAMS.circleDuration,
       handStart: leftHand,
       handEnd: leftHand,
-      phaseStart: TAU + LEFT,
-      phaseEnd: 2 * TAU + LEFT,
-      planeSide: "b"
+      phaseStart: TAU + PHASE.left,
+      phaseEnd: 2 * TAU + PHASE.left,
+      planeSide: WRAP_PARAMS.circleSide
     }),
-    makePhaseSegment({
-      durationUnits: 0.5,
+    makeWrapSegment({
+      durationUnits: WRAP_PARAMS.transferDuration,
       handStart: leftHand,
       handEnd: rightHand,
-      phaseStart: 2 * TAU + LEFT,
+      phaseStart: 2 * TAU + PHASE.left,
       phaseEnd: 3 * TAU,
-      planeSide: "a"
+      planeSide: WRAP_PARAMS.transferSide
     })
   ];
 }
+
+// === Segment Labels and Formatting ===
 
 function getSegmentHandKind(segment: Segment): string {
   if (segment.hand.driver.kind === "runtime") {
@@ -223,10 +240,10 @@ function formatNumber(value: number): string {
 function formatPhaseCardinal(phaseAbs: number): string {
   const phase = normalizeTime(phaseAbs, TAU);
   const cardinals: readonly { phase: number; label: string }[] = [
-    { phase: RIGHT, label: "0" },
-    { phase: UP, label: "90" },
-    { phase: LEFT, label: "180" },
-    { phase: DOWN, label: "270" }
+    { phase: PHASE.right, label: "0" },
+    { phase: PHASE.up, label: "90" },
+    { phase: PHASE.left, label: "180" },
+    { phase: PHASE.down, label: "270" }
   ];
   const match = cardinals.find((cardinal) => Math.abs(phase - cardinal.phase) <= 1e-9);
   if (match) return match.label;
@@ -234,30 +251,65 @@ function formatPhaseCardinal(phaseAbs: number): string {
   return ((phase * 180) / Math.PI).toFixed(0);
 }
 
-const selectedPattern: PatternDefinition = {
+function makeSpeedRows(segments: readonly Segment[]): SpeedAggregate[] {
+  return segments.map((segment, index) => ({
+    segmentIndex: index,
+    label: describeSegment(segment, index),
+    durationUnits: segment.durationUnits,
+    headStartLabel: formatPhaseCardinal(segment.head.startPose.phaseAbs),
+    handSpeedSum: 0,
+    handSpeedMax: 0,
+    headSpeedSum: 0,
+    headSpeedMax: 0,
+    sampleCount: 0
+  }));
+}
+
+function toAverageSpeedRows(rows: readonly SpeedAggregate[]): SpeedDiagnostics["rows"] {
+  return rows.map((row) => ({
+    ...row,
+    handSpeedAverage: row.sampleCount > 0 ? row.handSpeedSum / row.sampleCount : 0,
+    headSpeedAverage: row.sampleCount > 0 ? row.headSpeedSum / row.sampleCount : 0
+  }));
+}
+
+function toSpeedBars(
+  samples: readonly { headSpeed: number; segmentIndex: number }[],
+  maxHeadSpeed: number
+): SpeedDiagnostics["speedBars"] {
+  const safeMaxHeadSpeed = Math.max(maxHeadSpeed, 1e-6);
+
+  return samples.map((sample) => ({
+    heightPercent: Math.max(4, (sample.headSpeed / safeMaxHeadSpeed) * 100),
+    segmentIndex: sample.segmentIndex
+  }));
+}
+
+const wrapFixture: PatternDefinition = {
   id: "landmark-phase-schedule",
   name: "Landmark phase schedule",
   description:
     "Four-segment schedule: circles on back side b, runtime-eased transfer arcs on front side a.",
-  segments: makeLandmarkPhaseScheduleWrap()
+  segments: makeBasicWrapSegments()
 };
 
-const sideSequence = computed<MultiRigSequence>(() => ({
+const wrapSequence = computed<MultiRigSequence>(() => ({
   rigs: [
     {
       rigId: "right",
       sequence: {
-        segments: selectedPattern.segments
+        segments: wrapFixture.segments
       }
     }
   ]
 }));
 
-const core = useVisualizerCore(sideSequence, {
+const core = useVisualizerCore(wrapSequence, {
   autoplay: true,
   resumeOnSequenceChange: true,
   transportOptions: {
-    initialSpeed: 0.45
+    initialSpeed: WRAP_PARAMS.playbackSpeed,
+    unitsPerSecond: WRAP_PARAMS.playbackUnitsPerSecond
   }
 });
 core.session.setProjectionMode("orthographic");
@@ -274,7 +326,7 @@ const activeSegmentIndex = computed(() => {
   const frame = core.session.currentFrame.value;
   if (!frame?.ok) return null;
 
-  return frame.evaluatedPoses[DIAGNOSTIC_RIG_ID]?.segmentIndex ?? null;
+  return frame.evaluatedPoses[WRAP_PARAMS.diagnosticRigId]?.segmentIndex ?? null;
 });
 
 const currentTimeLabel = computed(() => core.transport.currentTime.value.toFixed(2));
@@ -292,39 +344,29 @@ const activeMetadata = computed(() => {
 });
 
 const segmentSummaries = computed(() =>
-  selectedPattern.segments.map((segment, index) => ({
+  wrapFixture.segments.map((segment, index) => ({
     label: describeSegment(segment, index),
-    durationUnits: segment.durationUnits,
-    handKind: getSegmentHandKind(segment)
+    durationUnits: segment.durationUnits
   }))
 );
+
+// === Speed Diagnostics ===
 
 const speedDiagnostics = computed<SpeedDiagnostics | null>(() => {
   const prepared = core.session.playback.prepared.value;
   if (!prepared || prepared.maxSequenceDuration <= 0) return null;
 
-  const rig = prepared.rigs.find((entry) => entry.rigId === DIAGNOSTIC_RIG_ID) ?? prepared.rigs[0];
+  const rig =
+    prepared.rigs.find((entry) => entry.rigId === WRAP_PARAMS.diagnosticRigId) ?? prepared.rigs[0];
   if (!rig) return null;
 
   const duration = prepared.maxSequenceDuration;
   const velocityDt = Math.max(duration / 1200, 1e-4);
-  const rows: SpeedAggregate[] = rig.prepared.segments.map((segment, index) => ({
-    segmentIndex: index,
-    label: describeSegment(segment, index),
-    durationUnits: segment.durationUnits,
-    durationShare: segment.durationUnits / duration,
-    headStartLabel: formatPhaseCardinal(segment.head.startPose.phaseAbs),
-    handKind: getSegmentHandKind(segment),
-    handSpeedSum: 0,
-    handSpeedMax: 0,
-    headSpeedSum: 0,
-    headSpeedMax: 0,
-    sampleCount: 0
-  }));
+  const rows = makeSpeedRows(rig.prepared.segments);
   const speedSeries: { headSpeed: number; segmentIndex: number }[] = [];
 
-  for (let index = 0; index < DIAGNOSTIC_SAMPLE_COUNT; index += 1) {
-    const t = (duration * (index + 0.5)) / DIAGNOSTIC_SAMPLE_COUNT;
+  for (let index = 0; index < WRAP_PARAMS.diagnosticSampleCount; index += 1) {
+    const t = (duration * (index + 0.5)) / WRAP_PARAMS.diagnosticSampleCount;
     const previous = evalPreparedMultiRigSequenceAt(
       prepared,
       normalizeTime(t - velocityDt, duration)
@@ -356,22 +398,16 @@ const speedDiagnostics = computed<SpeedDiagnostics | null>(() => {
 
   const maxHeadSpeed = rows.reduce((maxSpeed, row) => Math.max(maxSpeed, row.headSpeedMax), 0);
   const maxHandSpeed = rows.reduce((maxSpeed, row) => Math.max(maxSpeed, row.handSpeedMax), 0);
-  const safeMaxHeadSpeed = Math.max(maxHeadSpeed, 1e-6);
 
   return {
-    rows: rows.map((row) => ({
-      ...row,
-      handSpeedAverage: row.sampleCount > 0 ? row.handSpeedSum / row.sampleCount : 0,
-      headSpeedAverage: row.sampleCount > 0 ? row.headSpeedSum / row.sampleCount : 0
-    })),
-    speedBars: speedSeries.map((sample) => ({
-      heightPercent: Math.max(4, (sample.headSpeed / safeMaxHeadSpeed) * 100),
-      segmentIndex: sample.segmentIndex
-    })),
+    rows: toAverageSpeedRows(rows),
+    speedBars: toSpeedBars(speedSeries, maxHeadSpeed),
     maxHandSpeed,
     maxHeadSpeed
   };
 });
+
+// === Transport Handlers ===
 
 function togglePlayback() {
   core.transport.toggle();
@@ -387,9 +423,9 @@ function onScrub(event: Event) {
     <header class="grid gap-3 border-b border-slate-800 px-4 py-3 md:items-start">
       <div class="min-w-0">
         <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Engine Playback</p>
-        <h2 class="mt-1 text-lg font-semibold text-slate-100">{{ selectedPattern.name }}</h2>
+        <h2 class="mt-1 text-lg font-semibold text-slate-100">{{ wrapFixture.name }}</h2>
         <p class="mt-1 text-sm leading-6 text-slate-400">
-          {{ selectedPattern.description }}
+          {{ wrapFixture.description }}
         </p>
       </div>
 
@@ -460,15 +496,13 @@ function onScrub(event: Event) {
           <h3 class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
             Segment Timing
           </h3>
-          <p class="font-mono text-xs text-slate-500">
-            {{ selectedPattern.segments.length }} segments
-          </p>
+          <p class="font-mono text-xs text-slate-500">{{ wrapFixture.segments.length }} segments</p>
         </div>
 
         <div class="flex h-8 overflow-hidden rounded-md border border-slate-800 bg-slate-950">
           <div
             v-for="(summary, index) in segmentSummaries"
-            :key="`${selectedPattern.id}-segment-${index}`"
+            :key="`${wrapFixture.id}-segment-${index}`"
             class="grid min-w-8 place-items-center border-r border-slate-900 px-1 text-[0.65rem] font-semibold text-slate-100 last:border-r-0"
             :class="index === activeSegmentIndex ? 'bg-sky-500/70' : 'bg-slate-800/70'"
             :style="{ flex: `${summary.durationUnits} 1 0` }"
@@ -499,7 +533,7 @@ function onScrub(event: Event) {
           >
             <div
               v-for="(bar, index) in speedDiagnostics.speedBars"
-              :key="`${selectedPattern.id}-speed-${index}`"
+              :key="`${wrapFixture.id}-speed-${index}`"
               class="min-w-px flex-1 rounded-t-sm transition-colors"
               :class="bar.segmentIndex === activeSegmentIndex ? 'bg-sky-300' : 'bg-pink-400/65'"
               :style="{ height: `${bar.heightPercent}%` }"
@@ -521,7 +555,7 @@ function onScrub(event: Event) {
             <tbody class="divide-y divide-slate-900 bg-slate-950/60 font-mono text-slate-300">
               <tr
                 v-for="row in speedDiagnostics.rows"
-                :key="`${selectedPattern.id}-speed-row-${row.segmentIndex}`"
+                :key="`${wrapFixture.id}-speed-row-${row.segmentIndex}`"
                 :class="row.segmentIndex === activeSegmentIndex ? 'bg-sky-500/10 text-sky-100' : ''"
               >
                 <td class="whitespace-nowrap px-3 py-2 font-sans text-slate-200">
