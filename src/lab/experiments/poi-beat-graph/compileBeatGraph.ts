@@ -49,9 +49,9 @@ function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
 }
 
-function smoothstep(value: number): number {
+function smootherstep(value: number): number {
   const t = clamp01(value);
-  return t * t * (3 - 2 * t);
+  return t * t * t * (t * (t * 6 - 15) + 10);
 }
 
 function lerp2(a: Vec2, b: Vec2, progress: number): Vec2 {
@@ -85,13 +85,23 @@ function evalSmoothTransferHand(
   startPose: RelativeNodePose,
   start: Vec2,
   end: Vec2,
-  context: DriverEvalContext
+  context: DriverEvalContext,
+  localOffset = 0,
+  durationUnits = context.durationUnits
 ): RelativeNodePose {
-  const progress = smoothstep(context.tLocal / context.durationUnits);
+  const progress = smootherstep((context.tLocal + localOffset) / durationUnits);
   if (progress <= 0) return worldPointToPose(start);
   if (progress >= 1) return worldPointToPose(end);
 
   return cartesianToPolar(lerp2(start, end, progress), startPose.phaseAbs);
+}
+
+interface HandTransferWindow {
+  readonly start: Vec2;
+  readonly end: Vec2;
+  readonly localOffset: number;
+  readonly durationUnits: number;
+  readonly label: string;
 }
 
 function laneToHandPoint(laneId: PoiBeatLaneId, options: PoiBeatCompilerOptions): Vec2 | null {
@@ -111,7 +121,8 @@ function laneToHandPoint(laneId: PoiBeatLaneId, options: PoiBeatCompilerOptions)
 function makeHandMotion(
   interval: PoiBeatInterval,
   startPoint: Vec2,
-  endPoint: Vec2
+  endPoint: Vec2,
+  transferWindow: HandTransferWindow | null
 ): Segment["hand"] {
   if (distance2(startPoint, endPoint) <= 1e-9) {
     return {
@@ -120,15 +131,73 @@ function makeHandMotion(
     };
   }
 
+  const transferStart = transferWindow?.start ?? startPoint;
+  const transferEnd = transferWindow?.end ?? endPoint;
+  const localOffset = transferWindow?.localOffset ?? 0;
+  const durationUnits = transferWindow?.durationUnits;
+
   return {
     startPose: worldPointToPose(startPoint),
     driver: {
       kind: "runtime",
-      label: `front transfer ${interval.fromRow.laneId} to ${interval.toRow.laneId}`,
+      label:
+        transferWindow?.label ??
+        `front transfer ${interval.fromRow.laneId} to ${interval.toRow.laneId}`,
       evalPose: (startPose, context) =>
-        evalSmoothTransferHand(startPose, startPoint, endPoint, context)
+        evalSmoothTransferHand(
+          startPose,
+          transferStart,
+          transferEnd,
+          context,
+          localOffset,
+          durationUnits
+        )
     }
   };
+}
+
+// TODO: Keep this as a local experiment workaround for now. If more pass-through
+// cases appear, replace it with a generic transfer-window derivation step.
+function makeCenterPassThroughWindow(
+  intervals: readonly PoiBeatInterval[],
+  intervalIndex: number,
+  options: PoiBeatCompilerOptions
+): HandTransferWindow | null {
+  const interval = intervals[intervalIndex];
+  if (!interval || interval.kind !== "lane-switch") return null;
+
+  const previous = intervals[(intervalIndex - 1 + intervals.length) % intervals.length];
+  const next = intervals[(intervalIndex + 1) % intervals.length];
+
+  if (interval.toRow.laneId === "center" && next?.kind === "lane-switch") {
+    const start = laneToHandPoint(interval.fromRow.laneId, options);
+    const end = laneToHandPoint(next.toRow.laneId, options);
+    if (!start || !end || distance2(start, end) <= 1e-9) return null;
+
+    return {
+      start,
+      end,
+      localOffset: 0,
+      durationUnits: interval.durationUnits + next.durationUnits,
+      label: `front transfer ${interval.fromRow.laneId} through center to ${next.toRow.laneId}`
+    };
+  }
+
+  if (interval.fromRow.laneId === "center" && previous?.kind === "lane-switch") {
+    const start = laneToHandPoint(previous.fromRow.laneId, options);
+    const end = laneToHandPoint(interval.toRow.laneId, options);
+    if (!start || !end || distance2(start, end) <= 1e-9) return null;
+
+    return {
+      start,
+      end,
+      localOffset: previous.durationUnits,
+      durationUnits: previous.durationUnits + interval.durationUnits,
+      label: `front transfer ${previous.fromRow.laneId} through center to ${interval.toRow.laneId}`
+    };
+  }
+
+  return null;
 }
 
 function compileTrack(
@@ -150,7 +219,7 @@ function compileTrack(
   const intervals = deriveLoopIntervals(track, options.halfBeatDuration);
   const segments: Segment[] = [];
 
-  for (const interval of intervals) {
+  for (const [intervalIndex, interval] of intervals.entries()) {
     const startPoint = laneToHandPoint(interval.fromRow.laneId, options);
     const endPoint = laneToHandPoint(interval.toRow.laneId, options);
 
@@ -190,7 +259,12 @@ function compileTrack(
       durationUnits: interval.durationUnits,
       planeId: "wall",
       planeSide: interval.planeSide,
-      hand: makeHandMotion(interval, startPoint, endPoint),
+      hand: makeHandMotion(
+        interval,
+        startPoint,
+        endPoint,
+        makeCenterPassThroughWindow(intervals, intervalIndex, options)
+      ),
       head: {
         startPose: {
           phaseAbs: deriveRowState(track, interval.fromRow).phaseAbs,

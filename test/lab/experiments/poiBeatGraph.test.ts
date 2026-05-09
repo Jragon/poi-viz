@@ -33,6 +33,24 @@ function getCircleOmega(
   return driver.omega;
 }
 
+function handXAt(prepared: ReturnType<typeof prepareMultiRigSequence>, t: number): number {
+  if (!prepared.ok) {
+    throw new Error(`expected compiled sequence to prepare: ${JSON.stringify(prepared.errors)}`);
+  }
+
+  const result = evalPreparedMultiRigSequenceAt(prepared.prepared, t);
+  if (!result.ok) {
+    throw new Error(`expected compiled sequence to evaluate at ${t}`);
+  }
+
+  const handPose = result.poses.right?.pose.handPose;
+  if (!handPose) {
+    throw new Error("expected right rig hand pose");
+  }
+
+  return handPose.radius * Math.cos(handPose.phaseAbs);
+}
+
 describe("PoiBeatGraph lower-wrap seed", () => {
   it("encodes the known six-row lane sequence", () => {
     const graph = createLowerWrapBeatGraph();
@@ -224,6 +242,33 @@ describe("compilePoiBeatGraph", () => {
     }
 
     expect(loopBoundary.poses.right.pose).toEqual(start.poses.right.pose);
+  });
+
+  it("treats center rows as pass-through points during lane switch chains", () => {
+    const result = compilePoiBeatGraph(createLowerWrapBeatGraph());
+    const prepared = prepareMultiRigSequence(result.sequence);
+    const transferStart = HALF_BEAT_DURATION;
+    const transferDuration = HALF_BEAT_DURATION * 2;
+    const quarter = transferStart + transferDuration * 0.25;
+    const center = transferStart + transferDuration * 0.5;
+    const threeQuarter = transferStart + transferDuration * 0.75;
+    const transferEnd = transferStart + transferDuration;
+
+    const x0 = handXAt(prepared, transferStart);
+    const x1 = handXAt(prepared, quarter);
+    const x2 = handXAt(prepared, center);
+    const x3 = handXAt(prepared, threeQuarter);
+    const x4 = handXAt(prepared, transferEnd);
+
+    const distances = [x0 - x1, x1 - x2, x2 - x3, x3 - x4];
+
+    expect(x0).toBeCloseTo(0.5);
+    expect(x1).toBeCloseTo(0.396484375);
+    expect(x2).toBeCloseTo(0);
+    expect(x3).toBeCloseTo(-0.396484375);
+    expect(x4).toBeCloseTo(-0.5);
+    expect(distances[1]).toBeGreaterThan(distances[0]);
+    expect(Math.abs(distances[2])).toBeGreaterThan(Math.abs(distances[3]));
   });
 
   it("reports center same-lane intervals as compiler diagnostics", () => {
