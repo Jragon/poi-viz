@@ -23,3 +23,26 @@ export function createLowerWrapBeatGraph(): PoiBeatGraph {
     ]
   };
 }
+
+export function createUpperWrapBeatGraph(): PoiBeatGraph {
+  return {
+    cycleSteps: 6,
+    lanes: POI_BEAT_LANES,
+    tracks: [
+      {
+        id: "right",
+        hand: "right",
+        poiDirection: "counterclockwise",
+        initialPhase: "up",
+        rows: [
+          { step: 0, laneId: "right-high" },
+          { step: 1, laneId: "right-high" },
+          { step: 2, laneId: "center" },
+          { step: 3, laneId: "left-high" },
+          { step: 4, laneId: "left-high" },
+          { step: 5, laneId: "center" }
+        ]
+      }
+    ]
+  };
+}

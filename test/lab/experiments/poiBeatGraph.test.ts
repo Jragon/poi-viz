@@ -1,6 +1,9 @@
 import { PI } from "@/engine/constants";
 import { evalPreparedMultiRigSequenceAt, prepareMultiRigSequence } from "@/engine/multirig";
-import { compilePoiBeatGraph } from "@/lab/experiments/poi-beat-graph/compileBeatGraph";
+import {
+  compilePoiBeatGraph,
+  DEFAULT_POI_BEAT_COMPILER_OPTIONS
+} from "@/lab/experiments/poi-beat-graph/compileBeatGraph";
 import {
   appendPoiBeatGraphRow,
   deletePoiBeatGraphLastRow,
@@ -8,7 +11,10 @@ import {
   deriveRowStates,
   movePoiBeatGraphRowLane
 } from "@/lab/experiments/poi-beat-graph/graphHelpers";
-import { createLowerWrapBeatGraph } from "@/lab/experiments/poi-beat-graph/lowerWrapSeed";
+import {
+  createLowerWrapBeatGraph,
+  createUpperWrapBeatGraph
+} from "@/lab/experiments/poi-beat-graph/lowerWrapSeed";
 import type { PoiBeatGraph } from "@/lab/experiments/poi-beat-graph/types";
 import { describe, expect, it } from "vitest";
 
@@ -34,6 +40,10 @@ function getCircleOmega(
 }
 
 function handXAt(prepared: ReturnType<typeof prepareMultiRigSequence>, t: number): number {
+  return handPointAt(prepared, t).x;
+}
+
+function handPointAt(prepared: ReturnType<typeof prepareMultiRigSequence>, t: number) {
   if (!prepared.ok) {
     throw new Error(`expected compiled sequence to prepare: ${JSON.stringify(prepared.errors)}`);
   }
@@ -48,7 +58,10 @@ function handXAt(prepared: ReturnType<typeof prepareMultiRigSequence>, t: number
     throw new Error("expected right rig hand pose");
   }
 
-  return handPose.radius * Math.cos(handPose.phaseAbs);
+  return {
+    x: handPose.radius * Math.cos(handPose.phaseAbs),
+    y: handPose.radius * Math.sin(handPose.phaseAbs)
+  };
 }
 
 describe("PoiBeatGraph lower-wrap seed", () => {
@@ -242,6 +255,32 @@ describe("compilePoiBeatGraph", () => {
     }
 
     expect(loopBoundary.poses.right.pose).toEqual(start.poses.right.pose);
+  });
+
+  it("compiles and prepares the upper-wrap seed without high-lane diagnostics", () => {
+    const result = compilePoiBeatGraph(createUpperWrapBeatGraph());
+    const rig = result.sequence.rigs[0];
+    const prepared = prepareMultiRigSequence(result.sequence);
+
+    expect(result.diagnostics).toEqual([]);
+    expect(rig?.sequence.segments).toHaveLength(6);
+    expect(rig?.sequence.segments.map((segment) => segment.hand.driver.kind)).toEqual([
+      "circle",
+      "runtime",
+      "runtime",
+      "circle",
+      "runtime",
+      "runtime"
+    ]);
+    expect(prepared.ok).toBe(true);
+
+    const start = handPointAt(prepared, 0);
+    const transferCenter = handPointAt(prepared, HALF_BEAT_DURATION * 2);
+
+    expect(start.x).toBeCloseTo(DEFAULT_POI_BEAT_COMPILER_OPTIONS.handHorizontalOffset);
+    expect(start.y).toBeCloseTo(DEFAULT_POI_BEAT_COMPILER_OPTIONS.handVerticalOffset);
+    expect(transferCenter.x).toBeCloseTo(0);
+    expect(transferCenter.y).toBeCloseTo(DEFAULT_POI_BEAT_COMPILER_OPTIONS.handVerticalOffset);
   });
 
   it("treats center rows as pass-through points during lane switch chains", () => {

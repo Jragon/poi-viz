@@ -66,7 +66,7 @@ const PHASE = {
 } as const;
 
 const WRAP_PARAMS = {
-  handOffset: 0.5,
+  handHorizontalOffset: 0.5,
   headRadius: 0.6,
   circleDuration: 0.75,
   transferDuration: 0.75,
@@ -163,8 +163,8 @@ function makeWrapSegment(input: WrapSegmentInput): Segment {
 }
 
 function makeBasicWrapSegments(): Segment[] {
-  const rightHand = { x: WRAP_PARAMS.handOffset, y: 0 };
-  const leftHand = { x: -WRAP_PARAMS.handOffset, y: 0 };
+  const rightHand = { x: WRAP_PARAMS.handHorizontalOffset, y: 0 };
+  const leftHand = { x: -WRAP_PARAMS.handHorizontalOffset, y: 0 };
 
   return [
     makeWrapSegment({

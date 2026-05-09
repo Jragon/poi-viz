@@ -23,13 +23,13 @@ import type {
 export const DEFAULT_POI_BEAT_COMPILER_OPTIONS: PoiBeatCompilerOptions = {
   halfBeatDuration: 0.5,
   headRadius: 0.6,
-  handOffset: 0.5
+  handHorizontalOffset: 0.5,
+  handVerticalOffset: 0.35
 };
 
 export type PoiBeatCompileDiagnosticCode =
   | "EMPTY_TRACK"
   | "ROW_COUNT_MISMATCH"
-  | "UNSUPPORTED_HIGH_LANE"
   | "CENTER_STATIONARY_INTERVAL";
 
 export interface PoiBeatCompileDiagnostic {
@@ -104,17 +104,22 @@ interface HandTransferWindow {
   readonly label: string;
 }
 
-function laneToHandPoint(laneId: PoiBeatLaneId, options: PoiBeatCompilerOptions): Vec2 | null {
+function laneToHandPoint(laneId: PoiBeatLaneId, options: PoiBeatCompilerOptions): Vec2 {
   const lane = getPoiBeatLane(laneId);
-  if (lane.vertical === "high") return null;
+  const y =
+    lane.vertical === "high"
+      ? options.handVerticalOffset
+      : lane.vertical === "low"
+        ? -options.handVerticalOffset
+        : 0;
 
   switch (lane.lateral) {
     case "left":
-      return { x: -options.handOffset, y: 0 };
+      return { x: -options.handHorizontalOffset, y };
     case "center":
       return { x: 0, y: 0 };
     case "right":
-      return { x: options.handOffset, y: 0 };
+      return { x: options.handHorizontalOffset, y };
   }
 }
 
@@ -172,7 +177,7 @@ function makeCenterPassThroughWindow(
   if (interval.toRow.laneId === "center" && next?.kind === "lane-switch") {
     const start = laneToHandPoint(interval.fromRow.laneId, options);
     const end = laneToHandPoint(next.toRow.laneId, options);
-    if (!start || !end || distance2(start, end) <= 1e-9) return null;
+    if (distance2(start, end) <= 1e-9) return null;
 
     return {
       start,
@@ -186,7 +191,7 @@ function makeCenterPassThroughWindow(
   if (interval.fromRow.laneId === "center" && previous?.kind === "lane-switch") {
     const start = laneToHandPoint(previous.fromRow.laneId, options);
     const end = laneToHandPoint(interval.toRow.laneId, options);
-    if (!start || !end || distance2(start, end) <= 1e-9) return null;
+    if (distance2(start, end) <= 1e-9) return null;
 
     return {
       start,
@@ -222,28 +227,6 @@ function compileTrack(
   for (const [intervalIndex, interval] of intervals.entries()) {
     const startPoint = laneToHandPoint(interval.fromRow.laneId, options);
     const endPoint = laneToHandPoint(interval.toRow.laneId, options);
-
-    if (!startPoint) {
-      diagnostics.push({
-        code: "UNSUPPORTED_HIGH_LANE",
-        trackId: track.id,
-        intervalIndex: interval.index,
-        step: interval.fromRow.step,
-        laneId: interval.fromRow.laneId
-      });
-      continue;
-    }
-
-    if (!endPoint) {
-      diagnostics.push({
-        code: "UNSUPPORTED_HIGH_LANE",
-        trackId: track.id,
-        intervalIndex: interval.index,
-        step: interval.toRow.step,
-        laneId: interval.toRow.laneId
-      });
-      continue;
-    }
 
     if (interval.kind === "same-lane" && interval.fromRow.laneId === "center") {
       diagnostics.push({

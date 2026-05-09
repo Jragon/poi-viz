@@ -56,5 +56,6 @@ export interface PoiBeatInterval {
 export interface PoiBeatCompilerOptions {
   readonly halfBeatDuration: TimeUnit;
   readonly headRadius: number;
-  readonly handOffset: number;
+  readonly handHorizontalOffset: number;
+  readonly handVerticalOffset: number;
 }

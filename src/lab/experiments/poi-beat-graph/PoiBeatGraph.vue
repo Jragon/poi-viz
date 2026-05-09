@@ -179,6 +179,12 @@ function connectorClass(connector: ConnectorView): string {
   return "stroke-sky-300";
 }
 
+function laneHeaderLabel(lane: PoiBeatLane): string {
+  if (lane.vertical === "high") return `▲ ${lane.label}`;
+  if (lane.vertical === "low") return `▼ ${lane.label}`;
+  return lane.label;
+}
+
 function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
   if (row.isLoopClosure) return;
   emit("selectLane", row.sourceStep, laneId);
@@ -231,7 +237,7 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
             text-anchor="middle"
             class="fill-slate-400 text-[9px] font-medium"
           >
-            {{ lane.label }}
+            {{ laneHeaderLabel(lane) }}
           </text>
         </g>
 
