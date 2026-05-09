@@ -1,11 +1,13 @@
-import type { Driver, RadiusProfile, RelativeNodePose, TimeUnit, Vec2 } from "@/engine/types";
+import type {
+  Driver,
+  DriverEvalContext,
+  RadiusProfile,
+  RelativeNodePose,
+  TimeUnit,
+  Vec2
+} from "@/engine/types";
 
 const ORIGIN_EPSILON = 1e-12;
-
-export interface DriverEvalContext {
-  tLocal: TimeUnit;
-  durationUnits: TimeUnit;
-}
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
@@ -86,6 +88,8 @@ export function evalDriver(
 
       return cartesianToPolar(point, startPose.phaseAbs);
     }
+    case "runtime":
+      return driver.evalPose(startPose, context);
   }
 
   const exhaustive: never = driver;

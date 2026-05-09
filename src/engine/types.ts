@@ -65,14 +65,25 @@ export interface CircleDriver {
   radiusProfile?: RadiusProfile;
 }
 
+export interface DriverEvalContext {
+  tLocal: TimeUnit;
+  durationUnits: TimeUnit;
+}
+
 export interface PointToPointDriver {
   kind: "point-to-point";
   endPose: RelativeNodePose;
 }
 
-export type HandDriver = CircleDriver | PointToPointDriver;
+export interface RuntimeDriver {
+  kind: "runtime";
+  label: string;
+  evalPose: (startPose: RelativeNodePose, context: DriverEvalContext) => RelativeNodePose;
+}
 
-export type HeadDriver = CircleDriver;
+export type HandDriver = CircleDriver | PointToPointDriver | RuntimeDriver;
+
+export type HeadDriver = CircleDriver | RuntimeDriver;
 
 export type Driver = HandDriver;
 

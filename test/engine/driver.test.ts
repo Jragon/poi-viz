@@ -104,4 +104,36 @@ describe("evalDriver", () => {
     expect(pose.radius).toBeCloseTo(Math.SQRT1_2);
     expect(Math.abs(pose.phaseAbs)).toBeCloseTo(PI);
   });
+
+  it("evaluates runtime drivers with the start pose and local timing context", () => {
+    const start: RelativeNodePose = { phaseAbs: 0.25, radius: 2 };
+    const driver: Driver = {
+      kind: "runtime",
+      label: "test runtime",
+      evalPose: (startPose, evalContext) => ({
+        phaseAbs: startPose.phaseAbs + evalContext.tLocal,
+        radius: startPose.radius + evalContext.durationUnits
+      })
+    };
+
+    const pose = evalDriver(driver, start, { tLocal: 0.5, durationUnits: 2 });
+
+    expect(pose).toEqual({ phaseAbs: 0.75, radius: 4 });
+  });
+
+  it("keeps pure runtime driver evaluation deterministic", () => {
+    const start: RelativeNodePose = { phaseAbs: 0, radius: 1 };
+    const driver: Driver = {
+      kind: "runtime",
+      label: "deterministic runtime",
+      evalPose: (startPose, evalContext) => ({
+        phaseAbs: startPose.phaseAbs,
+        radius: startPose.radius * evalContext.durationUnits + evalContext.tLocal
+      })
+    };
+
+    const evalContext = { tLocal: 0.25, durationUnits: 3 };
+
+    expect(evalDriver(driver, start, evalContext)).toEqual(evalDriver(driver, start, evalContext));
+  });
 });

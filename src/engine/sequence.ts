@@ -20,6 +20,7 @@ export type SequenceValidationErrorCode =
   | "NON_POSITIVE_DURATION"
   | "INVALID_PLANE_ID"
   | "INVALID_PLANE_SIDE"
+  | "INVALID_DRIVER"
   | "DRIVER_UNSUPPORTED_FOR_NODE";
 
 export type SequenceValidationError = {
@@ -61,6 +62,37 @@ function wrapSequenceTime(totalDuration: TimeUnit, tGlobal: TimeUnit): TimeUnit 
   return tGlobal % totalDuration;
 }
 
+function validateDriverShape(
+  driver: UnknownDriver,
+  node: "hand" | "head",
+  index: number,
+  errors: SequenceValidationError[]
+): void {
+  switch (driver.kind) {
+    case "circle":
+      return;
+    case "point-to-point":
+      if (node === "head") {
+        errors.push({ code: "DRIVER_UNSUPPORTED_FOR_NODE", index, node });
+      }
+      return;
+    case "runtime": {
+      const runtimeDriver = driver as UnknownDriver & { label?: unknown; evalPose?: unknown };
+      if (typeof runtimeDriver.label !== "string" || runtimeDriver.label.trim() === "") {
+        errors.push({ code: "INVALID_DRIVER", index, node });
+        return;
+      }
+
+      if (typeof runtimeDriver.evalPose !== "function") {
+        errors.push({ code: "INVALID_DRIVER", index, node });
+      }
+      return;
+    }
+    default:
+      errors.push({ code: "INVALID_DRIVER", index, node });
+  }
+}
+
 export function validateSequenceStructure(sequence: SequenceSpec): SequenceValidationResult {
   const errors: SequenceValidationError[] = [];
   if (sequence.segments.length === 0) {
@@ -87,9 +119,8 @@ export function validateSequenceStructure(sequence: SequenceSpec): SequenceValid
       errors.push({ code: "INVALID_PLANE_SIDE", index });
     }
 
-    if ((segment.head.driver as UnknownDriver).kind === "point-to-point") {
-      errors.push({ code: "DRIVER_UNSUPPORTED_FOR_NODE", index, node: "head" });
-    }
+    validateDriverShape(segment.hand.driver as UnknownDriver, "hand", index, errors);
+    validateDriverShape(segment.head.driver as UnknownDriver, "head", index, errors);
   });
 
   return errors.length > 0 ? { ok: false, errors } : { ok: true };

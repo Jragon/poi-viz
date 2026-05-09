@@ -170,7 +170,7 @@ function resolveCircleOmega(driver: Driver): number | null {
   return driver.kind === "circle" ? driver.omega : null;
 }
 
-function sourceTouchesPointToPoint(
+function sourceTouchesNonCircleDriver(
   source: MetronomeSource,
   preparedRig: PreparedRigSequenceEntry | null,
   segmentIndex: number
@@ -182,9 +182,9 @@ function sourceTouchesPointToPoint(
 
   switch (source.kind) {
     case "absolute":
-      return source.node === "hand" && segment.hand.driver.kind === "point-to-point";
+      return (source.node === "hand" ? segment.hand.driver : segment.head.driver).kind !== "circle";
     case "relative-head-minus-hand":
-      return segment.hand.driver.kind === "point-to-point";
+      return segment.hand.driver.kind !== "circle" || segment.head.driver.kind !== "circle";
   }
 }
 
@@ -195,7 +195,7 @@ function resolveSourcePhase(
 ): number | null {
   const rig = frame.evaluatedPoses[source.rigId];
   if (!rig) return null;
-  if (sourceTouchesPointToPoint(source, preparedRig, rig.segmentIndex)) return null;
+  if (sourceTouchesNonCircleDriver(source, preparedRig, rig.segmentIndex)) return null;
 
   switch (source.kind) {
     case "absolute":

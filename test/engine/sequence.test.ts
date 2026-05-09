@@ -149,6 +149,88 @@ describe("validateSequenceStructure", () => {
       });
     }
   });
+  it("accepts runtime drivers on hand and head nodes", () => {
+    const seq: SequenceSpec = {
+      segments: [
+        {
+          ...base,
+          hand: {
+            ...base.hand,
+            driver: {
+              kind: "runtime",
+              label: "runtime hand",
+              evalPose: (startPose) => startPose
+            }
+          },
+          head: {
+            ...base.head,
+            driver: {
+              kind: "runtime",
+              label: "runtime head",
+              evalPose: (startPose) => startPose
+            }
+          }
+        }
+      ]
+    };
+
+    const result = validateSequenceStructure(seq);
+
+    expect(result.ok).toBe(true);
+  });
+  it("rejects malformed runtime drivers from imported data", () => {
+    const seq = {
+      segments: [
+        {
+          ...base,
+          hand: {
+            ...base.hand,
+            driver: {
+              kind: "runtime",
+              label: "missing eval"
+            }
+          },
+          head: {
+            ...base.head,
+            driver: {
+              kind: "runtime",
+              evalPose: (startPose: unknown) => startPose
+            }
+          }
+        }
+      ]
+    } as unknown as SequenceSpec;
+
+    const result = validateSequenceStructure(seq);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContainEqual({ code: "INVALID_DRIVER", index: 0, node: "hand" });
+      expect(result.errors).toContainEqual({ code: "INVALID_DRIVER", index: 0, node: "head" });
+    }
+  });
+  it("rejects unknown driver kinds from imported data", () => {
+    const seq = {
+      segments: [
+        {
+          ...base,
+          hand: {
+            ...base.hand,
+            driver: {
+              kind: "teleport"
+            }
+          }
+        }
+      ]
+    } as unknown as SequenceSpec;
+
+    const result = validateSequenceStructure(seq);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContainEqual({ code: "INVALID_DRIVER", index: 0, node: "hand" });
+    }
+  });
   it("reports invalid plane side errors in stable segment order", () => {
     const seq = {
       segments: [
