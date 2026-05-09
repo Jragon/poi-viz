@@ -68,8 +68,8 @@ const PHASE = {
 const WRAP_PARAMS = {
   handOffset: 0.5,
   headRadius: 0.6,
-  circleDuration: 1,
-  transferDuration: 0.5,
+  circleDuration: 0.75,
+  transferDuration: 0.75,
   circleSide: "b" as const,
   transferSide: "a" as const,
   transferLabel: "smooth transfer",
