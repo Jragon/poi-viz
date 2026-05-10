@@ -8,7 +8,7 @@ export type PoiBeatDirection = "clockwise" | "counterclockwise";
 
 export type PoiBeatPhaseLabel = "up" | "down";
 
-export type PoiBeatIntervalKind = "same-lane" | "lane-switch";
+export type PoiBeatIntervalKind = "same-lane" | "lane-switch" | "center-side-switch";
 
 export interface PoiBeatLane {
   readonly id: PoiBeatLaneId;
@@ -20,6 +20,7 @@ export interface PoiBeatLane {
 export interface PoiBeatRow {
   readonly step: number;
   readonly laneId: PoiBeatLaneId;
+  readonly planeSide?: PlaneSide;
 }
 
 export interface PoiBeatTrack {
@@ -41,6 +42,7 @@ export interface PoiBeatDerivedRowState {
   readonly phaseAbs: number;
   readonly phaseLabel: PoiBeatPhaseLabel;
   readonly planeSide: PlaneSide;
+  readonly isBTB: boolean;
 }
 
 export interface PoiBeatInterval {

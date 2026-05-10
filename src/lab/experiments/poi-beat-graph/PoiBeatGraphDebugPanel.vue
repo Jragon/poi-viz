@@ -168,7 +168,7 @@ function diagnosticKey(diagnostic: PoiBeatCompileDiagnostic): string {
                   v-for="track in visibleTracks"
                   :key="track.id"
                   class="border-l border-slate-800 px-3 py-2 font-semibold uppercase tracking-[0.14em]"
-                  colspan="4"
+                  colspan="5"
                 >
                   <span :class="trackHeaderClass(track)">{{ trackHeaderLabel(track) }}</span>
                 </th>
@@ -182,6 +182,7 @@ function diagnosticKey(diagnostic: PoiBeatCompileDiagnostic): string {
                   </th>
                   <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">Phase</th>
                   <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">Side</th>
+                  <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">BTB</th>
                   <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">Interval</th>
                 </template>
               </tr>
@@ -208,6 +209,9 @@ function diagnosticKey(diagnostic: PoiBeatCompileDiagnostic): string {
                   </td>
                   <td class="whitespace-nowrap px-3 py-2 text-slate-400">
                     {{ cell.rowState?.planeSide ?? "-" }}
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-2 text-slate-400">
+                    {{ cell.rowState ? (cell.rowState.isBTB ? "yes" : "no") : "-" }}
                   </td>
                   <td class="whitespace-nowrap px-3 py-2 text-slate-400">
                     {{ intervalLabel(cell) }}

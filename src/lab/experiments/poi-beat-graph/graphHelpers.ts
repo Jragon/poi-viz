@@ -8,6 +8,7 @@ import type {
   PoiBeatLane,
   PoiBeatLaneId,
   PoiBeatPhaseLabel,
+  PoiBeatRow,
   PoiBeatTrack
 } from "@/lab/experiments/poi-beat-graph/types";
 
@@ -55,8 +56,16 @@ export function deriveRowPhaseLabel(track: PoiBeatTrack, step: number): PoiBeatP
   return evenStep ? "down" : "up";
 }
 
-export function deriveRowSide(laneId: PoiBeatLaneId): PlaneSide {
+export function deriveLaneDefaultSide(laneId: PoiBeatLaneId): PlaneSide {
   return laneId === "center" ? "a" : "b";
+}
+
+export function deriveRowSide(row: PoiBeatRow): PlaneSide {
+  return row.planeSide ?? deriveLaneDefaultSide(row.laneId);
+}
+
+export function deriveRowIsBTB(row: PoiBeatRow): boolean {
+  return deriveRowSide(row) !== deriveLaneDefaultSide(row.laneId);
 }
 
 export function deriveRowState(
@@ -67,7 +76,8 @@ export function deriveRowState(
     row,
     phaseAbs: deriveRowPhaseAbs(track, row.step),
     phaseLabel: deriveRowPhaseLabel(track, row.step),
-    planeSide: deriveRowSide(row.laneId)
+    planeSide: deriveRowSide(row),
+    isBTB: deriveRowIsBTB(row)
   };
 }
 
@@ -82,13 +92,22 @@ export function deriveLoopIntervals(
   const rows = getOrderedRows(track);
   return rows.map((fromRow, index) => {
     const toRow = rows[(index + 1) % rows.length];
+    const fromSide = deriveRowSide(fromRow);
+    const toSide = deriveRowSide(toRow);
+    const kind =
+      fromRow.laneId === "center" && toRow.laneId === "center" && fromSide !== toSide
+        ? "center-side-switch"
+        : fromRow.laneId === toRow.laneId
+          ? "same-lane"
+          : "lane-switch";
+
     return {
       index,
       trackId: track.id,
       fromRow,
       toRow,
-      kind: fromRow.laneId === toRow.laneId ? "same-lane" : "lane-switch",
-      planeSide: deriveRowSide(toRow.laneId),
+      kind,
+      planeSide: toSide,
       durationUnits: halfBeatDuration
     };
   });
@@ -129,7 +148,37 @@ export function movePoiBeatGraphRowLane(
 
       return {
         ...track,
-        rows: track.rows.map((row) => (row.step === step ? { ...row, laneId } : row))
+        rows: track.rows.map((row) => {
+          if (row.step !== step || row.laneId === laneId) return row;
+          return { step: row.step, laneId };
+        })
+      };
+    })
+  };
+}
+
+export function togglePoiBeatGraphRowSide(
+  graph: PoiBeatGraph,
+  trackId: string,
+  step: number
+): PoiBeatGraph {
+  return {
+    ...graph,
+    tracks: graph.tracks.map((track) => {
+      if (track.id !== trackId) return track;
+
+      return {
+        ...track,
+        rows: track.rows.map((row) => {
+          if (row.step !== step) return row;
+
+          const nextSide = deriveRowSide(row) === "a" ? "b" : "a";
+          if (nextSide === deriveLaneDefaultSide(row.laneId)) {
+            return { step: row.step, laneId: row.laneId };
+          }
+
+          return { ...row, planeSide: nextSide };
+        })
       };
     })
   };

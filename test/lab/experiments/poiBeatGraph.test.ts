@@ -4,6 +4,7 @@ import {
   compilePoiBeatGraph,
   DEFAULT_POI_BEAT_COMPILER_OPTIONS
 } from "@/lab/experiments/poi-beat-graph/compileBeatGraph";
+import { createLowCommonCosmoBeatGraph } from "@/lab/experiments/poi-beat-graph/cosmoSeed";
 import {
   appendPoiBeatGraphRow,
   deletePoiBeatGraphLastRow,
@@ -13,7 +14,8 @@ import {
   findActivePoiBeatStep,
   movePoiBeatGraphRowLane,
   setPoiBeatGraphTrackDirection,
-  setPoiBeatGraphTrackInitialPhase
+  setPoiBeatGraphTrackInitialPhase,
+  togglePoiBeatGraphRowSide
 } from "@/lab/experiments/poi-beat-graph/graphHelpers";
 import {
   createLowerWrapBeatGraph,
@@ -54,7 +56,11 @@ function handXAt(prepared: ReturnType<typeof prepareMultiRigSequence>, t: number
   return handPointAt(prepared, t).x;
 }
 
-function handPointAt(prepared: ReturnType<typeof prepareMultiRigSequence>, t: number) {
+function handPointAt(
+  prepared: ReturnType<typeof prepareMultiRigSequence>,
+  t: number,
+  rigId = "right"
+) {
   if (!prepared.ok) {
     throw new Error(`expected compiled sequence to prepare: ${JSON.stringify(prepared.errors)}`);
   }
@@ -64,9 +70,9 @@ function handPointAt(prepared: ReturnType<typeof prepareMultiRigSequence>, t: nu
     throw new Error(`expected compiled sequence to evaluate at ${t}`);
   }
 
-  const handPose = result.poses.right?.pose.handPose;
+  const handPose = result.poses[rigId]?.pose.handPose;
   if (!handPose) {
-    throw new Error("expected right rig hand pose");
+    throw new Error(`expected ${rigId} rig hand pose`);
   }
 
   return {
@@ -121,6 +127,7 @@ describe("PoiBeatGraph lower-wrap seed", () => {
       "down"
     ]);
     expect(states.map((state) => state.planeSide)).toEqual(["b", "b", "a", "b", "b", "a"]);
+    expect(states.map((state) => state.isBTB)).toEqual([false, false, false, false, false, false]);
     expect(states.map((state) => state.phaseAbs)).toEqual([
       PI / 2,
       (3 * PI) / 2,
@@ -170,6 +177,40 @@ describe("PoiBeatGraph lower-wrap seed", () => {
     ]);
   });
 
+  it("clears authored side overrides when moving rows across lanes", () => {
+    const graph: PoiBeatGraph = {
+      ...createLowerWrapBeatGraph(),
+      tracks: [
+        {
+          ...getLowerWrapTrack(),
+          rows: [
+            { step: 0, laneId: "right-low", planeSide: "a" },
+            { step: 1, laneId: "right-low" },
+            { step: 2, laneId: "center" },
+            { step: 3, laneId: "left-low" },
+            { step: 4, laneId: "left-low" },
+            { step: 5, laneId: "center" }
+          ]
+        }
+      ]
+    };
+
+    const edited = movePoiBeatGraphRowLane(graph, "right", 0, "left-low");
+
+    expect(edited.tracks[0]?.rows[0]).toEqual({ step: 0, laneId: "left-low" });
+  });
+
+  it("toggles row side overrides against lane defaults", () => {
+    const graph = createLowerWrapBeatGraph();
+    const toggled = togglePoiBeatGraphRowSide(graph, "right", 2);
+    const restored = togglePoiBeatGraphRowSide(toggled, "right", 2);
+
+    expect(graph.tracks[0]?.rows[2]).toEqual({ step: 2, laneId: "center" });
+    expect(toggled.tracks[0]?.rows[2]).toEqual({ step: 2, laneId: "center", planeSide: "b" });
+    expect(deriveRowStates(getTrack(toggled, "right"))[2]?.isBTB).toBe(true);
+    expect(restored.tracks[0]?.rows[2]).toEqual({ step: 2, laneId: "center" });
+  });
+
   it("appends a new row by repeating each track's final active lane", () => {
     const graph = createLowerWrapBeatGraph();
     const edited = appendPoiBeatGraphRow(graph);
@@ -204,6 +245,108 @@ describe("PoiBeatGraph lower-wrap seed", () => {
     };
 
     expect(deletePoiBeatGraphLastRow(minimumGraph)).toBe(minimumGraph);
+  });
+});
+
+describe("PoiBeatGraph low common cosmo seed", () => {
+  it("encodes mirrored eight-row low common cosmo tracks", () => {
+    const graph = createLowCommonCosmoBeatGraph();
+    const left = getTrack(graph, "left");
+    const right = getTrack(graph, "right");
+
+    expect(graph.cycleSteps).toBe(8);
+    expect(graph.tracks.map((track) => track.id)).toEqual(["left", "right"]);
+    expect(left.hand).toBe("left");
+    expect(right.hand).toBe("right");
+    expect(left.poiDirection).toBe("counterclockwise");
+    expect(right.poiDirection).toBe("clockwise");
+    expect(left.rows.map((row) => row.laneId)).toEqual([
+      "right-low",
+      "right-low",
+      "center",
+      "center",
+      "right-low",
+      "right-low",
+      "center",
+      "center"
+    ]);
+    expect(right.rows.map((row) => row.laneId)).toEqual([
+      "left-low",
+      "left-low",
+      "center",
+      "center",
+      "left-low",
+      "left-low",
+      "center",
+      "center"
+    ]);
+    expect(right.rows.map((row) => row.planeSide)).toEqual([
+      "b",
+      "b",
+      "a",
+      "b",
+      "a",
+      "a",
+      "b",
+      "a"
+    ]);
+  });
+
+  it("derives center-side-switch intervals and local BTB flags", () => {
+    const right = getTrack(createLowCommonCosmoBeatGraph(), "right");
+    const states = deriveRowStates(right);
+    const intervals = deriveLoopIntervals(right, HALF_BEAT_DURATION);
+
+    expect(states.map((state) => state.phaseLabel)).toEqual([
+      "up",
+      "down",
+      "up",
+      "down",
+      "up",
+      "down",
+      "up",
+      "down"
+    ]);
+    expect(states.map((state) => state.planeSide)).toEqual([
+      "b",
+      "b",
+      "a",
+      "b",
+      "a",
+      "a",
+      "b",
+      "a"
+    ]);
+    expect(states.map((state) => state.isBTB)).toEqual([
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]);
+    expect(intervals.map((interval) => interval.kind)).toEqual([
+      "same-lane",
+      "lane-switch",
+      "center-side-switch",
+      "lane-switch",
+      "same-lane",
+      "lane-switch",
+      "center-side-switch",
+      "lane-switch"
+    ]);
+    expect(intervals.map((interval) => interval.planeSide)).toEqual([
+      "b",
+      "a",
+      "b",
+      "a",
+      "a",
+      "b",
+      "a",
+      "b"
+    ]);
   });
 });
 
@@ -405,6 +548,152 @@ describe("compilePoiBeatGraph", () => {
       -2 * PI,
       2 * PI
     ]);
+  });
+
+  it("compiles low common cosmo side switches without center stationary diagnostics", () => {
+    const result = compilePoiBeatGraph(createLowCommonCosmoBeatGraph());
+    const rightRig = result.sequence.rigs.find((rig) => rig.rigId === "right");
+    const prepared = prepareMultiRigSequence(result.sequence);
+
+    expect(result.diagnostics).toEqual([]);
+    expect(rightRig?.sequence.segments).toHaveLength(8);
+    expect(rightRig?.sequence.segments.map((segment) => segment.planeSide)).toEqual([
+      "b",
+      "a",
+      "b",
+      "a",
+      "a",
+      "b",
+      "a",
+      "b"
+    ]);
+    expect(rightRig?.sequence.segments.map((segment) => segment.hand.driver.kind)).toEqual([
+      "circle",
+      "runtime",
+      "runtime",
+      "runtime",
+      "circle",
+      "runtime",
+      "runtime",
+      "runtime"
+    ]);
+    expect(prepared.ok).toBe(true);
+  });
+
+  it("compiles low common cosmo center side switches as opposite-low bounce paths", () => {
+    const result = compilePoiBeatGraph(createLowCommonCosmoBeatGraph());
+    const prepared = prepareMultiRigSequence(result.sequence);
+    const options = DEFAULT_POI_BEAT_COMPILER_OPTIONS;
+    const firstBounceStart = HALF_BEAT_DURATION;
+    const firstBounceMidpoint = firstBounceStart + (HALF_BEAT_DURATION * 3) / 2;
+    const firstCenterBeat = firstBounceStart + HALF_BEAT_DURATION;
+    const firstBounceEnd = firstBounceStart + HALF_BEAT_DURATION * 3;
+
+    const start = handPointAt(prepared, firstBounceStart);
+    const centerBeat = handPointAt(prepared, firstCenterBeat);
+    const midpoint = handPointAt(prepared, firstBounceMidpoint);
+    const end = handPointAt(prepared, firstBounceEnd);
+
+    expect(start.x).toBeCloseTo(-options.handHorizontalOffset);
+    expect(start.y).toBeCloseTo(-options.handVerticalOffset);
+    expect(Math.abs(centerBeat.x)).toBeGreaterThan(0.1);
+    expect(centerBeat.y).toBeCloseTo(-options.handVerticalOffset);
+    expect(midpoint.x).toBeCloseTo(options.handHorizontalOffset);
+    expect(midpoint.y).toBeCloseTo(-options.handVerticalOffset);
+    expect(end.x).toBeCloseTo(-options.handHorizontalOffset);
+    expect(end.y).toBeCloseTo(-options.handVerticalOffset);
+  });
+
+  it("compiles low common cosmo wrap-around side switch as a continuous bounce path", () => {
+    const result = compilePoiBeatGraph(createLowCommonCosmoBeatGraph());
+    const prepared = prepareMultiRigSequence(result.sequence);
+    const options = DEFAULT_POI_BEAT_COMPILER_OPTIONS;
+    const secondBounceStart = HALF_BEAT_DURATION * 5;
+    const secondBounceMidpoint = secondBounceStart + (HALF_BEAT_DURATION * 3) / 2;
+    const loopBoundary = HALF_BEAT_DURATION * 8;
+
+    const start = handPointAt(prepared, secondBounceStart);
+    const midpoint = handPointAt(prepared, secondBounceMidpoint);
+    const boundary = handPointAt(prepared, loopBoundary);
+
+    expect(start.x).toBeCloseTo(-options.handHorizontalOffset);
+    expect(start.y).toBeCloseTo(-options.handVerticalOffset);
+    expect(midpoint.x).toBeCloseTo(options.handHorizontalOffset);
+    expect(midpoint.y).toBeCloseTo(-options.handVerticalOffset);
+    expect(boundary.x).toBeCloseTo(-options.handHorizontalOffset);
+    expect(boundary.y).toBeCloseTo(-options.handVerticalOffset);
+  });
+
+  it("mirrors the BTB exit lane for high-to-low cosmo side-switch entries", () => {
+    const graph: PoiBeatGraph = {
+      cycleSteps: 4,
+      lanes: createLowCommonCosmoBeatGraph().lanes,
+      tracks: [
+        {
+          id: "left",
+          hand: "left",
+          poiDirection: "counterclockwise",
+          initialPhase: "up",
+          rows: [
+            { step: 0, laneId: "right-high" },
+            { step: 1, laneId: "center" },
+            { step: 2, laneId: "center", planeSide: "b" },
+            { step: 3, laneId: "right-low", planeSide: "a" }
+          ]
+        }
+      ]
+    };
+    const result = compilePoiBeatGraph(graph);
+    const prepared = prepareMultiRigSequence(result.sequence);
+    const options = DEFAULT_POI_BEAT_COMPILER_OPTIONS;
+
+    const start = handPointAt(prepared, 0, "left");
+    const midpoint = handPointAt(prepared, (HALF_BEAT_DURATION * 3) / 2, "left");
+    const end = handPointAt(prepared, HALF_BEAT_DURATION * 3, "left");
+
+    expect(result.diagnostics).toEqual([]);
+    expect(start.x).toBeCloseTo(options.handHorizontalOffset);
+    expect(start.y).toBeCloseTo(options.handVerticalOffset);
+    expect(midpoint.x).toBeCloseTo(-options.handHorizontalOffset);
+    expect(midpoint.y).toBeCloseTo(-options.handVerticalOffset);
+    expect(end.x).toBeCloseTo(options.handHorizontalOffset);
+    expect(end.y).toBeCloseTo(-options.handVerticalOffset);
+  });
+
+  it("mirrors the BTB entry lane for low-to-high cosmo side-switch exits", () => {
+    const graph: PoiBeatGraph = {
+      cycleSteps: 4,
+      lanes: createLowCommonCosmoBeatGraph().lanes,
+      tracks: [
+        {
+          id: "right",
+          hand: "right",
+          poiDirection: "clockwise",
+          initialPhase: "up",
+          rows: [
+            { step: 0, laneId: "left-low", planeSide: "a" },
+            { step: 1, laneId: "center", planeSide: "b" },
+            { step: 2, laneId: "center" },
+            { step: 3, laneId: "left-high" }
+          ]
+        }
+      ]
+    };
+    const result = compilePoiBeatGraph(graph);
+    const prepared = prepareMultiRigSequence(result.sequence);
+    const options = DEFAULT_POI_BEAT_COMPILER_OPTIONS;
+
+    const start = handPointAt(prepared, 0);
+    const midpoint = handPointAt(prepared, (HALF_BEAT_DURATION * 3) / 2);
+    const end = handPointAt(prepared, HALF_BEAT_DURATION * 3);
+
+    expect(result.diagnostics).toEqual([]);
+    expect(start.x).toBeCloseTo(-options.handHorizontalOffset);
+    expect(start.y).toBeCloseTo(-options.handVerticalOffset);
+    expect(midpoint.x).toBeCloseTo(options.handHorizontalOffset);
+    expect(midpoint.y).toBeCloseTo(-options.handVerticalOffset);
+    expect(end.x).toBeCloseTo(-options.handHorizontalOffset);
+    expect(end.y).toBeCloseTo(options.handVerticalOffset);
   });
 
   it("filters visible tracks for compilation without mutating the source graph", () => {

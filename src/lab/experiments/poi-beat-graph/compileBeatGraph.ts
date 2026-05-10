@@ -8,6 +8,8 @@ import type {
 } from "@/engine/types";
 import {
   deriveLoopIntervals,
+  deriveRowIsBTB,
+  deriveRowSide,
   deriveRowState,
   getDirectionSign,
   getPoiBeatLane
@@ -81,27 +83,51 @@ function worldPointToPose(point: Vec2): RelativeNodePose {
   return cartesianToPolar(point, 0);
 }
 
-function evalSmoothTransferHand(
-  startPose: RelativeNodePose,
-  start: Vec2,
-  end: Vec2,
-  context: DriverEvalContext,
-  localOffset = 0,
-  durationUnits = context.durationUnits
-): RelativeNodePose {
-  const progress = smootherstep((context.tLocal + localOffset) / durationUnits);
-  if (progress <= 0) return worldPointToPose(start);
-  if (progress >= 1) return worldPointToPose(end);
-
-  return cartesianToPolar(lerp2(start, end, progress), startPose.phaseAbs);
+interface HandPathKey {
+  readonly tOffset: number;
+  readonly point: Vec2;
 }
 
-interface HandTransferWindow {
-  readonly start: Vec2;
-  readonly end: Vec2;
+interface HandPathWindow {
+  readonly keys: readonly HandPathKey[];
   readonly localOffset: number;
-  readonly durationUnits: number;
   readonly label: string;
+}
+
+function evalHandPathPoint(
+  keys: readonly HandPathKey[],
+  tOffset: number,
+  fallbackPhaseAbs: number
+): RelativeNodePose {
+  const first = keys[0];
+  const last = keys[keys.length - 1];
+  if (!first || !last) {
+    throw new Error("Hand path window requires at least one key");
+  }
+
+  if (tOffset <= first.tOffset) return worldPointToPose(first.point);
+  if (tOffset >= last.tOffset) return worldPointToPose(last.point);
+
+  for (let keyIndex = 0; keyIndex < keys.length - 1; keyIndex += 1) {
+    const fromKey = keys[keyIndex];
+    const toKey = keys[keyIndex + 1];
+    if (!fromKey || !toKey) continue;
+    if (!(fromKey.tOffset <= tOffset && tOffset <= toKey.tOffset)) continue;
+
+    const duration = toKey.tOffset - fromKey.tOffset;
+    const progress = duration <= 0 ? 1 : smootherstep((tOffset - fromKey.tOffset) / duration);
+    return cartesianToPolar(lerp2(fromKey.point, toKey.point, progress), fallbackPhaseAbs);
+  }
+
+  return worldPointToPose(last.point);
+}
+
+function evalHandPathWindow(
+  window: HandPathWindow,
+  startPose: RelativeNodePose,
+  context: DriverEvalContext
+): RelativeNodePose {
+  return evalHandPathPoint(window.keys, context.tLocal + window.localOffset, startPose.phaseAbs);
 }
 
 function laneToHandPoint(laneId: PoiBeatLaneId, options: PoiBeatCompilerOptions): Vec2 {
@@ -123,12 +149,51 @@ function laneToHandPoint(laneId: PoiBeatLaneId, options: PoiBeatCompilerOptions)
   }
 }
 
+function mirrorPoiBeatLane(laneId: PoiBeatLaneId): PoiBeatLaneId | null {
+  switch (laneId) {
+    case "left-high":
+      return "right-high";
+    case "left-low":
+      return "right-low";
+    case "right-low":
+      return "left-low";
+    case "right-high":
+      return "left-high";
+    case "center":
+      return null;
+  }
+}
+
+function getCosmoBounceReferenceLane(
+  entry: PoiBeatInterval,
+  exit: PoiBeatInterval
+): PoiBeatLaneId | null {
+  const entryIsBTB = deriveRowIsBTB(entry.fromRow);
+  const exitIsBTB = deriveRowIsBTB(exit.toRow);
+
+  if (entryIsBTB && !exitIsBTB) return entry.fromRow.laneId;
+  if (exitIsBTB && !entryIsBTB) return exit.toRow.laneId;
+  if (entry.fromRow.laneId === exit.toRow.laneId) return entry.fromRow.laneId;
+  return null;
+}
+
 function makeHandMotion(
   interval: PoiBeatInterval,
   startPoint: Vec2,
   endPoint: Vec2,
-  transferWindow: HandTransferWindow | null
+  pathWindow: HandPathWindow | null
 ): Segment["hand"] {
+  if (pathWindow) {
+    return {
+      startPose: evalHandPathPoint(pathWindow.keys, pathWindow.localOffset, 0),
+      driver: {
+        kind: "runtime",
+        label: pathWindow.label,
+        evalPose: (startPose, context) => evalHandPathWindow(pathWindow, startPose, context)
+      }
+    };
+  }
+
   if (distance2(startPoint, endPoint) <= 1e-9) {
     return {
       startPose: worldPointToPose(startPoint),
@@ -136,69 +201,146 @@ function makeHandMotion(
     };
   }
 
-  const transferStart = transferWindow?.start ?? startPoint;
-  const transferEnd = transferWindow?.end ?? endPoint;
-  const localOffset = transferWindow?.localOffset ?? 0;
-  const durationUnits = transferWindow?.durationUnits;
-
   return {
     startPose: worldPointToPose(startPoint),
     driver: {
       kind: "runtime",
-      label:
-        transferWindow?.label ??
-        `front transfer ${interval.fromRow.laneId} to ${interval.toRow.laneId}`,
+      label: `front transfer ${interval.fromRow.laneId} to ${interval.toRow.laneId}`,
       evalPose: (startPose, context) =>
-        evalSmoothTransferHand(
-          startPose,
-          transferStart,
-          transferEnd,
-          context,
-          localOffset,
-          durationUnits
+        evalHandPathPoint(
+          [
+            { tOffset: 0, point: startPoint },
+            { tOffset: context.durationUnits, point: endPoint }
+          ],
+          context.tLocal,
+          startPose.phaseAbs
         )
     }
   };
 }
 
-// TODO: Keep this as a local experiment workaround for now. If more pass-through
-// cases appear, replace it with a generic transfer-window derivation step.
-function makeCenterPassThroughWindow(
+function intervalAt(
+  intervals: readonly PoiBeatInterval[],
+  index: number
+): PoiBeatInterval | undefined {
+  if (intervals.length === 0) return undefined;
+  return intervals[((index % intervals.length) + intervals.length) % intervals.length];
+}
+
+function intervalIndexAt(intervals: readonly PoiBeatInterval[], index: number): number {
+  return ((index % intervals.length) + intervals.length) % intervals.length;
+}
+
+function makeCosmoBounceWindow(
   intervals: readonly PoiBeatInterval[],
   intervalIndex: number,
   options: PoiBeatCompilerOptions
-): HandTransferWindow | null {
+): HandPathWindow | null {
+  if (intervals.length < 3) return null;
+
+  for (const entryIndex of [intervalIndex, intervalIndex - 1, intervalIndex - 2]) {
+    const sideSwitchIndex = entryIndex + 1;
+    const exitIndex = entryIndex + 2;
+    const entry = intervalAt(intervals, entryIndex);
+    const sideSwitch = intervalAt(intervals, sideSwitchIndex);
+    const exit = intervalAt(intervals, exitIndex);
+    if (!entry || !sideSwitch || !exit) continue;
+    if (
+      ![
+        intervalIndexAt(intervals, entryIndex),
+        intervalIndexAt(intervals, sideSwitchIndex),
+        intervalIndexAt(intervals, exitIndex)
+      ].includes(intervalIndex)
+    ) {
+      continue;
+    }
+
+    if (entry.kind !== "lane-switch" || entry.toRow.laneId !== "center") continue;
+    if (sideSwitch.kind !== "center-side-switch") continue;
+    if (exit.kind !== "lane-switch" || exit.fromRow.laneId !== "center") continue;
+
+    const bounceReferenceLaneId = getCosmoBounceReferenceLane(entry, exit);
+    if (!bounceReferenceLaneId) continue;
+
+    const bounceLaneId = mirrorPoiBeatLane(bounceReferenceLaneId);
+    if (!bounceLaneId) continue;
+
+    const entryDuration = entry.durationUnits;
+    const switchDuration = sideSwitch.durationUnits;
+    const exitDuration = exit.durationUnits;
+    const totalDuration = entryDuration + switchDuration + exitDuration;
+    const localOffset =
+      intervalIndex === intervalIndexAt(intervals, entryIndex)
+        ? 0
+        : intervalIndex === intervalIndexAt(intervals, sideSwitchIndex)
+          ? entryDuration
+          : entryDuration + switchDuration;
+
+    return {
+      localOffset,
+      label: `cosmo bounce ${entry.fromRow.laneId} through ${bounceLaneId} to ${exit.toRow.laneId}`,
+      keys: [
+        { tOffset: 0, point: laneToHandPoint(entry.fromRow.laneId, options) },
+        { tOffset: totalDuration / 2, point: laneToHandPoint(bounceLaneId, options) },
+        { tOffset: totalDuration, point: laneToHandPoint(exit.toRow.laneId, options) }
+      ]
+    };
+  }
+
+  return null;
+}
+
+// TODO: Keep this as a local experiment workaround for now. If more pass-through
+// cases appear, replace it with a generic transfer-window derivation step.
+function makeHandPathWindow(
+  intervals: readonly PoiBeatInterval[],
+  intervalIndex: number,
+  options: PoiBeatCompilerOptions
+): HandPathWindow | null {
+  const cosmoBounceWindow = makeCosmoBounceWindow(intervals, intervalIndex, options);
+  if (cosmoBounceWindow) return cosmoBounceWindow;
+
   const interval = intervals[intervalIndex];
   if (!interval || interval.kind !== "lane-switch") return null;
 
   const previous = intervals[(intervalIndex - 1 + intervals.length) % intervals.length];
   const next = intervals[(intervalIndex + 1) % intervals.length];
 
-  if (interval.toRow.laneId === "center" && next?.kind === "lane-switch") {
+  if (
+    interval.toRow.laneId === "center" &&
+    next?.kind === "lane-switch" &&
+    deriveRowSide(next.fromRow) === interval.planeSide
+  ) {
     const start = laneToHandPoint(interval.fromRow.laneId, options);
     const end = laneToHandPoint(next.toRow.laneId, options);
     if (distance2(start, end) <= 1e-9) return null;
 
     return {
-      start,
-      end,
       localOffset: 0,
-      durationUnits: interval.durationUnits + next.durationUnits,
-      label: `front transfer ${interval.fromRow.laneId} through center to ${next.toRow.laneId}`
+      label: `front transfer ${interval.fromRow.laneId} through center to ${next.toRow.laneId}`,
+      keys: [
+        { tOffset: 0, point: start },
+        { tOffset: interval.durationUnits + next.durationUnits, point: end }
+      ]
     };
   }
 
-  if (interval.fromRow.laneId === "center" && previous?.kind === "lane-switch") {
+  if (
+    interval.fromRow.laneId === "center" &&
+    previous?.kind === "lane-switch" &&
+    previous.planeSide === deriveRowSide(interval.fromRow)
+  ) {
     const start = laneToHandPoint(previous.fromRow.laneId, options);
     const end = laneToHandPoint(interval.toRow.laneId, options);
     if (distance2(start, end) <= 1e-9) return null;
 
     return {
-      start,
-      end,
       localOffset: previous.durationUnits,
-      durationUnits: previous.durationUnits + interval.durationUnits,
-      label: `front transfer ${previous.fromRow.laneId} through center to ${interval.toRow.laneId}`
+      label: `front transfer ${previous.fromRow.laneId} through center to ${interval.toRow.laneId}`,
+      keys: [
+        { tOffset: 0, point: start },
+        { tOffset: previous.durationUnits + interval.durationUnits, point: end }
+      ]
     };
   }
 
@@ -246,7 +388,7 @@ function compileTrack(
         interval,
         startPoint,
         endPoint,
-        makeCenterPassThroughWindow(intervals, intervalIndex, options)
+        makeHandPathWindow(intervals, intervalIndex, options)
       ),
       head: {
         startPose: {

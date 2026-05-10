@@ -5,6 +5,7 @@ import {
   compilePoiBeatGraph,
   DEFAULT_POI_BEAT_COMPILER_OPTIONS
 } from "@/lab/experiments/poi-beat-graph/compileBeatGraph";
+import { createLowCommonCosmoBeatGraph } from "@/lab/experiments/poi-beat-graph/cosmoSeed";
 import {
   appendPoiBeatGraphRow,
   deletePoiBeatGraphLastRow,
@@ -12,9 +13,9 @@ import {
   findActivePoiBeatStep,
   movePoiBeatGraphRowLane,
   setPoiBeatGraphTrackDirection,
-  setPoiBeatGraphTrackInitialPhase
+  setPoiBeatGraphTrackInitialPhase,
+  togglePoiBeatGraphRowSide
 } from "@/lab/experiments/poi-beat-graph/graphHelpers";
-import { createTwoHandLowWrapBeatGraph } from "@/lab/experiments/poi-beat-graph/lowerWrapSeed";
 import PoiBeatGraph from "@/lab/experiments/poi-beat-graph/PoiBeatGraph.vue";
 import PoiBeatGraphDebugPanel from "@/lab/experiments/poi-beat-graph/PoiBeatGraphDebugPanel.vue";
 import type {
@@ -29,7 +30,7 @@ import {
   provideVisualizerWorkspace
 } from "@/visualizer/visualizerWorkspace";
 
-const graph = ref(createTwoHandLowWrapBeatGraph());
+const graph = ref(createLowCommonCosmoBeatGraph());
 const compilerOptions = DEFAULT_POI_BEAT_COMPILER_OPTIONS;
 const editingTrackId = ref(graph.value.tracks[0]?.id ?? "");
 const visibleTrackIds = ref(graph.value.tracks.map((track) => track.id));
@@ -83,6 +84,10 @@ watch(
 
 function moveActiveLane(step: number, laneId: PoiBeatLaneId) {
   graph.value = movePoiBeatGraphRowLane(graph.value, editingTrack.value.id, step, laneId);
+}
+
+function toggleActiveRowSide(step: number) {
+  graph.value = togglePoiBeatGraphRowSide(graph.value, editingTrack.value.id, step);
 }
 
 function setEditingTrack(trackId: string) {
@@ -186,9 +191,10 @@ function phaseButtonClass(track: PoiBeatTrack, phase: PoiBeatPhaseLabel): string
       <div class="grid content-start gap-4">
         <header>
           <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Poi Beat Graph</p>
-          <h1 class="mt-2 text-2xl font-semibold text-slate-50">Together opposites low wrap</h1>
+          <h1 class="mt-2 text-2xl font-semibold text-slate-50">Low common cosmo</h1>
           <p class="mt-2 text-sm leading-6 text-slate-400">
-            One shared grid edits left and right hand tracks against the same half-beat rows.
+            One shared grid edits mirrored left and right hand tracks against the same half-beat
+            rows.
           </p>
         </header>
 
@@ -286,6 +292,7 @@ function phaseButtonClass(track: PoiBeatTrack, phase: PoiBeatPhaseLabel): string
           :half-beat-duration="compilerOptions.halfBeatDuration"
           :active-step="activeStep"
           @select-lane="moveActiveLane"
+          @toggle-side="toggleActiveRowSide"
           @append-row="appendRow"
           @delete-row="deleteRow"
         />
@@ -310,9 +317,10 @@ function phaseButtonClass(track: PoiBeatTrack, phase: PoiBeatPhaseLabel): string
           >
             <div class="min-w-0">
               <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Live Cell</p>
-              <h2 class="mt-1 text-lg font-semibold text-slate-100">Compiled two-hand low wrap</h2>
+              <h2 class="mt-1 text-lg font-semibold text-slate-100">Compiled low common cosmo</h2>
               <p class="mt-1 text-sm leading-6 text-slate-400">
-                Visible hand tracks compile into separate rigs while the graph data stays intact.
+                Visible hand tracks compile into separate rigs with authored front/behind side
+                metadata.
               </p>
             </div>
 

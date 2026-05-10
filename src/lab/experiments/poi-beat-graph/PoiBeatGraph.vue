@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 import {
   deriveLoopIntervals,
@@ -24,6 +24,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   selectLane: [step: number, laneId: PoiBeatLaneId];
+  toggleSide: [step: number];
   appendRow: [];
   deleteRow: [];
 }>();
@@ -66,6 +67,8 @@ interface ConnectorView {
   readonly key: string;
   readonly track: PoiBeatTrack;
   readonly interval: PoiBeatInterval;
+  readonly fromIsBTB: boolean;
+  readonly toIsBTB: boolean;
   readonly x1: number;
   readonly y1: number;
   readonly x2: number;
@@ -89,6 +92,7 @@ const track = computed<PoiBeatTrack>(() => {
 
   return selectedTrack;
 });
+const selectedNodeKey = ref<string | null>(null);
 
 const lanes = computed(() => props.graph.lanes);
 const laneX = computed(
@@ -118,6 +122,11 @@ const svgHeight = computed(
 const trackPaths = computed<readonly TrackPathView[]>(() =>
   visibleTracks.value.map((visibleTrack) => makeTrackPath(visibleTrack))
 );
+const connectors = computed(() => trackPaths.value.flatMap((path) => path.connectors));
+const lineConnectors = computed(() =>
+  connectors.value.filter((connector) => !isCenterSideSwitch(connector))
+);
+const arcConnectors = computed(() => connectors.value.filter(isCenterSideSwitch));
 const clickTargets = computed<readonly ClickTargetView[]>(() =>
   displayRows.value.flatMap((row, rowIndex) =>
     lanes.value.map((lane, laneIndex) => ({
@@ -181,6 +190,8 @@ function makeTrackPath(pathTrack: PoiBeatTrack): TrackPathView {
       key: `${pathTrack.id}-${interval.fromRow.step}-${interval.toRow.step}`,
       track: pathTrack,
       interval,
+      fromIsBTB: fromPoint.row.isBTB,
+      toIsBTB: toPoint.row.isBTB,
       x1: fromPoint.x,
       y1: fromPoint.y,
       x2: toPoint.x,
@@ -230,22 +241,55 @@ function pointRadius(point: ActivePointView): number {
 }
 
 function pointStrokeWidth(point: ActivePointView): number {
+  if (point.row.isBTB) return isActivePoint(point) ? 3.5 : 3;
   return isActivePoint(point) ? 3 : 2;
 }
 
-function pointNodeStyle(point: ActivePointView): Record<string, string> | undefined {
-  if (!isActivePoint(point)) return undefined;
+function pointStrokeDasharray(point: ActivePointView): string | undefined {
+  if (!point.row.isBTB) return undefined;
+  return "2 2";
+}
 
-  return {
-    fill: "rgb(120 53 15 / 0.25)",
-    stroke: "rgb(253 230 138)",
-    filter: "drop-shadow(0 0 5px rgb(251 191 36 / 0.8))"
-  };
+function pointNodeStyle(point: ActivePointView): Record<string, string> | undefined {
+  if (!isActivePoint(point) && !point.row.isBTB) return undefined;
+
+  const style: Record<string, string> = {};
+
+  if (point.row.isBTB) {
+    style.fill = "rgb(15 23 42 / 0.1)";
+  }
+
+  if (isActivePoint(point)) {
+    style.fill = "rgb(120 53 15 / 0.25)";
+    style.stroke = "rgb(253 230 138)";
+    style.filter = "drop-shadow(0 0 5px rgb(251 191 36 / 0.8))";
+  }
+
+  return style;
 }
 
 function connectorClass(connector: ConnectorView): string {
   if (connector.track.hand === "left") return "stroke-cyan-300";
   return "stroke-pink-300";
+}
+
+function isCenterSideSwitch(connector: ConnectorView): boolean {
+  return connector.interval.kind === "center-side-switch";
+}
+
+function connectorStrokeDasharray(connector: ConnectorView): string | undefined {
+  if (isCenterSideSwitch(connector)) return undefined;
+  if (connector.fromIsBTB || connector.toIsBTB) return "4 5";
+  return undefined;
+}
+
+function centerSideSwitchPath(connector: ConnectorView): string {
+  const arcOffset = connector.track.hand === "left" ? -22 : 22;
+  const controlX = connector.x1 + arcOffset;
+  return [
+    `M ${connector.x1} ${connector.y1}`,
+    `C ${controlX} ${connector.y1}, ${controlX} ${connector.y2}, ${connector.x2} ${connector.y2}`
+  ].join(" ");
 }
 
 function laneHeaderLabel(lane: PoiBeatLane): string {
@@ -256,6 +300,14 @@ function laneHeaderLabel(lane: PoiBeatLane): string {
 
 function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
   if (row.isLoopClosure) return;
+  const nextSelectedNodeKey = `${track.value.id}-${row.sourceStep}-${laneId}`;
+
+  if (selectedNodeKey.value === nextSelectedNodeKey) {
+    emit("toggleSide", row.sourceStep);
+    return;
+  }
+
+  selectedNodeKey.value = nextSelectedNodeKey;
   emit("selectLane", row.sourceStep, laneId);
 }
 </script>
@@ -324,13 +376,23 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
 
         <g>
           <line
-            v-for="connector in trackPaths.flatMap((path) => path.connectors)"
+            v-for="connector in lineConnectors"
             :key="connector.key"
             :x1="connector.x1"
             :y1="connector.y1"
             :x2="connector.x2"
             :y2="connector.y2"
             :class="connectorClass(connector)"
+            :stroke-dasharray="connectorStrokeDasharray(connector)"
+            stroke-width="2.5"
+            stroke-linecap="round"
+          />
+          <path
+            v-for="connector in arcConnectors"
+            :key="connector.key"
+            :d="centerSideSwitchPath(connector)"
+            :class="connectorClass(connector)"
+            fill="none"
             stroke-width="2.5"
             stroke-linecap="round"
           />
@@ -346,6 +408,7 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
             :class="pointNodeClass(point)"
             :style="pointNodeStyle(point)"
             :stroke-width="pointStrokeWidth(point)"
+            :stroke-dasharray="pointStrokeDasharray(point)"
             :data-active-node="isActivePoint(point) ? 'true' : undefined"
           />
         </g>
@@ -397,9 +460,11 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
 
     <div class="grid grid-cols-2 border-t border-slate-800 text-xs text-slate-400">
       <div class="border-r border-slate-800 px-3 py-2">
-        <span class="font-mono text-sky-300">b</span> interval side
+        <span class="font-mono text-sky-300">dotted</span> BTB interval
       </div>
-      <div class="px-3 py-2"><span class="font-mono text-amber-300">a</span> interval side</div>
+      <div class="px-3 py-2">
+        <span class="font-mono text-amber-300">arc</span> center side switch
+      </div>
     </div>
   </section>
 </template>

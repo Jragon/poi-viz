@@ -68,6 +68,18 @@ Body-rig geometry uses normal y-up `Vec3` coordinates until projection, with pro
 - Left native outward is `-torsoRight`; right native outward is `+torsoRight`.
 - Native-side correction must not pull the elbow backward or inject a vertical snap near horizontal full extension; if a 2D projection would make that tempting, the elbow comes forward in `+Z` instead.
 
+## 2026-05-10: Low Common Cosmo Beat Graph Side Metadata
+
+Mel-style low common cosmo in the poi beat graph is represented with authored per-row side metadata, not runtime body-tracing state.
+
+- `PoiBeatRow.planeSide` is optional. Center rows default to side `a`; non-center rows default to side `b`.
+- BTB is derived per node as side differing from that lane default. No BTB state machine is required for phase-one graph rendering.
+- `center-side-switch` is a first-class interval kind for center-to-center side changes. It renders as a solid rounded arc.
+- Non-`center-side-switch` connectors render dotted when either endpoint is derived BTB.
+- Moving a graph row to another lane clears authored side so lane moves do not accidentally preserve BTB intent. Side toggling is an explicit second click on the selected node.
+- A `lane-switch -> center-side-switch -> lane-switch` chain compiles as a compiler-local keyed runtime hand path: entry lane -> mirrored BTB-adjacent non-center lane -> exit lane. The mirrored point lands at the midpoint of the center-side-switch interval.
+- All compiled cosmo segments remain on `planeId: "wall"`; `planeSide` changes segment metadata only. Plane-normal side offsets remain later visualization work.
+
 ## 2026-05-06: Driver-Specific Options and Hand Point-To-Point
 
 Driver selection owns the motion law and that driver's options.
