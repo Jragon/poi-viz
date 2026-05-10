@@ -19,6 +19,7 @@ const props = defineProps<{
   trackId?: string;
   visibleTrackIds?: readonly string[];
   halfBeatDuration: number;
+  activeStep?: number | null;
 }>();
 
 const emit = defineEmits<{
@@ -211,6 +212,37 @@ function trackNodeClass(pathTrack: PoiBeatTrack): string {
   return "fill-slate-950 stroke-pink-300";
 }
 
+function isActivePoint(point: ActivePointView): boolean {
+  return (
+    props.activeStep !== null &&
+    props.activeStep !== undefined &&
+    !point.row.isLoopClosure &&
+    point.row.sourceStep === props.activeStep
+  );
+}
+
+function pointNodeClass(point: ActivePointView): string {
+  return trackNodeClass(point.track);
+}
+
+function pointRadius(point: ActivePointView): number {
+  return isActivePoint(point) ? layout.activeRadius + 3 : layout.activeRadius;
+}
+
+function pointStrokeWidth(point: ActivePointView): number {
+  return isActivePoint(point) ? 3 : 2;
+}
+
+function pointNodeStyle(point: ActivePointView): Record<string, string> | undefined {
+  if (!isActivePoint(point)) return undefined;
+
+  return {
+    fill: "rgb(120 53 15 / 0.25)",
+    stroke: "rgb(253 230 138)",
+    filter: "drop-shadow(0 0 5px rgb(251 191 36 / 0.8))"
+  };
+}
+
 function connectorClass(connector: ConnectorView): string {
   if (connector.track.hand === "left") return "stroke-cyan-300";
   return "stroke-pink-300";
@@ -310,9 +342,11 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
             :key="point.key"
             :cx="point.x"
             :cy="point.y"
-            :r="layout.activeRadius"
-            :class="trackNodeClass(point.track)"
-            stroke-width="2"
+            :r="pointRadius(point)"
+            :class="pointNodeClass(point)"
+            :style="pointNodeStyle(point)"
+            :stroke-width="pointStrokeWidth(point)"
+            :data-active-node="isActivePoint(point) ? 'true' : undefined"
           />
         </g>
 

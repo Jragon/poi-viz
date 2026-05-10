@@ -10,6 +10,7 @@ import {
   deriveLoopIntervals,
   deriveRowStates,
   filterPoiBeatGraphTracks,
+  findActivePoiBeatStep,
   movePoiBeatGraphRowLane,
   setPoiBeatGraphTrackDirection,
   setPoiBeatGraphTrackInitialPhase
@@ -75,6 +76,21 @@ function handPointAt(prepared: ReturnType<typeof prepareMultiRigSequence>, t: nu
 }
 
 describe("PoiBeatGraph lower-wrap seed", () => {
+  it("maps playback time to the active graph step", () => {
+    expect(findActivePoiBeatStep(0, 6, HALF_BEAT_DURATION)).toBe(0);
+    expect(findActivePoiBeatStep(0.24, 6, HALF_BEAT_DURATION)).toBe(0);
+    expect(findActivePoiBeatStep(0.5, 6, HALF_BEAT_DURATION)).toBe(1);
+    expect(findActivePoiBeatStep(2.99, 6, HALF_BEAT_DURATION)).toBe(5);
+    expect(findActivePoiBeatStep(3, 6, HALF_BEAT_DURATION)).toBe(0);
+    expect(findActivePoiBeatStep(3.5, 6, HALF_BEAT_DURATION)).toBe(1);
+  });
+
+  it("returns null for invalid active graph step inputs", () => {
+    expect(findActivePoiBeatStep(Number.NaN, 6, HALF_BEAT_DURATION)).toBeNull();
+    expect(findActivePoiBeatStep(0, 0, HALF_BEAT_DURATION)).toBeNull();
+    expect(findActivePoiBeatStep(0, 6, 0)).toBeNull();
+  });
+
   it("encodes the known six-row lane sequence", () => {
     const graph = createLowerWrapBeatGraph();
     const track = getLowerWrapTrack();

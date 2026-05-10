@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 
-import EmbeddedVisualizer from "@/lab/components/EmbeddedVisualizer.vue";
 import {
   compilePoiBeatGraph,
   DEFAULT_POI_BEAT_COMPILER_OPTIONS
@@ -10,18 +9,25 @@ import {
   appendPoiBeatGraphRow,
   deletePoiBeatGraphLastRow,
   filterPoiBeatGraphTracks,
+  findActivePoiBeatStep,
   movePoiBeatGraphRowLane,
   setPoiBeatGraphTrackDirection,
   setPoiBeatGraphTrackInitialPhase
 } from "@/lab/experiments/poi-beat-graph/graphHelpers";
 import { createTwoHandLowWrapBeatGraph } from "@/lab/experiments/poi-beat-graph/lowerWrapSeed";
 import PoiBeatGraph from "@/lab/experiments/poi-beat-graph/PoiBeatGraph.vue";
+import PoiBeatGraphDebugPanel from "@/lab/experiments/poi-beat-graph/PoiBeatGraphDebugPanel.vue";
 import type {
   PoiBeatDirection,
   PoiBeatLaneId,
   PoiBeatPhaseLabel,
   PoiBeatTrack
 } from "@/lab/experiments/poi-beat-graph/types";
+import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
+import {
+  createVisualizerWorkspace,
+  provideVisualizerWorkspace
+} from "@/visualizer/visualizerWorkspace";
 
 const graph = ref(createTwoHandLowWrapBeatGraph());
 const compilerOptions = DEFAULT_POI_BEAT_COMPILER_OPTIONS;
@@ -30,6 +36,13 @@ const visibleTrackIds = ref(graph.value.tracks.map((track) => track.id));
 const showStickFigure = ref(false);
 const visibleGraph = computed(() => filterPoiBeatGraphTracks(graph.value, visibleTrackIds.value));
 const compiled = computed(() => compilePoiBeatGraph(visibleGraph.value, compilerOptions));
+const workspace = provideVisualizerWorkspace(
+  createVisualizerWorkspace(() => compiled.value.sequence, {
+    autoplay: true,
+    resumeOnSequenceChange: true
+  })
+);
+const { core, transport, display } = workspace;
 const tracks = computed(() => graph.value.tracks);
 const editingTrack = computed(() => {
   const track = graph.value.tracks.find((candidate) => candidate.id === editingTrackId.value);
@@ -38,6 +51,36 @@ const editingTrack = computed(() => {
   }
   return track;
 });
+const activeStep = computed(() =>
+  findActivePoiBeatStep(
+    transport.currentTime.value,
+    graph.value.cycleSteps,
+    compilerOptions.halfBeatDuration
+  )
+);
+const currentTimeLabel = computed(() => transport.currentTime.value.toFixed(2));
+const durationLabel = computed(() => transport.duration.value.toFixed(2));
+const activePlanesLabel = computed(() => {
+  const planes = new Set(
+    compiled.value.sequence.rigs.flatMap((rig) =>
+      rig.sequence.segments.map((segment) => segment.planeId ?? "wall")
+    )
+  );
+  return Array.from(planes).join(" / ");
+});
+
+core.session.setProjectionMode("orthographic");
+display.setOverlayVisibility("showHandTrails", false);
+display.setOverlayVisibility("showHeadTrails", true);
+
+watch(
+  showStickFigure,
+  (showBodyRig) => {
+    display.setOverlayVisibility("showBodyRig", showBodyRig);
+  },
+  { immediate: true }
+);
+
 function moveActiveLane(step: number, laneId: PoiBeatLaneId) {
   graph.value = movePoiBeatGraphRowLane(graph.value, editingTrack.value.id, step, laneId);
 }
@@ -85,6 +128,18 @@ function appendRow() {
 
 function deleteRow() {
   graph.value = deletePoiBeatGraphLastRow(graph.value);
+}
+
+function togglePlayback() {
+  transport.toggle();
+}
+
+function onScrub(event: Event) {
+  transport.setCurrentTime(Number((event.target as HTMLInputElement).value));
+}
+
+function setSpeed(value: number) {
+  transport.setSpeed(value);
 }
 
 function isEditingTrack(trackId: string): boolean {
@@ -229,30 +284,11 @@ function phaseButtonClass(track: PoiBeatTrack, phase: PoiBeatPhaseLabel): string
           :track-id="editingTrackId"
           :visible-track-ids="visibleTrackIds"
           :half-beat-duration="compilerOptions.halfBeatDuration"
+          :active-step="activeStep"
           @select-lane="moveActiveLane"
           @append-row="appendRow"
           @delete-row="deleteRow"
         />
-
-        <section
-          v-if="compiled.diagnostics.length > 0"
-          class="rounded-lg border border-amber-800 bg-amber-950/40 px-4 py-3 text-sm text-amber-100"
-        >
-          <h2 class="font-semibold">Compiler diagnostics</h2>
-          <ul class="mt-2 grid gap-1 font-mono text-xs">
-            <li
-              v-for="diagnostic in compiled.diagnostics"
-              :key="`${diagnostic.code}-${diagnostic.intervalIndex ?? 'track'}-${diagnostic.step ?? 'none'}`"
-            >
-              {{ diagnostic.code }} track={{ diagnostic.trackId }}
-              <template v-if="diagnostic.intervalIndex !== undefined">
-                interval={{ diagnostic.intervalIndex }}
-              </template>
-              <template v-if="diagnostic.step !== undefined"> step={{ diagnostic.step }} </template>
-              <template v-if="diagnostic.laneId"> lane={{ diagnostic.laneId }} </template>
-            </li>
-          </ul>
-        </section>
       </div>
 
       <div class="grid content-start gap-6">
@@ -268,14 +304,104 @@ function phaseButtonClass(track: PoiBeatTrack, phase: PoiBeatPhaseLabel): string
           Stick figure
         </label>
 
-        <EmbeddedVisualizer
-          :sequence="compiled.sequence"
-          title="Compiled two-hand low wrap"
-          summary="Visible hand tracks compile into separate rigs while the graph data stays intact."
-          :show-body-rig="showStickFigure"
-          size="normal"
-          projection-mode="orthographic"
-          :projection-drag-enabled="false"
+        <section class="overflow-hidden rounded-lg border border-slate-800 bg-slate-950/80">
+          <header
+            class="grid gap-3 border-b border-slate-800 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start"
+          >
+            <div class="min-w-0">
+              <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Live Cell</p>
+              <h2 class="mt-1 text-lg font-semibold text-slate-100">Compiled two-hand low wrap</h2>
+              <p class="mt-1 text-sm leading-6 text-slate-400">
+                Visible hand tracks compile into separate rigs while the graph data stays intact.
+              </p>
+            </div>
+
+            <dl class="grid grid-cols-2 gap-x-5 gap-y-1 text-xs text-slate-400 md:text-right">
+              <div>
+                <dt class="uppercase tracking-[0.18em] text-slate-600">Time</dt>
+                <dd class="font-mono text-slate-300">
+                  {{ currentTimeLabel }} / {{ durationLabel }}
+                </dd>
+              </div>
+              <div>
+                <dt class="uppercase tracking-[0.18em] text-slate-600">Planes</dt>
+                <dd class="font-mono text-slate-300">{{ activePlanesLabel }}</dd>
+              </div>
+            </dl>
+          </header>
+
+          <div
+            v-if="core.errorMessage.value"
+            class="border-b border-rose-900/70 bg-rose-950/45 px-4 py-3 text-sm text-rose-100"
+          >
+            {{ core.errorMessage.value }}
+          </div>
+
+          <PoiCanvasViewport
+            v-else
+            class="min-h-112! rounded-none border-0 md:min-h-136!"
+            :projection-drag-enabled="false"
+          />
+
+          <div
+            class="grid gap-4 border-t border-slate-800 px-4 py-3 text-sm text-slate-300 md:grid-cols-[auto_minmax(10rem,1fr)_auto] md:items-center"
+          >
+            <button
+              type="button"
+              class="rounded-md border border-slate-700 px-3 py-2 font-medium text-slate-100 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:text-slate-500"
+              :disabled="transport.duration.value <= 0"
+              @click="togglePlayback"
+            >
+              {{ transport.isPlaying.value ? "Pause" : "Play" }}
+            </button>
+
+            <label class="grid gap-1 text-xs uppercase tracking-[0.18em] text-slate-500">
+              Timeline
+              <input
+                type="range"
+                min="0"
+                :max="transport.duration.value"
+                step="any"
+                :value="transport.currentTime.value"
+                class="w-full accent-sky-400"
+                :disabled="transport.duration.value <= 0"
+                @input="onScrub"
+              />
+            </label>
+
+            <div class="hidden gap-1 text-xs uppercase tracking-[0.18em] text-slate-500 md:grid">
+              Speed
+              <div
+                class="grid grid-cols-3 overflow-hidden rounded-md border border-slate-700 normal-case tracking-normal"
+              >
+                <button
+                  v-for="speed in [0.25, 0.5, 1]"
+                  :key="speed"
+                  type="button"
+                  class="px-3 py-2 text-sm transition hover:bg-slate-800 hover:text-white"
+                  :class="
+                    transport.speed.value === speed
+                      ? 'bg-sky-400 text-slate-950 hover:bg-sky-300 hover:text-slate-950'
+                      : 'bg-slate-950 text-slate-200'
+                  "
+                  @click="setSpeed(speed)"
+                >
+                  {{ speed }}x
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <PoiBeatGraphDebugPanel
+          :graph="graph"
+          :visible-track-ids="visibleTrackIds"
+          :active-step="activeStep"
+          :half-beat-duration="compilerOptions.halfBeatDuration"
+          :current-time="transport.currentTime.value"
+          :duration="transport.duration.value"
+          :is-playing="transport.isPlaying.value"
+          :diagnostics="compiled.diagnostics"
         />
       </div>
     </section>

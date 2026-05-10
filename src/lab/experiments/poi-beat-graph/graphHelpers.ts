@@ -94,6 +94,28 @@ export function deriveLoopIntervals(
   });
 }
 
+export function findActivePoiBeatStep(
+  currentTime: TimeUnit,
+  cycleSteps: number,
+  halfBeatDuration: TimeUnit
+): number | null {
+  if (
+    !Number.isFinite(currentTime) ||
+    !Number.isFinite(cycleSteps) ||
+    !Number.isFinite(halfBeatDuration) ||
+    cycleSteps <= 0 ||
+    halfBeatDuration <= 0
+  ) {
+    return null;
+  }
+
+  const cycleDuration = cycleSteps * halfBeatDuration;
+  if (!Number.isFinite(cycleDuration) || cycleDuration <= 0) return null;
+
+  const normalizedTime = ((currentTime % cycleDuration) + cycleDuration) % cycleDuration;
+  return Math.min(Math.floor(normalizedTime / halfBeatDuration), cycleSteps - 1);
+}
+
 export function movePoiBeatGraphRowLane(
   graph: PoiBeatGraph,
   trackId: string,
