@@ -11,9 +11,11 @@ import type {
   Vec2,
   Vec3
 } from "@/engine/types";
-import { createDefaultOverlaySettings } from "@/visualizer/overlaySettings";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
-import { useVisualizerCore } from "@/visualizer/useVisualizerCore";
+import {
+  createVisualizerWorkspace,
+  provideVisualizerWorkspace
+} from "@/visualizer/visualizerWorkspace";
 
 type PatternDefinition = {
   id: string;
@@ -304,23 +306,21 @@ const wrapSequence = computed<MultiRigSequence>(() => ({
   ]
 }));
 
-const core = useVisualizerCore(wrapSequence, {
-  autoplay: true,
-  resumeOnSequenceChange: true,
-  transportOptions: {
-    initialSpeed: WRAP_PARAMS.playbackSpeed,
-    unitsPerSecond: WRAP_PARAMS.playbackUnitsPerSecond
-  }
-});
+const workspace = provideVisualizerWorkspace(
+  createVisualizerWorkspace(wrapSequence, {
+    autoplay: true,
+    resumeOnSequenceChange: true,
+    transportOptions: {
+      initialSpeed: WRAP_PARAMS.playbackSpeed,
+      unitsPerSecond: WRAP_PARAMS.playbackUnitsPerSecond
+    }
+  })
+);
+const { core, transport, display } = workspace;
 core.session.setProjectionMode("orthographic");
 core.session.setTrailDecaySteps(180);
-
-const overlaySettings = computed(() => {
-  const settings = createDefaultOverlaySettings(core.rigOrder.value);
-  settings.visibility.showHandTrails = true;
-  settings.visibility.showHeadTrails = true;
-  return settings;
-});
+display.setOverlayVisibility("showHandTrails", true);
+display.setOverlayVisibility("showHeadTrails", true);
 
 const activeSegmentIndex = computed(() => {
   const frame = core.session.currentFrame.value;
@@ -329,8 +329,8 @@ const activeSegmentIndex = computed(() => {
   return frame.evaluatedPoses[WRAP_PARAMS.diagnosticRigId]?.segmentIndex ?? null;
 });
 
-const currentTimeLabel = computed(() => core.transport.currentTime.value.toFixed(2));
-const durationLabel = computed(() => core.transport.duration.value.toFixed(2));
+const currentTimeLabel = computed(() => transport.currentTime.value.toFixed(2));
+const durationLabel = computed(() => transport.duration.value.toFixed(2));
 const activeMetadata = computed(() => {
   const frame = core.session.currentFrame.value;
   if (!frame?.ok) return "unprepared";
@@ -410,11 +410,11 @@ const speedDiagnostics = computed<SpeedDiagnostics | null>(() => {
 // === Transport Handlers ===
 
 function togglePlayback() {
-  core.transport.toggle();
+  transport.toggle();
 }
 
 function onScrub(event: Event) {
-  core.transport.setCurrentTime(Number((event.target as HTMLInputElement).value));
+  transport.setCurrentTime(Number((event.target as HTMLInputElement).value));
 }
 </script>
 
@@ -451,16 +451,7 @@ function onScrub(event: Event) {
     <PoiCanvasViewport
       v-else
       class="min-h-80! rounded-none border-0 md:min-h-112!"
-      :display-scale="1"
-      :is-fullscreen="false"
-      :overlay-settings="overlaySettings"
-      :poses="core.cartesianPoses.value"
-      :projection-drag="null"
-      :rig-order="core.rigOrder.value"
-      :scene-world-radius="core.sceneWorldRadius.value"
-      :trails="core.trails.value"
-      :webcam-active="false"
-      :webcam-stream="null"
+      :projection-drag-enabled="false"
     />
 
     <div
@@ -469,10 +460,10 @@ function onScrub(event: Event) {
       <button
         type="button"
         class="rounded-md border border-slate-700 px-3 py-2 font-medium text-slate-100 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:text-slate-500"
-        :disabled="core.transport.duration.value <= 0"
+        :disabled="transport.duration.value <= 0"
         @click="togglePlayback"
       >
-        {{ core.transport.isPlaying.value ? "Pause" : "Play" }}
+        {{ transport.isPlaying.value ? "Pause" : "Play" }}
       </button>
 
       <label class="grid gap-1 text-xs uppercase tracking-[0.18em] text-slate-500">
@@ -480,11 +471,11 @@ function onScrub(event: Event) {
         <input
           type="range"
           min="0"
-          :max="core.transport.duration.value"
+          :max="transport.duration.value"
           step="any"
-          :value="core.transport.currentTime.value"
+          :value="transport.currentTime.value"
           class="w-full accent-sky-400"
-          :disabled="core.transport.duration.value <= 0"
+          :disabled="transport.duration.value <= 0"
           @input="onScrub"
         />
       </label>

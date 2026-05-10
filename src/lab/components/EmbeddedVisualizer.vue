@@ -3,9 +3,11 @@ import { computed, watch } from "vue";
 
 import type { ProjectionModePreference } from "@/engine/planeProjection";
 import type { MultiRigSequence } from "@/engine/types";
-import { createDefaultOverlaySettings } from "@/visualizer/overlaySettings";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
-import { useVisualizerCore } from "@/visualizer/useVisualizerCore";
+import {
+  createVisualizerWorkspace,
+  provideVisualizerWorkspace
+} from "@/visualizer/visualizerWorkspace";
 
 type EmbeddedVisualizerSize = "normal" | "compact" | "mini";
 
@@ -30,10 +32,16 @@ const props = withDefaults(
   }
 );
 
-const core = useVisualizerCore(() => props.sequence, {
-  autoplay: props.autoplay,
-  resumeOnSequenceChange: true
-});
+const workspace = provideVisualizerWorkspace(
+  createVisualizerWorkspace(() => props.sequence, {
+    autoplay: props.autoplay,
+    resumeOnSequenceChange: true
+  })
+);
+const { core, transport, display } = workspace;
+
+display.setOverlayVisibility("showHandTrails", false);
+display.setOverlayVisibility("showHeadTrails", true);
 
 watch(
   () => props.projectionMode,
@@ -43,16 +51,16 @@ watch(
   { immediate: true }
 );
 
-const overlaySettings = computed(() => {
-  const settings = createDefaultOverlaySettings(core.rigOrder.value);
-  settings.visibility.showHandTrails = false;
-  settings.visibility.showHeadTrails = true;
-  settings.visibility.showBodyRig = props.showBodyRig;
-  return settings;
-});
+watch(
+  () => props.showBodyRig,
+  (showBodyRig) => {
+    display.setOverlayVisibility("showBodyRig", showBodyRig);
+  },
+  { immediate: true }
+);
 
-const currentTimeLabel = computed(() => core.transport.currentTime.value.toFixed(2));
-const durationLabel = computed(() => core.transport.duration.value.toFixed(2));
+const currentTimeLabel = computed(() => transport.currentTime.value.toFixed(2));
+const durationLabel = computed(() => transport.duration.value.toFixed(2));
 const activePlanesLabel = computed(() => {
   const planes = new Set(
     props.sequence.rigs.flatMap((rig) =>
@@ -68,26 +76,16 @@ const canvasClass = computed(() =>
       ? "!min-h-80 rounded-none border-0 md:!min-h-96"
       : "!min-h-112 rounded-none border-0 md:!min-h-136"
 );
-const projectionDrag = computed(() =>
-  props.projectionDragEnabled
-    ? {
-        mode: core.session.projectionSettings.value.mode,
-        yawDeg: core.session.projectionYawDeg.value,
-        pitchDeg: core.session.projectionPitchDeg.value
-      }
-    : null
-);
-
 function togglePlayback() {
-  core.transport.toggle();
+  transport.toggle();
 }
 
 function onScrub(event: Event) {
-  core.transport.setCurrentTime(Number((event.target as HTMLInputElement).value));
+  transport.setCurrentTime(Number((event.target as HTMLInputElement).value));
 }
 
 function setSpeed(value: number) {
-  core.transport.setSpeed(value);
+  transport.setSpeed(value);
 }
 </script>
 
@@ -126,20 +124,7 @@ function setSpeed(value: number) {
     <PoiCanvasViewport
       v-else
       :class="canvasClass"
-      :display-scale="1"
-      :is-fullscreen="false"
-      :overlay-settings="overlaySettings"
-      :poses="core.cartesianPoses.value"
-      :world-poses="core.worldPoses.value"
-      :projection-drag="projectionDrag"
-      :projection-settings="core.session.projectionSettings.value"
-      :rig-order="core.rigOrder.value"
-      :scene-world-radius="core.sceneWorldRadius.value"
-      :trails="core.trails.value"
-      :webcam-active="false"
-      :webcam-stream="null"
-      @update:projection-yaw-deg="core.session.setProjectionYawDeg"
-      @update:projection-pitch-deg="core.session.setProjectionPitchDeg"
+      :projection-drag-enabled="props.projectionDragEnabled"
     />
 
     <div
@@ -148,10 +133,10 @@ function setSpeed(value: number) {
       <button
         type="button"
         class="rounded-md border border-slate-700 px-3 py-2 font-medium text-slate-100 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:text-slate-500"
-        :disabled="core.transport.duration.value <= 0"
+        :disabled="transport.duration.value <= 0"
         @click="togglePlayback"
       >
-        {{ core.transport.isPlaying.value ? "Pause" : "Play" }}
+        {{ transport.isPlaying.value ? "Pause" : "Play" }}
       </button>
 
       <label class="grid gap-1 text-xs uppercase tracking-[0.18em] text-slate-500">
@@ -159,11 +144,11 @@ function setSpeed(value: number) {
         <input
           type="range"
           min="0"
-          :max="core.transport.duration.value"
+          :max="transport.duration.value"
           step="any"
-          :value="core.transport.currentTime.value"
+          :value="transport.currentTime.value"
           class="w-full accent-sky-400"
-          :disabled="core.transport.duration.value <= 0"
+          :disabled="transport.duration.value <= 0"
           @input="onScrub"
         />
       </label>
@@ -179,7 +164,7 @@ function setSpeed(value: number) {
             type="button"
             class="px-3 py-2 text-sm transition hover:bg-slate-800 hover:text-white"
             :class="
-              core.transport.speed.value === speed
+              transport.speed.value === speed
                 ? 'bg-sky-400 text-slate-950 hover:bg-sky-300 hover:text-slate-950'
                 : 'bg-slate-950 text-slate-200'
             "

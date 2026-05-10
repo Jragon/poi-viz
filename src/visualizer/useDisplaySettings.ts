@@ -1,14 +1,4 @@
-import {
-  computed,
-  inject,
-  provide,
-  ref,
-  toValue,
-  type ComputedRef,
-  type InjectionKey,
-  type MaybeRefOrGetter,
-  type Ref
-} from "vue";
+import { computed, ref, toValue, type ComputedRef, type MaybeRefOrGetter, type Ref } from "vue";
 
 import type { ProjectionModePreference } from "@/engine/planeProjection";
 import type { RigId } from "@/engine/types";
@@ -460,9 +450,6 @@ export interface DisplaySettingsController {
   resetActivePreset: () => void;
   resetPreset: (presetId: BuiltInDisplayPresetId) => void;
 }
-
-export const displaySettingsKey: InjectionKey<DisplaySettingsController> =
-  Symbol("display-settings");
 
 function getDefaultStorage(): StorageLike | null {
   if (typeof globalThis.localStorage === "undefined") {
@@ -998,20 +985,4 @@ export function createDisplaySettingsController(
     resetActivePreset,
     resetPreset
   };
-}
-
-export function provideDisplaySettings(
-  controller: DisplaySettingsController
-): DisplaySettingsController {
-  provide(displaySettingsKey, controller);
-  return controller;
-}
-
-export function useDisplaySettings(): DisplaySettingsController {
-  const controller = inject(displaySettingsKey);
-  if (!controller) {
-    throw new Error("No display settings provided in the current component tree");
-  }
-
-  return controller;
 }

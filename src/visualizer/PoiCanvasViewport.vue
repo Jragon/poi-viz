@@ -1,18 +1,13 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch, type PropType } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
-import {
-  DEFAULT_PLANE_PROJECTION_SETTINGS,
-  type PlaneProjectionSettings,
-  type ProjectionMode
-} from "@/engine/planeProjection";
-import type { CartesianMultiRigPose, RigId, WorldMultiRigPose } from "@/engine/types";
+import type { ProjectionMode } from "@/engine/planeProjection";
 import { computeBodyOverlay, getBodyOverlaySceneExtent } from "@/visualizer/bodyOverlay";
 import { computeDisplayPixelsPerWorldUnit } from "@/visualizer/displayScale";
-import type { VisualizerOverlaySettings } from "@/visualizer/overlaySettings";
 import { computeDragProjection, createProjectionDragState } from "@/visualizer/projectionDrag";
-import { renderFrame, type RigTrail } from "@/visualizer/renderFrame";
+import { renderFrame } from "@/visualizer/renderFrame";
 import { createSceneLayout, type SceneLayout } from "@/visualizer/sceneLayout";
+import { useVisualizerWorkspace } from "@/visualizer/visualizerWorkspace";
 
 export interface ProjectionDragSettings {
   readonly mode: ProjectionMode;
@@ -20,61 +15,31 @@ export interface ProjectionDragSettings {
   readonly pitchDeg: number;
 }
 
-const props = defineProps({
-  poses: {
-    type: Object as PropType<CartesianMultiRigPose>,
-    required: true
-  },
-  worldPoses: {
-    type: Object as PropType<WorldMultiRigPose>,
-    default: () => ({})
-  },
-  sceneWorldRadius: {
-    type: Number,
-    required: true
-  },
-  displayScale: {
-    type: Number,
-    default: 1
-  },
-  isFullscreen: {
-    type: Boolean,
-    default: false
-  },
-  webcamActive: {
-    type: Boolean,
-    default: false
-  },
-  webcamStream: {
-    type: Object as PropType<MediaStream | null>,
-    default: null
-  },
-  rigOrder: {
-    type: Array as PropType<readonly RigId[]>,
-    required: true
-  },
-  trails: {
-    type: Object as PropType<Partial<Record<RigId, RigTrail>>>,
-    default: () => ({})
-  },
-  overlaySettings: {
-    type: Object as PropType<VisualizerOverlaySettings>,
-    required: true
-  },
-  projectionDrag: {
-    type: Object as PropType<ProjectionDragSettings | null>,
-    default: null
-  },
-  projectionSettings: {
-    type: Object as PropType<PlaneProjectionSettings>,
-    default: () => DEFAULT_PLANE_PROJECTION_SETTINGS
+const props = withDefaults(
+  defineProps<{
+    isFullscreen?: boolean;
+    webcamActive?: boolean;
+    webcamStream?: MediaStream | null;
+    projectionDragEnabled?: boolean;
+  }>(),
+  {
+    isFullscreen: false,
+    webcamActive: false,
+    webcamStream: null,
+    projectionDragEnabled: true
   }
-});
+);
 
-const emit = defineEmits<{
-  "update:projectionYawDeg": [value: number];
-  "update:projectionPitchDeg": [value: number];
-}>();
+const { core, display } = useVisualizerWorkspace();
+const projectionDrag = computed<ProjectionDragSettings | null>(() =>
+  props.projectionDragEnabled
+    ? {
+        mode: core.session.projectionSettings.value.mode,
+        yawDeg: core.session.projectionYawDeg.value,
+        pitchDeg: core.session.projectionPitchDeg.value
+      }
+    : null
+);
 
 const containerRef = ref<HTMLDivElement | null>(null);
 const canvasRef = ref<HTMLCanvasElement | null>(null);
@@ -83,7 +48,7 @@ const layoutRef = ref<SceneLayout | null>(null);
 const canvasContextRef = ref<CanvasRenderingContext2D | null>(null);
 const activePointerId = ref<number | null>(null);
 const dragState = createProjectionDragState();
-const isProjectionDragAvailable = computed(() => props.projectionDrag?.mode === "tilted");
+const isProjectionDragAvailable = computed(() => projectionDrag.value?.mode === "tilted");
 const isProjectionDragging = computed(() => activePointerId.value !== null && dragState.isActive());
 
 let resizeObserver: ResizeObserver | null = null;
@@ -104,26 +69,27 @@ const draw = () => {
   }
 
   ctx.setTransform(layout.dpr, 0, 0, layout.dpr, 0, 0);
-  const bodyOverlay = props.overlaySettings.visibility.showBodyRig
+  const overlaySettings = display.overlaySettings.value;
+  const bodyOverlay = overlaySettings.visibility.showBodyRig
     ? computeBodyOverlay({
-        worldPoses: props.worldPoses,
+        worldPoses: core.worldPoses.value,
         layout,
-        projectionSettings: props.projectionSettings
+        projectionSettings: core.session.projectionSettings.value
       })
     : null;
 
-  renderFrame(ctx, layout, props.poses, {
-    geometry: props.overlaySettings.geometry,
-    rigStyles: props.overlaySettings.rigStyles,
-    rigOrder: props.rigOrder,
-    trails: props.trails,
+  renderFrame(ctx, layout, core.cartesianPoses.value, {
+    geometry: overlaySettings.geometry,
+    rigStyles: overlaySettings.rigStyles,
+    rigOrder: core.rigOrder.value,
+    trails: core.trails.value,
     bodyOverlay,
     transparentBackground: props.webcamActive,
-    showHandTrails: props.overlaySettings.visibility.showHandTrails,
-    showHeadTrails: props.overlaySettings.visibility.showHeadTrails,
-    showChainLines: props.overlaySettings.visibility.showChainLines,
-    showNodeMarkers: props.overlaySettings.visibility.showNodeMarkers,
-    showBodyRig: props.overlaySettings.visibility.showBodyRig,
+    showHandTrails: overlaySettings.visibility.showHandTrails,
+    showHeadTrails: overlaySettings.visibility.showHeadTrails,
+    showChainLines: overlaySettings.visibility.showChainLines,
+    showNodeMarkers: overlaySettings.visibility.showNodeMarkers,
+    showBodyRig: overlaySettings.visibility.showBodyRig,
     showLabels: false
   });
 };
@@ -139,10 +105,11 @@ const updateLayout = () => {
     return;
   }
 
-  const sceneExtent = props.overlaySettings.visibility.showBodyRig
-    ? getBodyOverlaySceneExtent({ sequenceRadiusWorld: props.sceneWorldRadius })
+  const overlaySettings = display.overlaySettings.value;
+  const sceneExtent = overlaySettings.visibility.showBodyRig
+    ? getBodyOverlaySceneExtent({ sequenceRadiusWorld: core.sceneWorldRadius.value })
     : null;
-  const effectiveSceneWorldRadius = sceneExtent?.sceneRadiusWorld ?? props.sceneWorldRadius;
+  const effectiveSceneWorldRadius = sceneExtent?.sceneRadiusWorld ?? core.sceneWorldRadius.value;
 
   layoutRef.value = createSceneLayout({
     cssWidth: rect.width,
@@ -154,7 +121,7 @@ const updateLayout = () => {
       cssWidth: rect.width,
       cssHeight: rect.height,
       sceneRadiusWorld: effectiveSceneWorldRadius,
-      displayScale: props.displayScale
+      displayScale: display.displayScale.value
     })
   });
   draw();
@@ -162,13 +129,13 @@ const updateLayout = () => {
 
 watch(
   () => [
-    props.poses,
-    props.worldPoses,
-    props.rigOrder,
-    props.trails,
-    props.overlaySettings,
+    core.cartesianPoses.value,
+    core.worldPoses.value,
+    core.rigOrder.value,
+    core.trails.value,
+    display.overlaySettings.value,
     props.webcamActive,
-    props.projectionSettings
+    core.session.projectionSettings.value
   ],
   () => {
     draw();
@@ -177,7 +144,11 @@ watch(
 );
 
 watch(
-  () => [props.sceneWorldRadius, props.displayScale, props.overlaySettings.visibility.showBodyRig],
+  () => [
+    core.sceneWorldRadius.value,
+    display.displayScale.value,
+    display.overlaySettings.value.visibility.showBodyRig
+  ],
   () => {
     updateLayout();
   }
@@ -208,20 +179,25 @@ function endProjectionDrag(event?: PointerEvent, releaseCapture = true) {
 }
 
 function onProjectionPointerDown(event: PointerEvent) {
-  const projectionDrag = props.projectionDrag;
+  const activeProjectionDrag = projectionDrag.value;
   if (
     event.pointerType !== "mouse" ||
     event.button !== 0 ||
     activePointerId.value !== null ||
     !isProjectionDragAvailable.value ||
-    !projectionDrag
+    !activeProjectionDrag
   ) {
     return;
   }
 
   event.preventDefault();
   activePointerId.value = event.pointerId;
-  dragState.start(event.clientX, event.clientY, projectionDrag.yawDeg, projectionDrag.pitchDeg);
+  dragState.start(
+    event.clientX,
+    event.clientY,
+    activeProjectionDrag.yawDeg,
+    activeProjectionDrag.pitchDeg
+  );
   containerRef.value?.setPointerCapture(event.pointerId);
 }
 
@@ -237,8 +213,8 @@ function onProjectionPointerMove(event: PointerEvent) {
 
   event.preventDefault();
   const next = computeDragProjection(move.startYawDeg, move.startPitchDeg, move.dx, move.dy);
-  emit("update:projectionYawDeg", next.yawDeg);
-  emit("update:projectionPitchDeg", next.pitchDeg);
+  core.session.setProjectionYawDeg(next.yawDeg);
+  core.session.setProjectionPitchDeg(next.pitchDeg);
 }
 
 function onProjectionPointerEnd(event: PointerEvent) {

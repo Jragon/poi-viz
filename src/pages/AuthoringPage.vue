@@ -13,9 +13,10 @@ import type {
 } from "@/authoring/types";
 import { useAuthoringEditor, type SelectedSegment } from "@/authoring/useAuthoringEditor";
 import { useAuthoringLibrary } from "@/authoring/useAuthoringLibrary";
-import { createTransport } from "@/composables/useTransport";
-import { createDefaultOverlaySettings } from "@/visualizer/overlaySettings";
-import { useVisualizerCore } from "@/visualizer/useVisualizerCore";
+import {
+  createVisualizerWorkspace,
+  provideVisualizerWorkspace
+} from "@/visualizer/visualizerWorkspace";
 
 const TRACK_IDS: readonly AuthoredTrackId[] = ["left", "right"];
 
@@ -50,20 +51,17 @@ const metaDrafts = reactive<{ name: string | null; description: string | null }>
 const globalOmegaUnit = ref<AuthoredOmegaUnit>("circles-per-unit");
 let exportFeedbackTimeout: number | null = null;
 
-const transport = createTransport();
-const {
-  rigOrder,
-  cartesianPoses,
-  trails,
-  sceneWorldRadius,
-  errorMessage: previewSessionErrorMessage
-} = useVisualizerCore(() => lastValidCompiled.value.sequence, {
-  transport,
-  autoplay: true,
-  resumeOnSequenceChange: true
-});
+const previewWorkspace = provideVisualizerWorkspace(
+  createVisualizerWorkspace(() => lastValidCompiled.value.sequence, {
+    autoplay: true,
+    resumeOnSequenceChange: true
+  })
+);
+const { transport } = previewWorkspace;
+const { errorMessage: previewSessionErrorMessage } = previewWorkspace.core;
 
-const previewOverlaySettings = computed(() => createDefaultOverlaySettings(rigOrder.value));
+previewWorkspace.display.setDisplayScale(1);
+
 const previewErrorMessage = computed(
   () => compileErrorMessage.value ?? previewSessionErrorMessage.value ?? null
 );
@@ -239,8 +237,6 @@ onBeforeUnmount(() => {
   if (exportFeedbackTimeout !== null) {
     window.clearTimeout(exportFeedbackTimeout);
   }
-
-  transport.dispose();
 });
 </script>
 
@@ -426,16 +422,7 @@ onBeforeUnmount(() => {
           </p>
         </section>
 
-        <AuthoringPreviewPanel
-          :error-message="previewErrorMessage"
-          :cartesian-poses="cartesianPoses"
-          :trails="trails"
-          :rig-order="rigOrder"
-          :scene-world-radius="sceneWorldRadius"
-          :display-scale="1"
-          :overlay-settings="previewOverlaySettings"
-          :track-totals="trackTotals"
-        />
+        <AuthoringPreviewPanel :error-message="previewErrorMessage" :track-totals="trackTotals" />
       </aside>
     </section>
   </main>

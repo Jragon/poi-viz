@@ -9,13 +9,15 @@ import { demoSequence } from "@/visualizer/demoSequence";
 import MetronomeControls from "@/visualizer/MetronomeControls.vue";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
 import TransportControls from "@/visualizer/TransportControls.vue";
-import { useVisualizerCore } from "@/visualizer/useVisualizerCore";
-import { useVisualizerDisplay } from "@/visualizer/useVisualizerDisplay";
 import { useVisualizerExport } from "@/visualizer/useVisualizerExport";
 import { useVisualizerMetronome } from "@/visualizer/useVisualizerMetronome";
 import { useWebcam } from "@/visualizer/useWebcam";
 import VisualizerControls from "@/visualizer/VisualizerControls.vue";
 import VisualizerDisplayPanel from "@/visualizer/VisualizerDisplayPanel.vue";
+import {
+  createVisualizerWorkspace,
+  provideVisualizerWorkspace
+} from "@/visualizer/visualizerWorkspace";
 
 type FullscreenCapableElement = HTMLElement & {
   webkitRequestFullscreen?: () => Promise<void> | void;
@@ -38,30 +40,21 @@ const {
   select: selectDocument
 } = useVisualizerDocumentSource(library);
 const activeSequence = computed(() => selectedSequence.value ?? demoSequence);
-const core = useVisualizerCore(activeSequence, {
-  autoplay: true,
-  resumeOnSequenceChange: true
-});
+const workspace = provideVisualizerWorkspace(
+  createVisualizerWorkspace(activeSequence, {
+    autoplay: true,
+    resumeOnSequenceChange: true
+  })
+);
+const core = workspace.core;
 const {
   rigOrder,
-  worldPoses,
-  cartesianPoses,
-  trails,
-  sceneWorldRadius,
   transportDurationLabel,
   errorMessage: visualizerErrorMessage,
   isReady: visualizerReady
 } = core;
-const displaySettings = useVisualizerDisplay(core);
-const {
-  activePresetId,
-  panelOpen,
-  displayScale,
-  overlaySettings,
-  setWebcamActive,
-  togglePanel,
-  closePanel
-} = displaySettings;
+const displaySettings = workspace.display;
+const { activePresetId, panelOpen, setWebcamActive, togglePanel, closePanel } = displaySettings;
 const {
   state: pngSequenceExportState,
   start: startPngSequenceExport,
@@ -88,11 +81,6 @@ const {
 const fullscreenTargetRef = ref<HTMLElement | null>(null);
 const viewportRef = ref<CanvasViewportExposed | null>(null);
 const isFullscreen = ref(false);
-const projectionDrag = computed(() => ({
-  mode: core.session.projectionSettings.value.mode,
-  yawDeg: core.session.projectionYawDeg.value,
-  pitchDeg: core.session.projectionPitchDeg.value
-}));
 
 let fullscreenAnimationFrame = 0;
 
@@ -228,20 +216,9 @@ async function toggleWebcam() {
               <PoiCanvasViewport
                 v-else
                 ref="viewportRef"
-                :display-scale="displayScale"
                 :is-fullscreen="isFullscreen"
-                :overlay-settings="overlaySettings"
-                :poses="cartesianPoses"
-                :projection-drag="projectionDrag"
-                :projection-settings="core.session.projectionSettings.value"
-                :rig-order="rigOrder"
-                :scene-world-radius="sceneWorldRadius"
-                :trails="trails"
                 :webcam-active="webcamActive"
                 :webcam-stream="webcamStream"
-                :world-poses="worldPoses"
-                @update:projection-yaw-deg="core.session.setProjectionYawDeg"
-                @update:projection-pitch-deg="core.session.setProjectionPitchDeg"
               />
 
               <VisualizerDisplayPanel

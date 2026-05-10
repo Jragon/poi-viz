@@ -5,9 +5,11 @@ import { compileAuthoredDocument } from "@/authoring/compile";
 import type { AuthoredDocumentEntry } from "@/authoring/types";
 import { useAuthoringLibrary } from "@/authoring/useAuthoringLibrary";
 import type { MultiRigSequence } from "@/engine/types";
-import { createDefaultOverlaySettings } from "@/visualizer/overlaySettings";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
-import { useVisualizerCore } from "@/visualizer/useVisualizerCore";
+import {
+  createVisualizerWorkspace,
+  provideVisualizerWorkspace
+} from "@/visualizer/visualizerWorkspace";
 
 function compileAuthoredSequence(entry: AuthoredDocumentEntry): MultiRigSequence | null {
   const result = compileAuthoredDocument(entry.document);
@@ -47,24 +49,22 @@ const selectedSequence = computed<MultiRigSequence>(() => {
   return { rigs: [] };
 });
 
-const core = useVisualizerCore(selectedSequence, {
-  autoplay: true,
-  resumeOnSequenceChange: true,
-  transportOptions: {
-    initialSpeed: 0.35
-  }
-});
-const transport = core.transport;
+const workspace = provideVisualizerWorkspace(
+  createVisualizerWorkspace(selectedSequence, {
+    autoplay: true,
+    resumeOnSequenceChange: true,
+    transportOptions: {
+      initialSpeed: 0.35
+    }
+  })
+);
+const { core, transport, display } = workspace;
 
-const overlaySettings = computed(() => {
-  const settings = createDefaultOverlaySettings(core.rigOrder.value);
-  settings.visibility.showBodyRig = true;
-  settings.visibility.showHandTrails = true;
-  settings.visibility.showHeadTrails = true;
-  settings.visibility.showChainLines = true;
-  settings.visibility.showNodeMarkers = true;
-  return settings;
-});
+display.setOverlayVisibility("showBodyRig", true);
+display.setOverlayVisibility("showHandTrails", true);
+display.setOverlayVisibility("showHeadTrails", true);
+display.setOverlayVisibility("showChainLines", true);
+display.setOverlayVisibility("showNodeMarkers", true);
 
 const durationLabel = computed(() => transport.duration.value.toFixed(2));
 const timeLabel = computed(() => transport.currentTime.value.toFixed(2));
@@ -182,18 +182,7 @@ watch(
 
       <PoiCanvasViewport
         class="min-h-112! rounded-lg md:min-h-136!"
-        :display-scale="1"
-        :is-fullscreen="false"
-        :overlay-settings="overlaySettings"
-        :poses="core.cartesianPoses.value"
-        :projection-drag="null"
-        :projection-settings="core.session.projectionSettings.value"
-        :rig-order="core.rigOrder.value"
-        :scene-world-radius="core.sceneWorldRadius.value"
-        :trails="core.trails.value"
-        :webcam-active="false"
-        :webcam-stream="null"
-        :world-poses="core.worldPoses.value"
+        :projection-drag-enabled="false"
       />
 
       <p class="text-sm leading-6 text-slate-400">

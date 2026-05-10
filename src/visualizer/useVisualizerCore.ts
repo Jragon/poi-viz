@@ -9,7 +9,6 @@ import {
 
 import {
   createTransport,
-  provideTransport,
   type TransportController,
   type TransportOptions
 } from "@/composables/useTransport";
@@ -57,10 +56,6 @@ export function useVisualizerCore(
   const ownsTransport = !options.transport;
   const transport = options.transport ?? createTransport(options.transportOptions);
   const instance = getCurrentInstance();
-
-  if (instance) {
-    provideTransport(transport);
-  }
 
   const sessionOptions: VisualizerSessionOptions = {
     ...(options.autoplay !== undefined ? { autoplay: options.autoplay } : {}),

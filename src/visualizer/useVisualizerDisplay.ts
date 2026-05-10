@@ -1,8 +1,7 @@
-import { computed, getCurrentInstance } from "vue";
+import { computed } from "vue";
 
 import {
   createDisplaySettingsController,
-  provideDisplaySettings,
   type DisplaySettingsController,
   type DisplaySettingsOptions,
   type ExternalDisplaySettingBindings,
@@ -72,11 +71,5 @@ export function useVisualizerDisplay(
     controllerOptions.storageKey = options.storageKey;
   }
 
-  const controller = createDisplaySettingsController(controllerOptions);
-
-  if (getCurrentInstance()) {
-    provideDisplaySettings(controller);
-  }
-
-  return controller;
+  return createDisplaySettingsController(controllerOptions);
 }

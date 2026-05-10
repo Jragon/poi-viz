@@ -1,4 +1,4 @@
-import { computed, inject, provide, ref, type InjectionKey, type Ref } from "vue";
+import { computed, ref, type Ref } from "vue";
 
 type FrameRequestCallback = (timestampMs: number) => void;
 
@@ -27,8 +27,6 @@ export interface TransportController {
   setSpeed: (nextSpeed: number) => void;
   dispose: () => void;
 }
-
-export const transportKey: InjectionKey<TransportController> = Symbol("transport");
 
 function getDefaultRequestFrame(): (callback: FrameRequestCallback) => number {
   if (typeof globalThis.requestAnimationFrame !== "function") {
@@ -188,20 +186,4 @@ export function createTransport(options: TransportOptions = {}): TransportContro
     setSpeed,
     dispose
   };
-}
-
-export function provideTransport(
-  transport: TransportController = createTransport()
-): TransportController {
-  provide(transportKey, transport);
-  return transport;
-}
-
-export function useTransport(): TransportController {
-  const transport = inject(transportKey);
-  if (!transport) {
-    throw new Error("No transport provided in the current component tree");
-  }
-
-  return transport;
 }

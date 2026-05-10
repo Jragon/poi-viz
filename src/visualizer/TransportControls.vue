@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-import { useTransport } from "@/composables/useTransport";
+import { useVisualizerWorkspace } from "@/visualizer/visualizerWorkspace";
 
-const { currentTime, duration, isPlaying, play, pause, setCurrentTime } = useTransport();
+const { transport } = useVisualizerWorkspace();
+const { currentTime, duration, isPlaying, play, pause, setCurrentTime } = transport;
 
 const currentTimeLabel = computed(() => currentTime.value.toFixed(2));
 const durationLabel = computed(() => duration.value.toFixed(2));

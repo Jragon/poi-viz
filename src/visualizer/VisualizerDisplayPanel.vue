@@ -8,10 +8,10 @@ import {
   OVERLAY_GEOMETRY_SETTINGS,
   OVERLAY_VISIBILITY_SETTINGS,
   RIG_COLOR_SETTINGS,
-  useDisplaySettings,
   type RangeSettingRegistryEntry
 } from "@/visualizer/useDisplaySettings";
 import type { TrailLoopMode } from "@/visualizer/useMultiRigPlayback";
+import { useVisualizerWorkspace } from "@/visualizer/visualizerWorkspace";
 
 const props = withDefaults(
   defineProps<{
@@ -24,7 +24,7 @@ const props = withDefaults(
   }
 );
 
-const display = useDisplaySettings();
+const { display } = useVisualizerWorkspace();
 
 const activePresetLabel = computed(() =>
   display.activePresetId.value === "webcam" ? "Webcam" : "Normal"

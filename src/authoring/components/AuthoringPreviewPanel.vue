@@ -1,24 +1,15 @@
 <script setup lang="ts">
 import type { AuthoredTrackId } from "@/authoring/types";
-import { useTransport } from "@/composables/useTransport";
-import type { CartesianMultiRigPose, RigId } from "@/engine/types";
-import type { VisualizerOverlaySettings } from "@/visualizer/overlaySettings";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
-import type { RigTrail } from "@/visualizer/renderFrame";
 import TransportControls from "@/visualizer/TransportControls.vue";
+import { useVisualizerWorkspace } from "@/visualizer/visualizerWorkspace";
 
 defineProps<{
   errorMessage: string | null;
-  cartesianPoses: CartesianMultiRigPose;
-  trails: Partial<Record<RigId, RigTrail>>;
-  rigOrder: readonly RigId[];
-  sceneWorldRadius: number;
-  displayScale: number;
-  overlaySettings: VisualizerOverlaySettings;
   trackTotals: ReadonlyArray<{ trackId: AuthoredTrackId; totalDuration: number }>;
 }>();
 
-const transport = useTransport();
+const { transport } = useVisualizerWorkspace();
 
 function formatNumber(value: number, digits = 2): string {
   return Number.isFinite(value) ? value.toFixed(digits) : "--";
@@ -38,14 +29,7 @@ function formatNumber(value: number, digits = 2): string {
     <section class="grid gap-4 rounded-3xl border border-slate-800 bg-slate-900/60 p-4">
       <TransportControls />
 
-      <PoiCanvasViewport
-        :poses="cartesianPoses"
-        :trails="trails"
-        :rig-order="rigOrder"
-        :scene-world-radius="sceneWorldRadius"
-        :display-scale="displayScale"
-        :overlay-settings="overlaySettings"
-      />
+      <PoiCanvasViewport :projection-drag-enabled="false" />
 
       <div
         class="grid gap-2 rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-300"
