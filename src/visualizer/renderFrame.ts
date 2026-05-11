@@ -73,6 +73,7 @@ export interface RenderFrameOptions {
   readonly showNodeMarkers?: boolean;
   readonly showBodyRig?: boolean;
   readonly showLabels?: boolean;
+  readonly backSideRigIds?: readonly RigId[];
 }
 
 function styleForRig(
@@ -220,6 +221,7 @@ export function renderFrame(
   const showChainLines = options.showChainLines ?? true;
   const showNodeMarkers = options.showNodeMarkers ?? true;
   const showBodyRig = options.showBodyRig ?? false;
+  const backSideRigIds = new Set(options.backSideRigIds ?? []);
 
   clearFrame(ctx, layout.cssWidth, layout.cssHeight, {
     ...(options.backgroundColor ? { backgroundColor: options.backgroundColor } : {}),
@@ -287,6 +289,10 @@ export function renderFrame(
     const anchorCanvas = worldToCanvas(layout, anchorWorld);
     const handCanvas = worldToCanvas(layout, translatePoint(anchorWorld, pose.handPosition));
     const headCanvas = worldToCanvas(layout, translatePoint(anchorWorld, pose.headPosition));
+    const liveAlpha = backSideRigIds.has(rigId) ? 0.62 : 1;
+
+    ctx.save();
+    ctx.globalAlpha *= liveAlpha;
 
     if (showChainLines) {
       drawLine(ctx, handCanvas, headCanvas, style.lineColor, geometry.chainLineWidth);
@@ -310,6 +316,8 @@ export function renderFrame(
         geometry.nodeStrokeWidth
       );
     }
+
+    ctx.restore();
 
     if (options.showLabels ?? true) {
       drawLabel(ctx, rigId, { x: anchorCanvas.x, y: anchorCanvas.y - 10 }, style.labelColor);

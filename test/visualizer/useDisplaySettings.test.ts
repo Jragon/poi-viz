@@ -195,6 +195,7 @@ describe("useDisplaySettings", () => {
     const projectionMode = ref<"auto" | "orthographic" | "tilted">("auto");
     const projectionYawDeg = ref(-25);
     const projectionPitchDeg = ref(18);
+    const planeSideSeparationWorld = ref(0);
     const controller = createDisplaySettingsController({
       rigOrder: ["left"],
       storage,
@@ -228,6 +229,12 @@ describe("useDisplaySettings", () => {
           set: (value) => {
             projectionPitchDeg.value = value;
           }
+        },
+        planeSideSeparationWorld: {
+          value: planeSideSeparationWorld,
+          set: (value) => {
+            planeSideSeparationWorld.value = value;
+          }
         }
       }
     });
@@ -237,6 +244,7 @@ describe("useDisplaySettings", () => {
     controller.external.projectionMode?.set("tilted");
     controller.external.projectionYawDeg?.set(-30);
     controller.external.projectionPitchDeg?.set(20);
+    controller.external.planeSideSeparationWorld?.set(0.2);
     controller.setDisplayScale(1.5);
 
     expect(trailDecaySteps.value).toBe(42);
@@ -244,11 +252,13 @@ describe("useDisplaySettings", () => {
     expect(projectionMode.value).toBe("tilted");
     expect(projectionYawDeg.value).toBe(-30);
     expect(projectionPitchDeg.value).toBe(20);
+    expect(planeSideSeparationWorld.value).toBe(0.2);
     expect(JSON.stringify(storedSnapshot(storage))).not.toContain("trailDecaySteps");
     expect(JSON.stringify(storedSnapshot(storage))).not.toContain("transportSecondsPerUnit");
     expect(JSON.stringify(storedSnapshot(storage))).not.toContain("projectionMode");
     expect(JSON.stringify(storedSnapshot(storage))).not.toContain("projectionYawDeg");
     expect(JSON.stringify(storedSnapshot(storage))).not.toContain("projectionPitchDeg");
+    expect(JSON.stringify(storedSnapshot(storage))).not.toContain("planeSideSeparationWorld");
   });
 
   it("exposes registry ownership for preset and external settings", () => {
@@ -263,6 +273,7 @@ describe("useDisplaySettings", () => {
     expect(ownershipById.projectionMode).toBe("external");
     expect(ownershipById.projectionYawDeg).toBe("external");
     expect(ownershipById.projectionPitchDeg).toBe("external");
+    expect(ownershipById.planeSideSeparationWorld).toBe("external");
     expect(ownershipById["overlay.visibility.showBodyRig"]).toBe("preset");
     expect(ownershipById["overlay.geometry.bodyLineWidth"]).toBe("preset");
   });

@@ -2,7 +2,7 @@ import { evalSegment } from "@/engine/engine";
 import { evalPreparedMultiRigSequenceAt, type PreparedMultiRigSequence } from "@/engine/multirig";
 import {
   DEFAULT_PLANE_PROJECTION_SETTINGS,
-  toProjectedMultiRigPose,
+  toWorldMultiRigPose,
   type PlaneProjectionSettings
 } from "@/engine/planeProjection";
 import type {
@@ -14,6 +14,12 @@ import type {
   TimeUnit,
   Vec2
 } from "@/engine/types";
+import {
+  DEFAULT_PLANE_SIDE_DISPLAY_SETTINGS,
+  applyPlaneSideDisplayOffsets,
+  projectWorldMultiRigPose,
+  type PlaneSideDisplaySettings
+} from "@/visualizer/planeSideDisplay";
 
 type EvaluatedTrailPose = {
   pose: RelativeRigPose;
@@ -238,7 +244,8 @@ export function sampleMultiRigTrailGrid(
   dt: TimeUnit,
   normalizedHoldSteps: number | null,
   loopDuration: TimeUnit | null,
-  projectionSettings: PlaneProjectionSettings = DEFAULT_PLANE_PROJECTION_SETTINGS
+  projectionSettings: PlaneProjectionSettings = DEFAULT_PLANE_PROJECTION_SETTINGS,
+  planeSideDisplaySettings: PlaneSideDisplaySettings = DEFAULT_PLANE_SIDE_DISPLAY_SETTINGS
 ): MultiRigTrailSamples {
   const effectiveLoopDuration = normalizedHoldSteps === null ? null : loopDuration;
   const startIndex = normalizedHoldSteps === null ? 0 : sampleIndex - (normalizedHoldSteps - 1);
@@ -253,7 +260,11 @@ export function sampleMultiRigTrailGrid(
       effectiveLoopDuration === null ? rawTime : normalizeLoopTime(rawTime, effectiveLoopDuration);
     const result = evalPreparedMultiRigSequenceAt(prepared, sampleTime);
     if (!result.ok) return {};
-    appendCartesianSample(trails, toProjectedMultiRigPose(result.poses, projectionSettings));
+    const displayWorldPoses = applyPlaneSideDisplayOffsets(
+      toWorldMultiRigPose(result.poses),
+      planeSideDisplaySettings
+    );
+    appendCartesianSample(trails, projectWorldMultiRigPose(displayWorldPoses, projectionSettings));
   }
 
   return trails;

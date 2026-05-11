@@ -317,7 +317,8 @@ const workspace = provideVisualizerWorkspace(
   })
 );
 const { core, transport, display } = workspace;
-core.session.setProjectionMode("orthographic");
+core.session.setProjectionMode("tilted");
+core.session.setPlaneSideSeparationWorld(0.2);
 core.session.setTrailDecaySteps(180);
 display.setOverlayVisibility("showHandTrails", true);
 display.setOverlayVisibility("showHeadTrails", true);

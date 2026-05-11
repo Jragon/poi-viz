@@ -53,6 +53,10 @@ export function useVisualizerDisplay(
         value: core.session.projectionPitchDeg,
         set: core.session.setProjectionPitchDeg
       },
+      planeSideSeparationWorld: {
+        value: core.session.planeSideSeparationWorld,
+        set: core.session.setPlaneSideSeparationWorld
+      },
       transportSecondsPerUnit: {
         value: transportSecondsPerUnit,
         set: (value) => {

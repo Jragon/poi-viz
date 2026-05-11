@@ -76,6 +76,7 @@ export interface ExternalDisplaySettingBindings {
   projectionMode?: DisplayProjectionModeBinding;
   projectionYawDeg?: DisplayNumberBinding;
   projectionPitchDeg?: DisplayNumberBinding;
+  planeSideSeparationWorld?: DisplayNumberBinding;
 }
 
 export interface DisplaySettingsOptions {
@@ -407,6 +408,17 @@ export const EXTERNAL_DISPLAY_SETTINGS: readonly SettingRegistryEntry[] = [
     max: 45,
     step: 1,
     digits: 0
+  },
+  {
+    id: "planeSideSeparationWorld",
+    label: "Plane Side Separation",
+    group: "Projection",
+    kind: "range",
+    ownership: "external",
+    min: 0,
+    max: 0.5,
+    step: 0.01,
+    digits: 2
   },
   {
     id: "transportSecondsPerUnit",

@@ -18,7 +18,6 @@ import {
 } from "@/engine/multirig";
 import {
   DEFAULT_PLANE_PROJECTION_SETTINGS,
-  toProjectedMultiRigPose,
   toWorldMultiRigPose,
   type PlaneProjectionSettings,
   type ProjectionMode
@@ -31,6 +30,12 @@ import type {
   TimeUnit,
   WorldMultiRigPose
 } from "@/engine/types";
+import {
+  DEFAULT_PLANE_SIDE_DISPLAY_SETTINGS,
+  applyPlaneSideDisplayOffsets,
+  projectWorldMultiRigPose,
+  type PlaneSideDisplaySettings
+} from "@/visualizer/planeSideDisplay";
 import {
   appendCurrentPoseToTrails,
   isContinuousAtLoopBoundary,
@@ -85,7 +90,8 @@ function toRelativePoses(poses: EvaluatedMultiRigPose): Record<RigId, RelativeRi
 
 export function useMultiRigPlayback(
   sequence: MaybeRefOrGetter<MultiRigSequence>,
-  projectionSettings: MaybeRefOrGetter<PlaneProjectionSettings> = DEFAULT_PLANE_PROJECTION_SETTINGS
+  projectionSettings: MaybeRefOrGetter<PlaneProjectionSettings> = DEFAULT_PLANE_PROJECTION_SETTINGS,
+  planeSideDisplaySettings: MaybeRefOrGetter<PlaneSideDisplaySettings> = DEFAULT_PLANE_SIDE_DISPLAY_SETTINGS
 ): MultiRigPlaybackController {
   const prepared = ref<PreparedMultiRigSequence | null>(null);
   const prepareErrors = ref<MultiRigSequenceValidationError[]>([]);
@@ -101,6 +107,7 @@ export function useMultiRigPlayback(
     projectionMode: ProjectionMode;
     projectionYawDeg: number;
     projectionPitchDeg: number;
+    planeSideSeparationWorld: number;
     trails: MultiRigTrailSamples;
   } | null = null;
 
@@ -140,12 +147,17 @@ export function useMultiRigPlayback(
 
     const relativePoses = toRelativePoses(evalResult.poses);
     const currentProjectionSettings = toValue(projectionSettings);
+    const currentPlaneSideDisplaySettings = toValue(planeSideDisplaySettings);
+    const worldPoses = applyPlaneSideDisplayOffsets(
+      toWorldMultiRigPose(evalResult.poses),
+      currentPlaneSideDisplaySettings
+    );
     const result: PlaybackEvalSuccess = {
       ok: true,
       evaluatedPoses: evalResult.poses,
       relativePoses,
-      worldPoses: toWorldMultiRigPose(evalResult.poses),
-      cartesianPoses: toProjectedMultiRigPose(evalResult.poses, currentProjectionSettings)
+      worldPoses,
+      cartesianPoses: projectWorldMultiRigPose(worldPoses, currentProjectionSettings)
     };
     lastEvaluation.value = result;
     return result;
@@ -173,6 +185,7 @@ export function useMultiRigPlayback(
 
     const loopMode = options.loopMode ?? "off";
     const currentProjectionSettings = toValue(projectionSettings);
+    const currentPlaneSideDisplaySettings = toValue(planeSideDisplaySettings);
     const optionLoopDuration = options.loopDuration ?? 0;
     const loopDuration =
       Number.isFinite(optionLoopDuration) && optionLoopDuration > 0 ? optionLoopDuration : null;
@@ -196,7 +209,8 @@ export function useMultiRigPlayback(
       trailCache.isContinuous === isContinuous &&
       trailCache.projectionMode === currentProjectionSettings.mode &&
       trailCache.projectionYawDeg === currentProjectionSettings.yawDeg &&
-      trailCache.projectionPitchDeg === currentProjectionSettings.pitchDeg
+      trailCache.projectionPitchDeg === currentProjectionSettings.pitchDeg &&
+      trailCache.planeSideSeparationWorld === currentPlaneSideDisplaySettings.separationWorld
         ? trailCache.trails
         : null;
 
@@ -207,7 +221,8 @@ export function useMultiRigPlayback(
         dt,
         normalizedHoldSteps,
         wrappedLoopDuration,
-        currentProjectionSettings
+        currentProjectionSettings,
+        currentPlaneSideDisplaySettings
       );
       trailCache = {
         prepared: prepared.value,
@@ -220,6 +235,7 @@ export function useMultiRigPlayback(
         projectionMode: currentProjectionSettings.mode,
         projectionYawDeg: currentProjectionSettings.yawDeg,
         projectionPitchDeg: currentProjectionSettings.pitchDeg,
+        planeSideSeparationWorld: currentPlaneSideDisplaySettings.separationWorld,
         trails: baseTrails
       };
     }
@@ -231,9 +247,14 @@ export function useMultiRigPlayback(
     const currentEval = evalPreparedMultiRigSequenceAt(prepared.value, t);
     if (!currentEval.ok) return {};
 
+    const currentWorldPoses = applyPlaneSideDisplayOffsets(
+      toWorldMultiRigPose(currentEval.poses),
+      currentPlaneSideDisplaySettings
+    );
+
     return appendCurrentPoseToTrails(
       baseTrails,
-      toProjectedMultiRigPose(currentEval.poses, currentProjectionSettings),
+      projectWorldMultiRigPose(currentWorldPoses, currentProjectionSettings),
       normalizedHoldSteps
     );
   };

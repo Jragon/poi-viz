@@ -70,6 +70,12 @@ const draw = () => {
 
   ctx.setTransform(layout.dpr, 0, 0, layout.dpr, 0, 0);
   const overlaySettings = display.overlaySettings.value;
+  const currentFrame = core.session.currentFrame.value;
+  const backSideRigIds = currentFrame?.ok
+    ? Object.entries(currentFrame.evaluatedPoses)
+        .filter(([, pose]) => pose.planeSide === "b")
+        .map(([rigId]) => rigId)
+    : [];
   const bodyOverlay = overlaySettings.visibility.showBodyRig
     ? computeBodyOverlay({
         worldPoses: core.worldPoses.value,
@@ -90,7 +96,8 @@ const draw = () => {
     showChainLines: overlaySettings.visibility.showChainLines,
     showNodeMarkers: overlaySettings.visibility.showNodeMarkers,
     showBodyRig: overlaySettings.visibility.showBodyRig,
-    showLabels: false
+    showLabels: false,
+    backSideRigIds
   });
 };
 

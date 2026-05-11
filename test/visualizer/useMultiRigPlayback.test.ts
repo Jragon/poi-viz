@@ -160,6 +160,62 @@ describe("useMultiRigPlayback", () => {
     expect(withSideResult.cartesianPoses).toEqual(withoutSideResult.cartesianPoses);
   });
 
+  it("applies plane side separation to display-world and projected poses only", () => {
+    const playback = useMultiRigPlayback(
+      {
+        rigs: [
+          {
+            rigId: "left",
+            sequence: {
+              segments: [
+                { ...makeSegment(0, 0), durationUnits: 1, planeId: "wall", planeSide: "b" }
+              ]
+            }
+          }
+        ]
+      },
+      { mode: "tilted", yawDeg: -25, pitchDeg: 18 },
+      { separationWorld: 0.2 }
+    );
+
+    const result = playback.evaluate(0);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.evaluatedPoses.left.pose.handPose).toEqual({ phaseAbs: 0, radius: 1 });
+    expect(result.relativePoses.left.handPose).toEqual({ phaseAbs: 0, radius: 1 });
+    expect(result.worldPoses.left.handPosition).toEqual({ x: 1, y: 0, z: -0.2 });
+    expect(result.worldPoses.left.headPosition).toEqual({ x: 2, y: 0, z: -0.2 });
+    expect(result.cartesianPoses.left.handPosition.x).not.toBeCloseTo(
+      Math.cos(0) * Math.cos((-25 * Math.PI) / 180),
+      6
+    );
+  });
+
+  it("does not offset display poses for sequences without authored plane side", () => {
+    const playback = useMultiRigPlayback(
+      {
+        rigs: [
+          {
+            rigId: "left",
+            sequence: {
+              segments: [{ ...makeSegment(0, 0), durationUnits: 1, planeId: "wall" }]
+            }
+          }
+        ]
+      },
+      { mode: "tilted", yawDeg: -25, pitchDeg: 18 },
+      { separationWorld: 0.2 }
+    );
+
+    const result = playback.evaluate(0);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.worldPoses.left.handPosition).toEqual({ x: 1, y: 0, z: 0 });
+    expect(result.worldPoses.left.headPosition).toEqual({ x: 2, y: 0, z: 0 });
+  });
+
   it("reports unprepared state when the input sequence fails validation", async () => {
     const sequence = ref<MultiRigSequence>({ rigs: [] });
     const playback = useMultiRigPlayback(sequence);
@@ -374,6 +430,32 @@ describe("useMultiRigPlayback.sampleTrails", () => {
     expect(off.left?.hand).toHaveLength(2);
     expect(auto.left?.hand).toHaveLength(3);
     expect(auto).not.toEqual(off);
+  });
+
+  it("separates cached trail windows by plane side display separation", () => {
+    const planeSideDisplay = ref({ separationWorld: 0 });
+    const playback = useMultiRigPlayback(
+      {
+        rigs: [
+          {
+            rigId: "left",
+            sequence: {
+              segments: [
+                { ...makeSegment(0, 0), durationUnits: 1, planeId: "wall", planeSide: "b" }
+              ]
+            }
+          }
+        ]
+      },
+      { mode: "tilted", yawDeg: -25, pitchDeg: 18 },
+      planeSideDisplay
+    );
+
+    const plain = playback.sampleTrails(0.1, 0.1);
+    planeSideDisplay.value = { separationWorld: 0.2 };
+    const separated = playback.sampleTrails(0.1, 0.1);
+
+    expect(separated.left?.hand?.[0].x).not.toBeCloseTo(plain.left!.hand[0].x, 6);
   });
 
   it("leaves unbounded trails unchanged in auto mode", () => {

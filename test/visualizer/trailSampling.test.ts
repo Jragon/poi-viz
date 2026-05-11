@@ -244,6 +244,28 @@ describe("trailSampling", () => {
     expect(trails.left?.hand[0].y).toBeCloseTo(-0.280065, 6);
   });
 
+  it("samples trail points with plane side display separation", () => {
+    const prepared = prepare({
+      rigs: [
+        {
+          rigId: "left",
+          sequence: {
+            segments: [{ ...makeSegment(0, 0), durationUnits: 1, planeId: "wall", planeSide: "b" }]
+          }
+        }
+      ]
+    });
+    const projectionSettings = { mode: "tilted", yawDeg: -25, pitchDeg: 18 } as const;
+
+    const plain = sampleMultiRigTrailGrid(prepared, 0, 0.25, 2, null, projectionSettings);
+    const separated = sampleMultiRigTrailGrid(prepared, 0, 0.25, 2, null, projectionSettings, {
+      separationWorld: 0.2
+    });
+
+    expect(separated.left?.hand[0].x).not.toBeCloseTo(plain.left!.hand[0].x, 6);
+    expect(separated.left?.hand[0].y).not.toBeCloseTo(plain.left!.hand[0].y, 6);
+  });
+
   it("keeps unbounded sampling on the non-wrapped grid", () => {
     const prepared = prepare(singleRigSequence(makeSegment(Math.PI * 2, Math.PI * 2), 1));
     const auto = sampleMultiRigTrailGrid(prepared, 5, 0.25, null, 1);

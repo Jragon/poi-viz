@@ -15,6 +15,8 @@ This sandbox checks the generic `planeSide` engine metadata without introducing 
 
 The sequence below is authored directly as engine data. It stays on the wall plane: side `b` is the back side for full poi circles, and side `a` is the front side for transfer arcs.
 
+The live visualizer offsets authored side metadata in display space only. This lab defaults to tilted projection with a small side separation so side `b` reads behind side `a`; trails may show hard side-change jumps, and the current back-side chain/nodes get only a subtle secondary cue.
+
 ### Current wrap probe model
 
 The active probe is intentionally narrow: one single-poi lower wrap compiled from phase landmarks, not from named trick abstractions. The poi phase is the primary schedule and the hand position changes only during the transfer windows.

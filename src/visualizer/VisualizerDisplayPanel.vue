@@ -38,6 +38,9 @@ const projectionYawSetting = EXTERNAL_DISPLAY_SETTINGS.find(
 const projectionPitchSetting = EXTERNAL_DISPLAY_SETTINGS.find(
   (setting) => setting.id === "projectionPitchDeg"
 ) as RangeSettingRegistryEntry;
+const planeSideSeparationSetting = EXTERNAL_DISPLAY_SETTINGS.find(
+  (setting) => setting.id === "planeSideSeparationWorld"
+) as RangeSettingRegistryEntry;
 const transportSpeedSetting = EXTERNAL_DISPLAY_SETTINGS.find(
   (setting) => setting.id === "transportSecondsPerUnit"
 ) as RangeSettingRegistryEntry;
@@ -226,7 +229,8 @@ function projectionModeValue(event: Event): ProjectionModePreference {
         v-if="
           display.external.projectionMode ||
           display.external.projectionYawDeg ||
-          display.external.projectionPitchDeg
+          display.external.projectionPitchDeg ||
+          display.external.planeSideSeparationWorld
         "
         class="grid gap-3 border-t border-slate-800 pt-4"
       >
@@ -289,6 +293,31 @@ function projectionModeValue(event: Event): ProjectionModePreference {
             :value="display.external.projectionPitchDeg.value.value"
             class="w-full accent-fuchsia-400"
             @input="display.external.projectionPitchDeg.set(numberValue($event))"
+          />
+        </label>
+
+        <label
+          v-if="display.external.planeSideSeparationWorld"
+          class="grid gap-2 text-xs uppercase tracking-[0.16em] text-slate-500"
+        >
+          <span class="flex items-center justify-between gap-3">
+            <span>{{ planeSideSeparationSetting.label }}</span>
+            <span class="font-mono text-sm normal-case tracking-normal text-slate-300">
+              {{
+                display.external.planeSideSeparationWorld.value.value.toFixed(
+                  planeSideSeparationSetting.digits
+                )
+              }}u
+            </span>
+          </span>
+          <input
+            type="range"
+            :min="planeSideSeparationSetting.min"
+            :max="planeSideSeparationSetting.max"
+            :step="planeSideSeparationSetting.step"
+            :value="display.external.planeSideSeparationWorld.value.value"
+            class="w-full accent-fuchsia-400"
+            @input="display.external.planeSideSeparationWorld.set(numberValue($event))"
           />
         </label>
       </div>

@@ -76,11 +76,12 @@ export function useVisualizerCore(
   const trails = currentTrails;
   const sceneWorldRadius = computed(() => {
     const prepared = playback.prepared.value;
+    const sideSeparation = session.planeSideSeparationWorld.value;
     if (!prepared) {
-      return 2;
+      return 2 + sideSeparation;
     }
 
-    return prepared.rigs.reduce((maxRadius, rig) => {
+    const sequenceRadius = prepared.rigs.reduce((maxRadius, rig) => {
       const rigMaxRadius = rig.prepared.segments.reduce((maxSegmentRadius, segment) => {
         const chainRadius = segment.hand.startPose.radius + segment.head.startPose.radius;
         return Math.max(maxSegmentRadius, chainRadius);
@@ -88,6 +89,8 @@ export function useVisualizerCore(
 
       return Math.max(maxRadius, rigMaxRadius);
     }, 2);
+
+    return sequenceRadius + sideSeparation;
   });
   const transportDurationLabel = computed(() => transport.duration.value.toFixed(2));
   const sequenceSummary = computed(() =>

@@ -4,6 +4,8 @@ import { nextTick, ref, type MaybeRefOrGetter } from "vue";
 import { createTransport } from "@/composables/useTransport";
 import type { MultiRigSequence, Segment } from "@/engine/types";
 import {
+  PLANE_SIDE_SEPARATION_DEFAULT,
+  PLANE_SIDE_SEPARATION_MAX,
   PROJECTION_PITCH_MAX,
   PROJECTION_PITCH_MIN,
   PROJECTION_YAW_MAX,
@@ -201,6 +203,26 @@ describe("useVisualizerSession", () => {
 
     session.setTrailDecaySteps(Number.NaN);
     expect(session.trailDecaySteps.value).toBe(TRAIL_DECAY_DEFAULT);
+  });
+
+  it("clamps plane side separation to a finite display range", () => {
+    const { session } = createSession(makeSequence(2));
+
+    expect(session.planeSideSeparationWorld.value).toBe(PLANE_SIDE_SEPARATION_DEFAULT);
+    expect(session.planeSideDisplaySettings.value).toEqual({ separationWorld: 0 });
+
+    session.setPlaneSideSeparationWorld(0.2);
+    expect(session.planeSideSeparationWorld.value).toBe(0.2);
+    expect(session.planeSideDisplaySettings.value).toEqual({ separationWorld: 0.2 });
+
+    session.setPlaneSideSeparationWorld(10);
+    expect(session.planeSideSeparationWorld.value).toBe(PLANE_SIDE_SEPARATION_MAX);
+
+    session.setPlaneSideSeparationWorld(-1);
+    expect(session.planeSideSeparationWorld.value).toBe(PLANE_SIDE_SEPARATION_DEFAULT);
+
+    session.setPlaneSideSeparationWorld(Number.NaN);
+    expect(session.planeSideSeparationWorld.value).toBe(PLANE_SIDE_SEPARATION_DEFAULT);
   });
 
   it("keeps the live trail tip aligned with the current frame between grid samples", async () => {

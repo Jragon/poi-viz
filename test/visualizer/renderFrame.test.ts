@@ -248,6 +248,24 @@ describe("renderFrame", () => {
     expect(alphaOps).toContain("globalAlpha:1.00");
   });
 
+  it("dims current live nodes and chain for back-side rigs without restyling trails", () => {
+    const { layout, poses, trails } = createSingleRigRenderInput();
+    const { ctx, operations } = createMockContext();
+
+    renderFrame(ctx, layout, poses, {
+      trails,
+      backSideRigIds: ["left"]
+    });
+
+    const alphaOps = operations.filter((op) => op.startsWith("globalAlpha:"));
+    expect(alphaOps).toContain("globalAlpha:0.60");
+    expect(alphaOps).toContain("globalAlpha:1.00");
+    expect(alphaOps).toContain("globalAlpha:0.62");
+    expect(operations.indexOf("globalAlpha:0.62")).toBeGreaterThan(
+      operations.indexOf("lineTo:150.0,170.0")
+    );
+  });
+
   it("skips background fill when transparent rendering is requested", () => {
     const layout = createSceneLayout({
       cssWidth: 300,
