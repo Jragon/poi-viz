@@ -28,16 +28,64 @@ function createWorldPoses(): WorldMultiRigPose {
 }
 
 describe("bodyOverlay", () => {
-  it("returns null when either required hand rig is missing", () => {
+  it("returns null when neither configured hand rig is present", () => {
     const layout = createSceneLayout({ cssWidth: 400, cssHeight: 300 });
 
     expect(
       computeBodyOverlay({
-        worldPoses: { left: createWorldPoses().left },
+        worldPoses: {
+          center: {
+            handPosition: { x: 0, y: 0.25, z: 0 },
+            headPosition: { x: 0.25, y: 0.25, z: 0 },
+            planeId: "wall"
+          }
+        },
         layout,
         projectionSettings
       })
     ).toBeNull();
+  });
+
+  it("uses the default right hand target when only the left rig is active", () => {
+    const layout = createSceneLayout({
+      cssWidth: 400,
+      cssHeight: 300,
+      rigAnchors: {
+        left: { x: -0.25, y: 0.1 }
+      }
+    });
+    const overlay = computeBodyOverlay({
+      worldPoses: { left: createWorldPoses().left },
+      layout,
+      projectionSettings
+    });
+
+    expect(overlay).not.toBeNull();
+    expect(overlay?.pose.solve.leftArm.handTarget).toEqual({ x: -0.75, y: 0.35, z: 0.1 });
+    expect(overlay?.pose.solve.rightArm.handTarget).toEqual(
+      overlay?.pose.body.defaultRightHandTarget
+    );
+  });
+
+  it("uses the default left hand target when only the right rig is active", () => {
+    const layout = createSceneLayout({
+      cssWidth: 400,
+      cssHeight: 300,
+      rigAnchors: {
+        right: { x: 0.25, y: 0.1 }
+      }
+    });
+    const overlay = computeBodyOverlay({
+      worldPoses: { right: createWorldPoses().right },
+      layout,
+      projectionSettings
+    });
+
+    expect(overlay).not.toBeNull();
+    expect(overlay?.pose.solve.leftArm.handTarget).toEqual(
+      overlay?.pose.body.defaultLeftHandTarget
+    );
+    expect(overlay?.pose.solve.rightArm.handTarget).toEqual({ x: 0.75, y: 0.35, z: 0.2 });
   });
 
   it("maps left and right hand targets through rig anchors", () => {

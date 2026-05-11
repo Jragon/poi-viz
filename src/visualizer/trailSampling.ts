@@ -16,7 +16,7 @@ import type {
 } from "@/engine/types";
 import {
   DEFAULT_PLANE_SIDE_DISPLAY_SETTINGS,
-  applyPlaneSideDisplayOffsets,
+  applyPlaneSideTransitionOffsets,
   projectWorldMultiRigPose,
   type PlaneSideDisplaySettings
 } from "@/visualizer/planeSideDisplay";
@@ -260,8 +260,9 @@ export function sampleMultiRigTrailGrid(
       effectiveLoopDuration === null ? rawTime : normalizeLoopTime(rawTime, effectiveLoopDuration);
     const result = evalPreparedMultiRigSequenceAt(prepared, sampleTime);
     if (!result.ok) return {};
-    const displayWorldPoses = applyPlaneSideDisplayOffsets(
+    const displayWorldPoses = applyPlaneSideTransitionOffsets(
       toWorldMultiRigPose(result.poses),
+      prepared,
       planeSideDisplaySettings
     );
     appendCartesianSample(trails, projectWorldMultiRigPose(displayWorldPoses, projectionSettings));

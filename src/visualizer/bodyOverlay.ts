@@ -111,7 +111,7 @@ export function computeBodyOverlay(input: BodyOverlayInput): BodyOverlayFrame | 
   const leftPose = input.worldPoses[rigIds.left];
   const rightPose = input.worldPoses[rigIds.right];
 
-  if (!leftPose || !rightPose) {
+  if (!leftPose && !rightPose) {
     return null;
   }
 
@@ -120,8 +120,12 @@ export function computeBodyOverlay(input: BodyOverlayInput): BodyOverlayFrame | 
   const pose = solveBodyRigFrame(
     body,
     {
-      leftHandTarget: anchoredHandTarget(input.layout, rigIds.left, leftPose),
-      rightHandTarget: anchoredHandTarget(input.layout, rigIds.right, rightPose)
+      leftHandTarget: leftPose
+        ? anchoredHandTarget(input.layout, rigIds.left, leftPose)
+        : body.defaultLeftHandTarget,
+      rightHandTarget: rightPose
+        ? anchoredHandTarget(input.layout, rigIds.right, rightPose)
+        : body.defaultRightHandTarget
     },
     input.projectionSettings ?? DEFAULT_PLANE_PROJECTION_SETTINGS
   );

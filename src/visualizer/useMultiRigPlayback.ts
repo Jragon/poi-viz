@@ -32,7 +32,7 @@ import type {
 } from "@/engine/types";
 import {
   DEFAULT_PLANE_SIDE_DISPLAY_SETTINGS,
-  applyPlaneSideDisplayOffsets,
+  applyPlaneSideTransitionOffsets,
   projectWorldMultiRigPose,
   type PlaneSideDisplaySettings
 } from "@/visualizer/planeSideDisplay";
@@ -148,8 +148,9 @@ export function useMultiRigPlayback(
     const relativePoses = toRelativePoses(evalResult.poses);
     const currentProjectionSettings = toValue(projectionSettings);
     const currentPlaneSideDisplaySettings = toValue(planeSideDisplaySettings);
-    const worldPoses = applyPlaneSideDisplayOffsets(
+    const worldPoses = applyPlaneSideTransitionOffsets(
       toWorldMultiRigPose(evalResult.poses),
+      prepared.value!,
       currentPlaneSideDisplaySettings
     );
     const result: PlaybackEvalSuccess = {
@@ -247,8 +248,9 @@ export function useMultiRigPlayback(
     const currentEval = evalPreparedMultiRigSequenceAt(prepared.value, t);
     if (!currentEval.ok) return {};
 
-    const currentWorldPoses = applyPlaneSideDisplayOffsets(
+    const currentWorldPoses = applyPlaneSideTransitionOffsets(
       toWorldMultiRigPose(currentEval.poses),
+      prepared.value!,
       currentPlaneSideDisplaySettings
     );
 

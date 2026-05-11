@@ -70,7 +70,9 @@ const activePlanesLabel = computed(() => {
   return Array.from(planes).join(" / ");
 });
 
-core.session.setProjectionMode("orthographic");
+// core.session.setProjectionMode("orthographic");
+core.session.setProjectionMode("tilted");
+core.session.setPlaneSideSeparationWorld(0.2);
 display.setOverlayVisibility("showHandTrails", false);
 display.setOverlayVisibility("showHeadTrails", true);
 
@@ -348,7 +350,7 @@ function phaseButtonClass(track: PoiBeatTrack, phase: PoiBeatPhaseLabel): string
           <PoiCanvasViewport
             v-else
             class="min-h-112! rounded-none border-0 md:min-h-136!"
-            :projection-drag-enabled="false"
+            :projection-drag-enabled="true"
           />
 
           <div
