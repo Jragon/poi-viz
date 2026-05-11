@@ -23,9 +23,9 @@ describe("bodyRigFrame", () => {
     expect(dimensions.config.upperArmLength + dimensions.config.forearmLength).toBeCloseTo(
       DEFAULT_BODY_ARM_REACH
     );
-    expect(dimensions.torsoHeight).toBeCloseTo(DEFAULT_BODY_ARM_REACH * 0.90625);
-    expect(dimensions.hipSpan).toBeCloseTo(dimensions.shoulderSpan * 0.6);
-    expect(dimensions.headRadius).toBeCloseTo(DEFAULT_BODY_ARM_REACH * 0.28125);
+    expect(dimensions.torsoHeight).toBeCloseTo(DEFAULT_BODY_ARM_REACH * 0.86);
+    expect(dimensions.hipSpan).toBeCloseTo(dimensions.shoulderSpan * 0.72);
+    expect(dimensions.headRadius).toBeCloseTo(DEFAULT_BODY_ARM_REACH * 0.21);
     expect(dimensions.sharedHandOverlapCircle.radius).toBeGreaterThan(0);
   });
 
@@ -36,7 +36,7 @@ describe("bodyRigFrame", () => {
     expect(dimensions.config.upperArmLength + dimensions.config.forearmLength).toBeCloseTo(
       dimensions.armReach
     );
-    expect(dimensions.torsoHeight / dimensions.armReach).toBeCloseTo(0.90625);
+    expect(dimensions.torsoHeight / dimensions.armReach).toBeCloseTo(0.86);
   });
 
   it("solves a y-up world-space body frame before projection", () => {

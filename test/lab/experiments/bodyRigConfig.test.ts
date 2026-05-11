@@ -12,9 +12,9 @@ describe("buildBodyRigConfigFromArmReach", () => {
   it("builds the shared default rig proportions from arm reach", () => {
     const config = buildBodyRigConfigFromArmReach(160);
 
-    expect(config.upperArmLength).toBeCloseTo(80);
-    expect(config.forearmLength).toBeCloseTo(80);
-    expect(config.baseShoulderSpan).toBeCloseTo(170);
+    expect(config.upperArmLength).toBeCloseTo(88);
+    expect(config.forearmLength).toBeCloseTo(72);
+    expect(config.baseShoulderSpan).toBeCloseTo(128);
     expect(config.maxYawRad).toBeCloseTo(DEFAULT_MAX_TORSO_YAW_RAD);
     expect(config.minProjectedSpanRatio).toBeCloseTo(DEFAULT_MIN_PROJECTED_SHOULDER_SPAN_RATIO);
     expect(config.elbowPolicy?.mode).toBe("outward");
@@ -29,9 +29,9 @@ describe("buildBodyRigConfigFromArmReach", () => {
       neutralDeadzonePx: 12
     });
 
-    expect(config.upperArmLength).toBeCloseTo(60);
-    expect(config.forearmLength).toBeCloseTo(60);
-    expect(config.baseShoulderSpan).toBeCloseTo(127.5);
+    expect(config.upperArmLength).toBeCloseTo(66);
+    expect(config.forearmLength).toBeCloseTo(54);
+    expect(config.baseShoulderSpan).toBeCloseTo(96);
     expect(config.maxYawRad).toBeCloseTo(Math.PI / 2);
     expect(config.minProjectedSpanRatio).toBeCloseTo(0.4);
     expect(config.neutralDeadzonePx).toBe(12);
