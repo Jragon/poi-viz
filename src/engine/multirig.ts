@@ -43,6 +43,7 @@ export type EvaluatedMultiRigPose = Record<
     pose: MultiRigPose[RigId];
     planeId: PlaneId;
     planeSide?: PlaneSide;
+    behindBody?: boolean;
     segmentIndex: number;
     tLocal: TimeUnit;
   }
@@ -127,6 +128,7 @@ export function evalPreparedMultiRigSequenceAt(
       pose: result.pose,
       planeId: result.planeId,
       ...(result.planeSide !== undefined ? { planeSide: result.planeSide } : {}),
+      ...(result.behindBody !== undefined ? { behindBody: result.behindBody } : {}),
       segmentIndex: result.segmentIndex,
       tLocal: result.tLocal
     };

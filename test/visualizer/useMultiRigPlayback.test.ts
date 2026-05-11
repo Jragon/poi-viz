@@ -160,6 +160,44 @@ describe("useMultiRigPlayback", () => {
     expect(withSideResult.cartesianPoses).toEqual(withoutSideResult.cartesianPoses);
   });
 
+  it("exposes evaluated behind-body metadata without changing projection", () => {
+    const segment = makeSegment(0, 0);
+    const withBehindBody = useMultiRigPlayback({
+      rigs: [
+        {
+          rigId: "left",
+          sequence: {
+            segments: [{ ...segment, durationUnits: 1, planeId: "wall", behindBody: true }]
+          }
+        }
+      ]
+    });
+    const withoutBehindBody = useMultiRigPlayback({
+      rigs: [
+        {
+          rigId: "left",
+          sequence: {
+            segments: [{ ...segment, durationUnits: 1, planeId: "wall" }]
+          }
+        }
+      ]
+    });
+
+    const withBehindBodyResult = withBehindBody.evaluate(0);
+    const withoutBehindBodyResult = withoutBehindBody.evaluate(0);
+    expect(withBehindBodyResult.ok).toBe(true);
+    expect(withoutBehindBodyResult.ok).toBe(true);
+
+    if (!withBehindBodyResult.ok || !withoutBehindBodyResult.ok) return;
+    expect(withBehindBodyResult.evaluatedPoses.left.behindBody).toBe(true);
+    expect(withBehindBodyResult.worldPoses.left.behindBody).toBe(true);
+    expect(withoutBehindBodyResult.evaluatedPoses.left.behindBody).toBeUndefined();
+    expect(withoutBehindBodyResult.worldPoses.left.behindBody).toBeUndefined();
+    expect("behindBody" in withoutBehindBodyResult.evaluatedPoses.left).toBe(false);
+    expect("behindBody" in withoutBehindBodyResult.worldPoses.left).toBe(false);
+    expect(withBehindBodyResult.cartesianPoses).toEqual(withoutBehindBodyResult.cartesianPoses);
+  });
+
   it("applies plane side separation to display-world and projected poses only", () => {
     const playback = useMultiRigPlayback(
       {

@@ -455,6 +455,14 @@ describe("compilePoiBeatGraph", () => {
       "a",
       "b"
     ]);
+    expect(rig?.sequence.segments.map((segment) => segment.behindBody)).toEqual([
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    ]);
     expect(rig?.sequence.segments.map((segment) => segment.hand.driver.kind)).toEqual([
       "circle",
       "runtime",
@@ -578,6 +586,30 @@ describe("compilePoiBeatGraph", () => {
       "runtime"
     ]);
     expect(prepared.ok).toBe(true);
+  });
+
+  it("marks BTB rows as behind-body segment metadata", () => {
+    const graph: PoiBeatGraph = {
+      cycleSteps: 2,
+      lanes: createLowerWrapBeatGraph().lanes,
+      tracks: [
+        {
+          id: "right",
+          hand: "right",
+          poiDirection: "clockwise",
+          initialPhase: "up",
+          rows: [
+            { step: 0, laneId: "left-low", planeSide: "a" },
+            { step: 1, laneId: "center" }
+          ]
+        }
+      ]
+    };
+    const result = compilePoiBeatGraph(graph);
+    const rig = result.sequence.rigs[0];
+
+    expect(result.diagnostics).toEqual([]);
+    expect(rig?.sequence.segments.map((segment) => segment.behindBody)).toEqual([true, undefined]);
   });
 
   it("compiles low common cosmo center side switches as opposite-low bounce paths", () => {

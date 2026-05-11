@@ -13,10 +13,10 @@ function createMockContext() {
   const operations: string[] = [];
   let globalAlpha = 1;
   let lineWidth = 1;
+  let strokeStyle = "";
 
   const ctx = {
     fillStyle: "",
-    strokeStyle: "",
     font: "",
     textAlign: "start",
     textBaseline: "alphabetic",
@@ -47,6 +47,9 @@ function createMockContext() {
     arc: (x: number, y: number, radius: number) => {
       operations.push(`arc:${x.toFixed(1)},${y.toFixed(1)},${radius.toFixed(1)}`);
     },
+    setLineDash: (segments: number[]) => {
+      operations.push(`setLineDash:${segments.join(",")}`);
+    },
     fill: () => {
       operations.push("fill");
     },
@@ -67,6 +70,13 @@ function createMockContext() {
     set: (value: number) => {
       lineWidth = value;
       operations.push(`lineWidth:${value.toFixed(1)}`);
+    }
+  });
+  Object.defineProperty(ctx, "strokeStyle", {
+    get: () => strokeStyle,
+    set: (value: string) => {
+      strokeStyle = value;
+      operations.push(`strokeStyle:${value}`);
     }
   });
 
@@ -437,6 +447,159 @@ describe("renderFrame", () => {
     expect(bodyOverlay).not.toBeNull();
     expect(bodyIndex).toBeGreaterThan(handTrailIndex);
     expect(chainLineIndex).toBeGreaterThan(bodyIndex);
+  });
+
+  it("draws a dashed ring around body overlay hands marked behind-body", () => {
+    const { layout, poses } = createSingleRigRenderInput();
+    const bodyOverlay = computeBodyOverlay({
+      layout,
+      worldPoses: {
+        left: {
+          handPosition: { x: -0.5, y: 0.25, z: 0 },
+          headPosition: { x: -0.25, y: 0.25, z: 0 },
+          planeId: "wall",
+          behindBody: true
+        },
+        right: {
+          handPosition: { x: 0.5, y: 0.25, z: 0 },
+          headPosition: { x: 0.75, y: 0.25, z: 0 },
+          planeId: "wall"
+        }
+      }
+    });
+    const { ctx, operations } = createMockContext();
+
+    renderFrame(ctx, layout, poses, {
+      bodyOverlay,
+      showBodyRig: true
+    });
+
+    expect(bodyOverlay?.behindBodySides.left).toBe(true);
+    expect(operations).toContain("setLineDash:4,5");
+    expect(operations).toContain("setLineDash:");
+    expect(operations).toContain("lineWidth:2.0");
+    expect(operations).toContain("arc:100.0,75.0,11.0");
+  });
+
+  it("draws behind-body arms before the trunk and front arms after it", () => {
+    const { layout, poses } = createSingleRigRenderInput();
+    const bodyOverlay = computeBodyOverlay({
+      layout,
+      worldPoses: {
+        left: {
+          handPosition: { x: -0.5, y: 0.25, z: 0 },
+          headPosition: { x: -0.25, y: 0.25, z: 0 },
+          planeId: "wall",
+          behindBody: true
+        },
+        right: {
+          handPosition: { x: 0.5, y: 0.25, z: 0 },
+          headPosition: { x: 0.75, y: 0.25, z: 0 },
+          planeId: "wall"
+        }
+      }
+    });
+    const { ctx, operations } = createMockContext();
+
+    renderFrame(ctx, layout, poses, {
+      bodyOverlay,
+      showBodyRig: true,
+      showChainLines: false,
+      showNodeMarkers: false,
+      rigOrder: ["left", "right"],
+      rigStyles: {
+        left: {
+          handColor: "left-hand",
+          headColor: "left-head",
+          lineColor: "left-arm",
+          labelColor: "left-label",
+          handTrailColor: "left-hand-trail",
+          headTrailColor: "left-head-trail"
+        },
+        right: {
+          handColor: "right-hand",
+          headColor: "right-head",
+          lineColor: "right-arm",
+          labelColor: "right-label",
+          handTrailColor: "right-hand-trail",
+          headTrailColor: "right-head-trail"
+        }
+      }
+    });
+
+    const leftArmIndex = operations.indexOf("strokeStyle:left-arm");
+    const trunkIndex = operations.indexOf("strokeStyle:rgba(148, 163, 184, 0.42)");
+    const rightArmIndex = operations.indexOf("strokeStyle:right-arm");
+
+    expect(bodyOverlay?.behindBodySides).toEqual({ left: true, right: false });
+    expect(leftArmIndex).toBeGreaterThan(-1);
+    expect(trunkIndex).toBeGreaterThan(-1);
+    expect(rightArmIndex).toBeGreaterThan(-1);
+    expect(leftArmIndex).toBeLessThan(trunkIndex);
+    expect(rightArmIndex).toBeGreaterThan(trunkIndex);
+  });
+
+  it("draws both arms behind the trunk for back crossers", () => {
+    const { layout, poses } = createSingleRigRenderInput();
+    const bodyOverlay = computeBodyOverlay({
+      layout,
+      worldPoses: {
+        left: {
+          handPosition: { x: -0.5, y: 0.25, z: 0 },
+          headPosition: { x: -0.25, y: 0.25, z: 0 },
+          planeId: "wall",
+          behindBody: true
+        },
+        right: {
+          handPosition: { x: 0.5, y: 0.25, z: 0 },
+          headPosition: { x: 0.75, y: 0.25, z: 0 },
+          planeId: "wall",
+          behindBody: true
+        }
+      }
+    });
+    const { ctx, operations } = createMockContext();
+
+    renderFrame(ctx, layout, poses, {
+      bodyOverlay,
+      showBodyRig: true,
+      showChainLines: false,
+      showNodeMarkers: false,
+      rigOrder: ["left", "right"],
+      rigStyles: {
+        left: {
+          handColor: "left-hand",
+          headColor: "left-head",
+          lineColor: "left-arm",
+          labelColor: "left-label",
+          handTrailColor: "left-hand-trail",
+          headTrailColor: "left-head-trail"
+        },
+        right: {
+          handColor: "right-hand",
+          headColor: "right-head",
+          lineColor: "right-arm",
+          labelColor: "right-label",
+          handTrailColor: "right-hand-trail",
+          headTrailColor: "right-head-trail"
+        }
+      }
+    });
+
+    const trunkIndex = operations.indexOf("strokeStyle:rgba(148, 163, 184, 0.42)");
+    const leftArmIndices = operations
+      .map((operation, index) => (operation === "strokeStyle:left-arm" ? index : -1))
+      .filter((index) => index >= 0);
+    const rightArmIndices = operations
+      .map((operation, index) => (operation === "strokeStyle:right-arm" ? index : -1))
+      .filter((index) => index >= 0);
+
+    expect(bodyOverlay?.behindBodySides).toEqual({ left: true, right: true });
+    expect(trunkIndex).toBeGreaterThan(-1);
+    expect(leftArmIndices).toHaveLength(1);
+    expect(rightArmIndices).toHaveLength(1);
+    expect(leftArmIndices[0]).toBeLessThan(trunkIndex);
+    expect(rightArmIndices[0]).toBeLessThan(trunkIndex);
   });
 
   it("does not draw provided body overlay when the body layer is disabled", () => {

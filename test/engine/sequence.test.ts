@@ -311,6 +311,23 @@ describe("prepareSequence", () => {
       expect(prepared.prepared.segments[1].planeSide).toBeUndefined();
     }
   });
+  it("preserves explicit behind-body metadata and leaves omitted values unspecified", () => {
+    const seq: SequenceSpec = {
+      segments: [
+        { ...segA, durationUnits: 2, behindBody: true },
+        { ...segB, durationUnits: 3, behindBody: false },
+        { ...segA, durationUnits: 1 }
+      ]
+    };
+    const prepared = prepareSequence(seq);
+    expect(prepared.ok).toBe(true);
+    if (prepared.ok) {
+      expect(prepared.prepared.segments[0].behindBody).toBe(true);
+      expect(prepared.prepared.segments[1].behindBody).toBe(false);
+      expect(prepared.prepared.segments[2].behindBody).toBeUndefined();
+      expect("behindBody" in prepared.prepared.segments[2]).toBe(false);
+    }
+  });
 });
 describe("evalPreparedSequenceAt", () => {
   const segA = makeSegment(1, 2);
@@ -400,6 +417,26 @@ describe("evalPreparedSequenceAt", () => {
 
     expect(result.planeSide).toBeUndefined();
     expect("planeSide" in result).toBe(false);
+  });
+  it("returns active behind-body metadata when specified", () => {
+    const behindBodyPrepared = prepareSequence({
+      segments: [
+        { ...segA, durationUnits: 2, behindBody: true },
+        { ...segB, durationUnits: 3, behindBody: false }
+      ]
+    });
+    if (!behindBodyPrepared.ok) {
+      throw new Error("Test fixture sequence must be valid");
+    }
+
+    const trueResult = evalPreparedSequenceAt(behindBodyPrepared.prepared, 1);
+    const falseResult = evalPreparedSequenceAt(behindBodyPrepared.prepared, 2);
+    if (!trueResult.ok || !falseResult.ok) {
+      throw new Error("expected ok results");
+    }
+
+    expect(trueResult.behindBody).toBe(true);
+    expect(falseResult.behindBody).toBe(false);
   });
   it("uses half-open boundary semantics: exact boundary selects next segment", () => {
     const tGlobal = 2;

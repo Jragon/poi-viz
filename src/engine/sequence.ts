@@ -53,6 +53,7 @@ export type EvalPreparedAtResult =
       pose: RelativeRigPose;
       planeId: PlaneId;
       planeSide?: PlaneSide;
+      behindBody?: boolean;
       segmentIndex: number;
       tLocal: TimeUnit;
     }
@@ -135,12 +136,13 @@ export function prepareSequence(sequence: SequenceSpec): PrepareSequenceResult {
   for (const segment of sequence.segments) {
     const startUnit = cursor;
     const endUnit = startUnit + segment.durationUnits;
-    const { planeId, planeSide, ...segmentMotion } = segment;
+    const { planeId, planeSide, behindBody, ...segmentMotion } = segment;
 
     segments.push({
       ...segmentMotion,
       planeId: planeId ?? DEFAULT_PLANE_ID,
       ...(planeSide !== undefined ? { planeSide } : {}),
+      ...(behindBody !== undefined ? { behindBody } : {}),
       startUnit,
       endUnit
     });
@@ -175,6 +177,7 @@ export function evalPreparedSequenceAt(
       pose,
       planeId: segment.planeId,
       ...(segment.planeSide !== undefined ? { planeSide: segment.planeSide } : {}),
+      ...(segment.behindBody !== undefined ? { behindBody: segment.behindBody } : {}),
       tLocal,
       segmentIndex: index
     };

@@ -49,6 +49,7 @@ export interface WorldRigPose {
   headPosition: Vec3;
   planeId: PlaneId;
   planeSide?: PlaneSide;
+  behindBody?: boolean;
   segmentIndex?: number;
   tLocal?: TimeUnit;
 }
@@ -103,6 +104,7 @@ export interface Segment {
   durationUnits: TimeUnit;
   planeId?: PlaneId;
   planeSide?: PlaneSide;
+  behindBody?: boolean;
   hand: HandSegmentNodeMotion;
   head: HeadSegmentNodeMotion;
 }

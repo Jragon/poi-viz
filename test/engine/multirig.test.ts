@@ -170,6 +170,34 @@ describe("evalPreparedMultiRigSequenceAt", () => {
     }
   });
 
+  it("passes active behind-body metadata through evaluated rig poses", () => {
+    const preparedResult = prepareMultiRigSequence({
+      rigs: [
+        {
+          rigId: "left",
+          sequence: {
+            segments: [{ ...makeSegment(1, 2), durationUnits: 2, behindBody: true }]
+          }
+        },
+        {
+          rigId: "right",
+          sequence: { segments: [{ ...makeSegment(3, 4), durationUnits: 2 }] }
+        }
+      ]
+    });
+    if (!preparedResult.ok) {
+      throw new Error("Fixture must prepare successfully");
+    }
+
+    const result = evalPreparedMultiRigSequenceAt(preparedResult.prepared, 1);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.poses.left.behindBody).toBe(true);
+      expect(result.poses.right.behindBody).toBeUndefined();
+      expect("behindBody" in result.poses.right).toBe(false);
+    }
+  });
+
   it("rejects invalid and negative times before evaluating rigs", () => {
     const preparedResult = prepareMultiRigSequence({
       rigs: [{ rigId: "left", sequence: makeSequence([2], 1, 2) }]

@@ -21,6 +21,10 @@ export interface BodyOverlayFrame {
   readonly pose: BodyRigPose;
   readonly dimensions: BodyRigDimensions;
   readonly rigIds: BodyOverlayRigIds;
+  readonly behindBodySides: {
+    readonly left: boolean;
+    readonly right: boolean;
+  };
 }
 
 export interface BodyOverlayInput {
@@ -133,6 +137,10 @@ export function computeBodyOverlay(input: BodyOverlayInput): BodyOverlayFrame | 
   return {
     pose,
     dimensions,
-    rigIds
+    rigIds,
+    behindBodySides: {
+      left: leftPose?.behindBody ?? false,
+      right: rightPose?.behindBody ?? false
+    }
   };
 }

@@ -384,6 +384,7 @@ function compileTrack(
       durationUnits: interval.durationUnits,
       planeId: "wall",
       planeSide: interval.planeSide,
+      ...(deriveRowIsBTB(interval.fromRow) ? { behindBody: true } : {}),
       hand: makeHandMotion(
         interval,
         startPoint,

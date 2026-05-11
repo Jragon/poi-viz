@@ -108,6 +108,21 @@ describe("bodyOverlay", () => {
     expect(overlay?.pose.solve.rightArm.handTarget).toEqual({ x: 0.75, y: 0.35, z: 0.2 });
   });
 
+  it("maps behind-body metadata onto overlay hand sides", () => {
+    const layout = createSceneLayout({ cssWidth: 400, cssHeight: 300 });
+    const overlay = computeBodyOverlay({
+      worldPoses: {
+        ...createWorldPoses(),
+        left: { ...createWorldPoses().left, behindBody: true }
+      },
+      layout,
+      projectionSettings
+    });
+
+    expect(overlay).not.toBeNull();
+    expect(overlay?.behindBodySides).toEqual({ left: true, right: false });
+  });
+
   it("uses active projection settings for projected hand targets", () => {
     const layout = createSceneLayout({ cssWidth: 400, cssHeight: 300 });
     const orthographic = computeBodyOverlay({

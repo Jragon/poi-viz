@@ -17,6 +17,7 @@ type ProjectableEvaluatedPose = {
   pose: RelativeRigPose;
   planeId: PlaneId;
   planeSide?: PlaneSide;
+  behindBody?: boolean;
   segmentIndex?: number;
   tLocal?: TimeUnit;
 };
@@ -173,6 +174,7 @@ export function toWorldMultiRigPose(
       rigId,
       toWorldRigPose(value.pose, value.planeId, {
         ...(value.planeSide === undefined ? {} : { planeSide: value.planeSide }),
+        ...(value.behindBody === undefined ? {} : { behindBody: value.behindBody }),
         ...(value.segmentIndex === undefined ? {} : { segmentIndex: value.segmentIndex }),
         ...(value.tLocal === undefined ? {} : { tLocal: value.tLocal })
       })

@@ -104,6 +104,77 @@ function bodyHandStyle(
   return styles.get(rigId)?.handColor ?? (side === "left" ? "#2dd4bf" : "#f59e0b");
 }
 
+function drawBodyHandBehindBodyRing(
+  ctx: CanvasRenderingContext2D,
+  center: Vec2,
+  radius: number,
+  color: string
+) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(center.x, center.y, radius + 3, 0, Math.PI * 2);
+  ctx.setLineDash([4, 5]);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function bodyArmHand(pose: BodyOverlayFrame["pose"], side: ArmSide): Vec2 {
+  return side === "left" ? pose.leftArm.hand : pose.rightArm.hand;
+}
+
+function bodyArmElbow(pose: BodyOverlayFrame["pose"], side: ArmSide): Vec2 {
+  return side === "left" ? pose.leftArm.elbow : pose.rightArm.elbow;
+}
+
+function bodyArmShoulder(pose: BodyOverlayFrame["pose"], side: ArmSide): Vec2 {
+  return side === "left" ? pose.shoulders.leftShoulder : pose.shoulders.rightShoulder;
+}
+
+function drawBodyArm(
+  ctx: CanvasRenderingContext2D,
+  toCanvas: (point: Vec2) => Vec2,
+  bodyOverlay: BodyOverlayFrame,
+  side: ArmSide,
+  geometry: RenderFrameGeometry,
+  styles: Map<RigId, RigRenderStyle>,
+  nodeFill: string
+) {
+  const pose = bodyOverlay.pose;
+  const handStyle = bodyHandStyle(bodyOverlay, side, styles);
+
+  drawPolyline(
+    ctx,
+    getBodyRigArmPoints(pose, side).map(toCanvas),
+    bodyArmStyle(bodyOverlay, side, styles),
+    geometry.bodyArmLineWidth
+  );
+
+  for (const point of [bodyArmShoulder(pose, side), bodyArmElbow(pose, side)]) {
+    drawNode(ctx, toCanvas(point), geometry.bodyJointRadius, nodeFill, "rgba(226, 232, 240, 0.5)");
+  }
+
+  drawNode(
+    ctx,
+    toCanvas(bodyArmHand(pose, side)),
+    geometry.handRadius,
+    handStyle,
+    "#0f172a",
+    geometry.nodeStrokeWidth
+  );
+
+  if (bodyOverlay.behindBodySides[side]) {
+    drawBodyHandBehindBodyRing(
+      ctx,
+      toCanvas(bodyArmHand(pose, side)),
+      geometry.handRadius,
+      handStyle
+    );
+  }
+}
+
 function renderBodyOverlay(
   ctx: CanvasRenderingContext2D,
   layout: SceneLayout,
@@ -121,6 +192,14 @@ function renderBodyOverlay(
   ctx.save();
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
+
+  const armDrawOrder = getBodyRigArmDrawOrder(pose);
+  const behindArms = armDrawOrder.filter((side) => bodyOverlay.behindBodySides[side]);
+  const frontArms = armDrawOrder.filter((side) => !bodyOverlay.behindBodySides[side]);
+
+  for (const side of behindArms) {
+    drawBodyArm(ctx, toCanvas, bodyOverlay, side, geometry, styles, nodeFill);
+  }
 
   drawLine(
     ctx,
@@ -157,15 +236,6 @@ function renderBodyOverlay(
     geometry.bodyLineWidth
   );
 
-  for (const side of getBodyRigArmDrawOrder(pose)) {
-    drawPolyline(
-      ctx,
-      getBodyRigArmPoints(pose, side).map(toCanvas),
-      bodyArmStyle(bodyOverlay, side, styles),
-      geometry.bodyArmLineWidth
-    );
-  }
-
   const headCenter = toCanvas(body.headCenter);
   ctx.beginPath();
   ctx.arc(headCenter.x, headCenter.y, body.headRadius * layout.pixelsPerWorldUnit, 0, Math.PI * 2);
@@ -177,8 +247,6 @@ function renderBodyOverlay(
     body.neck,
     pose.shoulders.leftShoulder,
     pose.shoulders.rightShoulder,
-    pose.leftArm.elbow,
-    pose.rightArm.elbow,
     body.pelvis,
     body.hipLeft,
     body.hipRight,
@@ -190,22 +258,9 @@ function renderBodyOverlay(
     drawNode(ctx, toCanvas(point), geometry.bodyJointRadius, nodeFill, "rgba(226, 232, 240, 0.5)");
   }
 
-  drawNode(
-    ctx,
-    toCanvas(pose.leftArm.hand),
-    geometry.handRadius,
-    bodyHandStyle(bodyOverlay, "left", styles),
-    "#0f172a",
-    geometry.nodeStrokeWidth
-  );
-  drawNode(
-    ctx,
-    toCanvas(pose.rightArm.hand),
-    geometry.handRadius,
-    bodyHandStyle(bodyOverlay, "right", styles),
-    "#0f172a",
-    geometry.nodeStrokeWidth
-  );
+  for (const side of frontArms) {
+    drawBodyArm(ctx, toCanvas, bodyOverlay, side, geometry, styles, nodeFill);
+  }
   ctx.restore();
 }
 
