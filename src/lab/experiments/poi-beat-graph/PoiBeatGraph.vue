@@ -20,6 +20,7 @@ const props = defineProps<{
   visibleTrackIds?: readonly string[];
   halfBeatDuration: number;
   activeStep?: number | null;
+  readonly?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -299,6 +300,7 @@ function laneHeaderLabel(lane: PoiBeatLane): string {
 }
 
 function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
+  if (props.readonly) return;
   if (row.isLoopClosure) return;
   const nextSelectedNodeKey = `${track.value.id}-${row.sourceStep}-${laneId}`;
 
@@ -316,7 +318,9 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
   <section class="overflow-hidden rounded-lg border border-slate-800 bg-slate-900/60">
     <div class="border-b border-slate-800 px-4 py-2.5">
       <p class="text-xs uppercase tracking-[0.16em] text-slate-500">Graph</p>
-      <h2 class="mt-1 text-sm font-semibold text-slate-200">{{ track.id }} edit graph</h2>
+      <h2 class="mt-1 text-sm font-semibold text-slate-200">
+        {{ readonly ? "Generated graph" : `${track.id} edit graph` }}
+      </h2>
     </div>
 
     <div class="px-3 py-3">
@@ -413,7 +417,7 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
           />
         </g>
 
-        <g>
+        <g v-if="!readonly">
           <foreignObject
             v-for="node in clickTargets"
             :key="node.key"
@@ -436,7 +440,7 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
       </svg>
     </div>
 
-    <div class="flex justify-center gap-2 border-t border-slate-800 px-3 py-2">
+    <div v-if="!readonly" class="flex justify-center gap-2 border-t border-slate-800 px-3 py-2">
       <button
         type="button"
         class="inline-grid h-7 w-7 place-items-center rounded-md border border-slate-700 text-base leading-none text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:border-slate-800 disabled:text-slate-600 disabled:hover:bg-transparent"

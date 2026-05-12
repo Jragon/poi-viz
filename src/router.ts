@@ -5,6 +5,7 @@ import BodyTracingJournalPage from "@/lab/experiments/body-tracing/BodyTracingJo
 import BodyTracingPlaneExperimentsPage from "@/lab/experiments/body-tracing/BodyTracingPlaneExperimentsPage.vue";
 import PoiBeatGraphPage from "@/lab/experiments/poi-beat-graph/PoiBeatGraphPage.vue";
 import QuarterTimeJournalPage from "@/lab/experiments/quarter-time/QuarterTimeJournalPage.vue";
+import ReelExplorerPage from "@/lab/experiments/reel-explorer/ReelExplorerPage.vue";
 import AuthoringPage from "@/pages/AuthoringPage.vue";
 import VisualizerPage from "@/pages/VisualizerPage.vue";
 
@@ -45,6 +46,11 @@ export const router = createRouter({
       path: "/lab/poi-beat-graph",
       name: "poi-beat-graph",
       component: PoiBeatGraphPage
+    },
+    {
+      path: "/lab/reel-explorer",
+      name: "reel-explorer",
+      component: ReelExplorerPage
     }
   ]
 });

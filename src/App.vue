@@ -27,6 +27,10 @@ const labLinks = [
   {
     label: "Poi Beat Graph",
     to: "/lab/poi-beat-graph"
+  },
+  {
+    label: "Reel Explorer",
+    to: "/lab/reel-explorer"
   }
 ];
 
