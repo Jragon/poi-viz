@@ -766,7 +766,7 @@ describe("compilePoiBeatGraph", () => {
     expect(Math.abs(distances[2])).toBeGreaterThan(Math.abs(distances[3]));
   });
 
-  it("reports center same-lane intervals as compiler diagnostics", () => {
+  it("compiles center same-lane intervals without diagnostics", () => {
     const graph: PoiBeatGraph = {
       cycleSteps: 2,
       lanes: createLowerWrapBeatGraph().lanes,
@@ -786,12 +786,7 @@ describe("compilePoiBeatGraph", () => {
 
     const result = compilePoiBeatGraph(graph);
 
-    expect(result.diagnostics).toContainEqual({
-      code: "CENTER_STATIONARY_INTERVAL",
-      trackId: "right",
-      intervalIndex: 0,
-      step: 0,
-      laneId: "center"
-    });
+    expect(result.diagnostics).toEqual([]);
+    expect(result.sequence.rigs[0]?.sequence.segments).toHaveLength(2);
   });
 });

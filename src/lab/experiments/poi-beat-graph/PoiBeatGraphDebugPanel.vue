@@ -2,7 +2,6 @@
 import { computed } from "vue";
 
 import type { TimeUnit } from "@/engine/types";
-import type { PoiBeatCompileDiagnostic } from "@/lab/experiments/poi-beat-graph/compileBeatGraph";
 import {
   deriveLoopIntervals,
   deriveRowState,
@@ -25,7 +24,6 @@ const props = defineProps<{
   currentTime: TimeUnit;
   duration: TimeUnit;
   isPlaying: boolean;
-  diagnostics: readonly PoiBeatCompileDiagnostic[];
 }>();
 
 interface TrackStepCell {
@@ -104,10 +102,6 @@ function intervalLabel(cell: TrackStepCell): string {
   if (!cell.interval) return "-";
   return `${cell.interval.index} ${cell.interval.kind}`;
 }
-
-function diagnosticKey(diagnostic: PoiBeatCompileDiagnostic): string {
-  return `${diagnostic.code}-${diagnostic.trackId}-${diagnostic.intervalIndex ?? "track"}-${diagnostic.step ?? "none"}-${diagnostic.laneId ?? "none"}`;
-}
 </script>
 
 <template>
@@ -127,7 +121,6 @@ function diagnosticKey(diagnostic: PoiBeatCompileDiagnostic): string {
               <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">Step</th>
               <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">State</th>
               <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">Tracks</th>
-              <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">Diagnostics</th>
             </tr>
           </thead>
           <tbody class="bg-slate-950/60 font-mono text-slate-300">
@@ -137,7 +130,6 @@ function diagnosticKey(diagnostic: PoiBeatCompileDiagnostic): string {
               <td class="whitespace-nowrap px-3 py-2 text-amber-200">{{ activeStepLabel }}</td>
               <td class="whitespace-nowrap px-3 py-2">{{ playbackLabel }}</td>
               <td class="whitespace-nowrap px-3 py-2">{{ visibleTracks.length }}</td>
-              <td class="whitespace-nowrap px-3 py-2">{{ diagnostics.length }}</td>
             </tr>
           </tbody>
         </table>
@@ -227,50 +219,6 @@ function diagnosticKey(diagnostic: PoiBeatCompileDiagnostic): string {
           class="rounded-md border border-slate-800 bg-slate-950/60 px-3 py-2 text-xs text-slate-500"
         >
           No sequence rows.
-        </p>
-      </div>
-
-      <div class="grid gap-2 border-t border-slate-800 pt-4">
-        <div class="flex items-center justify-between gap-3">
-          <h3 class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-            Compiler Diagnostics
-          </h3>
-          <p class="font-mono text-xs text-slate-500">{{ diagnostics.length }}</p>
-        </div>
-
-        <div
-          v-if="diagnostics.length > 0"
-          class="overflow-x-auto rounded-md border border-amber-800/70"
-        >
-          <table class="min-w-full divide-y divide-amber-900/70 text-left text-xs">
-            <thead class="bg-amber-950/40 text-amber-200/70">
-              <tr>
-                <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">Code</th>
-                <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">Track</th>
-                <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">Interval</th>
-                <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">Step</th>
-                <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">Lane</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-amber-950/70 bg-amber-950/25 font-mono text-amber-100">
-              <tr v-for="diagnostic in diagnostics" :key="diagnosticKey(diagnostic)">
-                <td class="whitespace-nowrap px-3 py-2">{{ diagnostic.code }}</td>
-                <td class="whitespace-nowrap px-3 py-2">{{ diagnostic.trackId }}</td>
-                <td class="whitespace-nowrap px-3 py-2">
-                  {{ diagnostic.intervalIndex ?? "-" }}
-                </td>
-                <td class="whitespace-nowrap px-3 py-2">{{ diagnostic.step ?? "-" }}</td>
-                <td class="whitespace-nowrap px-3 py-2">{{ diagnostic.laneId ?? "-" }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <p
-          v-else
-          class="rounded-md border border-slate-800 bg-slate-950/60 px-3 py-2 text-xs text-slate-500"
-        >
-          No compiler diagnostics.
         </p>
       </div>
     </div>

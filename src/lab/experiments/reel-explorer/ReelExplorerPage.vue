@@ -467,7 +467,6 @@ function visibilityButtonClass(trackId: string): string {
           :current-time="transport.currentTime.value"
           :duration="transport.duration.value"
           :is-playing="transport.isPlaying.value"
-          :diagnostics="compiled.diagnostics"
         />
       </div>
     </section>

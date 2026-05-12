@@ -29,10 +29,7 @@ export const DEFAULT_POI_BEAT_COMPILER_OPTIONS: PoiBeatCompilerOptions = {
   handVerticalOffset: 0.35
 };
 
-export type PoiBeatCompileDiagnosticCode =
-  | "EMPTY_TRACK"
-  | "ROW_COUNT_MISMATCH"
-  | "CENTER_STATIONARY_INTERVAL";
+export type PoiBeatCompileDiagnosticCode = "EMPTY_TRACK" | "ROW_COUNT_MISMATCH";
 
 export interface PoiBeatCompileDiagnostic {
   readonly code: PoiBeatCompileDiagnosticCode;
@@ -369,16 +366,6 @@ function compileTrack(
   for (const [intervalIndex, interval] of intervals.entries()) {
     const startPoint = laneToHandPoint(interval.fromRow.laneId, options);
     const endPoint = laneToHandPoint(interval.toRow.laneId, options);
-
-    if (interval.kind === "same-lane" && interval.fromRow.laneId === "center") {
-      diagnostics.push({
-        code: "CENTER_STATIONARY_INTERVAL",
-        trackId: track.id,
-        intervalIndex: interval.index,
-        step: interval.fromRow.step,
-        laneId: interval.fromRow.laneId
-      });
-    }
 
     segments.push({
       durationUnits: interval.durationUnits,
