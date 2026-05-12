@@ -31,6 +31,10 @@ const labLinks = [
   {
     label: "Reel Explorer",
     to: "/lab/reel-explorer"
+  },
+  {
+    label: "Wrap Explorer",
+    to: "/lab/wrap-explorer"
   }
 ];
 

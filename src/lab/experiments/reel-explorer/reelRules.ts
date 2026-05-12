@@ -134,7 +134,7 @@ export function deriveInitialPhase(
   positionSide: ReelBodySide,
   direction: PoiBeatDirection,
   isOffsetHand: boolean,
-  offset: ReelOffset
+  offset: number
 ): PoiBeatPhaseLabel {
   let startsUp = (positionSide === "right") !== (direction === "clockwise");
   if (isOffsetHand && offset % 2 === 1) {
