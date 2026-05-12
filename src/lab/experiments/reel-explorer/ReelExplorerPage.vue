@@ -34,7 +34,7 @@ import {
 const config = ref<ReelConfig>(DEFAULT_REEL_CONFIG);
 const compilerOptions = DEFAULT_POI_BEAT_COMPILER_OPTIONS;
 const visibleTrackIds = ref<string[]>(["left", "right"]);
-const showStickFigure = ref(false);
+const showStickFigure = ref(true);
 
 const graph = computed(() => buildReelBeatGraph(config.value));
 const reelState = computed(() => deriveReelState(config.value));
@@ -77,6 +77,7 @@ const reelSummaryLabel = computed(
 
 core.session.setProjectionMode("tilted");
 core.session.setPlaneSideSeparationWorld(0.2);
+transport.setSpeed(0.5);
 display.setOverlayVisibility("showHandTrails", false);
 display.setOverlayVisibility("showHeadTrails", true);
 
