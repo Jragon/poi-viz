@@ -154,20 +154,20 @@ describe("computePlaneSideDepthFactor", () => {
   });
 
   it("interpolates a→b transition through crosspoint at midpoint", () => {
-    // With default window 0.5: window is [0.25, 0.75]
+    // With default window 0.75: window is [0.125, 0.875]
     // current=b (offset -1), previous=a (offset +1)
     expect(computePlaneSideDepthFactor("b", "a", 0)).toBe(1);
-    expect(computePlaneSideDepthFactor("b", "a", 0.25)).toBe(1);
+    expect(computePlaneSideDepthFactor("b", "a", 0.125)).toBe(1);
     expect(computePlaneSideDepthFactor("b", "a", 0.5)).toBeCloseTo(0, 10);
-    expect(computePlaneSideDepthFactor("b", "a", 0.75)).toBe(-1);
+    expect(computePlaneSideDepthFactor("b", "a", 0.875)).toBe(-1);
     expect(computePlaneSideDepthFactor("b", "a", 1)).toBe(-1);
   });
 
   it("interpolates b→a transition through crosspoint at midpoint", () => {
     expect(computePlaneSideDepthFactor("a", "b", 0)).toBe(-1);
-    expect(computePlaneSideDepthFactor("a", "b", 0.25)).toBe(-1);
+    expect(computePlaneSideDepthFactor("a", "b", 0.125)).toBe(-1);
     expect(computePlaneSideDepthFactor("a", "b", 0.5)).toBeCloseTo(0, 10);
-    expect(computePlaneSideDepthFactor("a", "b", 0.75)).toBe(1);
+    expect(computePlaneSideDepthFactor("a", "b", 0.875)).toBe(1);
     expect(computePlaneSideDepthFactor("a", "b", 1)).toBe(1);
   });
 
