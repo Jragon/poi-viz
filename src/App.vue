@@ -25,20 +25,12 @@ const labLinks = [
     to: "/lab/body-tracing/planes"
   },
   {
-    label: "Poi Beat Graph",
-    to: "/lab/poi-beat-graph"
+    label: "Body Tracing Explorer",
+    to: "/lab/body-tracing-explorer"
   },
   {
-    label: "Reel Explorer",
-    to: "/lab/reel-explorer"
-  },
-  {
-    label: "Wrap Explorer",
-    to: "/lab/wrap-explorer"
-  },
-  {
-    label: "Cosmo Explorer",
-    to: "/lab/cosmo-explorer"
+    label: "Beat Graph Editor",
+    to: "/lab/beat-graph"
   }
 ];
 

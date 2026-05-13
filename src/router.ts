@@ -3,11 +3,9 @@ import { createRouter, createWebHistory } from "vue-router";
 import ArcherWeavesJournalPage from "@/lab/experiments/archer-weaves/ArcherWeavesJournalPage.vue";
 import BodyTracingJournalPage from "@/lab/experiments/body-tracing/BodyTracingJournalPage.vue";
 import BodyTracingPlaneExperimentsPage from "@/lab/experiments/body-tracing/BodyTracingPlaneExperimentsPage.vue";
-import CosmoExplorerPage from "@/lab/experiments/cosmo-explorer/CosmoExplorerPage.vue";
-import PoiBeatGraphPage from "@/lab/experiments/poi-beat-graph/PoiBeatGraphPage.vue";
+import BeatGraphEditorPage from "@/lab/experiments/mel-body-tracing/pages/BeatGraphEditorPage.vue";
+import BodyTracingExplorerPage from "@/lab/experiments/mel-body-tracing/pages/BodyTracingExplorerPage.vue";
 import QuarterTimeJournalPage from "@/lab/experiments/quarter-time/QuarterTimeJournalPage.vue";
-import ReelExplorerPage from "@/lab/experiments/reel-explorer/ReelExplorerPage.vue";
-import WrapExplorerPage from "@/lab/experiments/wrap-explorer/WrapExplorerPage.vue";
 import AuthoringPage from "@/pages/AuthoringPage.vue";
 import VisualizerPage from "@/pages/VisualizerPage.vue";
 
@@ -45,24 +43,14 @@ export const router = createRouter({
       component: BodyTracingPlaneExperimentsPage
     },
     {
-      path: "/lab/poi-beat-graph",
-      name: "poi-beat-graph",
-      component: PoiBeatGraphPage
+      path: "/lab/body-tracing-explorer",
+      name: "body-tracing-explorer",
+      component: BodyTracingExplorerPage
     },
     {
-      path: "/lab/reel-explorer",
-      name: "reel-explorer",
-      component: ReelExplorerPage
-    },
-    {
-      path: "/lab/wrap-explorer",
-      name: "wrap-explorer",
-      component: WrapExplorerPage
-    },
-    {
-      path: "/lab/cosmo-explorer",
-      name: "cosmo-explorer",
-      component: CosmoExplorerPage
+      path: "/lab/beat-graph",
+      name: "beat-graph-editor",
+      component: BeatGraphEditorPage
     }
   ]
 });

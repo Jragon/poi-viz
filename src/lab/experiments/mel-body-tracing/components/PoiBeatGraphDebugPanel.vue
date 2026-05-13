@@ -7,14 +7,14 @@ import {
   deriveRowState,
   getOrderedRows,
   getPoiBeatLane
-} from "@/lab/experiments/poi-beat-graph/graphHelpers";
+} from "@/lab/experiments/mel-body-tracing/beat-graph/graphHelpers";
 import type {
   PoiBeatDerivedRowState,
   PoiBeatGraph,
   PoiBeatInterval,
   PoiBeatRow,
   PoiBeatTrack
-} from "@/lab/experiments/poi-beat-graph/types";
+} from "@/lab/experiments/mel-body-tracing/beat-graph/types";
 
 const props = defineProps<{
   graph: PoiBeatGraph;

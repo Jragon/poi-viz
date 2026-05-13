@@ -1,4 +1,4 @@
-import type { ReelDirection, ReelPosition } from "@/lab/experiments/reel-explorer/types";
+import type { ReelDirection, ReelPosition } from "@/lab/experiments/mel-body-tracing/explorers/reelTypes";
 
 export type CosmoFrontPosition = Extract<
   ReelPosition,

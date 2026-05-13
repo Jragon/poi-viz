@@ -1,4 +1,4 @@
-import { POI_BEAT_LANES } from "@/lab/experiments/poi-beat-graph/graphHelpers";
+import { POI_BEAT_LANES } from "@/lab/experiments/mel-body-tracing/beat-graph/graphHelpers";
 import type {
   PoiBeatDirection,
   PoiBeatGraph,
@@ -6,7 +6,7 @@ import type {
   PoiBeatLaneId,
   PoiBeatPhaseLabel,
   PoiBeatRow
-} from "@/lab/experiments/poi-beat-graph/types";
+} from "@/lab/experiments/mel-body-tracing/beat-graph/types";
 import type {
   ReelBodySide,
   ReelConfig,
@@ -16,7 +16,7 @@ import type {
   ReelPosition,
   ReelResolvedState,
   ReelTimingLabel
-} from "@/lab/experiments/reel-explorer/types";
+} from "@/lab/experiments/mel-body-tracing/explorers/reelTypes";
 
 export const DEFAULT_REEL_CONFIG: ReelConfig = {
   left: "low-native",

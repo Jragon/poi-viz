@@ -3,8 +3,8 @@ import { evalPreparedMultiRigSequenceAt, prepareMultiRigSequence } from "@/engin
 import {
   compilePoiBeatGraph,
   DEFAULT_POI_BEAT_COMPILER_OPTIONS
-} from "@/lab/experiments/poi-beat-graph/compileBeatGraph";
-import { createLowCommonCosmoBeatGraph } from "@/lab/experiments/poi-beat-graph/cosmoSeed";
+} from "@/lab/experiments/mel-body-tracing/beat-graph/compileBeatGraph";
+import { createLowCommonCosmoBeatGraph } from "@/lab/experiments/mel-body-tracing/beat-graph/cosmoSeed";
 import {
   appendPoiBeatGraphRow,
   deletePoiBeatGraphLastRow,
@@ -16,13 +16,13 @@ import {
   setPoiBeatGraphTrackDirection,
   setPoiBeatGraphTrackInitialPhase,
   togglePoiBeatGraphRowSide
-} from "@/lab/experiments/poi-beat-graph/graphHelpers";
+} from "@/lab/experiments/mel-body-tracing/beat-graph/graphHelpers";
 import {
   createLowerWrapBeatGraph,
   createTwoHandLowWrapBeatGraph,
   createUpperWrapBeatGraph
-} from "@/lab/experiments/poi-beat-graph/lowerWrapSeed";
-import type { PoiBeatGraph } from "@/lab/experiments/poi-beat-graph/types";
+} from "@/lab/experiments/mel-body-tracing/beat-graph/lowerWrapSeed";
+import type { PoiBeatGraph } from "@/lab/experiments/mel-body-tracing/beat-graph/types";
 import { describe, expect, it } from "vitest";
 
 const HALF_BEAT_DURATION = 0.5;

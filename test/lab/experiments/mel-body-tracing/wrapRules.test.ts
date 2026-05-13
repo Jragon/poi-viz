@@ -1,7 +1,7 @@
-import { deriveRowStates } from "@/lab/experiments/poi-beat-graph/graphHelpers";
-import type { PoiBeatTrack } from "@/lab/experiments/poi-beat-graph/types";
-import type { ReelPosition } from "@/lab/experiments/reel-explorer/types";
-import type { WrapConfig } from "@/lab/experiments/wrap-explorer/types";
+import { deriveRowStates } from "@/lab/experiments/mel-body-tracing/beat-graph/graphHelpers";
+import type { PoiBeatTrack } from "@/lab/experiments/mel-body-tracing/beat-graph/types";
+import type { ReelPosition } from "@/lab/experiments/mel-body-tracing/explorers/reelTypes";
+import type { WrapConfig } from "@/lab/experiments/mel-body-tracing/explorers/wrapTypes";
 import {
   buildWrapBeatGraph,
   buildWrapHandRows,
@@ -9,7 +9,7 @@ import {
   getValidPartners,
   isValidWrapPair,
   rotateWrapRows
-} from "@/lab/experiments/wrap-explorer/wrapRules";
+} from "@/lab/experiments/mel-body-tracing/explorers/wrapRules";
 import { describe, expect, it } from "vitest";
 
 function getTrack(graph: ReturnType<typeof buildWrapBeatGraph>, trackId: string): PoiBeatTrack {

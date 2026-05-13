@@ -1,5 +1,5 @@
-import { deriveRowStates } from "@/lab/experiments/poi-beat-graph/graphHelpers";
-import type { PoiBeatTrack } from "@/lab/experiments/poi-beat-graph/types";
+import { deriveRowStates } from "@/lab/experiments/mel-body-tracing/beat-graph/graphHelpers";
+import type { PoiBeatTrack } from "@/lab/experiments/mel-body-tracing/beat-graph/types";
 import {
   buildHandRows,
   buildReelBeatGraph,
@@ -9,8 +9,8 @@ import {
   mapPositionToLane,
   resolveDirections,
   rotateRows
-} from "@/lab/experiments/reel-explorer/reelRules";
-import type { ReelConfig } from "@/lab/experiments/reel-explorer/types";
+} from "@/lab/experiments/mel-body-tracing/explorers/reelRules";
+import type { ReelConfig } from "@/lab/experiments/mel-body-tracing/explorers/reelTypes";
 import { describe, expect, it } from "vitest";
 
 function getTrack(graph: ReturnType<typeof buildReelBeatGraph>, trackId: string): PoiBeatTrack {

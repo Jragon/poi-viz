@@ -1,5 +1,5 @@
-import { POI_BEAT_LANES } from "@/lab/experiments/poi-beat-graph/graphHelpers";
-import type { PoiBeatGraph, PoiBeatRow } from "@/lab/experiments/poi-beat-graph/types";
+import { POI_BEAT_LANES } from "@/lab/experiments/mel-body-tracing/beat-graph/graphHelpers";
+import type { PoiBeatGraph, PoiBeatRow } from "@/lab/experiments/mel-body-tracing/beat-graph/types";
 
 const LOW_COMMON_COSMO_SIDE_PATTERN = ["b", "b", "a", "b", "a", "a", "b", "a"] as const;
 

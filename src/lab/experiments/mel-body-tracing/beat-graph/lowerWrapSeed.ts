@@ -1,5 +1,5 @@
-import { POI_BEAT_LANES } from "@/lab/experiments/poi-beat-graph/graphHelpers";
-import type { PoiBeatGraph } from "@/lab/experiments/poi-beat-graph/types";
+import { POI_BEAT_LANES } from "@/lab/experiments/mel-body-tracing/beat-graph/graphHelpers";
+import type { PoiBeatGraph } from "@/lab/experiments/mel-body-tracing/beat-graph/types";
 
 export function createLowerWrapBeatGraph(): PoiBeatGraph {
   return {

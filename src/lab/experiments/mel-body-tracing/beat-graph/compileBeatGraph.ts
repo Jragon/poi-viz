@@ -13,14 +13,14 @@ import {
   deriveRowState,
   getDirectionSign,
   getPoiBeatLane
-} from "@/lab/experiments/poi-beat-graph/graphHelpers";
+} from "@/lab/experiments/mel-body-tracing/beat-graph/graphHelpers";
 import type {
   PoiBeatCompilerOptions,
   PoiBeatGraph,
   PoiBeatInterval,
   PoiBeatLaneId,
   PoiBeatTrack
-} from "@/lab/experiments/poi-beat-graph/types";
+} from "@/lab/experiments/mel-body-tracing/beat-graph/types";
 
 export const DEFAULT_POI_BEAT_COMPILER_OPTIONS: PoiBeatCompilerOptions = {
   halfBeatDuration: 0.5,

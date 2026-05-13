@@ -4,8 +4,8 @@ import { computed, ref, watch } from "vue";
 import {
   compilePoiBeatGraph,
   DEFAULT_POI_BEAT_COMPILER_OPTIONS
-} from "@/lab/experiments/poi-beat-graph/compileBeatGraph";
-import { createLowCommonCosmoBeatGraph } from "@/lab/experiments/poi-beat-graph/cosmoSeed";
+} from "@/lab/experiments/mel-body-tracing/beat-graph/compileBeatGraph";
+import { createLowCommonCosmoBeatGraph } from "@/lab/experiments/mel-body-tracing/beat-graph/cosmoSeed";
 import {
   appendPoiBeatGraphRow,
   deletePoiBeatGraphLastRow,
@@ -15,22 +15,23 @@ import {
   setPoiBeatGraphTrackDirection,
   setPoiBeatGraphTrackInitialPhase,
   togglePoiBeatGraphRowSide
-} from "@/lab/experiments/poi-beat-graph/graphHelpers";
-import PoiBeatGraph from "@/lab/experiments/poi-beat-graph/PoiBeatGraph.vue";
-import PoiBeatGraphDebugPanel from "@/lab/experiments/poi-beat-graph/PoiBeatGraphDebugPanel.vue";
+} from "@/lab/experiments/mel-body-tracing/beat-graph/graphHelpers";
 import type {
   PoiBeatDirection,
   PoiBeatLaneId,
   PoiBeatPhaseLabel,
   PoiBeatTrack
-} from "@/lab/experiments/poi-beat-graph/types";
+} from "@/lab/experiments/mel-body-tracing/beat-graph/types";
+import { useBeatGraphUrlState } from "@/lab/experiments/mel-body-tracing/beat-graph/useBeatGraphUrlState";
+import PoiBeatGraph from "@/lab/experiments/mel-body-tracing/components/PoiBeatGraph.vue";
+import PoiBeatGraphDebugPanel from "@/lab/experiments/mel-body-tracing/components/PoiBeatGraphDebugPanel.vue";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
 import {
   createVisualizerWorkspace,
   provideVisualizerWorkspace
 } from "@/visualizer/visualizerWorkspace";
 
-const graph = ref(createLowCommonCosmoBeatGraph());
+const { graph } = useBeatGraphUrlState(createLowCommonCosmoBeatGraph);
 const compilerOptions = DEFAULT_POI_BEAT_COMPILER_OPTIONS;
 const editingTrackId = ref(graph.value.tracks[0]?.id ?? "");
 const visibleTrackIds = ref(graph.value.tracks.map((track) => track.id));
@@ -48,7 +49,7 @@ const tracks = computed(() => graph.value.tracks);
 const editingTrack = computed(() => {
   const track = graph.value.tracks.find((candidate) => candidate.id === editingTrackId.value);
   if (!track) {
-    throw new Error("PoiBeatGraphPage requires at least one track");
+    throw new Error("BeatGraphEditorPage requires at least one track");
   }
   return track;
 });
@@ -191,16 +192,26 @@ function phaseButtonClass(track: PoiBeatTrack, phase: PoiBeatPhaseLabel): string
   <main class="min-h-screen bg-slate-950 px-5 py-8 text-slate-100 md:px-8 md:py-10">
     <section class="mx-auto grid max-w-7xl gap-5 lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)]">
       <div class="grid content-start gap-4">
-        <header>
-          <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Poi Beat Graph</p>
-          <h1 class="mt-2 text-2xl font-semibold text-slate-50">Low common cosmo</h1>
+        <header class="order-1">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Mel body tracing</p>
+              <h1 class="mt-2 text-2xl font-semibold text-slate-50">Beat Graph Editor</h1>
+            </div>
+            <RouterLink
+              to="/lab/body-tracing-explorer"
+              class="rounded-md border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-slate-500 hover:bg-slate-800 hover:text-slate-100"
+            >
+              Back to Explorer
+            </RouterLink>
+          </div>
           <p class="mt-2 text-sm leading-6 text-slate-400">
             One shared grid edits mirrored left and right hand tracks against the same half-beat
             rows.
           </p>
         </header>
 
-        <section class="rounded-lg border border-slate-800 bg-slate-900/60">
+        <section class="order-2 rounded-lg border border-slate-800 bg-slate-900/60 lg:order-3">
           <div class="border-b border-slate-800 px-4 py-3">
             <h2 class="text-sm font-semibold text-slate-200">Hands</h2>
           </div>
@@ -287,17 +298,19 @@ function phaseButtonClass(track: PoiBeatTrack, phase: PoiBeatPhaseLabel): string
           </div>
         </section>
 
-        <PoiBeatGraph
-          :graph="graph"
-          :track-id="editingTrackId"
-          :visible-track-ids="visibleTrackIds"
-          :half-beat-duration="compilerOptions.halfBeatDuration"
-          :active-step="activeStep"
-          @select-lane="moveActiveLane"
-          @toggle-side="toggleActiveRowSide"
-          @append-row="appendRow"
-          @delete-row="deleteRow"
-        />
+        <div class="order-3 lg:order-2">
+          <PoiBeatGraph
+            :graph="graph"
+            :track-id="editingTrackId"
+            :visible-track-ids="visibleTrackIds"
+            :half-beat-duration="compilerOptions.halfBeatDuration"
+            :active-step="activeStep"
+            @select-lane="moveActiveLane"
+            @toggle-side="toggleActiveRowSide"
+            @append-row="appendRow"
+            @delete-row="deleteRow"
+          />
+        </div>
       </div>
 
       <div class="grid content-start gap-6">

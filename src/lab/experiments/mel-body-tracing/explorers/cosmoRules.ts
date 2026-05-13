@@ -5,22 +5,22 @@ import type {
   CosmoFrontPosition,
   CosmoOffset,
   CosmoPositionPair
-} from "@/lab/experiments/cosmo-explorer/types";
-import { POI_BEAT_LANES } from "@/lab/experiments/poi-beat-graph/graphHelpers";
+} from "@/lab/experiments/mel-body-tracing/explorers/cosmoTypes";
+import { POI_BEAT_LANES } from "@/lab/experiments/mel-body-tracing/beat-graph/graphHelpers";
 import type {
   PoiBeatDirection,
   PoiBeatGraph,
   PoiBeatHand,
   PoiBeatPhaseLabel,
   PoiBeatRow
-} from "@/lab/experiments/poi-beat-graph/types";
+} from "@/lab/experiments/mel-body-tracing/beat-graph/types";
 import {
   deriveInitialPhase,
   mapPositionToBodySide,
   mapPositionToLane,
   resolveDirections
-} from "@/lab/experiments/reel-explorer/reelRules";
-import type { ReelBodySide } from "@/lab/experiments/reel-explorer/types";
+} from "@/lab/experiments/mel-body-tracing/explorers/reelRules";
+import type { ReelBodySide } from "@/lab/experiments/mel-body-tracing/explorers/reelTypes";
 
 type CosmoTemplateTag = "A" | "B" | "CF" | "CB";
 

@@ -3,7 +3,7 @@ import type {
   PoiBeatHand,
   PoiBeatLaneId,
   PoiBeatPhaseLabel
-} from "@/lab/experiments/poi-beat-graph/types";
+} from "@/lab/experiments/mel-body-tracing/beat-graph/types";
 
 export type ReelPosition =
   | "high-native"

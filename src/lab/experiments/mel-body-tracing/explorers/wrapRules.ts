@@ -1,11 +1,11 @@
-import { POI_BEAT_LANES } from "@/lab/experiments/poi-beat-graph/graphHelpers";
+import { POI_BEAT_LANES } from "@/lab/experiments/mel-body-tracing/beat-graph/graphHelpers";
 import type {
   PoiBeatDirection,
   PoiBeatGraph,
   PoiBeatHand,
   PoiBeatPhaseLabel,
   PoiBeatRow
-} from "@/lab/experiments/poi-beat-graph/types";
+} from "@/lab/experiments/mel-body-tracing/beat-graph/types";
 import {
   deriveInitialPhase,
   isBackPosition,
@@ -13,13 +13,13 @@ import {
   mapPositionToLane,
   REEL_POSITION_OPTIONS,
   resolveDirections
-} from "@/lab/experiments/reel-explorer/reelRules";
-import type { ReelBodySide, ReelPosition } from "@/lab/experiments/reel-explorer/types";
+} from "@/lab/experiments/mel-body-tracing/explorers/reelRules";
+import type { ReelBodySide, ReelPosition } from "@/lab/experiments/mel-body-tracing/explorers/reelTypes";
 import type {
   WrapConfig,
   WrapOffset,
   WrapPositionPair
-} from "@/lab/experiments/wrap-explorer/types";
+} from "@/lab/experiments/mel-body-tracing/explorers/wrapTypes";
 
 export const DEFAULT_WRAP_CONFIG: WrapConfig = {
   left: { a: "low-native", b: "low-non-native" },

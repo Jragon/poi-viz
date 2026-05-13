@@ -1,4 +1,4 @@
-import type { ReelDirection, ReelPosition } from "@/lab/experiments/reel-explorer/types";
+import type { ReelDirection, ReelPosition } from "@/lab/experiments/mel-body-tracing/explorers/reelTypes";
 
 export type WrapOffset = 0 | 1 | 2 | 3 | 4 | 5;
 

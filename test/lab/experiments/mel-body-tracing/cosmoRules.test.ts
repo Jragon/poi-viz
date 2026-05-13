@@ -7,14 +7,14 @@ import {
   isValidCosmoPair,
   isVerticalPair,
   rotateCosmoRows
-} from "@/lab/experiments/cosmo-explorer/cosmoRules";
+} from "@/lab/experiments/mel-body-tracing/explorers/cosmoRules";
 import type {
   CosmoBackPosition,
   CosmoConfig,
   CosmoFrontPosition
-} from "@/lab/experiments/cosmo-explorer/types";
-import { deriveRowStates } from "@/lab/experiments/poi-beat-graph/graphHelpers";
-import type { PoiBeatDirection, PoiBeatTrack } from "@/lab/experiments/poi-beat-graph/types";
+} from "@/lab/experiments/mel-body-tracing/explorers/cosmoTypes";
+import { deriveRowStates } from "@/lab/experiments/mel-body-tracing/beat-graph/graphHelpers";
+import type { PoiBeatDirection, PoiBeatTrack } from "@/lab/experiments/mel-body-tracing/beat-graph/types";
 import { describe, expect, it } from "vitest";
 
 function getTrack(graph: ReturnType<typeof buildCosmoBeatGraph>, trackId: string): PoiBeatTrack {

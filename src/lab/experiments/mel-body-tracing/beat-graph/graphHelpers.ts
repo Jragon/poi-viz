@@ -10,7 +10,7 @@ import type {
   PoiBeatPhaseLabel,
   PoiBeatRow,
   PoiBeatTrack
-} from "@/lab/experiments/poi-beat-graph/types";
+} from "@/lab/experiments/mel-body-tracing/beat-graph/types";
 
 export const POI_BEAT_LANES: readonly PoiBeatLane[] = [
   { id: "left-high", label: "Left high", lateral: "left", vertical: "high" },
