@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import type { RouteLocationRaw } from "vue-router";
+import type { LocationQueryRaw, RouteLocationRaw } from "vue-router";
 
 import { encodeBeatGraphToUrlParams } from "@/lab/experiments/mel-body-tracing/beat-graph/beatGraphUrlCodec";
 import { DEFAULT_POI_BEAT_COMPILER_OPTIONS } from "@/lab/experiments/mel-body-tracing/beat-graph/compileBeatGraph";
@@ -61,10 +61,11 @@ const activePlanesLabel = computed(() => {
 const beatGraphEditorLocation = computed<RouteLocationRaw>(() => {
   const params = encodeBeatGraphToUrlParams(graph.value);
   if (!params) return { path: "/lab/beat-graph" };
+  const query: LocationQueryRaw = { ...params };
 
   return {
     path: "/lab/beat-graph",
-    query: params
+    query
   };
 });
 
@@ -118,7 +119,15 @@ function tabButtonClass(tab: BodyTracingExplorerTab): string {
           <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Mel body tracing</p>
           <h1 class="mt-2 text-2xl font-semibold text-slate-50">Body Tracing Explorer</h1>
           <p class="mt-2 text-sm leading-6 text-slate-400">
-            Play with reels, wraps, and cosmos from Ivan “Mel” Gorbunov’s Body Tracing Framework.
+            Play with reels, wraps, and cosmos from Ivan “Mel” Gorbunov’s
+            <a
+              href="https://antispinner.gitbook.io/btf"
+              target="_blank"
+              rel="noreferrer"
+              class="font-medium text-sky-300 underline decoration-sky-500/50 underline-offset-4 transition hover:text-sky-200"
+            >
+              Body Tracing Framework </a
+            >.
           </p>
         </header>
 

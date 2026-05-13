@@ -207,7 +207,15 @@ function phaseButtonClass(track: PoiBeatTrack, phase: PoiBeatPhaseLabel): string
           </div>
           <p class="mt-2 text-sm leading-6 text-slate-400">
             One shared grid edits mirrored left and right hand tracks against the same half-beat
-            rows.
+            rows. The beat graph model comes directly from Mel's
+            <a
+              href="https://antispinner.gitbook.io/btf"
+              target="_blank"
+              rel="noreferrer"
+              class="font-medium text-sky-300 underline decoration-sky-500/50 underline-offset-4 transition hover:text-sky-200"
+            >
+              Body Tracing Framework </a
+            >.
           </p>
         </header>
 
