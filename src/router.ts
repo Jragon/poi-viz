@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import ArcherWeavesJournalPage from "@/lab/experiments/archer-weaves/ArcherWeavesJournalPage.vue";
 import BodyTracingJournalPage from "@/lab/experiments/body-tracing/BodyTracingJournalPage.vue";
 import BodyTracingPlaneExperimentsPage from "@/lab/experiments/body-tracing/BodyTracingPlaneExperimentsPage.vue";
+import CosmoExplorerPage from "@/lab/experiments/cosmo-explorer/CosmoExplorerPage.vue";
 import PoiBeatGraphPage from "@/lab/experiments/poi-beat-graph/PoiBeatGraphPage.vue";
 import QuarterTimeJournalPage from "@/lab/experiments/quarter-time/QuarterTimeJournalPage.vue";
 import ReelExplorerPage from "@/lab/experiments/reel-explorer/ReelExplorerPage.vue";
@@ -57,6 +58,11 @@ export const router = createRouter({
       path: "/lab/wrap-explorer",
       name: "wrap-explorer",
       component: WrapExplorerPage
+    },
+    {
+      path: "/lab/cosmo-explorer",
+      name: "cosmo-explorer",
+      component: CosmoExplorerPage
     }
   ]
 });

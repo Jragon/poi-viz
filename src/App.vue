@@ -35,6 +35,10 @@ const labLinks = [
   {
     label: "Wrap Explorer",
     to: "/lab/wrap-explorer"
+  },
+  {
+    label: "Cosmo Explorer",
+    to: "/lab/cosmo-explorer"
   }
 ];
 
