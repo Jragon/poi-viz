@@ -52,36 +52,40 @@ watch(
   <div
     class="min-h-screen bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.10),transparent_35%),linear-gradient(180deg,rgba(15,23,42,1),rgba(2,6,23,1))] text-slate-100"
   >
-    <nav class="sticky top-0 z-20 border-b border-slate-800/80 bg-slate-950/85 backdrop-blur">
-      <div class="mx-auto flex w-full max-w-360 items-center justify-between gap-4 px-6 py-4">
-        <div>
+    <nav class="z-20 border-b border-slate-800/80 bg-slate-950/85 backdrop-blur">
+      <div
+        class="mx-auto flex w-full max-w-360 flex-col items-stretch gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between md:px-6"
+      >
+        <div class="min-w-0">
           <p class="text-xs uppercase tracking-[0.24em] text-slate-500">poi-vis</p>
-          <p class="text-sm text-slate-300">
+          <p class="max-w-72 text-sm text-slate-300 sm:max-w-none">
             The messy, over complicated, hard to use, poi visualiser
           </p>
         </div>
 
-        <div class="flex gap-2 rounded-2xl border border-slate-800 bg-slate-900/70 p-1 text-sm">
+        <div
+          class="flex w-full min-w-0 gap-1 rounded-2xl border border-slate-800 bg-slate-900/70 p-1 text-sm sm:w-auto sm:gap-2"
+        >
           <RouterLink
             to="/"
-            class="rounded-xl px-4 py-2 text-slate-300 transition hover:bg-slate-800 hover:text-white"
+            class="min-w-0 flex-1 rounded-xl px-3 py-2 text-center text-slate-300 transition hover:bg-slate-800 hover:text-white sm:flex-none sm:px-4"
             active-class="bg-sky-400 text-slate-950 hover:bg-sky-300"
           >
             Visualizer
           </RouterLink>
           <RouterLink
             to="/authoring"
-            class="rounded-xl px-4 py-2 text-slate-300 transition hover:bg-slate-800 hover:text-white"
+            class="min-w-0 flex-1 rounded-xl px-3 py-2 text-center text-slate-300 transition hover:bg-slate-800 hover:text-white sm:flex-none sm:px-4"
             active-class="bg-sky-400 text-slate-950 hover:bg-sky-300"
           >
             Authoring
           </RouterLink>
-          <details ref="labMenu" class="group relative">
+          <details ref="labMenu" class="group relative flex-1 sm:flex-none">
             <summary
-              class="list-none rounded-xl px-4 py-2 text-slate-300 transition marker:content-none hover:bg-slate-800 hover:text-white"
+              class="list-none rounded-xl px-3 py-2 text-slate-300 transition marker:content-none hover:bg-slate-800 hover:text-white sm:px-4"
               :class="isLabRoute ? 'bg-sky-400 text-slate-950 hover:bg-sky-300' : ''"
             >
-              <span class="flex items-center gap-2">
+              <span class="flex items-center justify-center gap-2">
                 <span>Lab</span>
                 <svg
                   viewBox="0 0 20 20"
