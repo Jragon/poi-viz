@@ -1,4 +1,3 @@
-import { POI_BEAT_LANES } from "@/lab/experiments/mel-body-tracing/beat-graph/graphHelpers";
 import type {
   PoiBeatDirection,
   PoiBeatGraph,
@@ -7,11 +6,10 @@ import type {
 } from "@/lab/experiments/mel-body-tracing/beat-graph/types";
 import type { ReelPosition } from "@/lab/experiments/mel-body-tracing/explorers/reelTypes";
 import { mapPositionToLane } from "@/lab/experiments/mel-body-tracing/explorers/reelRules";
-import { isValidWrapPair } from "@/lab/experiments/mel-body-tracing/explorers/wrapRules";
 
 type NativeWrapPosition = Extract<ReelPosition, "low-native" | "high-native">;
 
-interface WrapPositionVisit {
+export interface WrapPositionVisit {
   readonly position: ReelPosition;
   readonly hand: PoiBeatHand;
   readonly rows: readonly PoiBeatRow[];
@@ -43,26 +41,8 @@ export function createSeededRandom(seed: number): () => number {
   };
 }
 
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
-
-function isNative(position: ReelPosition): position is NativeWrapPosition {
-  return position === "low-native" || position === "high-native";
-}
-
 function matchingNonNative(position: NativeWrapPosition): ReelPosition {
   return position === "high-native" ? "high-non-native" : "low-non-native";
-}
-
-function choose<T>(values: readonly T[], random: () => number): T {
-  const index = Math.min(values.length - 1, Math.floor(clamp01(random()) * values.length));
-  const selected = values[index];
-  if (selected === undefined) {
-    throw new Error("Cannot choose from an empty list");
-  }
-
-  return selected;
 }
 
 function withSteps(rows: readonly Omit<PoiBeatRow, "step">[], startStep: number): readonly PoiBeatRow[] {
@@ -116,10 +96,6 @@ export function generateWrapPositionGraph(
   options: WrapPositionEnumeratorOptions = DEFAULT_WRAP_POSITION_ENUMERATOR_OPTIONS
 ): WrapPositionEnumeratorResult {
   void options;
-  void POI_BEAT_LANES;
-  void isNative;
-  void choose;
-  void isValidWrapPair;
 
   throw new Error("generateWrapPositionGraph is not implemented yet");
 }

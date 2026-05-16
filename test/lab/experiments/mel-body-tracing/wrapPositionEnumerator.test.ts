@@ -1,24 +1,21 @@
-/* eslint-disable @typescript-eslint/no-unused-vars -- Later enumerator tasks extend this fixture. */
 import {
-  DEFAULT_WRAP_POSITION_ENUMERATOR_OPTIONS,
   buildBtbVisitRows,
   buildNormalVisitRows,
-  createSeededRandom,
-  generateWrapPositionGraph
+  createSeededRandom
 } from "@/lab/experiments/mel-body-tracing/generators/wrapPositionEnumerator";
-import {
-  compilePoiBeatGraph,
-  DEFAULT_POI_BEAT_COMPILER_OPTIONS
-} from "@/lab/experiments/mel-body-tracing/beat-graph/compileBeatGraph";
-import { isValidWrapPair } from "@/lab/experiments/mel-body-tracing/explorers/wrapRules";
 import { describe, expect, it } from "vitest";
 
 describe("wrapPositionEnumerator visit templates", () => {
-  it("creates repeatable pseudo-random values from the same seed", () => {
+  it("creates deterministic bounded pseudo-random values from a seed", () => {
     const a = createSeededRandom(1234);
     const b = createSeededRandom(1234);
+    const c = createSeededRandom(4321);
+    const values = [a(), a(), a()];
 
-    expect([a(), a(), a()]).toEqual([b(), b(), b()]);
+    expect(values).toEqual([0.7143076679203659, 0.20701311994343996, 0.7495418272446841]);
+    expect(values).toEqual([b(), b(), b()]);
+    expect(values).not.toEqual([c(), c(), c()]);
+    expect(values.every((value) => value >= 0 && value < 1)).toBe(true);
   });
 
   it("builds a normal front visit as position, position, center", () => {
