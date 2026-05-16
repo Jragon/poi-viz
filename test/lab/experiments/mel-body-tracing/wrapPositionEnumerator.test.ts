@@ -35,6 +35,19 @@ function expectNoMoreThanTwoConsecutiveSameSurfaceRows(rows: readonly PoiBeatRow
   }
 }
 
+function expectCompletedNormalVisitRows(
+  rows: readonly PoiBeatRow[],
+  positions: readonly Parameters<typeof buildNormalVisitRows>[0][],
+  hand: PoiBeatHand,
+  startStep: number
+): void {
+  const expectedRows = positions.flatMap((position, index) =>
+    buildNormalVisitRows(position, hand, startStep + index * 3)
+  );
+
+  expect(rows.slice(startStep, startStep + expectedRows.length)).toEqual(expectedRows);
+}
+
 describe("wrapPositionEnumerator visit templates", () => {
   it("creates deterministic bounded pseudo-random values from a seed", () => {
     const a = createSeededRandom(1234);
@@ -158,22 +171,73 @@ describe("generateWrapPositionGraph", () => {
     }
   });
 
-  it("keeps both tracks synchronized when one hand chooses BTB", () => {
+  it("keeps both tracks synchronized with four completed normal visits plus one explicit sync row for BTB catch-up", () => {
     const result = generateWrapPositionGraph({
       ...DEFAULT_WRAP_POSITION_ENUMERATOR_OPTIONS,
-      targetPositionVisits: 6,
-      seed: 2,
+      targetPositionVisits: 1,
+      seed: 1,
       btbChance: 1
     });
     const leftRows = getTrackRows(result.graph, "left");
     const rightRows = getTrackRows(result.graph, "right");
 
-    expect(result.btbVisits.left + result.btbVisits.right).toBeGreaterThan(0);
+    expect(result.btbVisits).toEqual({ left: 1, right: 0 });
+    expect(result.visitedPositions.left).toEqual(["low-native"]);
+    expect(result.visitedPositions.right).toHaveLength(4);
+    expect(leftRows).toEqual(buildBtbVisitRows("low-native", "left", 0));
+    expectCompletedNormalVisitRows(
+      rightRows,
+      result.visitedPositions.right,
+      "right",
+      0
+    );
+    expect(rightRows.at(-1)).toEqual({ step: 12, laneId: "center", planeSide: "a" });
+    expect(leftRows).toHaveLength(rightRows.length);
     expect(leftRows).toHaveLength(result.graph.cycleSteps);
     expect(rightRows).toHaveLength(result.graph.cycleSteps);
-    expect(leftRows).toHaveLength(rightRows.length);
     expectSequentialSteps(leftRows);
     expectSequentialSteps(rightRows);
+  });
+
+  it("treats targetPositionVisits as a minimum when BTB catch-up adds completed normal visits", () => {
+    const result = generateWrapPositionGraph({
+      ...DEFAULT_WRAP_POSITION_ENUMERATOR_OPTIONS,
+      targetPositionVisits: 1,
+      seed: 1,
+      btbChance: 1
+    });
+
+    expect(result.visitedPositions.left).toHaveLength(1);
+    expect(result.visitedPositions.right).toHaveLength(4);
+    expect(result.visitedPositions.left.length).toBeGreaterThanOrEqual(1);
+    expect(result.visitedPositions.right.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("gives the left hand BTB priority when both hands are eligible", () => {
+    const result = generateWrapPositionGraph({
+      ...DEFAULT_WRAP_POSITION_ENUMERATOR_OPTIONS,
+      targetPositionVisits: 1,
+      seed: 99,
+      btbChance: 1,
+      leftStart: "high-native",
+      rightStart: "high-native"
+    });
+
+    expect(result.btbVisits).toEqual({ left: 1, right: 0 });
+    expect(getTrackRows(result.graph, "left")).toEqual(buildBtbVisitRows("high-native", "left", 0));
+    expect(result.visitedPositions.right).toHaveLength(4);
+  });
+
+  it("derives initial phases from each configured start position and split-time direction", () => {
+    const result = generateWrapPositionGraph({
+      ...DEFAULT_WRAP_POSITION_ENUMERATOR_OPTIONS,
+      targetPositionVisits: 2,
+      btbChance: 0,
+      leftStart: "low-non-native",
+      rightStart: "low-native"
+    });
+
+    expect(result.graph.tracks.map((track) => track.initialPhase)).toEqual(["down", "up"]);
   });
 
   it("compiles generated graphs without diagnostics", () => {
@@ -204,12 +268,29 @@ describe("generateWrapPositionGraph", () => {
     expectNoMoreThanTwoConsecutiveSameSurfaceRows(getTrackRows(result.graph, "right"));
   });
 
-  it("normalizes target visits and BTB chance at finite boundaries", () => {
+  it.each([
+    ["targetPositionVisits", Number.NaN, 0.5],
+    ["targetPositionVisits", Infinity, 0.5],
+    ["targetPositionVisits", -Infinity, 0.5],
+    ["btbChance", 1, Number.NaN],
+    ["btbChance", 1, Infinity],
+    ["btbChance", 1, -Infinity]
+  ] as const)("rejects non-finite %s", (_name, targetPositionVisits, btbChance) => {
+    expect(() =>
+      generateWrapPositionGraph({
+        ...DEFAULT_WRAP_POSITION_ENUMERATOR_OPTIONS,
+        targetPositionVisits,
+        btbChance
+      })
+    ).toThrow();
+  });
+
+  it("normalizes finite target visits and clamps finite BTB chance at boundaries", () => {
     const result = generateWrapPositionGraph({
       ...DEFAULT_WRAP_POSITION_ENUMERATOR_OPTIONS,
-      targetPositionVisits: Number.NaN,
+      targetPositionVisits: 0.2,
       seed: 3,
-      btbChance: Infinity
+      btbChance: 2
     });
 
     expect(result.visitedPositions.left.length).toBeGreaterThanOrEqual(1);

@@ -6,7 +6,11 @@ import type {
 } from "@/lab/experiments/mel-body-tracing/beat-graph/types";
 import { POI_BEAT_LANES } from "@/lab/experiments/mel-body-tracing/beat-graph/graphHelpers";
 import type { ReelPosition } from "@/lab/experiments/mel-body-tracing/explorers/reelTypes";
-import { mapPositionToLane } from "@/lab/experiments/mel-body-tracing/explorers/reelRules";
+import {
+  deriveInitialPhase,
+  mapPositionToBodySide,
+  mapPositionToLane
+} from "@/lab/experiments/mel-body-tracing/explorers/reelRules";
 import { getValidPartners } from "@/lab/experiments/mel-body-tracing/explorers/wrapRules";
 
 export type WrapFrontPosition = Extract<
@@ -15,12 +19,6 @@ export type WrapFrontPosition = Extract<
 >;
 
 type NativeWrapPosition = Extract<WrapFrontPosition, "low-native" | "high-native">;
-
-export interface WrapPositionVisit {
-  readonly position: WrapFrontPosition;
-  readonly hand: PoiBeatHand;
-  readonly rows: readonly PoiBeatRow[];
-}
 
 export interface WrapPositionEnumeratorOptions {
   readonly targetPositionVisits: number;
@@ -59,7 +57,6 @@ export const DEFAULT_WRAP_POSITION_ENUMERATOR_OPTIONS: WrapPositionEnumeratorOpt
 interface HandGenerationState {
   readonly hand: PoiBeatHand;
   readonly rows: PoiBeatRow[];
-  readonly pendingNormalRows: PoiBeatRow[];
   readonly visitedPositions: WrapFrontPosition[];
   currentPosition: WrapFrontPosition;
   btbVisits: number;
@@ -92,15 +89,15 @@ function isNativePosition(position: WrapFrontPosition): position is NativeWrapPo
 
 function normalizeTargetPositionVisits(targetPositionVisits: number): number {
   if (!Number.isFinite(targetPositionVisits)) {
-    return 1;
+    throw new Error("targetPositionVisits must be finite");
   }
 
   return Math.max(1, Math.floor(targetPositionVisits));
 }
 
 function normalizeBtbChance(btbChance: number): number {
-  if (Number.isNaN(btbChance)) {
-    return 0;
+  if (!Number.isFinite(btbChance)) {
+    throw new Error("btbChance must be finite");
   }
 
   return Math.max(0, Math.min(1, btbChance));
@@ -173,7 +170,6 @@ function createHandState(hand: PoiBeatHand, startPosition: WrapFrontPosition): H
   return {
     hand,
     rows: [],
-    pendingNormalRows: [],
     visitedPositions: [],
     currentPosition: startPosition,
     btbVisits: 0
@@ -184,33 +180,28 @@ function appendRows(state: HandGenerationState, rows: readonly PoiBeatRow[]): vo
   state.rows.push(...rows);
 }
 
-function queueNormalVisit(state: HandGenerationState, random: () => number): void {
-  const startStep = state.rows.length + state.pendingNormalRows.length;
-  state.pendingNormalRows.push(
-    ...buildNormalVisitRows(state.currentPosition, state.hand, startStep)
-  );
+function appendNormalVisit(state: HandGenerationState, random: () => number): void {
+  appendRows(state, buildNormalVisitRows(state.currentPosition, state.hand, state.rows.length));
   state.visitedPositions.push(state.currentPosition);
   state.currentPosition = chooseNextFrontPosition(state.currentPosition, random);
 }
 
-function appendNormalRows(
+function appendNormalVisits(
   state: HandGenerationState,
   count: number,
   random: () => number
 ): void {
-  while (count > 0) {
-    if (state.pendingNormalRows.length === 0) {
-      queueNormalVisit(state, random);
-    }
-
-    const nextRow = state.pendingNormalRows.shift();
-    if (!nextRow) {
-      throw new Error("Expected a pending normal row");
-    }
-
-    state.rows.push(nextRow);
-    count -= 1;
+  for (let index = 0; index < count; index += 1) {
+    appendNormalVisit(state, random);
   }
+}
+
+function appendSyncCenterHoldRow(state: HandGenerationState): void {
+  state.rows.push({
+    step: state.rows.length,
+    laneId: "center",
+    planeSide: "a"
+  });
 }
 
 function appendBtbVisit(state: HandGenerationState): void {
@@ -224,7 +215,7 @@ function appendBtbVisit(state: HandGenerationState): void {
 }
 
 function canChooseBtb(state: HandGenerationState): boolean {
-  return state.pendingNormalRows.length === 0 && isNativePosition(state.currentPosition);
+  return isNativePosition(state.currentPosition);
 }
 
 function shouldChooseBtb(
@@ -233,6 +224,14 @@ function shouldChooseBtb(
   random: () => number
 ): boolean {
   return canChooseBtb(state) && random() < btbChance;
+}
+
+function deriveStartPhase(
+  hand: PoiBeatHand,
+  startPosition: WrapFrontPosition,
+  direction: PoiBeatDirection
+): ReturnType<typeof deriveInitialPhase> {
+  return deriveInitialPhase(mapPositionToBodySide(startPosition, hand), direction, false, 0);
 }
 
 export function generateWrapPositionGraph(
@@ -255,13 +254,15 @@ export function generateWrapPositionGraph(
 
     if (leftBtb) {
       appendBtbVisit(left);
-      appendNormalRows(right, 13, random);
+      appendNormalVisits(right, 4, random);
+      appendSyncCenterHoldRow(right);
     } else if (rightBtb) {
       appendBtbVisit(right);
-      appendNormalRows(left, 13, random);
+      appendNormalVisits(left, 4, random);
+      appendSyncCenterHoldRow(left);
     } else {
-      appendNormalRows(left, 3, random);
-      appendNormalRows(right, 3, random);
+      appendNormalVisit(left, random);
+      appendNormalVisit(right, random);
     }
   }
 
@@ -280,14 +281,18 @@ export function generateWrapPositionGraph(
           id: "left",
           hand: "left",
           poiDirection: SPLIT_TIME_DIRECTIONS.left,
-          initialPhase: "up",
+          initialPhase: deriveStartPhase("left", options.leftStart, SPLIT_TIME_DIRECTIONS.left),
           rows: left.rows
         },
         {
           id: "right",
           hand: "right",
           poiDirection: SPLIT_TIME_DIRECTIONS.right,
-          initialPhase: "up",
+          initialPhase: deriveStartPhase(
+            "right",
+            options.rightStart,
+            SPLIT_TIME_DIRECTIONS.right
+          ),
           rows: right.rows
         }
       ]
