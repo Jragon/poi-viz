@@ -7,10 +7,15 @@ import type {
 import type { ReelPosition } from "@/lab/experiments/mel-body-tracing/explorers/reelTypes";
 import { mapPositionToLane } from "@/lab/experiments/mel-body-tracing/explorers/reelRules";
 
-type NativeWrapPosition = Extract<ReelPosition, "low-native" | "high-native">;
+export type WrapFrontPosition = Extract<
+  ReelPosition,
+  "high-native" | "low-native" | "high-non-native" | "low-non-native"
+>;
+
+type NativeWrapPosition = Extract<WrapFrontPosition, "low-native" | "high-native">;
 
 export interface WrapPositionVisit {
-  readonly position: ReelPosition;
+  readonly position: WrapFrontPosition;
   readonly hand: PoiBeatHand;
   readonly rows: readonly PoiBeatRow[];
 }
@@ -33,6 +38,10 @@ export const DEFAULT_WRAP_POSITION_ENUMERATOR_OPTIONS: WrapPositionEnumeratorOpt
 };
 
 export function createSeededRandom(seed: number): () => number {
+  if (!Number.isFinite(seed) || !Number.isInteger(seed)) {
+    throw new Error("Seed must be a finite integer");
+  }
+
   let state = seed >>> 0;
 
   return () => {
@@ -41,7 +50,7 @@ export function createSeededRandom(seed: number): () => number {
   };
 }
 
-function matchingNonNative(position: NativeWrapPosition): ReelPosition {
+function matchingNonNative(position: NativeWrapPosition): WrapFrontPosition {
   return position === "high-native" ? "high-non-native" : "low-non-native";
 }
 
@@ -50,7 +59,7 @@ function withSteps(rows: readonly Omit<PoiBeatRow, "step">[], startStep: number)
 }
 
 export function buildNormalVisitRows(
-  position: ReelPosition,
+  position: WrapFrontPosition,
   hand: PoiBeatHand,
   startStep: number
 ): readonly PoiBeatRow[] {

@@ -18,6 +18,13 @@ describe("wrapPositionEnumerator visit templates", () => {
     expect(values.every((value) => value >= 0 && value < 1)).toBe(true);
   });
 
+  it.each([Number.NaN, Infinity, -Infinity, 1.5])(
+    "rejects non-finite or non-integer seed %s",
+    (seed) => {
+      expect(() => createSeededRandom(seed)).toThrow("Seed must be a finite integer");
+    }
+  );
+
   it("builds a normal front visit as position, position, center", () => {
     expect(buildNormalVisitRows("low-native", "right", 0)).toEqual([
       { step: 0, laneId: "right-low", planeSide: "b" },
