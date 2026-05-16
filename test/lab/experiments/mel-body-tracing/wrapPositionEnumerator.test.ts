@@ -1,9 +1,39 @@
 import {
+  DEFAULT_WRAP_POSITION_ENUMERATOR_OPTIONS,
   buildBtbVisitRows,
   buildNormalVisitRows,
-  createSeededRandom
+  createSeededRandom,
+  generateWrapPositionGraph
 } from "@/lab/experiments/mel-body-tracing/generators/wrapPositionEnumerator";
+import { DEFAULT_POI_BEAT_COMPILER_OPTIONS, compilePoiBeatGraph } from "@/lab/experiments/mel-body-tracing/beat-graph/compileBeatGraph";
+import type { PoiBeatGraph, PoiBeatHand, PoiBeatRow } from "@/lab/experiments/mel-body-tracing/beat-graph/types";
+import { isValidWrapPair } from "@/lab/experiments/mel-body-tracing/explorers/wrapRules";
 import { describe, expect, it } from "vitest";
+
+function getTrackRows(graph: PoiBeatGraph, hand: PoiBeatHand): readonly PoiBeatRow[] {
+  return graph.tracks.find((track) => track.hand === hand)?.rows ?? [];
+}
+
+function expectSequentialSteps(rows: readonly PoiBeatRow[]): void {
+  expect(rows.map((row) => row.step)).toEqual(rows.map((_, step) => step));
+}
+
+function expectNoMoreThanTwoConsecutiveSameSurfaceRows(rows: readonly PoiBeatRow[]): void {
+  let runKey = "";
+  let runLength = 0;
+
+  for (const row of rows) {
+    const key = `${row.laneId}:${row.planeSide ?? ""}`;
+    if (key === runKey) {
+      runLength += 1;
+    } else {
+      runKey = key;
+      runLength = 1;
+    }
+
+    expect(runLength).toBeLessThanOrEqual(2);
+  }
+}
 
 describe("wrapPositionEnumerator visit templates", () => {
   it("creates deterministic bounded pseudo-random values from a seed", () => {
@@ -67,5 +97,124 @@ describe("wrapPositionEnumerator visit templates", () => {
       { step: 14, laneId: "left-high", planeSide: "b" },
       { step: 15, laneId: "center", planeSide: "a" }
     ]);
+  });
+});
+
+describe("generateWrapPositionGraph", () => {
+  it("generates deterministic two-hand split-time-opposite graphs with btbChance 0", () => {
+    const options = {
+      ...DEFAULT_WRAP_POSITION_ENUMERATOR_OPTIONS,
+      targetPositionVisits: 8,
+      seed: 77,
+      btbChance: 0
+    };
+
+    const first = generateWrapPositionGraph(options);
+    const second = generateWrapPositionGraph(options);
+    const leftRows = getTrackRows(first.graph, "left");
+    const rightRows = getTrackRows(first.graph, "right");
+
+    expect(first).toEqual(second);
+    expect(first.graph.tracks.map((track) => track.id)).toEqual(["left", "right"]);
+    expect(first.graph.tracks.map((track) => track.poiDirection)).toEqual([
+      "clockwise",
+      "counterclockwise"
+    ]);
+    expect(first.graph.tracks.map((track) => track.initialPhase)).toEqual(["up", "up"]);
+    expect(leftRows).toHaveLength(24);
+    expect(rightRows).toHaveLength(24);
+    expect(first.graph.cycleSteps).toBe(24);
+    expect(first.visitedPositions.left).toHaveLength(8);
+    expect(first.visitedPositions.right).toHaveLength(8);
+    expect(first.btbVisits).toEqual({ left: 0, right: 0 });
+    expectSequentialSteps(leftRows);
+    expectSequentialSteps(rightRows);
+  });
+
+  it("uses only valid wrap partners between position changes, allowing same-position repeats only for BTB visits", () => {
+    const result = generateWrapPositionGraph({
+      ...DEFAULT_WRAP_POSITION_ENUMERATOR_OPTIONS,
+      targetPositionVisits: 16,
+      seed: 8,
+      btbChance: 0.5
+    });
+
+    for (const hand of ["left", "right"] as const) {
+      let repeatedPositions = 0;
+      const positions = result.visitedPositions[hand];
+
+      for (let index = 0; index < positions.length - 1; index += 1) {
+        const from = positions[index]!;
+        const to = positions[index + 1]!;
+
+        if (from === to) {
+          repeatedPositions += 1;
+        } else {
+          expect(isValidWrapPair(from, to)).toBe(true);
+        }
+      }
+
+      expect(repeatedPositions).toBeLessThanOrEqual(result.btbVisits[hand]);
+    }
+  });
+
+  it("keeps both tracks synchronized when one hand chooses BTB", () => {
+    const result = generateWrapPositionGraph({
+      ...DEFAULT_WRAP_POSITION_ENUMERATOR_OPTIONS,
+      targetPositionVisits: 6,
+      seed: 2,
+      btbChance: 1
+    });
+    const leftRows = getTrackRows(result.graph, "left");
+    const rightRows = getTrackRows(result.graph, "right");
+
+    expect(result.btbVisits.left + result.btbVisits.right).toBeGreaterThan(0);
+    expect(leftRows).toHaveLength(result.graph.cycleSteps);
+    expect(rightRows).toHaveLength(result.graph.cycleSteps);
+    expect(leftRows).toHaveLength(rightRows.length);
+    expectSequentialSteps(leftRows);
+    expectSequentialSteps(rightRows);
+  });
+
+  it("compiles generated graphs without diagnostics", () => {
+    const result = generateWrapPositionGraph({
+      ...DEFAULT_WRAP_POSITION_ENUMERATOR_OPTIONS,
+      targetPositionVisits: 10,
+      seed: 12,
+      btbChance: 0.35
+    });
+
+    const compiled = compilePoiBeatGraph(result.graph, DEFAULT_POI_BEAT_COMPILER_OPTIONS);
+
+    expect(compiled.diagnostics).toEqual([]);
+    expect(compiled.sequence.rigs).toHaveLength(2);
+    expect(compiled.sequence.rigs[0]?.sequence.segments).toHaveLength(result.graph.cycleSteps);
+    expect(compiled.sequence.rigs[1]?.sequence.segments).toHaveLength(result.graph.cycleSteps);
+  });
+
+  it("never emits more than two consecutive rows on the same lane and plane side", () => {
+    const result = generateWrapPositionGraph({
+      ...DEFAULT_WRAP_POSITION_ENUMERATOR_OPTIONS,
+      targetPositionVisits: 18,
+      seed: 4,
+      btbChance: 0.8
+    });
+
+    expectNoMoreThanTwoConsecutiveSameSurfaceRows(getTrackRows(result.graph, "left"));
+    expectNoMoreThanTwoConsecutiveSameSurfaceRows(getTrackRows(result.graph, "right"));
+  });
+
+  it("normalizes target visits and BTB chance at finite boundaries", () => {
+    const result = generateWrapPositionGraph({
+      ...DEFAULT_WRAP_POSITION_ENUMERATOR_OPTIONS,
+      targetPositionVisits: Number.NaN,
+      seed: 3,
+      btbChance: Infinity
+    });
+
+    expect(result.visitedPositions.left.length).toBeGreaterThanOrEqual(1);
+    expect(result.visitedPositions.right.length).toBeGreaterThanOrEqual(1);
+    expect(result.btbVisits.left + result.btbVisits.right).toBeGreaterThan(0);
+    expect(getTrackRows(result.graph, "left")).toHaveLength(getTrackRows(result.graph, "right").length);
   });
 });
