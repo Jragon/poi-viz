@@ -367,7 +367,6 @@ Append this implementation to `src/lab/experiments/mel-body-tracing/generators/w
 interface HandGenerationState {
   readonly hand: PoiBeatHand;
   readonly rows: PoiBeatRow[];
-  readonly pendingNormalRows: PoiBeatRow[];
   readonly visitedPositions: ReelPosition[];
   currentPosition: ReelPosition;
   btbVisits: number;
@@ -377,8 +376,7 @@ function createHandState(hand: PoiBeatHand, startPosition: ReelPosition): HandGe
   return {
     hand,
     rows: [],
-    pendingNormalRows: [],
-    visitedPositions: [startPosition],
+    visitedPositions: [],
     currentPosition: startPosition,
     btbVisits: 0
   };
@@ -398,22 +396,24 @@ function chooseNextPosition(currentPosition: ReelPosition, random: () => number)
   return choose(partners, random);
 }
 
-function queueNormalVisit(state: HandGenerationState, random: () => number): void {
-  state.pendingNormalRows.push(...buildNormalVisitRows(state.currentPosition, state.hand, 0));
-  state.currentPosition = chooseNextPosition(state.currentPosition, random);
+function appendNormalVisit(state: HandGenerationState, random: () => number): void {
+  appendRows(state, buildNormalVisitRows(state.currentPosition, state.hand, 0));
   state.visitedPositions.push(state.currentPosition);
+  state.currentPosition = chooseNextPosition(state.currentPosition, random);
 }
 
-function appendNormalRows(
+function appendNormalVisits(
   state: HandGenerationState,
-  rowCount: number,
+  count: number,
   random: () => number
 ): void {
-  while (state.pendingNormalRows.length < rowCount) {
-    queueNormalVisit(state, random);
+  for (let index = 0; index < count; index += 1) {
+    appendNormalVisit(state, random);
   }
+}
 
-  appendRows(state, state.pendingNormalRows.splice(0, rowCount));
+function appendSyncCenterHoldRow(state: HandGenerationState): void {
+  appendRows(state, [{ step: 0, laneId: "center", planeSide: "a" }]);
 }
 
 function canUseBtb(state: HandGenerationState): state is HandGenerationState & {
@@ -454,6 +454,9 @@ export function generateWrapPositionGraph(
   const left = createHandState("left", options.leftStart);
   const right = createHandState("right", options.rightStart);
 
+  // targetPositionVisits is a minimum target. A BTB sync block may push
+  // the catch-up hand past the target because it emits four complete
+  // normal visits plus one explicit center hold row.
   while (
     left.visitedPositions.length < targetPositionVisits ||
     right.visitedPositions.length < targetPositionVisits
@@ -465,17 +468,19 @@ export function generateWrapPositionGraph(
 
     if (leftBtb) {
       appendBtbVisit(left);
-      appendNormalRows(right, 13, random);
+      appendNormalVisits(right, 4, random);
+      appendSyncCenterHoldRow(right);
     } else if (rightBtb) {
       appendBtbVisit(right);
-      appendNormalRows(left, 13, random);
+      appendNormalVisits(left, 4, random);
+      appendSyncCenterHoldRow(left);
     } else {
-      appendNormalRows(left, 3, random);
-      appendNormalRows(right, 3, random);
+      appendNormalVisit(left, random);
+      appendNormalVisit(right, random);
     }
   }
 
-  const cycleSteps = Math.max(left.rows.length, right.rows.length);
+  const cycleSteps = left.rows.length;
 
   return {
     graph: {
@@ -546,7 +551,7 @@ it("never emits more than two consecutive rows on the same lane and plane side",
 });
 ```
 
-Expected: this should pass with the pending-row normal-fill implementation. If it fails, inspect the emitted rows and fix the generator rather than relaxing the test.
+Expected: this should pass with the explicit BTB sync rule: four completed normal visits plus one center sync hold row on the non-BTB hand. If it fails, inspect the emitted rows and fix the generator rather than relaxing the test.
 
 - [ ] **Step 5: Run tests to verify Task 2 passes**
 
@@ -969,4 +974,4 @@ If no fixes were needed, do not create an empty commit.
 
 - Spec coverage: The plan builds a separate lab page, a two-hand position enumerator, random BTB template substitution from native positions, synchronized graph output, and visualizer/beat-graph preview.
 - Scope check: Timing modes, offset exploration, cosmo/reel enumeration, early exits into overlapping beat graph rows, and polished gallery browsing are intentionally excluded from this MVP.
-- Known risk: BTB has 13 rows while normal visits have 3 rows. Task 2 handles this by using a pending-row normal stream for the non-BTB hand, so the catch-up side can emit exactly 13 normal rows without inserting silent static filler.
+- Known risk: BTB has 13 rows while normal visits have 3 rows. Task 2 handles this with the smallest explicit synchronization rule: the non-BTB hand emits four complete normal visits (12 rows) plus one named center sync hold row. That makes `targetPositionVisits` a minimum target because BTB catch-up can add completed visits.

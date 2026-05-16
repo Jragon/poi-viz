@@ -228,6 +228,28 @@ describe("generateWrapPositionGraph", () => {
     expect(result.visitedPositions.right).toHaveLength(4);
   });
 
+  it("allows the right hand to choose BTB when left starts non-native", () => {
+    const result = generateWrapPositionGraph({
+      ...DEFAULT_WRAP_POSITION_ENUMERATOR_OPTIONS,
+      targetPositionVisits: 1,
+      seed: 5,
+      btbChance: 1,
+      leftStart: "low-non-native",
+      rightStart: "low-native"
+    });
+    const leftRows = getTrackRows(result.graph, "left");
+    const rightRows = getTrackRows(result.graph, "right");
+    const compiled = compilePoiBeatGraph(result.graph, DEFAULT_POI_BEAT_COMPILER_OPTIONS);
+
+    expect(result.btbVisits.right).toBeGreaterThan(0);
+    expect(result.btbVisits.left).toBe(0);
+    expect(rightRows).toEqual(buildBtbVisitRows("low-native", "right", 0));
+    expect(leftRows).toHaveLength(rightRows.length);
+    expect(leftRows).toHaveLength(result.graph.cycleSteps);
+    expect(rightRows).toHaveLength(result.graph.cycleSteps);
+    expect(compiled.diagnostics).toEqual([]);
+  });
+
   it("derives initial phases from each configured start position and split-time direction", () => {
     const result = generateWrapPositionGraph({
       ...DEFAULT_WRAP_POSITION_ENUMERATOR_OPTIONS,
