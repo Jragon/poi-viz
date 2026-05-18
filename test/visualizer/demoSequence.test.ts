@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { evalPreparedMultiRigSequenceAt, prepareMultiRigSequence } from "@/engine/multirig";
 import { toProjectedMultiRigPose } from "@/engine/planeProjection";
-import { demoSequence, planeBreakDemoSequence } from "@/visualizer/demoSequence";
+import {
+  demoSequence,
+  planeBreakDemoSequence,
+  threeDDebugSequence
+} from "@/visualizer/demoSequence";
 
 describe("demoSequence", () => {
   it("prepares successfully and exposes the outer transport duration", () => {
@@ -35,5 +39,31 @@ describe("demoSequence", () => {
     expect(beforeProjected.left.handPosition.y).toBeCloseTo(afterProjected.left.handPosition.y, 12);
     expect(beforeProjected.left.headPosition.x).toBeCloseTo(afterProjected.left.headPosition.x, 12);
     expect(beforeProjected.left.headPosition.y).toBeCloseTo(afterProjected.left.headPosition.y, 12);
+  });
+
+  it("prepares the 3d debug fixture and preserves the intended rig plane mix", () => {
+    const result = prepareMultiRigSequence(threeDDebugSequence);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+
+    expect(result.prepared.rigs.map((rig) => rig.rigId)).toEqual(["left", "right"]);
+    expect(result.prepared.maxSequenceDuration).toBeCloseTo(4 * Math.PI);
+
+    const start = evalPreparedMultiRigSequenceAt(result.prepared, 0);
+    const rightBoundary = evalPreparedMultiRigSequenceAt(result.prepared, 2 * Math.PI);
+
+    expect(start.ok).toBe(true);
+    expect(rightBoundary.ok).toBe(true);
+    if (!start.ok || !rightBoundary.ok) {
+      return;
+    }
+
+    expect(start.poses.left.planeId).toBe("wall");
+    expect(start.poses.right.planeId).toBe("wheel");
+    expect(rightBoundary.poses.left.planeId).toBe("wall");
+    expect(rightBoundary.poses.right.planeId).toBe("floor");
   });
 });

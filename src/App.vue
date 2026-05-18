@@ -2,37 +2,12 @@
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
+import { labLinks } from "@/lab/labLinks";
+
 const route = useRoute();
 const labMenu = ref<HTMLDetailsElement | null>(null);
 
 const isLabRoute = computed(() => route.path.startsWith("/lab/"));
-
-const labLinks = [
-  {
-    label: "Quarter Time",
-    to: "/lab/quarter-time-3d"
-  },
-  {
-    label: "Archer Weaves",
-    to: "/lab/archer-weaves"
-  },
-  {
-    label: "Body Tracing",
-    to: "/lab/body-tracing"
-  },
-  {
-    label: "Body Tracing Planes",
-    to: "/lab/body-tracing/planes"
-  },
-  {
-    label: "Body Tracing Explorer",
-    to: "/lab/body-tracing-explorer"
-  },
-  {
-    label: "Beat Graph Editor",
-    to: "/lab/beat-graph"
-  }
-];
 
 function closeLabMenu() {
   if (labMenu.value) {

@@ -6,6 +6,10 @@ import BodyTracingPlaneExperimentsPage from "@/lab/experiments/body-tracing/Body
 import BeatGraphEditorPage from "@/lab/experiments/mel-body-tracing/pages/BeatGraphEditorPage.vue";
 import BodyTracingExplorerPage from "@/lab/experiments/mel-body-tracing/pages/BodyTracingExplorerPage.vue";
 import QuarterTimeJournalPage from "@/lab/experiments/quarter-time/QuarterTimeJournalPage.vue";
+import {
+  THREE_D_DEBUG_ROUTE,
+  loadThreeDDebugPage
+} from "@/lab/experiments/three-d-debug/routeMeta";
 import AuthoringPage from "@/pages/AuthoringPage.vue";
 import VisualizerPage from "@/pages/VisualizerPage.vue";
 
@@ -51,6 +55,10 @@ export const router = createRouter({
       path: "/lab/beat-graph",
       name: "beat-graph-editor",
       component: BeatGraphEditorPage
+    },
+    {
+      ...THREE_D_DEBUG_ROUTE,
+      component: loadThreeDDebugPage
     }
   ]
 });
