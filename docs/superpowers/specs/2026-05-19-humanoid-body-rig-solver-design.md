@@ -13,6 +13,7 @@ This work should improve the body solver first. Rendering volumes are useful, bu
 - Make the body-rig solve more anatomically plausible while staying deterministic and testable.
 - Fix overhead shoulder flipping with explicit singularity-safe shoulder-girdle behavior.
 - Add pelvis and chest state so torso, hips, and shoulders are real solved body regions rather than renderer guesses.
+- Define the canonical body-local pattern space from the largest circle both hands can overlap for the full pattern.
 - Migrate 2D and 3D body consumers to the same upgraded body-rig contract with no compatibility shim.
 - Keep projection and rendering as adapters over the solved body state.
 - Add simple volumes so the figure is no longer just a stick figure, without making stylized cuteness the primary goal.
@@ -76,6 +77,21 @@ The main source area is [src/body-rig](../../../src/body-rig). The 3D renderer i
 ## Output Contract
 
 The body-rig output should expose body semantics, not mesh details.
+
+### Canonical Pattern Space
+
+The body-rig layer should define the canonical body-local space used by pattern authoring and visualization. This space is based on the largest circle that both hands can overlap for the whole pattern.
+
+Rules:
+
+- Compute the largest shared hand-overlap circle from the solved body dimensions, shoulder policy, yaw/projection limits, and arm reach range.
+- The center of that shared overlap circle is the body-local origin.
+- Unit length `1` is the radius of that shared overlap circle.
+- A sequence with both arm radii at `1` should mean both hands can reach the entire unit circle for the full pattern, subject only to explicit boundary diagnostics.
+- 2D and 3D consumers must use this same origin and unit scale. The 2D visualizer should not keep a separate normalization path.
+- If the upgraded pelvis/chest/shoulder solver changes the shared overlap circle, the canonical origin and unit radius must update with the solver rather than being patched in a renderer.
+
+The existing shared-overlap concept should become part of the authoritative body-rig contract, not a helper that only the 2D visualizer understands.
 
 ### Body Pose State
 
