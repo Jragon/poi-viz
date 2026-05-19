@@ -26,7 +26,7 @@ describe("Three3DDebugCanvas trail sync", () => {
   });
 });
 
-describe("Three3DDebugCanvas task 4 stick figure wiring", () => {
+describe("Three3DDebugCanvas task 8 humanoid body-volume wiring", () => {
   it("has a bodyScene prop and references BodyHumanoidRenderer", () => {
     const source = readFileSync(THREE_D_DEBUG_CANVAS_FILE, "utf8");
 
@@ -34,7 +34,7 @@ describe("Three3DDebugCanvas task 4 stick figure wiring", () => {
     expect(source).toContain("BodyHumanoidRenderer");
   });
 
-  it("disposes the stick figure renderer inside disposeThreeSceneResources", () => {
+  it("disposes the humanoid body renderer inside disposeThreeSceneResources", () => {
     const source = readFileSync(THREE_D_DEBUG_CANVAS_FILE, "utf8");
 
     expect(source).toContain("function disposeThreeSceneResources() {");
@@ -50,7 +50,7 @@ describe("Three3DDebugCanvas task 4 stick figure wiring", () => {
     expect(source).toContain("objects.tether.quaternion.setFromUnitVectors");
   });
 
-  it("renders head and hand spheres inside the stick figure renderer", () => {
+  it("renders hand joint node spheres inside the humanoid body renderer", () => {
     const rendererSource = readFileSync(BODY_HUMANOID_RENDERER_FILE, "utf8");
 
     expect(rendererSource).toContain("new THREE.SphereGeometry(0.05");
@@ -80,7 +80,7 @@ describe("Three3DDebugCanvas task 4 stick figure wiring", () => {
     expect(rendererSource).not.toContain("segmentLines");
   });
 
-  it("renders sphere joints for all skeleton joints using a generic joint mesh map", () => {
+  it("renders sphere joints for hand joint nodes and body volumes using a generic joint mesh map", () => {
     const rendererSource = readFileSync(BODY_HUMANOID_RENDERER_FILE, "utf8");
 
     expect(rendererSource).toContain("jointMeshes");
