@@ -245,7 +245,7 @@ Expected target areas:
 - [src/body-rig/stickFigureGeometry.ts](../../../src/body-rig/stickFigureGeometry.ts)
 - [src/body-rig/bodySkeletonFrame.ts](../../../src/body-rig/bodySkeletonFrame.ts)
 - 2D body/stick figure visualizer consumers
-- [src/lab/experiments/three-d-debug/bodyStickFigureRenderer.ts](../../../src/lab/experiments/three-d-debug/bodyStickFigureRenderer.ts)
+- [src/lab/experiments/three-d-debug/bodyHumanoidRenderer.ts](../../../src/lab/experiments/three-d-debug/bodyHumanoidRenderer.ts)
 - body-rig, visualizer, and lab tests
 
 Docs and source must stay aligned. If the public skeleton contract changes, update docs and tests in the same implementation branch.
