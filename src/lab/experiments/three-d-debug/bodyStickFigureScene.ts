@@ -1,7 +1,6 @@
 import {
   buildBodyRigDimensionsForSharedHandRadius,
   buildBodyRigFrameFromDimensions,
-  buildBodySkeletonFrame,
   solveBodyRigFrame,
   type BodySkeletonFrame
 } from "@/body-rig";
@@ -39,5 +38,5 @@ export function buildBodyStickFigureScene(
     projectionSettings ?? DEFAULT_PLANE_PROJECTION_SETTINGS
   );
 
-  return buildBodySkeletonFrame(pose.body, pose.solve);
+  return pose.skeleton;
 }

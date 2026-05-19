@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import type { WorldMultiRigPose } from "@/engine/types";
@@ -113,5 +116,15 @@ describe("buildBodyStickFigureScene", () => {
 
     expect(result).not.toBeNull();
     expect(result!.segments).toBe(SKELETON_SEGMENTS);
+  });
+
+  it("returns the skeleton produced by the solved BodyRigPose", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), "src/lab/experiments/three-d-debug/bodyStickFigureScene.ts"),
+      "utf8"
+    );
+
+    expect(source).toContain("return pose.skeleton;");
+    expect(source).not.toContain("buildBodySkeletonFrame");
   });
 });
