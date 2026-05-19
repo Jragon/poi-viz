@@ -60,8 +60,12 @@ describe("Three3DDebugCanvas task 4 stick figure wiring", () => {
   it("renders separate hand/head trail visibility in the canvas trail sync", () => {
     const source = readFileSync(THREE_D_DEBUG_CANVAS_FILE, "utf8");
 
-    expect(source).toContain("objects.hand.visible = props.showHandTrails && handPoints.length >= 2;");
-    expect(source).toContain("objects.head.visible = props.showHeadTrails && headPoints.length >= 2;");
+    expect(source).toContain(
+      "objects.hand.visible = props.showHandTrails && handPoints.length >= 2;"
+    );
+    expect(source).toContain(
+      "objects.head.visible = props.showHeadTrails && headPoints.length >= 2;"
+    );
   });
 
   it("keeps live poi hand/head rig markers and connector in the canvas", () => {
@@ -122,7 +126,9 @@ describe("Three3DDebugCanvas task 4 fire poi controller wiring", () => {
     expect(source).toContain("createController: () => new FirePoiEffectController(),");
     expect(source).not.toContain("function disableFirePoiEffect() {");
     expect(source).not.toContain("firePoiEffectEnabled = false;");
-    expect(source).toMatch(/disposeThreeSceneResources\([\s\S]*firePoiEffectController\.dispose\(scene\)/);
+    expect(source).toMatch(
+      /disposeThreeSceneResources\([\s\S]*firePoiEffectController\.dispose\(scene\)/
+    );
   });
 
   it("watches fire poi settings alongside poses trails and rig order when syncing the fire effect", () => {
@@ -144,8 +150,6 @@ describe("Three3DDebugCanvas fire poi head marker visibility", () => {
   it("includes firePoiSettings in the rig markers watch trigger", () => {
     const source = readFileSync(THREE_D_DEBUG_CANVAS_FILE, "utf8");
 
-    expect(source).toContain(
-      "() => [props.poses, props.rigOrder, props.firePoiSettings],"
-    );
+    expect(source).toContain("() => [props.poses, props.rigOrder, props.firePoiSettings],");
   });
 });

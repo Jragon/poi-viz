@@ -1,9 +1,6 @@
 import type { PreparedMultiRigSequence } from "@/engine/multirig";
 
-import {
-  normalizeFirePoiSettings,
-  type FirePoiSettings
-} from "./firePoiSettings";
+import { normalizeFirePoiSettings, type FirePoiSettings } from "./firePoiSettings";
 
 interface TrailSamplingState {
   readonly prepared: PreparedMultiRigSequence | null;
@@ -37,8 +34,8 @@ function isNormalizedFirePoiSettingsRecord(
   const record = value as FirePoiSettingsRecord;
 
   return (
-    Object.keys(record).length === FIRE_POI_SETTINGS_KEYS.length
-    && FIRE_POI_SETTINGS_KEYS.every((key) => Object.is(record[key], normalized[key]))
+    Object.keys(record).length === FIRE_POI_SETTINGS_KEYS.length &&
+    FIRE_POI_SETTINGS_KEYS.every((key) => Object.is(record[key], normalized[key]))
   );
 }
 
@@ -67,12 +64,7 @@ export function reconcileStoredFirePoiSettings(value: unknown): {
 export function shouldSampleThreeDDebugWorldTrails(
   state: TrailSamplingState
 ): PreparedMultiRigSequence | null {
-  const {
-    prepared,
-    showHandTrails,
-    showHeadTrails,
-    firePoiEnabled
-  } = state;
+  const { prepared, showHandTrails, showHeadTrails, firePoiEnabled } = state;
 
   return prepared !== null && (showHandTrails || showHeadTrails || firePoiEnabled)
     ? prepared

@@ -7,17 +7,17 @@ import type { BodySkeletonFrame } from "@/body-rig";
 import type { PlaneId, RigId, Vec3, WorldMultiRigPose } from "@/engine/types";
 import type { WorldMultiRigTrailSamples } from "@/visualizer/worldTrailSampling";
 
+import { BodyStickFigureRenderer } from "./bodyStickFigureRenderer";
+import { FirePoiEffectController } from "./firePoiEffectController";
+import { syncRecoverableFirePoiEffect } from "./firePoiEffectSync";
+import type { FirePoiSettings } from "./firePoiSettings";
+import { setLineGeometryPoints } from "./trailLineGeometry";
 import {
   buildDebugRigSceneEntries,
   buildDefaultCameraViewState,
   buildOriginPlaneSheetStates,
   resolveSceneRadiusWorld
 } from "./worldPoseScene";
-import { BodyStickFigureRenderer } from "./bodyStickFigureRenderer";
-import { FirePoiEffectController } from "./firePoiEffectController";
-import { syncRecoverableFirePoiEffect } from "./firePoiEffectSync";
-import type { FirePoiSettings } from "./firePoiSettings";
-import { setLineGeometryPoints } from "./trailLineGeometry";
 
 const TETHER_RADIUS = 0.012;
 const UNIT_TETHER_LENGTH = 1;

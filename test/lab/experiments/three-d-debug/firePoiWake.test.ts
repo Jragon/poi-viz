@@ -226,11 +226,7 @@ describe("firePoiWake", () => {
     const result = buildFirePoiRigState({
       rigId: "left",
       headPosition,
-      headTrail: [
-        { x: 0, y: 0, z: 0 },
-        { x: 0, y: 1, z: 0 },
-        headPosition
-      ],
+      headTrail: [{ x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }, headPosition],
       settings
     });
 

@@ -4,8 +4,8 @@ import type { RigId, WorldMultiRigPose } from "@/engine/types";
 import type { WorldMultiRigTrailSamples } from "@/visualizer/worldTrailSampling";
 
 import type { FirePoiSettings } from "./firePoiSettings";
-import { buildFirePoiRigState } from "./firePoiWake";
 import type { FirePoiWakeParticle } from "./firePoiWake";
+import { buildFirePoiRigState } from "./firePoiWake";
 import type { SceneEffectController } from "./sceneEffectController";
 
 const CORE_BASE_OPACITY = 0.95;
@@ -23,7 +23,7 @@ function createCoreGlowTexture(): THREE.DataTexture {
       const fade = Math.pow(1 - dist, 2.2);
 
       const idx = (row * SIZE + col) * 4;
-      data[idx]     = 255;
+      data[idx] = 255;
       data[idx + 1] = Math.round(220 + 35 * (1 - dist));
       data[idx + 2] = Math.round(fade * 80);
       data[idx + 3] = Math.round(fade * 255);
@@ -193,11 +193,7 @@ function setWakeGeometry(
 }
 
 function applyIntensityToMaterials(objects: FirePoiRigObjects, settings: FirePoiSettings): void {
-  const intensityMultiplier = THREE.MathUtils.clamp(
-    settings.coreIntensity / 1.8,
-    0.35,
-    1.4
-  );
+  const intensityMultiplier = THREE.MathUtils.clamp(settings.coreIntensity / 1.8, 0.35, 1.4);
 
   (objects.core.material as THREE.SpriteMaterial).opacity = Math.min(
     1,
@@ -209,9 +205,7 @@ function applyIntensityToMaterials(objects: FirePoiRigObjects, settings: FirePoi
   );
 }
 
-export class FirePoiEffectController
-  implements SceneEffectController<FirePoiEffectControllerInput>
-{
+export class FirePoiEffectController implements SceneEffectController<FirePoiEffectControllerInput> {
   private readonly rigObjects = new Map<RigId, FirePoiRigObjects>();
 
   create(scene: THREE.Scene, input: FirePoiEffectControllerInput): void {
@@ -269,10 +263,7 @@ export class FirePoiEffectController
       );
       objects.core.scale.setScalar(input.settings.coreRadius * 1.5);
 
-      setWakeGeometry(
-        objects.wake.geometry as THREE.BufferGeometry,
-        rigState.particles
-      );
+      setWakeGeometry(objects.wake.geometry as THREE.BufferGeometry, rigState.particles);
       applyIntensityToMaterials(objects, input.settings);
       objects.group.visible = true;
     }

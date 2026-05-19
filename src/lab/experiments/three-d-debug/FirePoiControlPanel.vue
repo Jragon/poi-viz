@@ -65,7 +65,9 @@ function resetDefaults() {
       <label class="grid gap-2">
         <span class="flex items-center justify-between gap-3">
           <span>Core Intensity</span>
-          <span class="font-mono text-xs text-slate-500">{{ settings.coreIntensity.toFixed(2) }}</span>
+          <span class="font-mono text-xs text-slate-500">{{
+            settings.coreIntensity.toFixed(2)
+          }}</span>
         </span>
         <input
           :value="settings.coreIntensity"
@@ -74,7 +76,9 @@ function resetDefaults() {
           max="4"
           step="0.05"
           class="w-full accent-orange-400"
-          @input="patchSettings({ coreIntensity: Number(($event.target as HTMLInputElement).value) })"
+          @input="
+            patchSettings({ coreIntensity: Number(($event.target as HTMLInputElement).value) })
+          "
         />
       </label>
 
@@ -106,7 +110,9 @@ function resetDefaults() {
           max="48"
           step="1"
           class="w-full accent-orange-400"
-          @input="patchSettings({ wakeLengthSteps: Number(($event.target as HTMLInputElement).value) })"
+          @input="
+            patchSettings({ wakeLengthSteps: Number(($event.target as HTMLInputElement).value) })
+          "
         />
       </label>
 
@@ -122,7 +128,9 @@ function resetDefaults() {
           max="20"
           step="1"
           class="w-full accent-orange-400"
-          @input="patchSettings({ emissionDensity: Number(($event.target as HTMLInputElement).value) })"
+          @input="
+            patchSettings({ emissionDensity: Number(($event.target as HTMLInputElement).value) })
+          "
         />
       </label>
 
@@ -177,7 +185,9 @@ function resetDefaults() {
       <label class="grid gap-2">
         <span class="flex items-center justify-between gap-3">
           <span>Velocity Stretch</span>
-          <span class="font-mono text-xs text-slate-500">{{ settings.velocityStretch.toFixed(2) }}</span>
+          <span class="font-mono text-xs text-slate-500">{{
+            settings.velocityStretch.toFixed(2)
+          }}</span>
         </span>
         <input
           :value="settings.velocityStretch"
@@ -186,7 +196,9 @@ function resetDefaults() {
           max="3"
           step="0.05"
           class="w-full accent-orange-400"
-          @input="patchSettings({ velocityStretch: Number(($event.target as HTMLInputElement).value) })"
+          @input="
+            patchSettings({ velocityStretch: Number(($event.target as HTMLInputElement).value) })
+          "
         />
       </label>
 

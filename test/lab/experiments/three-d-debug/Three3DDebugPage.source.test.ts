@@ -52,8 +52,12 @@ describe("Three3DDebugCanvas source maintenance", () => {
   it("renders separate hand/head trail visibility in the canvas trail sync", () => {
     const source = readFileSync(THREE_D_DEBUG_CANVAS_FILE, "utf8");
 
-    expect(source).toContain("objects.hand.visible = props.showHandTrails && handPoints.length >= 2;");
-    expect(source).toContain("objects.head.visible = props.showHeadTrails && headPoints.length >= 2;");
+    expect(source).toContain(
+      "objects.hand.visible = props.showHandTrails && handPoints.length >= 2;"
+    );
+    expect(source).toContain(
+      "objects.head.visible = props.showHeadTrails && headPoints.length >= 2;"
+    );
   });
 });
 
@@ -77,8 +81,9 @@ describe("Three3DDebugPage body scene wiring", () => {
     expect(source).toContain("const bodyRigIds = computed(() => ({");
     expect(source).toContain("left: core.rigOrder.value[0],");
     expect(source).toContain("right: core.rigOrder.value[1]");
+    expect(source).toContain("const bodyScene = computed(() =>");
     expect(source).toContain(
-      "const bodyScene = computed(() => buildBodyStickFigureScene(core.worldPoses.value, undefined, bodyRigIds.value));"
+      "buildBodyStickFigureScene(core.worldPoses.value, undefined, bodyRigIds.value)"
     );
   });
 });

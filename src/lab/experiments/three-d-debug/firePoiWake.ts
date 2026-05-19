@@ -60,12 +60,14 @@ function pointsMatch(a: Vec3 | undefined, b: Vec3): boolean {
     return false;
   }
 
-  return (
-    Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z) <= POINT_MATCH_EPSILON
-  );
+  return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z) <= POINT_MATCH_EPSILON;
 }
 
-function buildTrailWindow(headTrail: readonly Vec3[], headPosition: Vec3, maxPoints: number): Vec3[] {
+function buildTrailWindow(
+  headTrail: readonly Vec3[],
+  headPosition: Vec3,
+  maxPoints: number
+): Vec3[] {
   const boundedTrail = headTrail.slice(-maxPoints);
 
   if (pointsMatch(boundedTrail[boundedTrail.length - 1], headPosition)) {

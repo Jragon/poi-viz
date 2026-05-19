@@ -18,9 +18,8 @@ import {
 } from "@/visualizer/visualizerWorkspace";
 import { sampleMultiRigWorldTrails } from "@/visualizer/worldTrailSampling";
 
-import Three3DDebugCanvas from "./Three3DDebugCanvas.vue";
-import FirePoiControlPanel from "./FirePoiControlPanel.vue";
 import { buildBodyStickFigureScene } from "./bodyStickFigureScene";
+import FirePoiControlPanel from "./FirePoiControlPanel.vue";
 import {
   DEFAULT_FIRE_POI_SETTINGS,
   normalizeFirePoiSettings,
@@ -30,6 +29,7 @@ import {
   reconcileStoredFirePoiSettings,
   shouldSampleThreeDDebugWorldTrails
 } from "./firePoiSettingsState";
+import Three3DDebugCanvas from "./Three3DDebugCanvas.vue";
 import { buildThreeDDebugSceneState } from "./worldPoseScene";
 
 const library = useAuthoringLibrary();
@@ -63,7 +63,9 @@ const trailLengthSteps = computed({
   get: () => core.session.trailDecaySteps.value,
   set: (value: number) => core.session.setTrailDecaySteps(value)
 });
-const reconciledFirePoiSettings = computed(() => reconcileStoredFirePoiSettings(firePoiSettings.value));
+const reconciledFirePoiSettings = computed(() =>
+  reconcileStoredFirePoiSettings(firePoiSettings.value)
+);
 const resolvedFirePoiSettings = computed(() => reconciledFirePoiSettings.value.settings);
 const firePoiEnabled = computed({
   get: () => resolvedFirePoiSettings.value.enabled,
@@ -92,7 +94,9 @@ const bodyRigIds = computed(() => ({
   left: core.rigOrder.value[0],
   right: core.rigOrder.value[1]
 }));
-const bodyScene = computed(() => buildBodyStickFigureScene(core.worldPoses.value, undefined, bodyRigIds.value));
+const bodyScene = computed(() =>
+  buildBodyStickFigureScene(core.worldPoses.value, undefined, bodyRigIds.value)
+);
 const worldTrails = computed(() => {
   const trailSamplingState = {
     prepared: core.session.playback.prepared.value,
@@ -199,8 +203,8 @@ function updateFirePoiSettings(next: FirePoiSettings) {
               <span>Trail Length</span>
               <span class="font-mono text-xs text-slate-500">{{ trailLengthSteps }}</span>
             </span>
-             <input
-               v-model.number="trailLengthSteps"
+            <input
+              v-model.number="trailLengthSteps"
               type="range"
               :min="TRAIL_DECAY_MIN"
               :max="TRAIL_DECAY_MAX"

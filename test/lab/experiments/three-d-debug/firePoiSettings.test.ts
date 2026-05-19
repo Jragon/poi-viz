@@ -76,10 +76,10 @@ describe("firePoiSettings", () => {
   it("extended clamp ranges allow high emission density and large core radius", () => {
     const result = normalizeFirePoiSettings({
       emissionDensity: 20,
-      coreRadius: 0.40
+      coreRadius: 0.4
     });
 
     expect(result.emissionDensity).toBe(20);
-    expect(result.coreRadius).toBeCloseTo(0.40);
+    expect(result.coreRadius).toBeCloseTo(0.4);
   });
 });
