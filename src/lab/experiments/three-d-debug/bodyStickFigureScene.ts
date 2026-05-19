@@ -23,7 +23,7 @@ export function buildBodyStickFigureScene(
   const leftPose = worldPoses[rigIds?.left ?? DEFAULT_VISUALIZER_BODY_RIG_IDS.left] ?? null;
   const rightPose = worldPoses[rigIds?.right ?? DEFAULT_VISUALIZER_BODY_RIG_IDS.right] ?? null;
 
-  if (!leftPose && !rightPose) {
+  if (!leftPose || !rightPose) {
     return null;
   }
 
@@ -33,8 +33,8 @@ export function buildBodyStickFigureScene(
   const pose = solveBodyRigFrame(
     body,
     {
-      leftHandTarget: leftPose ? leftPose.handPosition : body.defaultLeftHandTarget,
-      rightHandTarget: rightPose ? rightPose.handPosition : body.defaultRightHandTarget
+      leftHandTarget: leftPose.handPosition,
+      rightHandTarget: rightPose.handPosition
     },
     projectionSettings ?? DEFAULT_PLANE_PROJECTION_SETTINGS
   );

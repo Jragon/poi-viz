@@ -232,7 +232,7 @@ function syncRigMarkers() {
 
     handMaterial.color.set(entry.handColor);
     headMaterial.color.set(entry.headColor);
-    tetherMaterial.color.set(entry.headColor);
+    tetherMaterial.color.set(entry.tetherColor);
     objects.tether.position.lerpVectors(handPosition, headPosition, 0.5);
     objects.tether.scale.set(1, Math.max(tetherLength, 1e-6), 1);
     if (tetherLength > 1e-6) {

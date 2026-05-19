@@ -46,6 +46,7 @@ describe("Three3DDebugCanvas task 4 stick figure wiring", () => {
 
     expect(source).toContain("readonly tether: THREE.Mesh");
     expect(source).toContain("new THREE.CylinderGeometry(TETHER_RADIUS");
+    expect(source).toContain("tetherMaterial.color.set(entry.tetherColor);");
     expect(source).toContain("objects.tether.quaternion.setFromUnitVectors");
   });
 

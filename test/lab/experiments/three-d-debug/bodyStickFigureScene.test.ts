@@ -65,22 +65,16 @@ describe("buildBodyStickFigureScene", () => {
     expect(result!.joints.handRight.x).toBeCloseTo(0.5, 3);
   });
 
-  it("builds a skeleton when only left rig is present", () => {
+  it("returns null when only left rig is present", () => {
     const worldPoses: WorldMultiRigPose = { left: leftPose };
 
-    const result = buildBodyStickFigureScene(worldPoses);
-
-    expect(result).not.toBeNull();
-    expect(result!.joints.handLeft.x).toBeCloseTo(-0.5, 3);
+    expect(buildBodyStickFigureScene(worldPoses)).toBeNull();
   });
 
-  it("builds a skeleton when only right rig is present", () => {
+  it("returns null when only right rig is present", () => {
     const worldPoses: WorldMultiRigPose = { right: rightPose };
 
-    const result = buildBodyStickFigureScene(worldPoses);
-
-    expect(result).not.toBeNull();
-    expect(result!.joints.handRight.x).toBeCloseTo(0.5, 3);
+    expect(buildBodyStickFigureScene(worldPoses)).toBeNull();
   });
 
   it("returns orientation cue with unit-length up, forward, and right vectors", () => {
