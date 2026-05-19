@@ -653,14 +653,14 @@ function computeWorldShoulderOffset(
   );
   const sideDistance = Math.abs(targetOffsetX);
   const lateralRatio = clamp(sideDistance / Math.max(maxReach, Number.EPSILON), 0, 1);
-  const overheadAmbiguous =
-    overheadFactor >= 0.55 && targetCenterDistance <= shoulderPolicy.overheadAmbiguityRadius;
+  const overheadActive = overheadFactor >= 0.55;
+  const overheadAmbiguous = overheadActive && targetCenterDistance <= shoulderPolicy.overheadAmbiguityRadius;
   const rawLateralFade = smoothstep(
     shoulderPolicy.overheadAmbiguityRadius,
     shoulderPolicy.overheadLateralFadeRadius,
     targetCenterDistance
   );
-  const lateralFade = overheadAmbiguous ? rawLateralFade : 1;
+  const lateralFade = overheadActive ? rawLateralFade : 1;
   const outwardSign = armSide === "right" ? 1 : -1;
   const isOutward = targetOffsetX === 0 ? true : Math.sign(targetOffsetX) === outwardSign;
   const maxLateral = isOutward ? shoulderPolicy.maxOutwardReach : shoulderPolicy.maxCrossBodyReach;

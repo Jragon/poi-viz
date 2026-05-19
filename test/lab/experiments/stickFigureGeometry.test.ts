@@ -864,6 +864,45 @@ describe("solveWorldBodyRig", () => {
     expect(center.shoulderGirdle.right.protraction).toBeGreaterThan(0);
   });
 
+  it("recovers lateral shoulder travel smoothly across the overhead fade band", () => {
+    const config = buildBodyRigConfigFromArmReach(1.25);
+    const root = {
+      shoulderCenter: { x: 0, y: 1.4, z: 0 },
+      neutralPelvisCenter: { x: 0, y: 0.8, z: 0 },
+      neutralChestCenter: { x: 0, y: 1.35, z: 0 },
+      worldUp: { x: 0, y: 1, z: 0 },
+      neutralForward: { x: 0, y: 0, z: 1 },
+      scale: 1
+    };
+    const solveAtOffset = (offsetX: number) =>
+      solveWorldBodyRig({
+        root,
+        config,
+        goals: {
+          leftHandTarget: { x: offsetX, y: 2.35, z: 0 },
+          rightHandTarget: { x: offsetX, y: 2.35, z: 0 }
+        },
+        yawSearchSteps: 96
+      });
+
+    const justInside = solveAtOffset(0.224);
+    const justOutside = solveAtOffset(0.226);
+    const midFade = solveAtOffset(0.29);
+    const outsideFade = solveAtOffset(0.42);
+
+    expect(justInside.diagnostics.leftShoulder.overheadAmbiguous).toBe(true);
+    expect(justOutside.diagnostics.leftShoulder.overheadAmbiguous).toBe(false);
+    expect(
+      Math.abs(justOutside.shoulderGirdle.left.lateralTravel - justInside.shoulderGirdle.left.lateralTravel)
+    ).toBeLessThan(0.01);
+    expect(Math.abs(midFade.shoulderGirdle.left.lateralTravel)).toBeGreaterThan(
+      Math.abs(justOutside.shoulderGirdle.left.lateralTravel)
+    );
+    expect(Math.abs(midFade.shoulderGirdle.left.lateralTravel)).toBeLessThan(
+      Math.abs(outsideFade.shoulderGirdle.left.lateralTravel)
+    );
+  });
+
   it("does not apply overhead lateral fade to non-overhead forward reaches", () => {
     const config = buildBodyRigConfigFromArmReach(1.25);
     const result = solveWorldBodyRig({
