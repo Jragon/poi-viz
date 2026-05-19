@@ -31,8 +31,8 @@ The visualizer already knows how to render poi paths, but body tracing needs a s
 - Sequence radius 1 is normalized to the largest shared-hand overlap circle.
 - Authored sequences can be selected inside the POC.
 - The rig infers a best-fit torso yaw from the two hand targets.
-- Feet, hips, pelvis, torso center, and neck stay fixed.
-- The shoulder span compresses as a 2D proxy for torso rotation.
+- Pelvis, chest, and shoulder-girdle are solved by the shared body-rig layer; feet remain planted.
+- Shoulder placement is the result of the full body-rig solver chain, not a 2D span proxy.
 - Both elbows move to satisfy fixed arm-length constraints.
 - Unreachable targets are clamped as best-effort poses with diagnostics.
 - The main visualizer body overlay is now part of this path; export behavior and body-aware side metadata are still out of scope.

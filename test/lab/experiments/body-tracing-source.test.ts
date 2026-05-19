@@ -6,6 +6,11 @@ const source = readFileSync(
   "utf8"
 );
 
+const doc = readFileSync(
+  "src/lab/experiments/body-tracing/body-tracing.md",
+  "utf8"
+);
+
 describe("BodyTracingStickFigureCanvas source", () => {
   it("draws from the shared skeleton frame instead of local shoulder and pelvis heuristics", () => {
     expect(source).toContain("pose.skeleton");
@@ -19,5 +24,17 @@ describe("BodyTracingStickFigureCanvas source", () => {
   it("uses canonical wall-plane pattern space for the shared hand guide", () => {
     expect(source).toContain("computeBodyRigCanonicalPatternSpace");
     expect(source).toContain("canonicalPatternSpace.unitRadius");
+  });
+});
+
+describe("body-tracing.md documentation", () => {
+  it("describes pelvis/chest/shoulder-girdle as solved by the body-rig layer", () => {
+    expect(doc).toContain("body-rig layer");
+    expect(doc).toContain("shoulder-girdle");
+  });
+
+  it("does not contain stale fixed-pelvis or 2D-span-proxy language", () => {
+    expect(doc).not.toContain("pelvis, torso center, and neck stay fixed");
+    expect(doc).not.toContain("shoulder span compresses as a 2D proxy");
   });
 });
