@@ -1,6 +1,6 @@
 import {
   buildBodyRigDimensionsForSharedHandRadius,
-  buildBodyRigFrame,
+  buildBodyRigFrameFromDimensions,
   solveBodyRigFrame,
   type BodyRigDimensions,
   type BodyRigPose
@@ -49,24 +49,8 @@ function resolveVisualizerBodyRigIds(
   };
 }
 
-function resolveBodyRigDimensions(dimensions?: BodyRigDimensions): BodyRigDimensions {
+export function resolveBodyRigDimensions(dimensions?: BodyRigDimensions): BodyRigDimensions {
   return dimensions ?? buildBodyRigDimensionsForSharedHandRadius(1);
-}
-
-function buildVisualizerBodyFrame(dimensions: BodyRigDimensions) {
-  return buildBodyRigFrame({
-    shoulderCenter: dimensions.rootShoulderCenter,
-    rigConfig: dimensions.config,
-    torsoHeight: dimensions.torsoHeight,
-    hipSpan: dimensions.hipSpan,
-    headRadius: dimensions.headRadius,
-    headGap: dimensions.headGap,
-    neckOffset: dimensions.neckOffset,
-    thighLength: dimensions.thighLength,
-    shinLength: dimensions.shinLength,
-    footOffset: dimensions.footOffset,
-    stanceWidth: dimensions.stanceWidth
-  });
 }
 
 function anchoredHandTarget(layout: SceneLayout, rigId: RigId, pose: WorldRigPose): Vec3 {
@@ -91,7 +75,7 @@ export function solveVisualizerBodyRig(
   }
 
   const dimensions = resolveBodyRigDimensions(input.dimensions);
-  const body = buildVisualizerBodyFrame(dimensions);
+  const body = buildBodyRigFrameFromDimensions(dimensions);
 
   return {
     pose: solveBodyRigFrame(

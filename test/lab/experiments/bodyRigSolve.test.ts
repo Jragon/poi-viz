@@ -45,6 +45,24 @@ describe("bodyRigSolve", () => {
     ).toBeNull();
   });
 
+  it("returns non-null when only right rig is present and left arm falls back to body default", () => {
+    const layout = createSceneLayout({
+      cssWidth: 400,
+      cssHeight: 300,
+      rigAnchors: {
+        right: { x: 0.25, y: 0.1 }
+      }
+    });
+    const result = solveVisualizerBodyRig({
+      worldPoses: { right: createWorldPoses().right },
+      layout,
+      projectionSettings
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.pose.solve.leftArm.handTarget).toEqual(result?.pose.body.defaultLeftHandTarget);
+  });
+
   it("maps configured hand targets through rig anchors", () => {
     const layout = createSceneLayout({
       cssWidth: 400,

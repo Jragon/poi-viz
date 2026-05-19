@@ -108,6 +108,18 @@ describe("bodyOverlay", () => {
     expect(overlay?.pose.solve.rightArm.handTarget).toEqual({ x: 0.75, y: 0.35, z: 0.2 });
   });
 
+  it("defaults behindBodySides to false when behindBody is absent from world poses", () => {
+    const layout = createSceneLayout({ cssWidth: 400, cssHeight: 300 });
+    const overlay = computeBodyOverlay({
+      worldPoses: createWorldPoses(),
+      layout,
+      projectionSettings
+    });
+
+    expect(overlay).not.toBeNull();
+    expect(overlay?.behindBodySides).toEqual({ left: false, right: false });
+  });
+
   it("maps behind-body metadata onto overlay hand sides", () => {
     const layout = createSceneLayout({ cssWidth: 400, cssHeight: 300 });
     const overlay = computeBodyOverlay({

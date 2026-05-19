@@ -1,5 +1,4 @@
 import {
-  buildBodyRigDimensionsForSharedHandRadius,
   type BodyRigDimensions,
   type BodyRigPose
 } from "@/body-rig";
@@ -7,12 +6,14 @@ import type { PlaneProjectionSettings } from "@/engine/planeProjection";
 import type { Vec2, WorldMultiRigPose } from "@/engine/types";
 import {
   DEFAULT_VISUALIZER_BODY_RIG_IDS,
+  resolveBodyRigDimensions,
   solveVisualizerBodyRig,
   type VisualizerBodyRigIds
 } from "@/visualizer/bodyRigSolve";
 import type { SceneLayout } from "@/visualizer/sceneLayout";
 
 export type BodyOverlayRigIds = VisualizerBodyRigIds;
+export { DEFAULT_VISUALIZER_BODY_RIG_IDS as DEFAULT_BODY_OVERLAY_RIG_IDS };
 
 export interface BodyOverlayFrame {
   readonly pose: BodyRigPose;
@@ -42,20 +43,12 @@ export interface BodyOverlaySceneExtent {
   readonly cameraCenterWorld: Vec2;
 }
 
-export const DEFAULT_BODY_OVERLAY_RIG_IDS: BodyOverlayRigIds = {
-  ...DEFAULT_VISUALIZER_BODY_RIG_IDS
-};
-
 export const DEFAULT_BODY_OVERLAY_MIN_SCENE_RADIUS = 2.45;
-
-function bodyRigDimensionsFromInput(dimensions?: BodyRigDimensions): BodyRigDimensions {
-  return dimensions ?? buildBodyRigDimensionsForSharedHandRadius(1);
-}
 
 export function getBodyOverlaySceneExtent(
   input: BodyOverlaySceneExtentInput
 ): BodyOverlaySceneExtent {
-  const dimensions = bodyRigDimensionsFromInput(input.dimensions);
+  const dimensions = resolveBodyRigDimensions(input.dimensions);
   const sequenceRadiusWorld =
     Number.isFinite(input.sequenceRadiusWorld) && input.sequenceRadiusWorld > 0
       ? input.sequenceRadiusWorld

@@ -2,6 +2,7 @@ import { projectWorldPoint, type PlaneProjectionSettings } from "@/engine/planeP
 import type { Vec2, Vec3 } from "@/engine/types";
 
 import type { BodyRigConfig } from "./bodyRigConfig";
+import type { BodyRigDimensions } from "./bodyRigDefaults";
 import {
   getProjectedBodyRigArmPoints,
   projectWorldBodyRig,
@@ -203,8 +204,23 @@ export function buildBodyRigFrame(input: BuildBodyRigFrameInput): BodyRigFrame {
   };
 }
 
-export function solveBodyRigFrame(
-  body: BodyRigFrame,
+export function buildBodyRigFrameFromDimensions(dimensions: BodyRigDimensions): BodyRigFrame {
+  return buildBodyRigFrame({
+    shoulderCenter: dimensions.rootShoulderCenter,
+    rigConfig: dimensions.config,
+    torsoHeight: dimensions.torsoHeight,
+    hipSpan: dimensions.hipSpan,
+    headRadius: dimensions.headRadius,
+    headGap: dimensions.headGap,
+    neckOffset: dimensions.neckOffset,
+    thighLength: dimensions.thighLength,
+    shinLength: dimensions.shinLength,
+    footOffset: dimensions.footOffset,
+    stanceWidth: dimensions.stanceWidth
+  });
+}
+
+export function solveBodyRigFrame(  body: BodyRigFrame,
   goals: BodyRigWorldGoals,
   projectionSettings: PlaneProjectionSettings,
   yawSearchSteps?: number
