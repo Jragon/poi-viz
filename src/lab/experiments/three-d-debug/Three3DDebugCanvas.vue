@@ -14,6 +14,9 @@ import {
   resolveSceneRadiusWorld
 } from "./worldPoseScene";
 import { BodyStickFigureRenderer } from "./bodyStickFigureRenderer";
+import { FirePoiEffectController } from "./firePoiEffectController";
+import { syncRecoverableFirePoiEffect } from "./firePoiEffectSync";
+import type { FirePoiSettings } from "./firePoiSettings";
 import { setLineGeometryPoints } from "./trailLineGeometry";
 
 const TETHER_RADIUS = 0.012;
@@ -34,6 +37,7 @@ const props = withDefaults(
     showHandTrails?: boolean;
     showHeadTrails?: boolean;
     showPlaneSheets?: boolean;
+    firePoiSettings: FirePoiSettings;
     cameraResetVersion?: number;
   }>(),
   {
@@ -80,6 +84,7 @@ let axesHelper: THREE.AxesHelper | null = null;
 let gridHelper: THREE.GridHelper | null = null;
 let resizeObserver: ResizeObserver | null = null;
 let bodyFigureRenderer: BodyStickFigureRenderer | null = null;
+let firePoiEffectController: FirePoiEffectController | null = null;
 
 function disposeMaterial(material: THREE.Material | THREE.Material[]) {
   if (Array.isArray(material)) {
@@ -194,6 +199,21 @@ function syncBodyScene() {
 
   bodyFigureRenderer.sync(scene, props.bodyScene);
   renderScene();
+}
+
+function syncFirePoiEffect() {
+  firePoiEffectController = syncRecoverableFirePoiEffect({
+    scene,
+    controller: firePoiEffectController,
+    createController: () => new FirePoiEffectController(),
+    input: {
+      poses: props.poses,
+      trails: props.trails,
+      rigOrder: props.rigOrder,
+      settings: props.firePoiSettings
+    },
+    renderScene
+  });
 }
 
 function syncRigMarkers() {
@@ -415,6 +435,11 @@ function disposeThreeSceneResources() {
   }
   bodyFigureRenderer = null;
 
+  if (firePoiEffectController && scene) {
+    firePoiEffectController.dispose(scene);
+  }
+  firePoiEffectController = null;
+
   for (const objects of rigMarkerObjects.values()) {
     scene?.remove(objects.tether, objects.hand, objects.head);
     disposeRigMarkerObjects(objects);
@@ -503,6 +528,7 @@ onMounted(() => {
     syncBodyScene();
     syncRigMarkers();
     syncTrailObjects();
+    syncFirePoiEffect();
     resizeRenderer();
   } catch (error) {
     rendererError.value =
@@ -532,6 +558,14 @@ watch(
   () => [props.trails, props.rigOrder, props.showHandTrails, props.showHeadTrails],
   () => {
     syncTrailObjects();
+  },
+  { deep: true, immediate: true }
+);
+
+watch(
+  () => [props.poses, props.trails, props.rigOrder, props.firePoiSettings],
+  () => {
+    syncFirePoiEffect();
   },
   { deep: true, immediate: true }
 );

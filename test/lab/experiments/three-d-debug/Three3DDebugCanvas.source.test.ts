@@ -101,3 +101,35 @@ describe("Three3DDebugCanvas task 4 stick figure wiring", () => {
     expect(rendererSource).toContain("headCueMesh");
   });
 });
+
+describe("Three3DDebugCanvas task 4 fire poi controller wiring", () => {
+  it("accepts fire poi settings and references FirePoiEffectController", () => {
+    const source = readFileSync(THREE_D_DEBUG_CANVAS_FILE, "utf8");
+
+    expect(source).toContain("firePoiSettings: FirePoiSettings;");
+    expect(source).toContain("FirePoiEffectController");
+    expect(source).toContain("syncRecoverableFirePoiEffect");
+    expect(source).toContain("./firePoiSettings");
+  });
+
+  it("routes fire poi sync through a recoverable helper instead of a sticky disable flag", () => {
+    const source = readFileSync(THREE_D_DEBUG_CANVAS_FILE, "utf8");
+
+    expect(source).toContain("let firePoiEffectController: FirePoiEffectController | null = null;");
+    expect(source).toContain("function syncFirePoiEffect() {");
+    expect(source).toContain('import { syncRecoverableFirePoiEffect } from "./firePoiEffectSync";');
+    expect(source).toContain("firePoiEffectController = syncRecoverableFirePoiEffect({");
+    expect(source).toContain("createController: () => new FirePoiEffectController(),");
+    expect(source).not.toContain("function disableFirePoiEffect() {");
+    expect(source).not.toContain("firePoiEffectEnabled = false;");
+    expect(source).toMatch(/disposeThreeSceneResources\([\s\S]*firePoiEffectController\.dispose\(scene\)/);
+  });
+
+  it("watches fire poi settings alongside poses trails and rig order when syncing the fire effect", () => {
+    const source = readFileSync(THREE_D_DEBUG_CANVAS_FILE, "utf8");
+
+    expect(source).toContain(
+      "() => [props.poses, props.trails, props.rigOrder, props.firePoiSettings]"
+    );
+  });
+});
