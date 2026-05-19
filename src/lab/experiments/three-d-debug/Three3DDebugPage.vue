@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { useStorage } from "@vueuse/core";
+import { computed, ref, watch } from "vue";
 
 import { useAuthoringLibrary } from "@/authoring/useAuthoringLibrary";
 import DocumentSelector from "@/pages/components/DocumentSelector.vue";
@@ -18,7 +19,17 @@ import {
 import { sampleMultiRigWorldTrails } from "@/visualizer/worldTrailSampling";
 
 import Three3DDebugCanvas from "./Three3DDebugCanvas.vue";
+import FirePoiControlPanel from "./FirePoiControlPanel.vue";
 import { buildBodyStickFigureScene } from "./bodyStickFigureScene";
+import {
+  DEFAULT_FIRE_POI_SETTINGS,
+  normalizeFirePoiSettings,
+  type FirePoiSettings
+} from "./firePoiSettings";
+import {
+  reconcileStoredFirePoiSettings,
+  shouldSampleThreeDDebugWorldTrails
+} from "./firePoiSettingsState";
 import { buildThreeDDebugSceneState } from "./worldPoseScene";
 
 const library = useAuthoringLibrary();
@@ -42,11 +53,37 @@ const showGrid = ref(true);
 const showHandTrails = ref(true);
 const showHeadTrails = ref(true);
 const showPlaneSheets = ref(true);
+const firePoiPanelOpen = useStorage("poi-v2:three-d-debug-fire-poi-panel-open", false);
+const firePoiSettings = useStorage(
+  "poi-v2:three-d-debug-fire-poi-settings",
+  DEFAULT_FIRE_POI_SETTINGS
+);
 const cameraResetVersion = ref(0);
 const trailLengthSteps = computed({
   get: () => core.session.trailDecaySteps.value,
   set: (value: number) => core.session.setTrailDecaySteps(value)
 });
+const reconciledFirePoiSettings = computed(() => reconcileStoredFirePoiSettings(firePoiSettings.value));
+const resolvedFirePoiSettings = computed(() => reconciledFirePoiSettings.value.settings);
+const firePoiEnabled = computed({
+  get: () => resolvedFirePoiSettings.value.enabled,
+  set: (enabled: boolean) => {
+    firePoiSettings.value = {
+      ...resolvedFirePoiSettings.value,
+      enabled
+    };
+  }
+});
+
+watch(
+  reconciledFirePoiSettings,
+  ({ settings, needsWrite }) => {
+    if (needsWrite) {
+      firePoiSettings.value = settings;
+    }
+  },
+  { immediate: true }
+);
 
 const sceneState = computed(() =>
   buildThreeDDebugSceneState(core.worldPoses.value, core.sceneWorldRadius.value)
@@ -57,19 +94,26 @@ const bodyRigIds = computed(() => ({
 }));
 const bodyScene = computed(() => buildBodyStickFigureScene(core.worldPoses.value, undefined, bodyRigIds.value));
 const worldTrails = computed(() => {
-  const prepared = core.session.playback.prepared.value;
-  if (!prepared || (!showHandTrails.value && !showHeadTrails.value)) {
+  const trailSamplingState = {
+    prepared: core.session.playback.prepared.value,
+    showHandTrails: showHandTrails.value,
+    showHeadTrails: showHeadTrails.value,
+    firePoiEnabled: resolvedFirePoiSettings.value.enabled
+  };
+  const preparedPlayback = shouldSampleThreeDDebugWorldTrails(trailSamplingState);
+
+  if (preparedPlayback === null) {
     return {};
   }
 
   return sampleMultiRigWorldTrails(
-    prepared,
+    preparedPlayback,
     core.transport.currentTime.value,
     TRAIL_STEP_FIXED,
     core.session.trailDecaySteps.value,
     {
       loopMode: core.session.trailLoopMode.value,
-      loopDuration: prepared.maxSequenceDuration
+      loopDuration: preparedPlayback.maxSequenceDuration
     },
     core.session.planeSideDisplaySettings.value
   );
@@ -80,6 +124,10 @@ const activePlaneLabel = computed(() =>
 
 function resetView() {
   cameraResetVersion.value += 1;
+}
+
+function updateFirePoiSettings(next: FirePoiSettings) {
+  firePoiSettings.value = normalizeFirePoiSettings(next);
 }
 </script>
 
@@ -126,6 +174,7 @@ function resetView() {
           :show-hand-trails="showHandTrails"
           :show-head-trails="showHeadTrails"
           :show-plane-sheets="showPlaneSheets"
+          :fire-poi-settings="resolvedFirePoiSettings"
           :camera-reset-version="cameraResetVersion"
         />
       </div>
@@ -213,7 +262,29 @@ function resetView() {
           <span>Plane Sheets</span>
           <input v-model="showPlaneSheets" type="checkbox" class="h-4 w-4 accent-sky-400" />
         </label>
+
+        <label
+          class="flex items-center justify-between gap-3 rounded-lg border border-slate-800 px-3 py-2"
+        >
+          <span>Fire Poi</span>
+          <input v-model="firePoiEnabled" type="checkbox" class="h-4 w-4 accent-orange-400" />
+        </label>
+
+        <button
+          type="button"
+          class="rounded-lg border border-slate-700 px-3 py-2 text-left text-sm text-slate-200 transition hover:border-orange-500 hover:text-orange-200"
+          @click="firePoiPanelOpen = true"
+        >
+          Fire Controls
+        </button>
       </aside>
+
+      <FirePoiControlPanel
+        v-if="firePoiPanelOpen"
+        :settings="resolvedFirePoiSettings"
+        @close="firePoiPanelOpen = false"
+        @update-settings="updateFirePoiSettings($event)"
+      />
     </section>
   </main>
 </template>
