@@ -238,6 +238,29 @@ export function isContinuousAtLoopBoundary(
   return relativePoseMatches(startEval.poses, endPoses);
 }
 
+export function getTrailGridSampleTimes(
+  sampleIndex: number,
+  dt: TimeUnit,
+  normalizedHoldSteps: number | null,
+  loopDuration: TimeUnit | null
+): TimeUnit[] {
+  const effectiveLoopDuration = normalizedHoldSteps === null ? null : loopDuration;
+  const startIndex = normalizedHoldSteps === null ? 0 : sampleIndex - (normalizedHoldSteps - 1);
+  const boundedStartIndex = effectiveLoopDuration === null ? Math.max(0, startIndex) : startIndex;
+  const pointCount = sampleIndex - boundedStartIndex + 1;
+  const sampleTimes: TimeUnit[] = [];
+
+  for (let index = 0; index < pointCount; index += 1) {
+    const gridIndex = boundedStartIndex + index;
+    const rawTime = gridIndex * dt;
+    sampleTimes.push(
+      effectiveLoopDuration === null ? rawTime : normalizeLoopTime(rawTime, effectiveLoopDuration)
+    );
+  }
+
+  return sampleTimes;
+}
+
 export function sampleMultiRigTrailGrid(
   prepared: PreparedMultiRigSequence,
   sampleIndex: number,
@@ -247,17 +270,14 @@ export function sampleMultiRigTrailGrid(
   projectionSettings: PlaneProjectionSettings = DEFAULT_PLANE_PROJECTION_SETTINGS,
   planeSideDisplaySettings: PlaneSideDisplaySettings = DEFAULT_PLANE_SIDE_DISPLAY_SETTINGS
 ): MultiRigTrailSamples {
-  const effectiveLoopDuration = normalizedHoldSteps === null ? null : loopDuration;
-  const startIndex = normalizedHoldSteps === null ? 0 : sampleIndex - (normalizedHoldSteps - 1);
-  const boundedStartIndex = effectiveLoopDuration === null ? Math.max(0, startIndex) : startIndex;
-  const pointCount = sampleIndex - boundedStartIndex + 1;
   const trails = createEmptyTrails(prepared);
 
-  for (let index = 0; index < pointCount; index += 1) {
-    const gridIndex = boundedStartIndex + index;
-    const rawTime = gridIndex * dt;
-    const sampleTime =
-      effectiveLoopDuration === null ? rawTime : normalizeLoopTime(rawTime, effectiveLoopDuration);
+  for (const sampleTime of getTrailGridSampleTimes(
+    sampleIndex,
+    dt,
+    normalizedHoldSteps,
+    loopDuration
+  )) {
     const result = evalPreparedMultiRigSequenceAt(prepared, sampleTime);
     if (!result.ok) return {};
     const displayWorldPoses = applyPlaneSideTransitionOffsets(

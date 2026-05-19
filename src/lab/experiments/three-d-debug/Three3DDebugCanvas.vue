@@ -1,26 +1,41 @@
 <script setup lang="ts">
 import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 import type { PlaneId, RigId, Vec3, WorldMultiRigPose } from "@/engine/types";
+import type { WorldMultiRigTrailSamples } from "@/visualizer/worldTrailSampling";
 
-import { buildDebugRigSceneEntries, buildPlaneHelperStates } from "./worldPoseScene";
+import {
+  buildDebugRigSceneEntries,
+  buildDefaultCameraViewState,
+  buildOriginPlaneSheetStates,
+  resolveSceneRadiusWorld
+} from "./worldPoseScene";
+import { setLineGeometryPoints } from "./trailLineGeometry";
 
 const props = withDefaults(
   defineProps<{
     poses: WorldMultiRigPose;
+    trails: WorldMultiRigTrailSamples;
     rigOrder: RigId[];
     sceneRadiusWorld: number;
     sceneCenterWorld: Vec3;
     activePlanes: PlaneId[];
     showAxes?: boolean;
     showGrid?: boolean;
-    showPlaneHelpers?: boolean;
+    showHandTrails?: boolean;
+    showHeadTrails?: boolean;
+    showPlaneSheets?: boolean;
+    cameraResetVersion?: number;
   }>(),
   {
     showAxes: true,
     showGrid: true,
-    showPlaneHelpers: true
+    showHandTrails: true,
+    showHeadTrails: true,
+    showPlaneSheets: true,
+    cameraResetVersion: 0
   }
 );
 
@@ -28,6 +43,11 @@ interface RigObjects {
   readonly hand: THREE.Mesh;
   readonly head: THREE.Mesh;
   readonly tether: THREE.Line;
+}
+
+interface TrailObjects {
+  readonly hand: THREE.Line;
+  readonly head: THREE.Line;
 }
 
 interface PlaneObjects {
@@ -39,14 +59,16 @@ interface PlaneObjects {
 const mountRef = ref<HTMLDivElement | null>(null);
 const rendererError = ref<string | null>(null);
 const backgroundColor = new THREE.Color("#020617");
-const resolvedSceneRadius = computed(() => Math.max(props.sceneRadiusWorld, 2));
+const resolvedSceneRadius = computed(() => resolveSceneRadiusWorld(props.sceneRadiusWorld));
 
 const rigObjects = new Map<RigId, RigObjects>();
+const trailObjects = new Map<RigId, TrailObjects>();
 const planeObjects = new Map<PlaneId, PlaneObjects>();
 
 let renderer: THREE.WebGLRenderer | null = null;
 let scene: THREE.Scene | null = null;
 let camera: THREE.PerspectiveCamera | null = null;
+let orbitControls: OrbitControls | null = null;
 let axesHelper: THREE.AxesHelper | null = null;
 let gridHelper: THREE.GridHelper | null = null;
 let resizeObserver: ResizeObserver | null = null;
@@ -72,21 +94,32 @@ function renderScene() {
   renderer.render(scene, camera);
 }
 
-function updateCamera() {
+function syncCamera(shouldResetPosition: boolean) {
   if (!camera) {
     return;
   }
 
-  const radius = resolvedSceneRadius.value;
-  camera.near = 0.1;
-  camera.far = Math.max(100, radius * 16);
-  camera.position.set(
-    props.sceneCenterWorld.x + radius * 1.8,
-    props.sceneCenterWorld.y + radius * 1.15,
-    props.sceneCenterWorld.z + radius * 1.8
-  );
-  camera.lookAt(props.sceneCenterWorld.x, props.sceneCenterWorld.y, props.sceneCenterWorld.z);
+  const viewState = buildDefaultCameraViewState(props.sceneCenterWorld, props.sceneRadiusWorld);
+
+  camera.near = viewState.near;
+  camera.far = viewState.far;
   camera.updateProjectionMatrix();
+
+  if (orbitControls) {
+    orbitControls.minDistance = viewState.minDistanceWorld;
+    orbitControls.maxDistance = viewState.maxDistanceWorld;
+    orbitControls.target.set(viewState.target.x, viewState.target.y, viewState.target.z);
+
+    if (shouldResetPosition) {
+      camera.position.set(viewState.position.x, viewState.position.y, viewState.position.z);
+    }
+
+    orbitControls.update();
+    return;
+  }
+
+  camera.position.set(viewState.position.x, viewState.position.y, viewState.position.z);
+  camera.lookAt(viewState.target.x, viewState.target.y, viewState.target.z);
 }
 
 function resizeRenderer() {
@@ -106,7 +139,7 @@ function resizeRenderer() {
 
 function createRigObjects(entry: ReturnType<typeof buildDebugRigSceneEntries>[number]): RigObjects {
   const hand = new THREE.Mesh(
-    new THREE.SphereGeometry(0.08, 24, 24),
+    new THREE.SphereGeometry(0.05, 24, 24),
     new THREE.MeshBasicMaterial({ color: entry.handColor })
   );
   const head = new THREE.Mesh(
@@ -122,6 +155,29 @@ function createRigObjects(entry: ReturnType<typeof buildDebugRigSceneEntries>[nu
   );
 
   return { hand, head, tether };
+}
+
+function createTrailObjects(
+  entry: ReturnType<typeof buildDebugRigSceneEntries>[number]
+): TrailObjects {
+  const hand = new THREE.Line(
+    new THREE.BufferGeometry(),
+    new THREE.LineBasicMaterial({
+      color: entry.handColor,
+      transparent: true,
+      opacity: 0.75
+    })
+  );
+  const head = new THREE.Line(
+    new THREE.BufferGeometry(),
+    new THREE.LineBasicMaterial({
+      color: entry.headColor,
+      transparent: true,
+      opacity: 0.45
+    })
+  );
+
+  return { hand, head };
 }
 
 function syncRigObjects() {
@@ -175,6 +231,50 @@ function syncRigObjects() {
   renderScene();
 }
 
+function syncTrailObjects() {
+  if (!scene) {
+    return;
+  }
+
+  const currentScene = scene;
+  const entries = buildDebugRigSceneEntries(props.poses, props.rigOrder);
+  const activeRigIds = new Set(entries.map((entry) => entry.rigId));
+
+  entries.forEach((entry) => {
+    let objects = trailObjects.get(entry.rigId);
+
+    if (!objects) {
+      objects = createTrailObjects(entry);
+      trailObjects.set(entry.rigId, objects);
+      currentScene.add(objects.hand, objects.head);
+    }
+
+    const handMaterial = objects.hand.material as THREE.LineBasicMaterial;
+    const headMaterial = objects.head.material as THREE.LineBasicMaterial;
+    const trails = props.trails[entry.rigId];
+    const handPoints = trails?.hand ?? [];
+    const headPoints = trails?.head ?? [];
+
+    handMaterial.color.set(entry.handColor);
+    headMaterial.color.set(entry.headColor);
+    setLineGeometryPoints(objects.hand.geometry as THREE.BufferGeometry, handPoints);
+    setLineGeometryPoints(objects.head.geometry as THREE.BufferGeometry, headPoints);
+    objects.hand.visible = props.showHandTrails && handPoints.length >= 2;
+    objects.head.visible = props.showHeadTrails && headPoints.length >= 2;
+  });
+
+  for (const [rigId, objects] of trailObjects.entries()) {
+    if (activeRigIds.has(rigId)) {
+      continue;
+    }
+
+    objects.hand.visible = false;
+    objects.head.visible = false;
+  }
+
+  renderScene();
+}
+
 function createPlaneObjects(color: string): PlaneObjects {
   const surface = new THREE.Mesh(
     new THREE.PlaneGeometry(1, 1),
@@ -182,12 +282,18 @@ function createPlaneObjects(color: string): PlaneObjects {
       color,
       transparent: true,
       opacity: 0.08,
+      depthWrite: false,
       side: THREE.DoubleSide
     })
   );
   const edge = new THREE.LineSegments(
     new THREE.EdgesGeometry(new THREE.PlaneGeometry(1, 1)),
-    new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.3 })
+    new THREE.LineBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.3,
+      depthWrite: false
+    })
   );
   const group = new THREE.Group();
 
@@ -218,7 +324,7 @@ function syncHelpers() {
   gridHelper.visible = props.showGrid;
   gridHelper.scale.setScalar(resolvedSceneRadius.value * 4);
 
-  buildPlaneHelperStates(props.activePlanes, props.showPlaneHelpers).forEach((state) => {
+  buildOriginPlaneSheetStates(props.activePlanes, props.showPlaneSheets).forEach((state) => {
     let objects = planeObjects.get(state.planeId);
 
     if (!objects) {
@@ -227,10 +333,16 @@ function syncHelpers() {
       currentScene.add(objects.group);
     }
 
-    (objects.surface.material as THREE.MeshBasicMaterial).color.set(state.color);
-    (objects.edge.material as THREE.LineBasicMaterial).color.set(state.color);
+    const surfaceMaterial = objects.surface.material as THREE.MeshBasicMaterial;
+    const edgeMaterial = objects.edge.material as THREE.LineBasicMaterial;
+
+    surfaceMaterial.color.set(state.color);
+    surfaceMaterial.opacity = state.opacity;
+    edgeMaterial.color.set(state.color);
+    edgeMaterial.opacity = Math.min(state.opacity * 2.5, 0.35);
+    objects.group.position.set(state.center.x, state.center.y, state.center.z);
     objects.group.rotation.set(state.rotation.x, state.rotation.y, state.rotation.z);
-    objects.group.scale.setScalar(resolvedSceneRadius.value * 3);
+    objects.group.scale.set(state.radiusWorld * 2, state.radiusWorld * 2, 1);
     objects.group.visible = state.visible;
   });
 
@@ -246,6 +358,13 @@ function disposeRigObjects(objects: RigObjects) {
   disposeMaterial(objects.tether.material);
 }
 
+function disposeTrailObjects(objects: TrailObjects) {
+  objects.hand.geometry.dispose();
+  disposeMaterial(objects.hand.material);
+  objects.head.geometry.dispose();
+  disposeMaterial(objects.head.material);
+}
+
 function disposePlaneObjects(objects: PlaneObjects) {
   objects.surface.geometry.dispose();
   disposeMaterial(objects.surface.material);
@@ -253,101 +372,43 @@ function disposePlaneObjects(objects: PlaneObjects) {
   disposeMaterial(objects.edge.material);
 }
 
-onMounted(() => {
-  if (!mountRef.value) {
-    return;
-  }
-
-  try {
-    scene = new THREE.Scene();
-    scene.background = backgroundColor;
-
-    camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-    updateCamera();
-
-    renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.domElement.style.display = "block";
-    renderer.domElement.style.width = "100%";
-    renderer.domElement.style.height = "100%";
-
-    mountRef.value.appendChild(renderer.domElement);
-
-    resizeObserver = new ResizeObserver(() => {
-      resizeRenderer();
-    });
-    resizeObserver.observe(mountRef.value);
-
-    syncHelpers();
-    syncRigObjects();
-    resizeRenderer();
-  } catch (error) {
-    rendererError.value =
-      error instanceof Error ? error.message : "Unable to initialize Three.js renderer.";
-
-    renderer?.dispose();
-    renderer = null;
-    camera = null;
-    scene = null;
-  }
-});
-
-watch(
-  () => [props.poses, props.rigOrder],
-  () => {
-    syncRigObjects();
-  },
-  { deep: true, immediate: true }
-);
-
-watch(
-  [
-    () => props.sceneRadiusWorld,
-    () => props.sceneCenterWorld.x,
-    () => props.sceneCenterWorld.y,
-    () => props.sceneCenterWorld.z
-  ],
-  () => {
-    updateCamera();
-    syncHelpers();
-    renderScene();
-  },
-  { immediate: true }
-);
-
-watch(
-  () => [props.activePlanes, props.showAxes, props.showGrid, props.showPlaneHelpers],
-  () => {
-    syncHelpers();
-  },
-  { deep: true, immediate: true }
-);
-
-onBeforeUnmount(() => {
+function disposeThreeSceneResources() {
   resizeObserver?.disconnect();
   resizeObserver = null;
 
+  orbitControls?.removeEventListener("change", renderScene);
+  orbitControls?.dispose();
+  orbitControls = null;
+
   for (const objects of rigObjects.values()) {
+    scene?.remove(objects.hand, objects.head, objects.tether);
     disposeRigObjects(objects);
   }
   rigObjects.clear();
 
+  for (const objects of trailObjects.values()) {
+    scene?.remove(objects.hand, objects.head);
+    disposeTrailObjects(objects);
+  }
+  trailObjects.clear();
+
   for (const objects of planeObjects.values()) {
+    scene?.remove(objects.group);
     disposePlaneObjects(objects);
   }
   planeObjects.clear();
 
   if (axesHelper) {
+    scene?.remove(axesHelper);
     axesHelper.geometry.dispose();
     disposeMaterial(axesHelper.material);
-    scene?.remove(axesHelper);
     axesHelper = null;
   }
 
   if (gridHelper) {
+    scene?.remove(gridHelper);
     gridHelper.geometry.dispose();
     disposeMaterial(gridHelper.material);
-    scene?.remove(gridHelper);
     gridHelper = null;
   }
 
@@ -364,6 +425,105 @@ onBeforeUnmount(() => {
 
   camera = null;
   scene = null;
+}
+
+onMounted(() => {
+  if (!mountRef.value) {
+    return;
+  }
+
+  try {
+    scene = new THREE.Scene();
+    scene.background = backgroundColor;
+
+    camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+    syncCamera(true);
+
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.domElement.style.display = "block";
+    renderer.domElement.style.width = "100%";
+    renderer.domElement.style.height = "100%";
+
+    mountRef.value.appendChild(renderer.domElement);
+
+    try {
+      orbitControls = new OrbitControls(camera, renderer.domElement);
+      orbitControls.enablePan = false;
+      orbitControls.enableZoom = true;
+      orbitControls.enableRotate = true;
+      orbitControls.addEventListener("change", renderScene);
+      syncCamera(true);
+    } catch {
+      orbitControls = null;
+    }
+
+    resizeObserver = new ResizeObserver(() => {
+      resizeRenderer();
+    });
+    resizeObserver.observe(mountRef.value);
+
+    syncHelpers();
+    syncRigObjects();
+    syncTrailObjects();
+    resizeRenderer();
+  } catch (error) {
+    rendererError.value =
+      error instanceof Error ? error.message : "Unable to initialize Three.js renderer.";
+
+    disposeThreeSceneResources();
+  }
+});
+
+watch(
+  () => [props.poses, props.rigOrder],
+  () => {
+    syncRigObjects();
+  },
+  { deep: true, immediate: true }
+);
+
+watch(
+  () => [props.trails, props.rigOrder, props.showHandTrails, props.showHeadTrails],
+  () => {
+    syncTrailObjects();
+  },
+  { deep: true, immediate: true }
+);
+
+watch(
+  [
+    () => props.sceneRadiusWorld,
+    () => props.sceneCenterWorld.x,
+    () => props.sceneCenterWorld.y,
+    () => props.sceneCenterWorld.z
+  ],
+  () => {
+    syncCamera(false);
+    syncHelpers();
+    renderScene();
+  },
+  { immediate: true }
+);
+
+watch(
+  () => [props.activePlanes, props.showAxes, props.showGrid, props.showPlaneSheets],
+  () => {
+    syncHelpers();
+  },
+  { deep: true, immediate: true }
+);
+
+watch(
+  () => props.cameraResetVersion,
+  () => {
+    syncCamera(true);
+    renderScene();
+  }
+);
+
+onBeforeUnmount(() => {
+  disposeThreeSceneResources();
 });
 </script>
 
@@ -383,7 +543,7 @@ onBeforeUnmount(() => {
       v-else
       class="pointer-events-none absolute left-4 top-4 rounded-md border border-slate-800 bg-slate-950/80 px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-slate-400 backdrop-blur-sm"
     >
-      Hand / head / tether debug
+      Hand / head / tether / trails debug
     </div>
   </div>
 </template>

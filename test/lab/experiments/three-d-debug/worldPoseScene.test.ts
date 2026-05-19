@@ -4,10 +4,15 @@ import type { WorldMultiRigPose } from "@/engine/types";
 import {
   anchorWorldMultiRigPose,
   buildDebugRigSceneEntries,
+  buildDefaultCameraViewState,
+  buildOriginPlaneSheetStates,
   buildPlaneHelperStates,
   buildThreeDDebugSceneState,
   collectActivePlanes,
-  getWorldPoseBounds
+  getWorldPoseBounds,
+  ORIGIN_PLANE_SHEET_OPACITY,
+  ORIGIN_PLANE_SHEET_RADIUS_WORLD,
+  resolveSceneRadiusWorld
 } from "@/lab/experiments/three-d-debug/worldPoseScene";
 import { DEFAULT_RIG_STYLES } from "@/visualizer/drawingTools";
 
@@ -129,6 +134,79 @@ describe("worldPoseScene", () => {
     expect(buildPlaneHelperStates(["wall"], false).every((state) => !state.visible)).toBe(true);
   });
 
+  it("builds canonical origin plane-sheet states with fixed presentation data", () => {
+    expect(buildOriginPlaneSheetStates(["floor", "wall"], true)).toEqual([
+      {
+        planeId: "wall",
+        center: { x: 0, y: 0, z: 0 },
+        color: "#60a5fa",
+        rotation: { x: 0, y: 0, z: 0 },
+        radiusWorld: ORIGIN_PLANE_SHEET_RADIUS_WORLD,
+        opacity: ORIGIN_PLANE_SHEET_OPACITY,
+        visible: true
+      },
+      {
+        planeId: "wheel",
+        center: { x: 0, y: 0, z: 0 },
+        color: "#f472b6",
+        rotation: { x: 0, y: Math.PI * 0.5, z: 0 },
+        radiusWorld: ORIGIN_PLANE_SHEET_RADIUS_WORLD,
+        opacity: ORIGIN_PLANE_SHEET_OPACITY,
+        visible: false
+      },
+      {
+        planeId: "floor",
+        center: { x: 0, y: 0, z: 0 },
+        color: "#34d399",
+        rotation: { x: -Math.PI * 0.5, y: 0, z: 0 },
+        radiusWorld: ORIGIN_PLANE_SHEET_RADIUS_WORLD,
+        opacity: ORIGIN_PLANE_SHEET_OPACITY,
+        visible: true
+      }
+    ]);
+
+    expect(buildOriginPlaneSheetStates(["wall"], false).every((state) => !state.visible)).toBe(
+      true
+    );
+  });
+
+  it("builds a resettable default camera view state from scene center and radius", () => {
+    const viewState = buildDefaultCameraViewState({ x: 0, y: 0, z: 0 }, 2);
+
+    expect(viewState.target).toEqual({ x: 0, y: 0, z: 0 });
+    expect(viewState.position.x).toBeCloseTo(3.6, 12);
+    expect(viewState.position.y).toBeCloseTo(2.3, 12);
+    expect(viewState.position.z).toBeCloseTo(3.6, 12);
+    expect(viewState.near).toBe(0.1);
+    expect(viewState.far).toBe(100);
+    expect(viewState.minDistanceWorld).toBe(1);
+    expect(viewState.maxDistanceWorld).toBe(24);
+  });
+
+  it("falls back to the default camera radius for zero, negative, and non-finite inputs", () => {
+    [0, -5, Number.POSITIVE_INFINITY, Number.NaN].forEach((invalidRadius) => {
+      const viewState = buildDefaultCameraViewState({ x: 1, y: -2, z: 3 }, invalidRadius);
+
+      expect(viewState.target).toEqual({ x: 1, y: -2, z: 3 });
+      expect(viewState.position.x).toBeCloseTo(4.6, 12);
+      expect(viewState.position.y).toBeCloseTo(0.3, 12);
+      expect(viewState.position.z).toBeCloseTo(6.6, 12);
+      expect(viewState.near).toBe(0.1);
+      expect(viewState.far).toBe(100);
+      expect(viewState.minDistanceWorld).toBe(1);
+      expect(viewState.maxDistanceWorld).toBe(24);
+    });
+  });
+
+  it("normalizes scene radius to a stable positive finite fallback", () => {
+    expect(resolveSceneRadiusWorld(0)).toBe(2);
+    expect(resolveSceneRadiusWorld(-5)).toBe(2);
+    expect(resolveSceneRadiusWorld(Number.POSITIVE_INFINITY)).toBe(2);
+    expect(resolveSceneRadiusWorld(Number.NEGATIVE_INFINITY)).toBe(2);
+    expect(resolveSceneRadiusWorld(Number.NaN)).toBe(2);
+    expect(resolveSceneRadiusWorld(3.5)).toBe(3.5);
+  });
+
   it("builds the page scene state directly from raw world poses", () => {
     const worldPoses: WorldMultiRigPose = {
       right: {
@@ -154,7 +232,22 @@ describe("worldPoseScene", () => {
       radius: Math.hypot(2.5, 2, 0.5)
     });
     expect(sceneState.sceneCenterWorld).toEqual({ x: 0, y: 0, z: 0 });
-    expect(sceneState.sceneRadiusWorld).toBe(1.5);
+    expect(sceneState.sceneRadiusWorld).toBeCloseTo(Math.hypot(2.5, 2, 0.5));
+  });
+
+  it("never shrinks the scene radius below the current pose bounds", () => {
+    const worldPoses: WorldMultiRigPose = {
+      left: {
+        handPosition: { x: -4, y: 0, z: 0 },
+        headPosition: { x: 4, y: 0, z: 0 },
+        planeId: "wall"
+      }
+    };
+
+    const sceneState = buildThreeDDebugSceneState(worldPoses, 0.5);
+
+    expect(sceneState.worldBounds.radius).toBe(4);
+    expect(sceneState.sceneRadiusWorld).toBe(4);
   });
 
   it("computes a stable scene bound from all hand and head points", () => {

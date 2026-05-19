@@ -24,6 +24,25 @@ export interface PlaneHelperState {
   readonly visible: boolean;
 }
 
+export interface OriginPlaneSheetState {
+  readonly planeId: PlaneId;
+  readonly center: Vec3;
+  readonly color: string;
+  readonly rotation: Vec3;
+  readonly radiusWorld: number;
+  readonly opacity: number;
+  readonly visible: boolean;
+}
+
+export interface DefaultCameraViewState {
+  readonly target: Vec3;
+  readonly position: Vec3;
+  readonly near: number;
+  readonly far: number;
+  readonly minDistanceWorld: number;
+  readonly maxDistanceWorld: number;
+}
+
 export interface ThreeDDebugSceneState {
   readonly worldPoses: WorldMultiRigPose;
   readonly activePlanes: PlaneId[];
@@ -34,6 +53,8 @@ export interface ThreeDDebugSceneState {
 
 const CANONICAL_PLANE_ORDER: readonly PlaneId[] = ["wall", "wheel", "floor"];
 const DEFAULT_ANCHOR: Vec2 = { x: 0, y: 0 };
+export const ORIGIN_PLANE_SHEET_RADIUS_WORLD = 1.5;
+export const ORIGIN_PLANE_SHEET_OPACITY = 0.12;
 const PLANE_HELPER_COLORS: Record<PlaneId, string> = {
   wall: "#60a5fa",
   wheel: "#f472b6",
@@ -45,6 +66,19 @@ const PLANE_HELPER_ROTATIONS: Record<PlaneId, Vec3> = {
   floor: { x: -Math.PI * 0.5, y: 0, z: 0 }
 };
 const WORLD_ORIGIN: Vec3 = { x: 0, y: 0, z: 0 };
+const DEFAULT_SCENE_RADIUS_WORLD = 2;
+const DEFAULT_CAMERA_NEAR = 0.1;
+const DEFAULT_CAMERA_FAR_MIN = 100;
+const DEFAULT_CAMERA_FAR_MULTIPLIER = 16;
+const DEFAULT_CAMERA_MIN_DISTANCE_MULTIPLIER = 0.5;
+const DEFAULT_CAMERA_MAX_DISTANCE_MULTIPLIER = 12;
+const DEFAULT_CAMERA_MIN_DISTANCE_MIN = 0.5;
+const DEFAULT_CAMERA_MAX_DISTANCE_MIN = 12;
+const DEFAULT_CAMERA_POSITION_MULTIPLIERS = {
+  x: 1.8,
+  y: 1.15,
+  z: 1.8
+} as const;
 
 function createDefaultBounds(): WorldPoseBounds {
   return {
@@ -128,14 +162,62 @@ export function buildPlaneHelperStates(
   activePlanes: readonly PlaneId[],
   showPlaneHelpers: boolean
 ): PlaneHelperState[] {
+  return buildOriginPlaneSheetStates(activePlanes, showPlaneHelpers).map((planeState) => ({
+    planeId: planeState.planeId,
+    color: planeState.color,
+    rotation: planeState.rotation,
+    visible: planeState.visible
+  }));
+}
+
+export function buildOriginPlaneSheetStates(
+  activePlanes: readonly PlaneId[],
+  showPlaneSheets: boolean
+): OriginPlaneSheetState[] {
   const activePlaneSet = new Set<PlaneId>(activePlanes);
 
   return CANONICAL_PLANE_ORDER.map((planeId) => ({
     planeId,
+    center: { ...WORLD_ORIGIN },
     color: PLANE_HELPER_COLORS[planeId],
     rotation: { ...PLANE_HELPER_ROTATIONS[planeId] },
-    visible: showPlaneHelpers && activePlaneSet.has(planeId)
+    radiusWorld: ORIGIN_PLANE_SHEET_RADIUS_WORLD,
+    opacity: ORIGIN_PLANE_SHEET_OPACITY,
+    visible: showPlaneSheets && activePlaneSet.has(planeId)
   }));
+}
+
+export function resolveSceneRadiusWorld(sceneRadiusWorld: number): number {
+  return Number.isFinite(sceneRadiusWorld) && sceneRadiusWorld > 0
+    ? sceneRadiusWorld
+    : DEFAULT_SCENE_RADIUS_WORLD;
+}
+
+export function buildDefaultCameraViewState(
+  sceneCenterWorld: Vec3,
+  sceneRadiusWorld: number
+): DefaultCameraViewState {
+  const resolvedSceneRadiusWorld = resolveSceneRadiusWorld(sceneRadiusWorld);
+  const target = { ...sceneCenterWorld };
+
+  return {
+    target,
+    position: {
+      x: target.x + resolvedSceneRadiusWorld * DEFAULT_CAMERA_POSITION_MULTIPLIERS.x,
+      y: target.y + resolvedSceneRadiusWorld * DEFAULT_CAMERA_POSITION_MULTIPLIERS.y,
+      z: target.z + resolvedSceneRadiusWorld * DEFAULT_CAMERA_POSITION_MULTIPLIERS.z
+    },
+    near: DEFAULT_CAMERA_NEAR,
+    far: Math.max(DEFAULT_CAMERA_FAR_MIN, resolvedSceneRadiusWorld * DEFAULT_CAMERA_FAR_MULTIPLIER),
+    minDistanceWorld: Math.max(
+      DEFAULT_CAMERA_MIN_DISTANCE_MIN,
+      resolvedSceneRadiusWorld * DEFAULT_CAMERA_MIN_DISTANCE_MULTIPLIER
+    ),
+    maxDistanceWorld: Math.max(
+      DEFAULT_CAMERA_MAX_DISTANCE_MIN,
+      resolvedSceneRadiusWorld * DEFAULT_CAMERA_MAX_DISTANCE_MULTIPLIER
+    )
+  };
 }
 
 export function getWorldPoseBounds(poses: WorldMultiRigPose): WorldPoseBounds {
@@ -186,18 +268,21 @@ export function getWorldPoseBounds(poses: WorldMultiRigPose): WorldPoseBounds {
 
 export function buildThreeDDebugSceneState(
   worldPoses: WorldMultiRigPose,
-  fallbackSceneRadiusWorld: number
+  preferredSceneRadiusWorld: number
 ): ThreeDDebugSceneState {
   const worldBounds = getWorldPoseBounds(worldPoses);
-  const resolvedSceneRadiusWorld =
-    Number.isFinite(fallbackSceneRadiusWorld) && fallbackSceneRadiusWorld > 0
-      ? fallbackSceneRadiusWorld
-      : Math.max(worldBounds.radius, 2);
+  const resolvedSceneRadiusWorld = Math.max(
+    resolveSceneRadiusWorld(preferredSceneRadiusWorld),
+    worldBounds.radius,
+    DEFAULT_SCENE_RADIUS_WORLD
+  );
 
   return {
     worldPoses,
     activePlanes: collectActivePlanes(worldPoses),
     worldBounds,
+    // Keep the debug orbit target locked to canonical origin so playback and
+    // document-bound changes do not make the inspection camera drift.
     sceneCenterWorld: WORLD_ORIGIN,
     sceneRadiusWorld: resolvedSceneRadiusWorld
   };
