@@ -25,7 +25,7 @@ export interface BodyRigFrame {
   readonly neck: Vec3;
   readonly chest: Vec3;
   readonly rigConfig: BodyRigConfig;
-  readonly shoulderCenter: Vec3;
+  readonly shoulderGirdleCenter: Vec3;
   readonly pelvisCenter: Vec3;
   readonly hipLeft: Vec3;
   readonly hipRight: Vec3;
@@ -42,7 +42,7 @@ export interface ProjectedBodyRigStaticFrame {
   readonly headRadius: number;
   readonly neck: Vec2;
   readonly chest: Vec2;
-  readonly shoulderCenter: Vec2;
+  readonly shoulderGirdleCenter: Vec2;
   readonly pelvisCenter: Vec2;
   readonly hipLeft: Vec2;
   readonly hipRight: Vec2;
@@ -66,7 +66,7 @@ export interface BodyRigProjectedArm {
 }
 
 export interface BuildBodyRigFrameInput {
-  readonly shoulderCenter: Vec3;
+  readonly shoulderGirdleCenter: Vec3;
   readonly rigConfig: BodyRigConfig;
   readonly torsoHeight: number;
   readonly hipSpan: number;
@@ -108,7 +108,7 @@ function projectBodyRigFrame(
     headRadius: body.headRadius,
     neck: projectWorldPoint(body.neck, settings),
     chest: projectWorldPoint(solve.chest.center, settings),
-    shoulderCenter: projectWorldPoint(body.shoulderCenter, settings),
+    shoulderGirdleCenter: projectWorldPoint(body.shoulderGirdleCenter, settings),
     pelvisCenter: projectWorldPoint(solve.pelvis.center, settings),
     hipLeft: projectWorldPoint(body.hipLeft, settings),
     hipRight: projectWorldPoint(body.hipRight, settings),
@@ -143,93 +143,97 @@ function toProjectedArm(
 }
 
 export function buildBodyRigFrame(input: BuildBodyRigFrameInput): BodyRigFrame {
-  const shoulderY = input.shoulderCenter.y;
-  const shoulderZ = input.shoulderCenter.z;
+  const shoulderGirdleY = input.shoulderGirdleCenter.y;
+  const shoulderGirdleZ = input.shoulderGirdleCenter.z;
   const neutralLeftShoulder = {
-    x: input.shoulderCenter.x - input.rigConfig.baseShoulderSpan * 0.5,
-    y: shoulderY,
-    z: shoulderZ
+    x: input.shoulderGirdleCenter.x - input.rigConfig.baseShoulderSpan * 0.5,
+    y: shoulderGirdleY,
+    z: shoulderGirdleZ
   };
   const neutralRightShoulder = {
-    x: input.shoulderCenter.x + input.rigConfig.baseShoulderSpan * 0.5,
-    y: shoulderY,
-    z: shoulderZ
+    x: input.shoulderGirdleCenter.x + input.rigConfig.baseShoulderSpan * 0.5,
+    y: shoulderGirdleY,
+    z: shoulderGirdleZ
   };
   const defaultHandTargetXRatio = input.defaultHandTargetXRatio ?? 0;
   const defaultHandTargetYRatio = input.defaultHandTargetYRatio ?? 0;
   const pelvisCenter = {
-    x: input.shoulderCenter.x,
-    y: shoulderY - input.torsoHeight,
-    z: shoulderZ
+    x: input.shoulderGirdleCenter.x,
+    y: shoulderGirdleY - input.torsoHeight,
+    z: shoulderGirdleZ
   };
   const chest = {
-    x: input.shoulderCenter.x,
-    y: shoulderY - input.torsoHeight * 0.12,
-    z: shoulderZ
+    x: input.shoulderGirdleCenter.x,
+    y: shoulderGirdleY - input.torsoHeight * 0.12,
+    z: shoulderGirdleZ
   };
   const hipLeft = {
-    x: input.shoulderCenter.x - input.hipSpan * 0.5,
+    x: input.shoulderGirdleCenter.x - input.hipSpan * 0.5,
     y: pelvisCenter.y,
-    z: shoulderZ
+    z: shoulderGirdleZ
   };
   const hipRight = {
-    x: input.shoulderCenter.x + input.hipSpan * 0.5,
+    x: input.shoulderGirdleCenter.x + input.hipSpan * 0.5,
     y: pelvisCenter.y,
-    z: shoulderZ
+    z: shoulderGirdleZ
   };
   const kneeLeft = {
     x: hipLeft.x - input.stanceWidth,
     y: hipLeft.y - input.thighLength,
-    z: shoulderZ
+    z: shoulderGirdleZ
   };
   const kneeRight = {
     x: hipRight.x + input.stanceWidth,
     y: hipRight.y - input.thighLength,
-    z: shoulderZ
+    z: shoulderGirdleZ
   };
 
   return {
     headCenter: {
-      x: input.shoulderCenter.x,
-      y: shoulderY + input.headRadius + input.headGap,
-      z: shoulderZ
+      x: input.shoulderGirdleCenter.x,
+      y: shoulderGirdleY + input.headRadius + input.headGap,
+      z: shoulderGirdleZ
     },
     headRadius: input.headRadius,
     neck: {
-      x: input.shoulderCenter.x,
-      y: shoulderY + input.neckOffset,
-      z: shoulderZ
+      x: input.shoulderGirdleCenter.x,
+      y: shoulderGirdleY + input.neckOffset,
+      z: shoulderGirdleZ
     },
     chest,
     rigConfig: input.rigConfig,
-    shoulderCenter: input.shoulderCenter,
+    shoulderGirdleCenter: input.shoulderGirdleCenter,
     pelvisCenter,
     hipLeft,
     hipRight,
     kneeLeft,
     kneeRight,
-    footLeft: { x: kneeLeft.x - input.footOffset, y: kneeLeft.y - input.shinLength, z: shoulderZ },
+    footLeft: {
+      x: kneeLeft.x - input.footOffset,
+      y: kneeLeft.y - input.shinLength,
+      z: shoulderGirdleZ
+    },
     footRight: {
       x: kneeRight.x + input.footOffset,
       y: kneeRight.y - input.shinLength,
-      z: shoulderZ
+      z: shoulderGirdleZ
     },
     defaultLeftHandTarget: {
       x: neutralLeftShoulder.x - input.rigConfig.upperArmLength * defaultHandTargetXRatio,
       y: neutralLeftShoulder.y - input.rigConfig.forearmLength * defaultHandTargetYRatio,
-      z: shoulderZ
+      z: shoulderGirdleZ
     },
     defaultRightHandTarget: {
       x: neutralRightShoulder.x + input.rigConfig.upperArmLength * defaultHandTargetXRatio,
       y: neutralRightShoulder.y - input.rigConfig.forearmLength * defaultHandTargetYRatio,
-      z: shoulderZ
+      z: shoulderGirdleZ
     }
   };
 }
 
 export function buildBodyRigFrameFromDimensions(dimensions: BodyRigDimensions): BodyRigFrame {
   return buildBodyRigFrame({
-    shoulderCenter: dimensions.rootShoulderCenter,
+    shoulderGirdleCenter: dimensions.rootShoulderGirdleCenter,
     rigConfig: dimensions.config,
     torsoHeight: dimensions.torsoHeight,
     hipSpan: dimensions.hipSpan,
@@ -251,7 +255,7 @@ export function solveBodyRigFrame(
 ): BodyRigPose {
   const solve = solveWorldBodyRig({
     root: {
-      shoulderCenter: body.shoulderCenter,
+      shoulderGirdleCenter: body.shoulderGirdleCenter,
       neutralPelvisCenter: body.pelvisCenter,
       neutralChestCenter: body.chest,
       worldUp: { x: 0, y: 1, z: 0 },

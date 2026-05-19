@@ -68,11 +68,11 @@ function buildBodyFrame(layout: CanvasLayout): BodyRigFrame {
   const shoulderY = Math.max(height * 0.27, 110);
   const torsoHeight = Math.min(scale * 0.29, 160);
   const headRadius = Math.min(scale * 0.09, 38);
-  const shoulderCenter = { x: centerX, y: -shoulderY, z: 0 };
+  const shoulderGirdleCenter = { x: centerX, y: -shoulderY, z: 0 };
   const thighLength = Math.min(scale * 0.2, 116);
   const shinLength = Math.min(scale * 0.19, 108);
   return buildBodyRigFrame({
-    shoulderCenter,
+    shoulderGirdleCenter,
     rigConfig,
     torsoHeight,
     hipSpan: rigConfig.baseShoulderSpan * 0.6,
@@ -147,7 +147,7 @@ function drawLimb(
 function getCanonicalPatternSpace(frame: BodyRigFrame) {
   return computeBodyRigCanonicalPatternSpace({
     root: {
-      shoulderCenter: frame.shoulderCenter,
+      shoulderGirdleCenter: frame.shoulderGirdleCenter,
       neutralPelvisCenter: frame.pelvisCenter,
       neutralChestCenter: frame.chest,
       worldUp: { x: 0, y: 1, z: 0 },

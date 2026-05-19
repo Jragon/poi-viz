@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { buildBodyRigConfigFromArmReach, type BodyRigConfig } from "@/body-rig/bodyRigConfig";
 import {
+  computeCanonicalWallOverlapCircle,
   computeBodyRigCanonicalPatternSpace,
-  computeSharedHandOverlapCircle,
   projectShoulderLine,
   solveBodyRig,
   solveStickArm,
@@ -361,7 +361,7 @@ describe("solveWorldStickArm", () => {
 
   it("keeps a yawed full-body horizontal crossing forward instead of snapping backward", () => {
     const config = buildBodyRigConfigFromArmReach(1.25);
-    const sharedHandOverlapCircle = computeSharedHandOverlapCircle({
+    const canonicalWallCircle = computeCanonicalWallOverlapCircle({
       root: {
         torsoCenter: { x: 0, y: 0 },
         shoulderY: 0
@@ -372,17 +372,17 @@ describe("solveWorldStickArm", () => {
     const solveAtY = (y: number) =>
       solveWorldBodyRig({
         root: {
-          shoulderCenter: { x: 0, y: 0, z: 0 },
+          shoulderGirdleCenter: { x: 0, y: 0, z: 0 },
           worldUp: { x: 0, y: 1, z: 0 },
           neutralForward: { x: 0, y: 0, z: 1 },
           scale: 1
         },
         config,
         goals: {
-          leftHandTarget: { x: 0, y: y * sharedHandOverlapCircle.radius, z: 0 },
+          leftHandTarget: { x: 0, y: y * canonicalWallCircle.radius, z: 0 },
           rightHandTarget: {
-            x: sharedHandOverlapCircle.radius,
-            y: y * sharedHandOverlapCircle.radius,
+            x: canonicalWallCircle.radius,
+            y: y * canonicalWallCircle.radius,
             z: 0
           }
         }
@@ -417,9 +417,9 @@ describe("solveWorldStickArm", () => {
   });
 });
 
-describe("computeSharedHandOverlapCircle", () => {
+describe("computeCanonicalWallOverlapCircle", () => {
   it("computes the largest neutral shared-hand circle inside both arm reaches", () => {
-    const result = computeSharedHandOverlapCircle({
+    const result = computeCanonicalWallOverlapCircle({
       root: {
         torsoCenter: { x: 0, y: 0 },
         shoulderY: 0
@@ -439,7 +439,7 @@ describe("computeSharedHandOverlapCircle", () => {
   });
 
   it("uses the compressed shoulder span when asked for the maximum yaw overlap circle", () => {
-    const result = computeSharedHandOverlapCircle({
+    const result = computeCanonicalWallOverlapCircle({
       root: {
         torsoCenter: { x: 0, y: 0 },
         shoulderY: 0
@@ -459,7 +459,7 @@ describe("computeSharedHandOverlapCircle", () => {
   });
 
   it("keeps sampled boundary points reachable with both hands exactly overlapped", () => {
-    const circle = computeSharedHandOverlapCircle({
+    const circle = computeCanonicalWallOverlapCircle({
       root: {
         torsoCenter: { x: 200, y: 120 },
         shoulderY: 120
@@ -508,7 +508,7 @@ describe("computeSharedHandOverlapCircle", () => {
   });
 
   it("marks a sufficiently outside point as best effort even with shoulder contribution", () => {
-    const circle = computeSharedHandOverlapCircle({
+    const circle = computeCanonicalWallOverlapCircle({
       root: {
         torsoCenter: { x: 200, y: 120 },
         shoulderY: 120
@@ -552,7 +552,7 @@ describe("computeBodyRigCanonicalPatternSpace", () => {
     const config = buildBodyRigConfigFromArmReach(1.25);
     const result = computeBodyRigCanonicalPatternSpace({
       root: {
-        shoulderCenter: { x: 0.25, y: 1.4, z: 0.5 },
+        shoulderGirdleCenter: { x: 0.25, y: 1.4, z: 0.5 },
         worldUp: { x: 0, y: 1, z: 0 },
         neutralForward: { x: 0, y: 0, z: 1 },
         scale: 1
@@ -571,7 +571,7 @@ describe("computeBodyRigCanonicalPatternSpace", () => {
     const config = buildBodyRigConfigFromArmReach(1.25);
     const canonical = computeBodyRigCanonicalPatternSpace({
       root: {
-        shoulderCenter: { x: 0, y: 1.4, z: 0 },
+        shoulderGirdleCenter: { x: 0, y: 1.4, z: 0 },
         worldUp: { x: 0, y: 1, z: 0 },
         neutralForward: { x: 0, y: 0, z: 1 },
         scale: 1
@@ -756,7 +756,7 @@ describe("solveWorldBodyRig", () => {
   it("keeps a balanced wall-plane pose neutral while solving in Vec3", () => {
     const result = solveWorldBodyRig({
       root: {
-        shoulderCenter: { x: 200, y: 118, z: 0 },
+        shoulderGirdleCenter: { x: 200, y: 118, z: 0 },
         worldUp: { x: 0, y: 1, z: 0 },
         neutralForward: { x: 0, y: 0, z: 1 },
         scale: 1
@@ -790,7 +790,7 @@ describe("solveWorldBodyRig", () => {
   it("lifts shoulders in world space for overhead targets", () => {
     const result = solveWorldBodyRig({
       root: {
-        shoulderCenter: { x: 200, y: 118, z: 0 },
+        shoulderGirdleCenter: { x: 200, y: 118, z: 0 },
         worldUp: { x: 0, y: 1, z: 0 },
         neutralForward: { x: 0, y: 0, z: 1 },
         scale: 1
@@ -811,7 +811,7 @@ describe("solveWorldBodyRig", () => {
   it("exposes pelvis, chest, and shoulder-girdle state from the world solve", () => {
     const result = solveWorldBodyRig({
       root: {
-        shoulderCenter: { x: 0, y: 1.4, z: 0 },
+        shoulderGirdleCenter: { x: 0, y: 1.4, z: 0 },
         neutralPelvisCenter: { x: 0, y: 0.8, z: 0 },
         neutralChestCenter: { x: 0, y: 1.35, z: 0 },
         worldUp: { x: 0, y: 1, z: 0 },
@@ -839,7 +839,7 @@ describe("solveWorldBodyRig", () => {
   it("mirrors pelvis and shoulder-girdle state for mirrored world inputs", () => {
     const config = buildBodyRigConfigFromArmReach(1.25);
     const root = {
-      shoulderCenter: { x: 0, y: 1.4, z: 0 },
+      shoulderGirdleCenter: { x: 0, y: 1.4, z: 0 },
       neutralPelvisCenter: { x: 0, y: 0.8, z: 0 },
       neutralChestCenter: { x: 0, y: 1.35, z: 0 },
       worldUp: { x: 0, y: 1, z: 0 },
@@ -876,7 +876,7 @@ describe("solveWorldBodyRig", () => {
     const solveAtOffset = (offsetX: number) =>
       solveWorldBodyRig({
         root: {
-          shoulderCenter: { x: 0, y: 1.4, z: 0 },
+          shoulderGirdleCenter: { x: 0, y: 1.4, z: 0 },
           neutralPelvisCenter: { x: 0, y: 0.8, z: 0 },
           neutralChestCenter: { x: 0, y: 1.35, z: 0 },
           worldUp: { x: 0, y: 1, z: 0 },
@@ -910,7 +910,7 @@ describe("solveWorldBodyRig", () => {
   it("recovers lateral shoulder travel smoothly across the overhead fade band", () => {
     const config = buildBodyRigConfigFromArmReach(1.25);
     const root = {
-      shoulderCenter: { x: 0, y: 1.4, z: 0 },
+      shoulderGirdleCenter: { x: 0, y: 1.4, z: 0 },
       neutralPelvisCenter: { x: 0, y: 0.8, z: 0 },
       neutralChestCenter: { x: 0, y: 1.35, z: 0 },
       worldUp: { x: 0, y: 1, z: 0 },
@@ -950,7 +950,7 @@ describe("solveWorldBodyRig", () => {
     const config = buildBodyRigConfigFromArmReach(1.25);
     const result = solveWorldBodyRig({
       root: {
-        shoulderCenter: { x: 0, y: 1.4, z: 0 },
+        shoulderGirdleCenter: { x: 0, y: 1.4, z: 0 },
         neutralPelvisCenter: { x: 0, y: 0.8, z: 0 },
         neutralChestCenter: { x: 0, y: 1.35, z: 0 },
         worldUp: { x: 0, y: 1, z: 0 },
@@ -974,7 +974,7 @@ describe("solveWorldBodyRig", () => {
   it("keeps shoulder sockets stable as a shared overhead target crosses center", () => {
     const config = buildBodyRigConfigFromArmReach(1.25);
     const root = {
-      shoulderCenter: { x: 0, y: 1.4, z: 0 },
+      shoulderGirdleCenter: { x: 0, y: 1.4, z: 0 },
       neutralPelvisCenter: { x: 0, y: 0.8, z: 0 },
       neutralChestCenter: { x: 0, y: 1.35, z: 0 },
       worldUp: { x: 0, y: 1, z: 0 },

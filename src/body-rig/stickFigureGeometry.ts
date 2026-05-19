@@ -103,7 +103,7 @@ export interface BodyRigSolveResult {
 }
 
 export interface BodyRigWorldRoot {
-  readonly shoulderCenter: Vec3;
+  readonly shoulderGirdleCenter: Vec3;
   readonly neutralPelvisCenter?: Vec3;
   readonly neutralChestCenter?: Vec3;
   readonly worldUp: Vec3;
@@ -232,13 +232,13 @@ export interface BodyRigWorldSolveResult {
   readonly cost: number;
 }
 
-export interface SharedHandOverlapCircleInput {
+export interface CanonicalWallOverlapCircleInput {
   readonly root: BodyRigRoot;
   readonly config: BodyRigConfig;
   readonly useMaxYawCompression?: boolean;
 }
 
-export interface SharedHandOverlapCircleResult {
+export interface CanonicalWallOverlapCircleResult {
   readonly center: Vec2;
   readonly radius: number;
   readonly reach: ArmReachRange;
@@ -264,7 +264,7 @@ export interface BodyRigCanonicalPatternSpaceResult {
   readonly sourcePlane: "wall";
   readonly origin: Vec3;
   readonly unitRadius: number;
-  readonly wallCircle: SharedHandOverlapCircleResult;
+  readonly wallCircle: CanonicalWallOverlapCircleResult;
   readonly projections: Record<BodyRigProjectionPlaneId, BodyRigCanonicalPlaneSpace>;
 }
 
@@ -494,12 +494,12 @@ function getRootPelvisCenter(
 ): Vec3 {
   return (
     root.neutralPelvisCenter ??
-    add3(root.shoulderCenter, scale3(worldUp, -config.baseShoulderSpan * 0.86))
+    add3(root.shoulderGirdleCenter, scale3(worldUp, -config.baseShoulderSpan * 0.86))
   );
 }
 
 function getRootChestCenter(root: BodyRigWorldRoot): Vec3 {
-  return root.neutralChestCenter ?? root.shoulderCenter;
+  return root.neutralChestCenter ?? root.shoulderGirdleCenter;
 }
 
 function solveWorldPelvisState(
@@ -636,8 +636,14 @@ function solveWorldShoulders(
   return {
     yawRad: clampedYawRad,
     normalizedYaw: clampedYawRad / maxYawRad,
-    leftShoulder: add3(input.root.shoulderCenter, scale3(basis.torsoRight, -shoulderHalfSpan)),
-    rightShoulder: add3(input.root.shoulderCenter, scale3(basis.torsoRight, shoulderHalfSpan)),
+    leftShoulder: add3(
+      input.root.shoulderGirdleCenter,
+      scale3(basis.torsoRight, -shoulderHalfSpan)
+    ),
+    rightShoulder: add3(
+      input.root.shoulderGirdleCenter,
+      scale3(basis.torsoRight, shoulderHalfSpan)
+    ),
     nearSide: clampedYawRad === 0 ? null : clampedYawRad > 0 ? "right" : "left",
     farSide: clampedYawRad === 0 ? null : clampedYawRad > 0 ? "left" : "right",
     ...basis
@@ -1096,7 +1102,7 @@ function scoreWorldYawCandidate(
   const normalizedYaw = yawRad / Math.max(Math.abs(config.maxYawRad), Number.EPSILON);
   const yawPenalty = normalizedYaw ** 2 * config.solverWeights.yawPenalty;
   const handMidpoint = scale3(add3(input.goals.leftHandTarget, input.goals.rightHandTarget), 0.5);
-  const handMidpointOffset = subtract3(handMidpoint, input.root.shoulderCenter);
+  const handMidpointOffset = subtract3(handMidpoint, input.root.shoulderGirdleCenter);
   const neutralBasis = getWorldBasis(input.root, 0);
   const pelvis = solveWorldPelvisState(
     input,
@@ -1269,9 +1275,9 @@ export function projectShoulderLine(input: ProjectShoulderLineInput): ProjectSho
   };
 }
 
-export function computeSharedHandOverlapCircle(
-  input: SharedHandOverlapCircleInput
-): SharedHandOverlapCircleResult {
+export function computeCanonicalWallOverlapCircle(
+  input: CanonicalWallOverlapCircleInput
+): CanonicalWallOverlapCircleResult {
   const config = resolveBodyRigConfig(input.config);
   const usesMaxYawCompression = input.useMaxYawCompression ?? false;
   const shoulderInput: ProjectShoulderLineInput = {
@@ -1313,10 +1319,13 @@ export function computeSharedHandOverlapCircle(
 export function computeBodyRigCanonicalPatternSpace(
   input: BodyRigCanonicalPatternSpaceInput
 ): BodyRigCanonicalPatternSpaceResult {
-  const wallCircle = computeSharedHandOverlapCircle({
+  const wallCircle = computeCanonicalWallOverlapCircle({
     root: {
-      torsoCenter: { x: input.root.shoulderCenter.x, y: input.root.shoulderCenter.y },
-      shoulderY: input.root.shoulderCenter.y
+      torsoCenter: {
+        x: input.root.shoulderGirdleCenter.x,
+        y: input.root.shoulderGirdleCenter.y
+      },
+      shoulderY: input.root.shoulderGirdleCenter.y
     },
     config: input.config,
     ...(input.useMaxYawCompression === undefined
@@ -1326,7 +1335,7 @@ export function computeBodyRigCanonicalPatternSpace(
   const origin = {
     x: wallCircle.center.x,
     y: wallCircle.center.y,
-    z: input.root.shoulderCenter.z
+    z: input.root.shoulderGirdleCenter.z
   };
   const unitRadius = wallCircle.radius;
   const planeSpace = { origin, unitRadius };

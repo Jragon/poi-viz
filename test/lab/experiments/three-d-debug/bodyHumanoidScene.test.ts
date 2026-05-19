@@ -3,12 +3,12 @@ import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { SKELETON_SEGMENTS } from "@/body-rig";
 import type { WorldMultiRigPose } from "@/engine/types";
 import type { PlaneProjectionSettings } from "@/engine/planeProjection";
 import {
-  buildBodyStickFigureScene
-} from "@/lab/experiments/three-d-debug/bodyStickFigureScene";
-import { SKELETON_SEGMENTS } from "@/body-rig";
+  buildBodyHumanoidScene
+} from "@/lab/experiments/three-d-debug/bodyHumanoidScene";
 
 const leftPose = {
   handPosition: { x: -0.5, y: 0.6, z: 0 },
@@ -22,7 +22,7 @@ const rightPose = {
   planeId: "wall" as const
 };
 
-describe("buildBodyStickFigureScene", () => {
+describe("buildBodyHumanoidScene", () => {
   it("returns null when neither left nor right rig is present", () => {
     const worldPoses: WorldMultiRigPose = {
       center: {
@@ -32,7 +32,7 @@ describe("buildBodyStickFigureScene", () => {
       }
     };
 
-    expect(buildBodyStickFigureScene(worldPoses)).toBeNull();
+    expect(buildBodyHumanoidScene(worldPoses)).toBeNull();
   });
 
   it("uses configured rig ids instead of hard-coded left and right lookups", () => {
@@ -42,7 +42,7 @@ describe("buildBodyStickFigureScene", () => {
     };
 
     const result = (
-      buildBodyStickFigureScene as (...args: unknown[]) => ReturnType<typeof buildBodyStickFigureScene>
+      buildBodyHumanoidScene as (...args: unknown[]) => ReturnType<typeof buildBodyHumanoidScene>
     )(worldPoses, undefined, {
       left: "lead",
       right: "trail"
@@ -54,13 +54,13 @@ describe("buildBodyStickFigureScene", () => {
   });
 
   it("returns null for empty world poses", () => {
-    expect(buildBodyStickFigureScene({})).toBeNull();
+    expect(buildBodyHumanoidScene({})).toBeNull();
   });
 
   it("builds a full BodySkeletonFrame from both left and right world poses", () => {
     const worldPoses: WorldMultiRigPose = { left: leftPose, right: rightPose };
 
-    const result = buildBodyStickFigureScene(worldPoses);
+    const result = buildBodyHumanoidScene(worldPoses);
 
     expect(result).not.toBeNull();
     expect(result!.segments).toBe(SKELETON_SEGMENTS);
@@ -71,19 +71,19 @@ describe("buildBodyStickFigureScene", () => {
   it("returns null when only left rig is present", () => {
     const worldPoses: WorldMultiRigPose = { left: leftPose };
 
-    expect(buildBodyStickFigureScene(worldPoses)).toBeNull();
+    expect(buildBodyHumanoidScene(worldPoses)).toBeNull();
   });
 
   it("returns null when only right rig is present", () => {
     const worldPoses: WorldMultiRigPose = { right: rightPose };
 
-    expect(buildBodyStickFigureScene(worldPoses)).toBeNull();
+    expect(buildBodyHumanoidScene(worldPoses)).toBeNull();
   });
 
   it("returns orientation cue with unit-length up, forward, and right vectors", () => {
     const worldPoses: WorldMultiRigPose = { left: leftPose, right: rightPose };
 
-    const result = buildBodyStickFigureScene(worldPoses);
+    const result = buildBodyHumanoidScene(worldPoses);
     const { up, forward, right } = result!.orientation;
 
     const len = (v: { x: number; y: number; z: number }) =>
@@ -97,7 +97,7 @@ describe("buildBodyStickFigureScene", () => {
   it("returns mutually orthogonal orientation axes", () => {
     const worldPoses: WorldMultiRigPose = { left: leftPose, right: rightPose };
 
-    const result = buildBodyStickFigureScene(worldPoses);
+    const result = buildBodyHumanoidScene(worldPoses);
     const { up, forward, right } = result!.orientation;
 
     const dot = (a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) =>
@@ -112,7 +112,7 @@ describe("buildBodyStickFigureScene", () => {
     const worldPoses: WorldMultiRigPose = { left: leftPose, right: rightPose };
     const settings: PlaneProjectionSettings = { mode: "orthographic", yawDeg: 0, pitchDeg: 0 };
 
-    const result = buildBodyStickFigureScene(worldPoses, settings);
+    const result = buildBodyHumanoidScene(worldPoses, settings);
 
     expect(result).not.toBeNull();
     expect(result!.segments).toBe(SKELETON_SEGMENTS);
@@ -120,7 +120,7 @@ describe("buildBodyStickFigureScene", () => {
 
   it("returns the skeleton produced by the solved BodyRigPose", () => {
     const source = readFileSync(
-      resolve(process.cwd(), "src/lab/experiments/three-d-debug/bodyStickFigureScene.ts"),
+      resolve(process.cwd(), "src/lab/experiments/three-d-debug/bodyHumanoidScene.ts"),
       "utf8"
     );
 

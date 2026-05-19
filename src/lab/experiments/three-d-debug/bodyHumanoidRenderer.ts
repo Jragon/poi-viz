@@ -78,7 +78,7 @@ function getSegmentBaseSpan(category: SkeletonSegmentCategory): number {
 
 const VOLUME_RADIUS = {
   torso: 0.095,
-  pelvis: 0.075,
+  pelvisVolume: 0.075,
   head: 0.11
 } as const;
 
@@ -103,7 +103,7 @@ export class BodyHumanoidRenderer {
 
   private syncVolumes(scene: THREE.Scene, frame: BodySkeletonFrame): void {
     this.syncCapsuleVolume(scene, "torso", frame.joints.pelvisCenter, frame.joints.chest, VOLUME_RADIUS.torso, "#cbd5e1");
-    this.syncCapsuleVolume(scene, "pelvis", frame.joints.hipLeft, frame.joints.hipRight, VOLUME_RADIUS.pelvis, "#94a3b8");
+    this.syncCapsuleVolume(scene, "pelvis", frame.joints.hipLeft, frame.joints.hipRight, VOLUME_RADIUS.pelvisVolume, "#94a3b8");
     this.syncSphereVolume(scene, "head", frame.joints.headCenter, VOLUME_RADIUS.head, "#e2e8f0");
   }
 

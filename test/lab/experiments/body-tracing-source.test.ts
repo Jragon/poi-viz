@@ -18,7 +18,7 @@ describe("BodyTracingStickFigureCanvas source", () => {
     expect(source).toContain("pelvisCenter");
     expect(source).not.toContain("pose.shoulders.leftShoulder");
     expect(source).not.toContain("pose.shoulders.rightShoulder");
-    expect(source).not.toContain("body.pelvis");
+    expect(source).not.toContain(["body", "pelvis"].join("."));
   });
 
   it("uses canonical wall-plane pattern space for the shared hand guide", () => {

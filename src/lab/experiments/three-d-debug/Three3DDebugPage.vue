@@ -18,7 +18,7 @@ import {
 import { sampleMultiRigWorldTrails } from "@/visualizer/worldTrailSampling";
 
 import Three3DDebugCanvas from "./Three3DDebugCanvas.vue";
-import { buildBodyStickFigureScene } from "./bodyStickFigureScene";
+import { buildBodyHumanoidScene } from "./bodyHumanoidScene";
 import { buildThreeDDebugSceneState } from "./worldPoseScene";
 
 const library = useAuthoringLibrary();
@@ -55,7 +55,7 @@ const bodyRigIds = computed(() => ({
   left: core.rigOrder.value[0],
   right: core.rigOrder.value[1]
 }));
-const bodyScene = computed(() => buildBodyStickFigureScene(core.worldPoses.value, undefined, bodyRigIds.value));
+const bodyScene = computed(() => buildBodyHumanoidScene(core.worldPoses.value, undefined, bodyRigIds.value));
 const worldTrails = computed(() => {
   const prepared = core.session.playback.prepared.value;
   if (!prepared || (!showHandTrails.value && !showHeadTrails.value)) {

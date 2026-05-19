@@ -1,5 +1,5 @@
 import {
-  buildBodyRigDimensionsForSharedHandRadius,
+  buildBodyRigDimensionsForCanonicalUnitRadius,
   buildBodyRigFrameFromDimensions,
   solveBodyRigFrame,
   type BodyRigDimensions,
@@ -50,7 +50,7 @@ function resolveVisualizerBodyRigIds(
 }
 
 export function resolveBodyRigDimensions(dimensions?: BodyRigDimensions): BodyRigDimensions {
-  return dimensions ?? buildBodyRigDimensionsForSharedHandRadius(1);
+  return dimensions ?? buildBodyRigDimensionsForCanonicalUnitRadius(1);
 }
 
 function anchoredHandTarget(layout: SceneLayout, rigId: RigId, pose: WorldRigPose): Vec3 {

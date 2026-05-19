@@ -1,5 +1,5 @@
 import {
-  buildBodyRigDimensionsForSharedHandRadius,
+  buildBodyRigDimensionsForCanonicalUnitRadius,
   buildBodyRigFrameFromDimensions,
   solveBodyRigFrame,
   type BodySkeletonFrame
@@ -14,7 +14,7 @@ import {
   type VisualizerBodyRigIds
 } from "@/visualizer/bodyRigSolve";
 
-export function buildBodyStickFigureScene(
+export function buildBodyHumanoidScene(
   worldPoses: WorldMultiRigPose,
   projectionSettings?: PlaneProjectionSettings,
   rigIds?: Partial<VisualizerBodyRigIds>
@@ -26,7 +26,7 @@ export function buildBodyStickFigureScene(
     return null;
   }
 
-  const dimensions = buildBodyRigDimensionsForSharedHandRadius(1);
+  const dimensions = buildBodyRigDimensionsForCanonicalUnitRadius(1);
   const body = buildBodyRigFrameFromDimensions(dimensions);
 
   const pose = solveBodyRigFrame(

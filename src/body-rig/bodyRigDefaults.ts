@@ -20,7 +20,7 @@ export interface BodyRigDimensions {
   readonly footOffset: number;
   readonly stanceWidth: number;
   readonly cameraCenterWorld: Vec2;
-  readonly rootShoulderCenter: Vec3;
+  readonly rootShoulderGirdleCenter: Vec3;
   readonly canonicalPatternSpace: BodyRigCanonicalPatternSpaceResult;
 }
 
@@ -35,7 +35,7 @@ export const DEFAULT_BODY_SHIN_LENGTH_RATIO = 0.59375;
 export const DEFAULT_BODY_FOOT_OFFSET_RATIO = 0.0625;
 export const DEFAULT_BODY_STANCE_SHOULDER_RATIO = 0.2;
 export const DEFAULT_BODY_CAMERA_CENTER_WORLD: Vec2 = { x: 0, y: -0.7 };
-export const DEFAULT_BODY_ROOT_SHOULDER_CENTER: Vec3 = { x: 0, y: 0, z: 0 };
+export const DEFAULT_BODY_ROOT_SHOULDER_GIRDLE_CENTER: Vec3 = { x: 0, y: 0, z: 0 };
 
 export function buildDefaultBodyRigDimensions(
   armReach = DEFAULT_BODY_ARM_REACH
@@ -44,7 +44,7 @@ export function buildDefaultBodyRigDimensions(
   const shoulderSpan = config.baseShoulderSpan;
   const canonicalPatternSpace = computeBodyRigCanonicalPatternSpace({
     root: {
-      shoulderCenter: DEFAULT_BODY_ROOT_SHOULDER_CENTER,
+      shoulderGirdleCenter: DEFAULT_BODY_ROOT_SHOULDER_GIRDLE_CENTER,
       worldUp: { x: 0, y: 1, z: 0 },
       neutralForward: { x: 0, y: 0, z: 1 },
       scale: 1
@@ -67,12 +67,12 @@ export function buildDefaultBodyRigDimensions(
     footOffset: armReach * DEFAULT_BODY_FOOT_OFFSET_RATIO,
     stanceWidth: shoulderSpan * DEFAULT_BODY_STANCE_SHOULDER_RATIO,
     cameraCenterWorld: DEFAULT_BODY_CAMERA_CENTER_WORLD,
-    rootShoulderCenter: DEFAULT_BODY_ROOT_SHOULDER_CENTER,
+    rootShoulderGirdleCenter: DEFAULT_BODY_ROOT_SHOULDER_GIRDLE_CENTER,
     canonicalPatternSpace
   };
 }
 
-export function buildBodyRigDimensionsForSharedHandRadius(targetRadius = 1): BodyRigDimensions {
+export function buildBodyRigDimensionsForCanonicalUnitRadius(targetRadius = 1): BodyRigDimensions {
   const base = buildDefaultBodyRigDimensions(1);
   const radius = Number.isFinite(targetRadius) && targetRadius > 0 ? targetRadius : 1;
 

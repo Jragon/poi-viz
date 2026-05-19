@@ -30,8 +30,8 @@ Body-rig geometry uses normal y-up `Vec3` world coordinates until projection.
 - `+Z` = forward from the torso toward the viewer/camera, out of the neutral wall plane.
 - Neutral torso forward is `+Z`.
 - Neutral torso right is `+X`, derived as `cross(worldUp, torsoForward)`.
-- Left shoulder is `shoulderCenter - torsoRight * halfSpan`.
-- Right shoulder is `shoulderCenter + torsoRight * halfSpan`.
+- Left shoulder is `shoulderGirdleCenter - torsoRight * halfSpan`.
+- Right shoulder is `shoulderGirdleCenter + torsoRight * halfSpan`.
 
 Projection is a boundary step. Wall orthographic projection uses `(x, y)`, and canvas drawing flips `y` only at the final pixel transform.
 

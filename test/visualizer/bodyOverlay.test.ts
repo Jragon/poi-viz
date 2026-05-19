@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildBodyRigDimensionsForSharedHandRadius } from "@/body-rig";
+import { buildBodyRigDimensionsForCanonicalUnitRadius } from "@/body-rig";
 import type { PlaneProjectionSettings } from "@/engine/planeProjection";
 import type { WorldMultiRigPose } from "@/engine/types";
 import { computeBodyOverlay, getBodyOverlaySceneExtent } from "@/visualizer/bodyOverlay";
@@ -182,7 +182,7 @@ describe("bodyOverlay", () => {
   });
 
   it("computes body-aware scene framing from sequence radius and body dimensions", () => {
-    const dimensions = buildBodyRigDimensionsForSharedHandRadius(1);
+    const dimensions = buildBodyRigDimensionsForCanonicalUnitRadius(1);
     const extent = getBodyOverlaySceneExtent({
       sequenceRadiusWorld: 2,
       dimensions
