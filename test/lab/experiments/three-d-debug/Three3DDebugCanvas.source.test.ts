@@ -60,4 +60,32 @@ describe("Three3DDebugCanvas task 4 stick figure wiring", () => {
     expect(source).toContain("objects.hand.visible = props.showHandTrails && handPoints.length >= 2;");
     expect(source).toContain("objects.head.visible = props.showHeadTrails && headPoints.length >= 2;");
   });
+
+  it("uses CapsuleGeometry for limb segments instead of THREE.Line", () => {
+    const rendererSource = readFileSync(BODY_STICK_FIGURE_RENDERER_FILE, "utf8");
+
+    expect(rendererSource).toContain("THREE.CapsuleGeometry");
+    expect(rendererSource).not.toContain("segmentLines");
+  });
+
+  it("renders sphere joints for all skeleton joints using a generic joint mesh map", () => {
+    const rendererSource = readFileSync(BODY_STICK_FIGURE_RENDERER_FILE, "utf8");
+
+    expect(rendererSource).toContain("jointMeshes");
+    expect(rendererSource).not.toContain("handLeftMesh");
+    expect(rendererSource).not.toContain("handRightMesh");
+  });
+
+  it("includes a torso orientation cue using ConeGeometry", () => {
+    const rendererSource = readFileSync(BODY_STICK_FIGURE_RENDERER_FILE, "utf8");
+
+    expect(rendererSource).toContain("THREE.ConeGeometry");
+    expect(rendererSource).toContain("torsoCueMesh");
+  });
+
+  it("includes a head-front readability cue", () => {
+    const rendererSource = readFileSync(BODY_STICK_FIGURE_RENDERER_FILE, "utf8");
+
+    expect(rendererSource).toContain("headCueMesh");
+  });
 });
