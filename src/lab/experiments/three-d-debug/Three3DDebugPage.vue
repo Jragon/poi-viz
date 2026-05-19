@@ -51,7 +51,11 @@ const trailLengthSteps = computed({
 const sceneState = computed(() =>
   buildThreeDDebugSceneState(core.worldPoses.value, core.sceneWorldRadius.value)
 );
-const bodyScene = computed(() => buildBodyStickFigureScene(core.worldPoses.value));
+const bodyRigIds = computed(() => ({
+  left: core.rigOrder.value[0],
+  right: core.rigOrder.value[1]
+}));
+const bodyScene = computed(() => buildBodyStickFigureScene(core.worldPoses.value, undefined, bodyRigIds.value));
 const worldTrails = computed(() => {
   const prepared = core.session.playback.prepared.value;
   if (!prepared || (!showHandTrails.value && !showHeadTrails.value)) {

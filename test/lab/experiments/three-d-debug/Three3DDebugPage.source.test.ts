@@ -70,4 +70,15 @@ describe("Three3DDebugPage task 4 body scene wiring", () => {
     expect(source).toContain("bodyScene");
     expect(source).toContain(':body-scene="bodyScene"');
   });
+
+  it("passes the current rig order into buildBodyStickFigureScene", () => {
+    const source = readFileSync(THREE_D_DEBUG_PAGE_FILE, "utf8");
+
+    expect(source).toContain("const bodyRigIds = computed(() => ({");
+    expect(source).toContain("left: core.rigOrder.value[0],");
+    expect(source).toContain("right: core.rigOrder.value[1]");
+    expect(source).toContain(
+      "const bodyScene = computed(() => buildBodyStickFigureScene(core.worldPoses.value, undefined, bodyRigIds.value));"
+    );
+  });
 });

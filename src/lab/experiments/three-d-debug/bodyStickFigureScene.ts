@@ -10,13 +10,18 @@ import {
   type PlaneProjectionSettings
 } from "@/engine/planeProjection";
 import type { WorldMultiRigPose } from "@/engine/types";
+import {
+  DEFAULT_VISUALIZER_BODY_RIG_IDS,
+  type VisualizerBodyRigIds
+} from "@/visualizer/bodyRigSolve";
 
 export function buildBodyStickFigureScene(
   worldPoses: WorldMultiRigPose,
-  projectionSettings?: PlaneProjectionSettings
+  projectionSettings?: PlaneProjectionSettings,
+  rigIds?: Partial<VisualizerBodyRigIds>
 ): BodySkeletonFrame | null {
-  const leftPose = worldPoses["left"] ?? null;
-  const rightPose = worldPoses["right"] ?? null;
+  const leftPose = worldPoses[rigIds?.left ?? DEFAULT_VISUALIZER_BODY_RIG_IDS.left] ?? null;
+  const rightPose = worldPoses[rigIds?.right ?? DEFAULT_VISUALIZER_BODY_RIG_IDS.right] ?? null;
 
   if (!leftPose && !rightPose) {
     return null;

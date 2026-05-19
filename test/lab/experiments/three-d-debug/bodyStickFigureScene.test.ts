@@ -32,6 +32,24 @@ describe("buildBodyStickFigureScene", () => {
     expect(buildBodyStickFigureScene(worldPoses)).toBeNull();
   });
 
+  it("uses configured rig ids instead of hard-coded left and right lookups", () => {
+    const worldPoses: WorldMultiRigPose = {
+      lead: leftPose,
+      trail: rightPose
+    };
+
+    const result = (
+      buildBodyStickFigureScene as (...args: unknown[]) => ReturnType<typeof buildBodyStickFigureScene>
+    )(worldPoses, undefined, {
+      left: "lead",
+      right: "trail"
+    });
+
+    expect(result).not.toBeNull();
+    expect(result!.joints.handLeft.x).toBeCloseTo(-0.5, 3);
+    expect(result!.joints.handRight.x).toBeCloseTo(0.5, 3);
+  });
+
   it("returns null for empty world poses", () => {
     expect(buildBodyStickFigureScene({})).toBeNull();
   });
