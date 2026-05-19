@@ -76,8 +76,15 @@ function getSegmentBaseSpan(category: SkeletonSegmentCategory): number {
   return UNIT_CAPSULE_BODY_LENGTH + LIMB_RADIUS[category] * 2;
 }
 
-export class BodyStickFigureRenderer {
+const VOLUME_RADIUS = {
+  torso: 0.095,
+  pelvis: 0.075,
+  head: 0.11
+} as const;
+
+export class BodyHumanoidRenderer {
   private readonly segmentMeshes = new Map<string, THREE.Mesh>();
+  private readonly volumeMeshes = new Map<string, THREE.Mesh>();
   private readonly jointMeshes = new Map<SkeletonJointName, THREE.Mesh>();
   private torsoCueMesh: THREE.Mesh | null = null;
   private headCueMesh: THREE.Mesh | null = null;
@@ -88,9 +95,69 @@ export class BodyStickFigureRenderer {
       return;
     }
 
+    this.syncVolumes(scene, frame);
     this.syncSegments(scene, frame);
     this.syncJoints(scene, frame);
     this.syncOrientationCues(scene, frame);
+  }
+
+  private syncVolumes(scene: THREE.Scene, frame: BodySkeletonFrame): void {
+    this.syncCapsuleVolume(scene, "torso", frame.joints.pelvisCenter, frame.joints.chest, VOLUME_RADIUS.torso, "#cbd5e1");
+    this.syncCapsuleVolume(scene, "pelvis", frame.joints.hipLeft, frame.joints.hipRight, VOLUME_RADIUS.pelvis, "#94a3b8");
+    this.syncSphereVolume(scene, "head", frame.joints.headCenter, VOLUME_RADIUS.head, "#e2e8f0");
+  }
+
+  private syncCapsuleVolume(
+    scene: THREE.Scene,
+    key: string,
+    from: { x: number; y: number; z: number },
+    to: { x: number; y: number; z: number },
+    radius: number,
+    color: string
+  ): void {
+    const fromV = new THREE.Vector3(from.x, from.y, from.z);
+    const toV = new THREE.Vector3(to.x, to.y, to.z);
+    const dir = new THREE.Vector3().subVectors(toV, fromV);
+    const length = dir.length();
+    dir.normalize();
+    const mid = new THREE.Vector3().lerpVectors(fromV, toV, 0.5);
+    let mesh = this.volumeMeshes.get(key);
+    if (!mesh) {
+      mesh = new THREE.Mesh(
+        new THREE.CapsuleGeometry(radius, UNIT_CAPSULE_BODY_LENGTH, CAPSULE_CAP_SEGS, CAPSULE_RADIAL_SEGS),
+        new THREE.MeshBasicMaterial({ color })
+      );
+      this.volumeMeshes.set(key, mesh);
+      scene.add(mesh);
+    }
+    mesh.position.copy(mid);
+    mesh.scale.set(1, length / (UNIT_CAPSULE_BODY_LENGTH + radius * 2), 1);
+    if (length > 1e-6) {
+      mesh.quaternion.setFromUnitVectors(Y_AXIS, dir);
+    } else {
+      mesh.quaternion.identity();
+    }
+    mesh.visible = true;
+  }
+
+  private syncSphereVolume(
+    scene: THREE.Scene,
+    key: string,
+    center: { x: number; y: number; z: number },
+    radius: number,
+    color: string
+  ): void {
+    let mesh = this.volumeMeshes.get(key);
+    if (!mesh) {
+      mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(radius, 16, 16),
+        new THREE.MeshBasicMaterial({ color })
+      );
+      this.volumeMeshes.set(key, mesh);
+      scene.add(mesh);
+    }
+    mesh.position.set(center.x, center.y, center.z);
+    mesh.visible = true;
   }
 
   private syncSegments(scene: THREE.Scene, frame: BodySkeletonFrame): void {
@@ -129,6 +196,9 @@ export class BodyStickFigureRenderer {
 
   private syncJoints(scene: THREE.Scene, frame: BodySkeletonFrame): void {
     for (const name of SKELETON_JOINT_NAMES) {
+      if (name !== "handLeft" && name !== "handRight") {
+        continue;
+      }
       const pos = frame.joints[name];
       let mesh = this.jointMeshes.get(name);
       if (!mesh) {
@@ -198,6 +268,13 @@ export class BodyStickFigureRenderer {
     }
     this.segmentMeshes.clear();
 
+    for (const mesh of this.volumeMeshes.values()) {
+      scene.remove(mesh);
+      mesh.geometry.dispose();
+      (mesh.material as THREE.Material).dispose();
+    }
+    this.volumeMeshes.clear();
+
     for (const mesh of this.jointMeshes.values()) {
       scene.remove(mesh);
       mesh.geometry.dispose();
@@ -218,6 +295,9 @@ export class BodyStickFigureRenderer {
 
   private setAllVisible(visible: boolean): void {
     for (const mesh of this.segmentMeshes.values()) {
+      mesh.visible = visible;
+    }
+    for (const mesh of this.volumeMeshes.values()) {
       mesh.visible = visible;
     }
     for (const mesh of this.jointMeshes.values()) {

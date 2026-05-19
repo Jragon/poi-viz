@@ -8,9 +8,9 @@ const THREE_D_DEBUG_CANVAS_FILE = resolve(
   "src/lab/experiments/three-d-debug/Three3DDebugCanvas.vue"
 );
 
-const BODY_STICK_FIGURE_RENDERER_FILE = resolve(
+const BODY_HUMANOID_RENDERER_FILE = resolve(
   process.cwd(),
-  "src/lab/experiments/three-d-debug/bodyStickFigureRenderer.ts"
+  "src/lab/experiments/three-d-debug/bodyHumanoidRenderer.ts"
 );
 
 describe("Three3DDebugCanvas trail sync", () => {
@@ -27,11 +27,11 @@ describe("Three3DDebugCanvas trail sync", () => {
 });
 
 describe("Three3DDebugCanvas task 4 stick figure wiring", () => {
-  it("has a bodyScene prop and references BodyStickFigureRenderer", () => {
+  it("has a bodyScene prop and references BodyHumanoidRenderer", () => {
     const source = readFileSync(THREE_D_DEBUG_CANVAS_FILE, "utf8");
 
     expect(source).toContain("bodyScene");
-    expect(source).toContain("BodyStickFigureRenderer");
+    expect(source).toContain("BodyHumanoidRenderer");
   });
 
   it("disposes the stick figure renderer inside disposeThreeSceneResources", () => {
@@ -51,7 +51,7 @@ describe("Three3DDebugCanvas task 4 stick figure wiring", () => {
   });
 
   it("renders head and hand spheres inside the stick figure renderer", () => {
-    const rendererSource = readFileSync(BODY_STICK_FIGURE_RENDERER_FILE, "utf8");
+    const rendererSource = readFileSync(BODY_HUMANOID_RENDERER_FILE, "utf8");
 
     expect(rendererSource).toContain("new THREE.SphereGeometry(0.05");
     expect(rendererSource).toContain("new THREE.SphereGeometry(0.1");
@@ -74,14 +74,14 @@ describe("Three3DDebugCanvas task 4 stick figure wiring", () => {
   });
 
   it("uses CapsuleGeometry for limb segments instead of THREE.Line", () => {
-    const rendererSource = readFileSync(BODY_STICK_FIGURE_RENDERER_FILE, "utf8");
+    const rendererSource = readFileSync(BODY_HUMANOID_RENDERER_FILE, "utf8");
 
     expect(rendererSource).toContain("THREE.CapsuleGeometry");
     expect(rendererSource).not.toContain("segmentLines");
   });
 
   it("renders sphere joints for all skeleton joints using a generic joint mesh map", () => {
-    const rendererSource = readFileSync(BODY_STICK_FIGURE_RENDERER_FILE, "utf8");
+    const rendererSource = readFileSync(BODY_HUMANOID_RENDERER_FILE, "utf8");
 
     expect(rendererSource).toContain("jointMeshes");
     expect(rendererSource).not.toContain("handLeftMesh");
@@ -89,14 +89,14 @@ describe("Three3DDebugCanvas task 4 stick figure wiring", () => {
   });
 
   it("includes a torso orientation cue using ConeGeometry", () => {
-    const rendererSource = readFileSync(BODY_STICK_FIGURE_RENDERER_FILE, "utf8");
+    const rendererSource = readFileSync(BODY_HUMANOID_RENDERER_FILE, "utf8");
 
     expect(rendererSource).toContain("THREE.ConeGeometry");
     expect(rendererSource).toContain("torsoCueMesh");
   });
 
   it("includes a head-front readability cue", () => {
-    const rendererSource = readFileSync(BODY_STICK_FIGURE_RENDERER_FILE, "utf8");
+    const rendererSource = readFileSync(BODY_HUMANOID_RENDERER_FILE, "utf8");
 
     expect(rendererSource).toContain("headCueMesh");
   });

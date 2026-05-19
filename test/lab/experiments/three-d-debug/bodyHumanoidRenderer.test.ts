@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { SKELETON_SEGMENTS } from "@/body-rig";
 import type { BodySkeletonFrame, SkeletonJointName } from "@/body-rig";
-import { BodyStickFigureRenderer } from "@/lab/experiments/three-d-debug/bodyStickFigureRenderer";
+import { BodyHumanoidRenderer } from "@/lab/experiments/three-d-debug/bodyHumanoidRenderer";
 
 function makeFrame(
   overrides: Partial<Record<SkeletonJointName, { x: number; y: number; z: number }>> = {}
@@ -79,10 +79,10 @@ function makeFrame(
   };
 }
 
-describe("BodyStickFigureRenderer", () => {
+describe("BodyHumanoidRenderer", () => {
   it("reuses segment geometry across syncs and hides all meshes for a null frame", () => {
     const scene = new THREE.Scene();
-    const renderer = new BodyStickFigureRenderer();
+    const renderer = new BodyHumanoidRenderer();
     const frameA = makeFrame();
     const frameB = makeFrame({
       handLeft: { x: -0.8, y: 0.92, z: 0.18 },
@@ -94,6 +94,7 @@ describe("BodyStickFigureRenderer", () => {
 
     const internals = renderer as unknown as {
       segmentMeshes: Map<string, THREE.Mesh>;
+      volumeMeshes: Map<string, THREE.Mesh>;
       jointMeshes: Map<SkeletonJointName, THREE.Mesh>;
       torsoCueMesh: THREE.Mesh | null;
       headCueMesh: THREE.Mesh | null;
@@ -102,6 +103,12 @@ describe("BodyStickFigureRenderer", () => {
     const segmentGeometries = segmentMeshes.map((mesh) => mesh.geometry);
 
     expect(segmentMeshes).toHaveLength(SKELETON_SEGMENTS.length);
+
+    expect(internals.volumeMeshes.has("torso")).toBe(true);
+    expect(internals.volumeMeshes.has("pelvis")).toBe(true);
+    expect(internals.volumeMeshes.has("head")).toBe(true);
+    expect(internals.volumeMeshes.get("torso")?.visible).toBe(true);
+    expect(internals.jointMeshes.size).toBeLessThanOrEqual(2);
 
     renderer.sync(scene, null);
 

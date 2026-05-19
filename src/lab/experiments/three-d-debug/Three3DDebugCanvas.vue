@@ -13,7 +13,7 @@ import {
   buildOriginPlaneSheetStates,
   resolveSceneRadiusWorld
 } from "./worldPoseScene";
-import { BodyStickFigureRenderer } from "./bodyStickFigureRenderer";
+import { BodyHumanoidRenderer } from "./bodyHumanoidRenderer";
 import { setLineGeometryPoints } from "./trailLineGeometry";
 
 const TETHER_RADIUS = 0.012;
@@ -79,7 +79,7 @@ let orbitControls: OrbitControls | null = null;
 let axesHelper: THREE.AxesHelper | null = null;
 let gridHelper: THREE.GridHelper | null = null;
 let resizeObserver: ResizeObserver | null = null;
-let bodyFigureRenderer: BodyStickFigureRenderer | null = null;
+let bodyFigureRenderer: BodyHumanoidRenderer | null = null;
 
 function disposeMaterial(material: THREE.Material | THREE.Material[]) {
   if (Array.isArray(material)) {
@@ -498,7 +498,7 @@ onMounted(() => {
     });
     resizeObserver.observe(mountRef.value);
 
-    bodyFigureRenderer = new BodyStickFigureRenderer();
+    bodyFigureRenderer = new BodyHumanoidRenderer();
     syncHelpers();
     syncBodyScene();
     syncRigMarkers();
