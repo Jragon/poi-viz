@@ -15,6 +15,10 @@ function distance3(a: Vec3, b: Vec3): number {
   return Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
 }
 
+function dot3(a: Vec3, b: Vec3): number {
+  return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
 describe("bodyRigFrame", () => {
   it("builds the sequence overlay default body dimensions as one preset", () => {
     const dimensions = buildDefaultBodyRigDimensions();
@@ -69,8 +73,12 @@ describe("bodyRigFrame", () => {
     expect(pose.solve.shoulders.leftShoulder.x).toBeLessThan(body.shoulderCenter.x);
     expect(pose.solve.shoulders.rightShoulder.x).toBeGreaterThan(body.shoulderCenter.x);
     expect(getBodyRigArmPoints(pose, "left")).toHaveLength(3);
-    expect(pose.solve.leftArm.elbowPole.x).toBeLessThanOrEqual(0);
-    expect(pose.solve.rightArm.elbowPole.x).toBeGreaterThanOrEqual(0);
+    expect(dot3(pose.solve.leftArm.elbowPole, pose.solve.shoulders.torsoForward)).toBeGreaterThan(
+      0.95
+    );
+    expect(dot3(pose.solve.rightArm.elbowPole, pose.solve.shoulders.torsoForward)).toBeGreaterThan(
+      0.95
+    );
     expect(pose.solve.leftArm.elbowPole.z).toBeGreaterThan(0);
     expect(pose.solve.rightArm.elbowPole.z).toBeGreaterThan(0);
     expect(distance3(pose.solve.leftArm.shoulder, pose.solve.leftArm.elbow)).toBeCloseTo(
