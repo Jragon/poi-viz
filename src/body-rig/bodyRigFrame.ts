@@ -220,7 +220,8 @@ export function buildBodyRigFrameFromDimensions(dimensions: BodyRigDimensions): 
   });
 }
 
-export function solveBodyRigFrame(  body: BodyRigFrame,
+export function solveBodyRigFrame(
+  body: BodyRigFrame,
   goals: BodyRigWorldGoals,
   projectionSettings: PlaneProjectionSettings,
   yawSearchSteps?: number
