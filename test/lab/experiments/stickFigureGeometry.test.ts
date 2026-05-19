@@ -864,6 +864,31 @@ describe("solveWorldBodyRig", () => {
     expect(center.shoulderGirdle.right.protraction).toBeGreaterThan(0);
   });
 
+  it("does not apply overhead lateral fade to non-overhead forward reaches", () => {
+    const config = buildBodyRigConfigFromArmReach(1.25);
+    const result = solveWorldBodyRig({
+      root: {
+        shoulderCenter: { x: 0, y: 1.4, z: 0 },
+        neutralPelvisCenter: { x: 0, y: 0.8, z: 0 },
+        neutralChestCenter: { x: 0, y: 1.35, z: 0 },
+        worldUp: { x: 0, y: 1, z: 0 },
+        neutralForward: { x: 0, y: 0, z: 1 },
+        scale: 1
+      },
+      config,
+      goals: {
+        leftHandTarget: { x: 0.45, y: 1.4, z: 1.25 },
+        rightHandTarget: { x: 0.45, y: 1.4, z: 1.25 }
+      },
+      yawSearchSteps: 96
+    });
+
+    expect(result.diagnostics.leftShoulder.overheadAmbiguous).toBe(false);
+    expect(result.diagnostics.rightShoulder.overheadAmbiguous).toBe(false);
+    expect(Math.abs(result.shoulderGirdle.left.lateralTravel)).toBeGreaterThan(0.01);
+    expect(Math.abs(result.shoulderGirdle.right.lateralTravel)).toBeGreaterThan(0.01);
+  });
+
   it("keeps shoulder sockets stable as a shared overhead target crosses center", () => {
     const config = buildBodyRigConfigFromArmReach(1.25);
     const root = {
