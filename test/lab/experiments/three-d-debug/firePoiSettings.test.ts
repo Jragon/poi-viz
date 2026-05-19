@@ -66,4 +66,10 @@ describe("firePoiSettings", () => {
       })
     ).toEqual(DEFAULT_FIRE_POI_SETTINGS);
   });
+
+  it("default settings favor a dense wake with tight core radius", () => {
+    expect(DEFAULT_FIRE_POI_SETTINGS.emissionDensity).toBeGreaterThanOrEqual(5);
+    expect(DEFAULT_FIRE_POI_SETTINGS.wakeLengthSteps).toBeGreaterThanOrEqual(24);
+    expect(DEFAULT_FIRE_POI_SETTINGS.coreRadius).toBeLessThanOrEqual(0.07);
+  });
 });

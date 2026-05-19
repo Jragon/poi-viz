@@ -5,11 +5,44 @@ import type { WorldMultiRigTrailSamples } from "@/visualizer/worldTrailSampling"
 
 import type { FirePoiSettings } from "./firePoiSettings";
 import { buildFirePoiRigState } from "./firePoiWake";
+import type { FirePoiWakeParticle } from "./firePoiWake";
 import type { SceneEffectController } from "./sceneEffectController";
 
 const CORE_BASE_OPACITY = 0.95;
 const INNER_FLAME_BASE_OPACITY = 0.45;
 const WAKE_BASE_OPACITY = 0.55;
+
+const WAKE_VERTEX_SHADER = `
+attribute float aHeat;
+attribute float aSize;
+varying float vHeat;
+
+void main() {
+  vHeat = aHeat;
+  vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+  gl_PointSize = aSize * 400.0 / (-mvPosition.z);
+  gl_Position = projectionMatrix * mvPosition;
+}
+`;
+
+const WAKE_FRAGMENT_SHADER = `
+uniform float uOpacity;
+varying float vHeat;
+
+void main() {
+  vec2 coord = gl_PointCoord - vec2(0.5);
+  float dist = length(coord) * 2.0;
+  if (dist > 1.0) discard;
+
+  float alpha = (1.0 - dist) * (1.0 - dist) * vHeat * uOpacity;
+
+  vec3 hotColor = vec3(1.0, 0.97, 0.65);
+  vec3 coolColor = vec3(1.0, 0.38, 0.05);
+  vec3 color = mix(coolColor, hotColor, vHeat * vHeat);
+
+  gl_FragColor = vec4(color, alpha);
+}
+`;
 
 interface FirePoiRigObjects {
   readonly group: THREE.Group;
@@ -73,11 +106,13 @@ function createRigObjects(rigId: RigId): FirePoiRigObjects {
 
   const wake = new THREE.Points(
     new THREE.BufferGeometry(),
-    new THREE.PointsMaterial({
-      color: "#ffb347",
-      size: 0.08,
+    new THREE.ShaderMaterial({
+      vertexShader: WAKE_VERTEX_SHADER,
+      fragmentShader: WAKE_FRAGMENT_SHADER,
+      uniforms: {
+        uOpacity: { value: WAKE_BASE_OPACITY }
+      },
       transparent: true,
-      opacity: 0.55,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     })
@@ -88,37 +123,57 @@ function createRigObjects(rigId: RigId): FirePoiRigObjects {
   return { group, core, innerFlame, wake };
 }
 
-function setWakePositions(
+function setWakeGeometry(
   geometry: THREE.BufferGeometry,
-  points: readonly { x: number; y: number; z: number }[]
+  particles: readonly FirePoiWakeParticle[]
 ): void {
-  const requiredLength = points.length * 3;
-  const existingPositions = geometry.getAttribute("position");
-  const reusablePositions =
-    existingPositions instanceof THREE.BufferAttribute &&
-    existingPositions.itemSize === 3 &&
-    existingPositions.array.length === requiredLength
-      ? existingPositions
-      : null;
-  const positions = reusablePositions?.array as Float32Array | undefined;
-  const nextPositions = positions ?? new Float32Array(requiredLength);
+  const count = particles.length;
 
-  points.forEach((point, index) => {
-    nextPositions[index * 3] = point.x;
-    nextPositions[index * 3 + 1] = point.y;
-    nextPositions[index * 3 + 2] = point.z;
-  });
+  function syncAttribute(
+    name: string,
+    itemSize: number,
+    setter: (arr: Float32Array, i: number) => void
+  ): void {
+    const existing = geometry.getAttribute(name);
+    const reusable =
+      existing instanceof THREE.BufferAttribute &&
+      existing.itemSize === itemSize &&
+      existing.array.length === count * itemSize
+        ? existing
+        : null;
+    const arr = (reusable?.array as Float32Array | undefined) ?? new Float32Array(count * itemSize);
 
-  if (reusablePositions) {
-    reusablePositions.needsUpdate = true;
-  } else {
-    geometry.setAttribute(
-      "position",
-      new THREE.BufferAttribute(nextPositions, 3).setUsage(THREE.DynamicDrawUsage)
-    );
+    for (let i = 0; i < count; i++) {
+      setter(arr, i);
+    }
+
+    if (reusable) {
+      reusable.needsUpdate = true;
+    } else {
+      geometry.setAttribute(
+        name,
+        new THREE.BufferAttribute(arr, itemSize).setUsage(THREE.DynamicDrawUsage)
+      );
+    }
   }
 
-  if (points.length === 0) {
+  syncAttribute("position", 3, (arr, i) => {
+    arr[i * 3] = particles[i].position.x;
+    arr[i * 3 + 1] = particles[i].position.y;
+    arr[i * 3 + 2] = particles[i].position.z;
+  });
+
+  syncAttribute("aHeat", 1, (arr, i) => {
+    arr[i] = particles[i].heat;
+  });
+
+  syncAttribute("aSize", 1, (arr, i) => {
+    arr[i] = particles[i].size;
+  });
+
+  geometry.setDrawRange(0, count);
+
+  if (count === 0) {
     geometry.boundingSphere = null;
     return;
   }
@@ -141,7 +196,7 @@ function applyIntensityToMaterials(objects: FirePoiRigObjects, settings: FirePoi
     1,
     INNER_FLAME_BASE_OPACITY * intensityMultiplier
   );
-  (objects.wake.material as THREE.PointsMaterial).opacity = Math.min(
+  (objects.wake.material as THREE.ShaderMaterial).uniforms.uOpacity.value = Math.min(
     1,
     WAKE_BASE_OPACITY * intensityMultiplier
   );
@@ -219,11 +274,10 @@ export class FirePoiEffectController
         rigState.corePosition.z + rigState.flameDirection.z
       );
 
-      setWakePositions(
+      setWakeGeometry(
         objects.wake.geometry as THREE.BufferGeometry,
-        rigState.particles.map((particle) => particle.position)
+        rigState.particles
       );
-      (objects.wake.material as THREE.PointsMaterial).size = input.settings.coreRadius * 1.1;
       applyIntensityToMaterials(objects, input.settings);
       objects.group.visible = true;
     }

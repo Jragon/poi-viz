@@ -202,7 +202,7 @@ describe("FirePoiEffectController", () => {
     expect(secondSnapshot).not.toEqual(firstSnapshot);
   });
 
-  it("keeps rendered sizes tied to coreRadius and uses intensity to increase opacity", () => {
+  it("uses intensity to scale wake uOpacity uniform and core mesh opacity", () => {
     const scene = new THREE.Scene();
     const controller = new FirePoiEffectController();
 
@@ -218,14 +218,14 @@ describe("FirePoiEffectController", () => {
       })
     );
 
-    const lowIntensityGroup = scene.getObjectByName("fire-poi:left") as THREE.Group;
-    const lowCore = lowIntensityGroup.children[0] as THREE.Mesh;
-    const lowWake = lowIntensityGroup.children[2] as THREE.Points;
+    const lowGroup = scene.getObjectByName("fire-poi:left") as THREE.Group;
+    const lowCore = lowGroup.children[0] as THREE.Mesh;
+    const lowWake = lowGroup.children[2] as THREE.Points;
     const lowCoreMaterial = lowCore.material as THREE.MeshBasicMaterial;
-    const lowWakeMaterial = lowWake.material as THREE.PointsMaterial;
+    const lowWakeMaterial = lowWake.material as THREE.ShaderMaterial;
     const lowCoreScale = lowCore.scale.x;
-    const lowWakeSize = lowWakeMaterial.size;
     const lowCoreOpacity = lowCoreMaterial.opacity;
+    const lowWakeOpacity = lowWakeMaterial.uniforms.uOpacity.value as number;
 
     controller.sync(
       scene,
@@ -239,19 +239,97 @@ describe("FirePoiEffectController", () => {
       })
     );
 
-    const highIntensityGroup = scene.getObjectByName("fire-poi:left") as THREE.Group;
-    const highCore = highIntensityGroup.children[0] as THREE.Mesh;
-    const highWake = highIntensityGroup.children[2] as THREE.Points;
+    const highGroup = scene.getObjectByName("fire-poi:left") as THREE.Group;
+    const highCore = highGroup.children[0] as THREE.Mesh;
+    const highWake = highGroup.children[2] as THREE.Points;
     const highCoreMaterial = highCore.material as THREE.MeshBasicMaterial;
-    const highWakeMaterial = highWake.material as THREE.PointsMaterial;
+    const highWakeMaterial = highWake.material as THREE.ShaderMaterial;
 
     expect(highCore.scale.x).toBeCloseTo(0.13);
     expect(highCore.scale.y).toBeCloseTo(0.13);
     expect(highCore.scale.z).toBeCloseTo(0.13);
-    expect(highWakeMaterial.size).toBeCloseTo(0.13 * 1.1);
     expect(highCore.scale.x).toBeCloseTo(lowCoreScale);
-    expect(highWakeMaterial.size).toBeCloseTo(lowWakeSize);
     expect(highCoreMaterial.opacity).toBeGreaterThan(lowCoreOpacity);
+    expect(highWakeMaterial.uniforms.uOpacity.value as number).toBeGreaterThan(lowWakeOpacity);
+  });
+
+  it("wake uses ShaderMaterial with additive blending and transparent rendering", () => {
+    const scene = new THREE.Scene();
+    const controller = new FirePoiEffectController();
+
+    controller.sync(scene, createEnabledInput());
+
+    const group = scene.getObjectByName("fire-poi:left");
+    const wake = group?.children[2] as THREE.Points;
+
+    expect(wake.material).toBeInstanceOf(THREE.ShaderMaterial);
+    expect((wake.material as THREE.ShaderMaterial).blending).toBe(THREE.AdditiveBlending);
+    expect((wake.material as THREE.ShaderMaterial).transparent).toBe(true);
+    expect((wake.material as THREE.ShaderMaterial).depthWrite).toBe(false);
+  });
+
+  it("wake geometry includes per-particle aHeat and aSize attributes with counts matching position", () => {
+    const scene = new THREE.Scene();
+    const controller = new FirePoiEffectController();
+
+    controller.sync(scene, createEnabledInput());
+
+    const group = scene.getObjectByName("fire-poi:left");
+    const wake = group?.children[2] as THREE.Points;
+    const geometry = wake.geometry as THREE.BufferGeometry;
+    const positionAttr = geometry.getAttribute("position") as THREE.BufferAttribute;
+    const heatAttr = geometry.getAttribute("aHeat") as THREE.BufferAttribute;
+    const sizeAttr = geometry.getAttribute("aSize") as THREE.BufferAttribute;
+
+    expect(positionAttr.count).toBeGreaterThan(0);
+    expect(heatAttr).toBeDefined();
+    expect(sizeAttr).toBeDefined();
+    expect(heatAttr.count).toBe(positionAttr.count);
+    expect(sizeAttr.count).toBe(positionAttr.count);
+  });
+
+  it("wake aHeat values are in [0, 1] and aSize values are positive", () => {
+    const scene = new THREE.Scene();
+    const controller = new FirePoiEffectController();
+
+    controller.sync(scene, createEnabledInput());
+
+    const group = scene.getObjectByName("fire-poi:left");
+    const wake = group?.children[2] as THREE.Points;
+    const geometry = wake.geometry as THREE.BufferGeometry;
+    const heatAttr = geometry.getAttribute("aHeat") as THREE.BufferAttribute;
+    const sizeAttr = geometry.getAttribute("aSize") as THREE.BufferAttribute;
+
+    for (let i = 0; i < heatAttr.count; i++) {
+      expect(heatAttr.getX(i)).toBeGreaterThanOrEqual(0);
+      expect(heatAttr.getX(i)).toBeLessThanOrEqual(1);
+      expect(sizeAttr.getX(i)).toBeGreaterThan(0);
+    }
+  });
+
+  it("clears draw range to zero when transitioning from non-zero to zero wake particles", () => {
+    const scene = new THREE.Scene();
+    const controller = new FirePoiEffectController();
+
+    controller.sync(scene, createEnabledInput());
+
+    const wake = scene.getObjectByName("fire-poi:left")?.children[2] as THREE.Points;
+    expect(wake.geometry.getAttribute("position").count).toBeGreaterThan(0);
+
+    // Empty head trail -> buildTrailWindow returns [headPosition] (length 1) -> particles: []
+    controller.sync(
+      scene,
+      createEnabledInput({
+        trails: {
+          left: {
+            hand: [],
+            head: []
+          }
+        }
+      })
+    );
+
+    expect(wake.geometry.drawRange.count).toBe(0);
   });
 
   it("removes stale rig objects when a previously active rig is omitted from the next sync", () => {

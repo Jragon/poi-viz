@@ -13,11 +13,11 @@ export interface FirePoiSettings {
 export const DEFAULT_FIRE_POI_SETTINGS: FirePoiSettings = {
   enabled: false,
   coreIntensity: 1.8,
-  coreRadius: 0.1,
-  wakeLengthSteps: 16,
-  emissionDensity: 3,
-  turbulence: 0.16,
-  spread: 0.14,
+  coreRadius: 0.06,
+  wakeLengthSteps: 24,
+  emissionDensity: 5,
+  turbulence: 0.10,
+  spread: 0.08,
   fadeRate: 1.35,
   velocityStretch: 1.4
 };
