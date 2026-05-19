@@ -108,7 +108,9 @@ describe("BodyHumanoidRenderer", () => {
     expect(internals.volumeMeshes.has("pelvis")).toBe(true);
     expect(internals.volumeMeshes.has("head")).toBe(true);
     expect(internals.volumeMeshes.get("torso")?.visible).toBe(true);
-    expect(internals.jointMeshes.size).toBeLessThanOrEqual(2);
+    expect(internals.volumeMeshes.get("pelvis")?.visible).toBe(true);
+    expect(internals.volumeMeshes.get("head")?.visible).toBe(true);
+    expect(Array.from(internals.jointMeshes.keys()).sort()).toEqual(["handLeft", "handRight"]);
 
     renderer.sync(scene, null);
 
