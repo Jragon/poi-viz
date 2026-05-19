@@ -35,4 +35,11 @@ describe("FirePoiControlPanel source", () => {
 
     expect(source).toContain("mergeFirePoiSettingsPatch");
   });
+
+  it("emission density and core radius sliders support extended max ranges", () => {
+    const source = readFileSync(FIRE_POI_PANEL_FILE, "utf8");
+
+    expect(source).toMatch(/Emission Density[\s\S]*?max="20"/);
+    expect(source).toMatch(/Core Radius[\s\S]*?max="0\.40"/);
+  });
 });

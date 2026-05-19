@@ -34,7 +34,7 @@ function createEnabledInput(
 }
 
 describe("FirePoiEffectController", () => {
-  it("creates a named group with a core mesh, inner flame mesh, and wake points per active rig", () => {
+  it("creates a named group with a core mesh, flame plane group, and wake points per active rig", () => {
     const scene = new THREE.Scene();
     const controller = new FirePoiEffectController();
 
@@ -77,13 +77,12 @@ describe("FirePoiEffectController", () => {
 
     for (const rigId of ["left", "right"] as const) {
       const group = scene.getObjectByName(`fire-poi:${rigId}`);
-      const wake = group?.children[2] as THREE.Points | undefined;
+      const wake = group?.children[1] as THREE.Points | undefined;
       const wakePositions = wake?.geometry.getAttribute("position");
 
       expect(group).toBeInstanceOf(THREE.Group);
-      expect(group?.children).toHaveLength(3);
-      expect(group?.children[0]).toBeInstanceOf(THREE.Mesh);
-      expect(group?.children[1]).toBeInstanceOf(THREE.Mesh);
+      expect(group?.children).toHaveLength(2);
+      expect(group?.children[0]).toBeInstanceOf(THREE.Sprite);
       expect(wake).toBeInstanceOf(THREE.Points);
       expect(wakePositions?.count).toBeGreaterThan(0);
     }
@@ -165,7 +164,7 @@ describe("FirePoiEffectController", () => {
 
     controller.sync(scene, createEnabledInput());
 
-    const wake = scene.getObjectByName("fire-poi:left")?.children[2] as THREE.Points;
+    const wake = scene.getObjectByName("fire-poi:left")?.children[1] as THREE.Points;
     const firstPositions = wake.geometry.getAttribute("position") as THREE.BufferAttribute;
     const firstSnapshot = Array.from(firstPositions.array as ArrayLike<number>);
 
@@ -192,7 +191,7 @@ describe("FirePoiEffectController", () => {
       })
     );
 
-    const secondWake = scene.getObjectByName("fire-poi:left")?.children[2] as THREE.Points;
+    const secondWake = scene.getObjectByName("fire-poi:left")?.children[1] as THREE.Points;
     const secondPositions = secondWake.geometry.getAttribute("position") as THREE.BufferAttribute;
     const secondSnapshot = Array.from(secondPositions.array as ArrayLike<number>);
 
@@ -200,6 +199,72 @@ describe("FirePoiEffectController", () => {
     expect(secondPositions).toBe(firstPositions);
     expect(secondPositions.count).toBe(firstPositions.count);
     expect(secondSnapshot).not.toEqual(firstSnapshot);
+  });
+
+  it("re-allocates wake position attribute when particle count grows from N to M (both > 0)", () => {
+    const scene = new THREE.Scene();
+    const controller = new FirePoiEffectController();
+
+    // Shorter trail: 2 input points, last matches headPosition → window = 2 points
+    // → 1 segment → N = 1 * emissionDensity particles
+    controller.sync(
+      scene,
+      createEnabledInput({
+        poses: {
+          left: {
+            handPosition: { x: -0.2, y: 0.7, z: 0 },
+            headPosition: { x: -0.1, y: 1.1, z: 0 },
+            planeId: "wall"
+          }
+        },
+        trails: {
+          left: {
+            hand: [],
+            head: [
+              { x: -0.16, y: 1.03, z: 0 },
+              { x: -0.1, y: 1.1, z: 0 }
+            ]
+          }
+        }
+      })
+    );
+
+    const wake = scene.getObjectByName("fire-poi:left")?.children[1] as THREE.Points;
+    const firstPositions = wake.geometry.getAttribute("position") as THREE.BufferAttribute;
+    const firstCount = firstPositions.count;
+
+    // Shorter trail (1 segment, near-head) → 3 * emissionDensity particles
+    expect(firstCount).toBe(3 * DEFAULT_FIRE_POI_SETTINGS.emissionDensity);
+
+    // Longer trail: 4 input points → 3 segments (2 base + 1 near-head×3) = 5 * emissionDensity
+    controller.sync(
+      scene,
+      createEnabledInput({
+        poses: {
+          left: {
+            handPosition: { x: -0.2, y: 0.7, z: 0 },
+            headPosition: { x: -0.1, y: 1.1, z: 0 },
+            planeId: "wall"
+          }
+        },
+        trails: {
+          left: {
+            hand: [],
+            head: [
+              { x: -0.28, y: 0.87, z: 0 },
+              { x: -0.22, y: 0.95, z: 0 },
+              { x: -0.16, y: 1.03, z: 0 },
+              { x: -0.1, y: 1.1, z: 0 }
+            ]
+          }
+        }
+      })
+    );
+
+    const secondPositions = wake.geometry.getAttribute("position") as THREE.BufferAttribute;
+
+    expect(secondPositions).not.toBe(firstPositions);
+    expect(secondPositions.count).toBe(5 * DEFAULT_FIRE_POI_SETTINGS.emissionDensity);
   });
 
   it("uses intensity to scale wake uOpacity uniform and core mesh opacity", () => {
@@ -219,9 +284,9 @@ describe("FirePoiEffectController", () => {
     );
 
     const lowGroup = scene.getObjectByName("fire-poi:left") as THREE.Group;
-    const lowCore = lowGroup.children[0] as THREE.Mesh;
-    const lowWake = lowGroup.children[2] as THREE.Points;
-    const lowCoreMaterial = lowCore.material as THREE.MeshBasicMaterial;
+    const lowCore = lowGroup.children[0] as THREE.Sprite;
+    const lowWake = lowGroup.children[1] as THREE.Points;
+    const lowCoreMaterial = lowCore.material as THREE.SpriteMaterial;
     const lowWakeMaterial = lowWake.material as THREE.ShaderMaterial;
     const lowCoreScale = lowCore.scale.x;
     const lowCoreOpacity = lowCoreMaterial.opacity;
@@ -240,14 +305,14 @@ describe("FirePoiEffectController", () => {
     );
 
     const highGroup = scene.getObjectByName("fire-poi:left") as THREE.Group;
-    const highCore = highGroup.children[0] as THREE.Mesh;
-    const highWake = highGroup.children[2] as THREE.Points;
-    const highCoreMaterial = highCore.material as THREE.MeshBasicMaterial;
+    const highCore = highGroup.children[0] as THREE.Sprite;
+    const highWake = highGroup.children[1] as THREE.Points;
+    const highCoreMaterial = highCore.material as THREE.SpriteMaterial;
     const highWakeMaterial = highWake.material as THREE.ShaderMaterial;
 
-    expect(highCore.scale.x).toBeCloseTo(0.13);
-    expect(highCore.scale.y).toBeCloseTo(0.13);
-    expect(highCore.scale.z).toBeCloseTo(0.13);
+    expect(highCore.scale.x).toBeCloseTo(0.13 * 1.5);
+    expect(highCore.scale.y).toBeCloseTo(0.13 * 1.5);
+    expect(highCore.scale.z).toBeCloseTo(0.13 * 1.5);
     expect(highCore.scale.x).toBeCloseTo(lowCoreScale);
     expect(highCoreMaterial.opacity).toBeGreaterThan(lowCoreOpacity);
     expect(highWakeMaterial.uniforms.uOpacity.value as number).toBeGreaterThan(lowWakeOpacity);
@@ -260,7 +325,7 @@ describe("FirePoiEffectController", () => {
     controller.sync(scene, createEnabledInput());
 
     const group = scene.getObjectByName("fire-poi:left");
-    const wake = group?.children[2] as THREE.Points;
+    const wake = group?.children[1] as THREE.Points;
 
     expect(wake.material).toBeInstanceOf(THREE.ShaderMaterial);
     expect((wake.material as THREE.ShaderMaterial).blending).toBe(THREE.AdditiveBlending);
@@ -275,7 +340,7 @@ describe("FirePoiEffectController", () => {
     controller.sync(scene, createEnabledInput());
 
     const group = scene.getObjectByName("fire-poi:left");
-    const wake = group?.children[2] as THREE.Points;
+    const wake = group?.children[1] as THREE.Points;
     const geometry = wake.geometry as THREE.BufferGeometry;
     const positionAttr = geometry.getAttribute("position") as THREE.BufferAttribute;
     const heatAttr = geometry.getAttribute("aHeat") as THREE.BufferAttribute;
@@ -295,7 +360,7 @@ describe("FirePoiEffectController", () => {
     controller.sync(scene, createEnabledInput());
 
     const group = scene.getObjectByName("fire-poi:left");
-    const wake = group?.children[2] as THREE.Points;
+    const wake = group?.children[1] as THREE.Points;
     const geometry = wake.geometry as THREE.BufferGeometry;
     const heatAttr = geometry.getAttribute("aHeat") as THREE.BufferAttribute;
     const sizeAttr = geometry.getAttribute("aSize") as THREE.BufferAttribute;
@@ -313,7 +378,7 @@ describe("FirePoiEffectController", () => {
 
     controller.sync(scene, createEnabledInput());
 
-    const wake = scene.getObjectByName("fire-poi:left")?.children[2] as THREE.Points;
+    const wake = scene.getObjectByName("fire-poi:left")?.children[1] as THREE.Points;
     expect(wake.geometry.getAttribute("position").count).toBeGreaterThan(0);
 
     // Empty head trail -> buildTrailWindow returns [headPosition] (length 1) -> particles: []
@@ -378,5 +443,36 @@ describe("FirePoiEffectController", () => {
     expect(scene.getObjectByName("fire-poi:left")).toBeTruthy();
     expect(scene.getObjectByName("fire-poi:right")).toBeUndefined();
     expect(scene.children).toHaveLength(1);
+  });
+
+  it("group contains only core sprite and wake points with no flame plane group", () => {
+    const scene = new THREE.Scene();
+    const controller = new FirePoiEffectController();
+
+    controller.sync(scene, createEnabledInput());
+
+    const group = scene.getObjectByName("fire-poi:left");
+
+    expect(group?.children).toHaveLength(2);
+    expect(group?.children[0]).toBeInstanceOf(THREE.Sprite);
+    expect(group?.children[1]).toBeInstanceOf(THREE.Points);
+  });
+
+  it("core sprite scale is 1.5x the coreRadius setting", () => {
+    const scene = new THREE.Scene();
+    const controller = new FirePoiEffectController();
+
+    controller.sync(
+      scene,
+      createEnabledInput({
+        settings: { ...DEFAULT_FIRE_POI_SETTINGS, enabled: true, coreRadius: 0.12 }
+      })
+    );
+
+    const group = scene.getObjectByName("fire-poi:left") as THREE.Group;
+    const core = group.children[0] as THREE.Sprite;
+
+    expect(core.scale.x).toBeCloseTo(0.12 * 1.5);
+    expect(core.scale.y).toBeCloseTo(0.12 * 1.5);
   });
 });

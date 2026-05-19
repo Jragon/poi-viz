@@ -12,8 +12,6 @@ export interface FirePoiWakeParticle {
 
 export interface FirePoiRigState {
   readonly corePosition: Vec3;
-  readonly flameDirection: Vec3;
-  readonly flameScale: Vec3;
   readonly particles: FirePoiWakeParticle[];
 }
 
@@ -96,24 +94,18 @@ function jitter(seed: string): Vec3 {
   return normalizeVector({ x, y, z });
 }
 
+const NEAR_HEAD_MULTIPLIER = 3;
+
 export function buildFirePoiRigState(input: BuildFirePoiRigStateInput): FirePoiRigState {
   const trail = buildTrailWindow(
     input.headTrail,
     input.headPosition,
     input.settings.wakeLengthSteps
   );
-  const tail = trail[trail.length - 2] ?? input.headPosition;
-  const direction = normalizeVector(subtract(input.headPosition, tail));
 
   if (trail.length < 2) {
     return {
       corePosition: input.headPosition,
-      flameDirection: direction,
-      flameScale: {
-        x: input.settings.coreRadius,
-        y: input.settings.coreRadius * input.settings.velocityStretch,
-        z: input.settings.coreRadius
-      },
       particles: []
     };
   }
@@ -121,36 +113,46 @@ export function buildFirePoiRigState(input: BuildFirePoiRigStateInput): FirePoiR
   const particles: FirePoiWakeParticle[] = [];
 
   for (let index = 1; index < trail.length; index += 1) {
-    const point = trail[index];
+    const from = trail[index - 1];
+    const to = trail[index];
     const age = (trail.length - index) / trail.length;
-    const segmentDirection = normalizeVector(subtract(point, trail[index - 1]));
+    const segmentDirection = normalizeVector(subtract(to, from));
+    const isNearHead = index === trail.length - 1;
+    const segmentDensity = isNearHead
+      ? input.settings.emissionDensity * NEAR_HEAD_MULTIPLIER
+      : input.settings.emissionDensity;
 
-    for (let emission = 0; emission < input.settings.emissionDensity; emission += 1) {
+    for (let emission = 0; emission < segmentDensity; emission += 1) {
+      // Near-head segment: sample from the head end (t→1) back toward the older
+      // end so the first particle sits close to the fireball core with no gap.
+      const t = isNearHead
+        ? 1.0 - (emission + 0.5) / segmentDensity
+        : (emission + 0.5) / segmentDensity;
+      const baseX = from.x + (to.x - from.x) * t;
+      const baseY = from.y + (to.y - from.y) * t;
+      const baseZ = from.z + (to.z - from.z) * t;
       const seed = `${input.rigId}:${index}:${emission}`;
       const randomOffset = jitter(seed);
-      const drag = age * input.settings.velocityStretch * 0.08;
+      // No backward drag on the freshest segment — drag would pull the nearest
+      // particles away from the fireball, creating a visible gap.
+      const drag = isNearHead ? 0 : age * input.settings.velocityStretch * 0.08;
       const spread = age * (input.settings.spread + input.settings.turbulence * 0.05);
 
       particles.push({
         position: {
-          x: point.x - segmentDirection.x * drag + randomOffset.x * spread,
-          y: point.y - segmentDirection.y * drag + randomOffset.y * spread,
-          z: point.z - segmentDirection.z * drag + randomOffset.z * spread
+          x: baseX - segmentDirection.x * drag + randomOffset.x * spread,
+          y: baseY - segmentDirection.y * drag + randomOffset.y * spread,
+          z: baseZ - segmentDirection.z * drag + randomOffset.z * spread
         },
         heat: Math.max(0, 1 - age * input.settings.fadeRate),
-        size: input.settings.coreRadius * (0.4 + age)
+        // Newest particles (age≈0) are the largest; older particles taper away.
+        size: input.settings.coreRadius * (0.4 + (1 - age))
       });
     }
   }
 
   return {
     corePosition: input.headPosition,
-    flameDirection: direction,
-    flameScale: {
-      x: input.settings.coreRadius,
-      y: input.settings.coreRadius * input.settings.velocityStretch,
-      z: input.settings.coreRadius
-    },
     particles
   };
 }

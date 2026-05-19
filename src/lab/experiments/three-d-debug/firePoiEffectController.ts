@@ -9,18 +9,43 @@ import type { FirePoiWakeParticle } from "./firePoiWake";
 import type { SceneEffectController } from "./sceneEffectController";
 
 const CORE_BASE_OPACITY = 0.95;
-const INNER_FLAME_BASE_OPACITY = 0.45;
 const WAKE_BASE_OPACITY = 0.55;
+
+function createCoreGlowTexture(): THREE.DataTexture {
+  const SIZE = 32;
+  const data = new Uint8Array(SIZE * SIZE * 4);
+
+  for (let row = 0; row < SIZE; row++) {
+    for (let col = 0; col < SIZE; col++) {
+      const u = col / (SIZE - 1) - 0.5;
+      const v = row / (SIZE - 1) - 0.5;
+      const dist = Math.min(1, Math.sqrt(u * u + v * v) * 2);
+      const fade = Math.pow(1 - dist, 2.2);
+
+      const idx = (row * SIZE + col) * 4;
+      data[idx]     = 255;
+      data[idx + 1] = Math.round(220 + 35 * (1 - dist));
+      data[idx + 2] = Math.round(fade * 80);
+      data[idx + 3] = Math.round(fade * 255);
+    }
+  }
+
+  const texture = new THREE.DataTexture(data, SIZE, SIZE, THREE.RGBAFormat);
+  texture.needsUpdate = true;
+  return texture;
+}
 
 const WAKE_VERTEX_SHADER = `
 attribute float aHeat;
 attribute float aSize;
 varying float vHeat;
 
+const float POINT_SIZE_FACTOR = 400.0;
+
 void main() {
   vHeat = aHeat;
   vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-  gl_PointSize = aSize * 400.0 / (-mvPosition.z);
+  gl_PointSize = aSize * POINT_SIZE_FACTOR / (-mvPosition.z);
   gl_Position = projectionMatrix * mvPosition;
 }
 `;
@@ -46,8 +71,7 @@ void main() {
 
 interface FirePoiRigObjects {
   readonly group: THREE.Group;
-  readonly core: THREE.Mesh;
-  readonly innerFlame: THREE.Mesh;
+  readonly core: THREE.Sprite;
   readonly wake: THREE.Points;
 }
 
@@ -69,11 +93,9 @@ function disposeMaterial(material: THREE.Material | THREE.Material[]): void {
 
 function disposeRigObjects(scene: THREE.Scene, objects: FirePoiRigObjects): void {
   scene.remove(objects.group);
-  objects.core.geometry.dispose();
-  objects.innerFlame.geometry.dispose();
-  objects.wake.geometry.dispose();
+  (objects.core.material as THREE.SpriteMaterial).map?.dispose();
   disposeMaterial(objects.core.material);
-  disposeMaterial(objects.innerFlame.material);
+  objects.wake.geometry.dispose();
   disposeMaterial(objects.wake.material);
 }
 
@@ -82,23 +104,12 @@ function createRigObjects(rigId: RigId): FirePoiRigObjects {
   group.name = `fire-poi:${rigId}`;
   group.visible = false;
 
-  const core = new THREE.Mesh(
-    new THREE.SphereGeometry(0.12, 24, 24),
-    new THREE.MeshBasicMaterial({
+  const core = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: createCoreGlowTexture(),
       color: "#fff7cc",
       transparent: true,
-      opacity: 0.95,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
-    })
-  );
-
-  const innerFlame = new THREE.Mesh(
-    new THREE.SphereGeometry(0.18, 20, 20),
-    new THREE.MeshBasicMaterial({
-      color: "#ff8a1f",
-      transparent: true,
-      opacity: 0.45,
+      opacity: CORE_BASE_OPACITY,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     })
@@ -118,9 +129,9 @@ function createRigObjects(rigId: RigId): FirePoiRigObjects {
     })
   );
 
-  group.add(core, innerFlame, wake);
+  group.add(core, wake);
 
-  return { group, core, innerFlame, wake };
+  return { group, core, wake };
 }
 
 function setWakeGeometry(
@@ -188,13 +199,9 @@ function applyIntensityToMaterials(objects: FirePoiRigObjects, settings: FirePoi
     1.4
   );
 
-  (objects.core.material as THREE.MeshBasicMaterial).opacity = Math.min(
+  (objects.core.material as THREE.SpriteMaterial).opacity = Math.min(
     1,
     CORE_BASE_OPACITY * intensityMultiplier
-  );
-  (objects.innerFlame.material as THREE.MeshBasicMaterial).opacity = Math.min(
-    1,
-    INNER_FLAME_BASE_OPACITY * intensityMultiplier
   );
   (objects.wake.material as THREE.ShaderMaterial).uniforms.uOpacity.value = Math.min(
     1,
@@ -260,19 +267,7 @@ export class FirePoiEffectController
         rigState.corePosition.y,
         rigState.corePosition.z
       );
-      objects.core.scale.setScalar(input.settings.coreRadius);
-
-      objects.innerFlame.position.copy(objects.core.position);
-      objects.innerFlame.scale.set(
-        rigState.flameScale.x,
-        rigState.flameScale.y,
-        rigState.flameScale.z
-      );
-      objects.innerFlame.lookAt(
-        rigState.corePosition.x + rigState.flameDirection.x,
-        rigState.corePosition.y + rigState.flameDirection.y,
-        rigState.corePosition.z + rigState.flameDirection.z
-      );
+      objects.core.scale.setScalar(input.settings.coreRadius * 1.5);
 
       setWakeGeometry(
         objects.wake.geometry as THREE.BufferGeometry,
@@ -293,9 +288,9 @@ export class FirePoiEffectController
   }
 
   dispose(scene: THREE.Scene): void {
-    for (const [rigId, objects] of this.rigObjects.entries()) {
+    for (const objects of this.rigObjects.values()) {
       disposeRigObjects(scene, objects);
-      this.rigObjects.delete(rigId);
     }
+    this.rigObjects.clear();
   }
 }

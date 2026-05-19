@@ -263,7 +263,7 @@ function syncRigMarkers() {
     objects.hand.position.set(entry.handPosition.x, entry.handPosition.y, entry.handPosition.z);
     objects.head.position.set(entry.headPosition.x, entry.headPosition.y, entry.headPosition.z);
     objects.hand.visible = true;
-    objects.head.visible = true;
+    objects.head.visible = !props.firePoiSettings.enabled;
     objects.tether.visible = true;
   });
 
@@ -547,7 +547,7 @@ watch(
 );
 
 watch(
-  () => [props.poses, props.rigOrder],
+  () => [props.poses, props.rigOrder, props.firePoiSettings],
   () => {
     syncRigMarkers();
   },

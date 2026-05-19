@@ -67,9 +67,19 @@ describe("firePoiSettings", () => {
     ).toEqual(DEFAULT_FIRE_POI_SETTINGS);
   });
 
-  it("default settings favor a dense wake with tight core radius", () => {
-    expect(DEFAULT_FIRE_POI_SETTINGS.emissionDensity).toBeGreaterThanOrEqual(5);
+  it("default settings favor a larger hot source with dense wake", () => {
+    expect(DEFAULT_FIRE_POI_SETTINGS.emissionDensity).toBeGreaterThanOrEqual(8);
     expect(DEFAULT_FIRE_POI_SETTINGS.wakeLengthSteps).toBeGreaterThanOrEqual(24);
-    expect(DEFAULT_FIRE_POI_SETTINGS.coreRadius).toBeLessThanOrEqual(0.07);
+    expect(DEFAULT_FIRE_POI_SETTINGS.coreRadius).toBeGreaterThanOrEqual(0.09);
+  });
+
+  it("extended clamp ranges allow high emission density and large core radius", () => {
+    const result = normalizeFirePoiSettings({
+      emissionDensity: 20,
+      coreRadius: 0.40
+    });
+
+    expect(result.emissionDensity).toBe(20);
+    expect(result.coreRadius).toBeCloseTo(0.40);
   });
 });

@@ -133,3 +133,19 @@ describe("Three3DDebugCanvas task 4 fire poi controller wiring", () => {
     );
   });
 });
+
+describe("Three3DDebugCanvas fire poi head marker visibility", () => {
+  it("hides the head rig marker sphere when fire poi is enabled", () => {
+    const source = readFileSync(THREE_D_DEBUG_CANVAS_FILE, "utf8");
+
+    expect(source).toContain("objects.head.visible = !props.firePoiSettings.enabled;");
+  });
+
+  it("includes firePoiSettings in the rig markers watch trigger", () => {
+    const source = readFileSync(THREE_D_DEBUG_CANVAS_FILE, "utf8");
+
+    expect(source).toContain(
+      "() => [props.poses, props.rigOrder, props.firePoiSettings],"
+    );
+  });
+});

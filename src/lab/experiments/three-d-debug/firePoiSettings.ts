@@ -13,12 +13,12 @@ export interface FirePoiSettings {
 export const DEFAULT_FIRE_POI_SETTINGS: FirePoiSettings = {
   enabled: false,
   coreIntensity: 1.8,
-  coreRadius: 0.06,
+  coreRadius: 0.10,
   wakeLengthSteps: 24,
-  emissionDensity: 5,
+  emissionDensity: 8,
   turbulence: 0.10,
   spread: 0.08,
-  fadeRate: 1.35,
+  fadeRate: 1.8,
   velocityStretch: 1.4
 };
 
@@ -37,12 +37,12 @@ export function normalizeFirePoiSettings(
         ? value.enabled
         : DEFAULT_FIRE_POI_SETTINGS.enabled,
     coreIntensity: clamp(value?.coreIntensity, 0.5, 4, DEFAULT_FIRE_POI_SETTINGS.coreIntensity),
-    coreRadius: clamp(value?.coreRadius, 0.04, 0.24, DEFAULT_FIRE_POI_SETTINGS.coreRadius),
+    coreRadius: clamp(value?.coreRadius, 0.04, 0.40, DEFAULT_FIRE_POI_SETTINGS.coreRadius),
     wakeLengthSteps: Math.round(
       clamp(value?.wakeLengthSteps, 4, 48, DEFAULT_FIRE_POI_SETTINGS.wakeLengthSteps)
     ),
     emissionDensity: Math.round(
-      clamp(value?.emissionDensity, 1, 6, DEFAULT_FIRE_POI_SETTINGS.emissionDensity)
+      clamp(value?.emissionDensity, 1, 20, DEFAULT_FIRE_POI_SETTINGS.emissionDensity)
     ),
     turbulence: clamp(value?.turbulence, 0, 0.6, DEFAULT_FIRE_POI_SETTINGS.turbulence),
     spread: clamp(value?.spread, 0.02, 0.4, DEFAULT_FIRE_POI_SETTINGS.spread),
