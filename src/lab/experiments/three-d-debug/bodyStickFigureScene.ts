@@ -1,24 +1,38 @@
-import { buildBodySkeletonFrame, type BodySkeletonFrame } from "@/body-rig";
+import {
+  buildBodyRigDimensionsForSharedHandRadius,
+  buildBodyRigFrameFromDimensions,
+  buildBodySkeletonFrame,
+  solveBodyRigFrame,
+  type BodySkeletonFrame
+} from "@/body-rig";
+import {
+  DEFAULT_PLANE_PROJECTION_SETTINGS,
+  type PlaneProjectionSettings
+} from "@/engine/planeProjection";
 import type { WorldMultiRigPose } from "@/engine/types";
-import type { PlaneProjectionSettings } from "@/engine/planeProjection";
-import { solveVisualizerBodyRig } from "@/visualizer/bodyRigSolve";
-import { createSceneLayout } from "@/visualizer/sceneLayout";
-
-const DEFAULT_LAYOUT = createSceneLayout({ cssWidth: 1, cssHeight: 1 });
 
 export function buildBodyStickFigureScene(
   worldPoses: WorldMultiRigPose,
   projectionSettings?: PlaneProjectionSettings
 ): BodySkeletonFrame | null {
-  const solveResult = solveVisualizerBodyRig({
-    worldPoses,
-    layout: DEFAULT_LAYOUT,
-    projectionSettings
-  });
+  const leftPose = worldPoses["left"] ?? null;
+  const rightPose = worldPoses["right"] ?? null;
 
-  if (!solveResult) {
+  if (!leftPose && !rightPose) {
     return null;
   }
 
-  return buildBodySkeletonFrame(solveResult.pose.body, solveResult.pose.solve);
+  const dimensions = buildBodyRigDimensionsForSharedHandRadius(1);
+  const body = buildBodyRigFrameFromDimensions(dimensions);
+
+  const pose = solveBodyRigFrame(
+    body,
+    {
+      leftHandTarget: leftPose ? leftPose.handPosition : body.defaultLeftHandTarget,
+      rightHandTarget: rightPose ? rightPose.handPosition : body.defaultRightHandTarget
+    },
+    projectionSettings ?? DEFAULT_PLANE_PROJECTION_SETTINGS
+  );
+
+  return buildBodySkeletonFrame(pose.body, pose.solve);
 }
