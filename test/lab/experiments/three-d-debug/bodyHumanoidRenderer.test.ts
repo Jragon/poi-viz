@@ -104,17 +104,28 @@ describe("BodyHumanoidRenderer", () => {
 
     expect(segmentMeshes).toHaveLength(SKELETON_SEGMENTS.length);
 
-    expect(internals.volumeMeshes.has("torso")).toBe(true);
-    expect(internals.volumeMeshes.has("pelvis")).toBe(true);
+    expect(internals.volumeMeshes.has("chest")).toBe(true);
+    expect(internals.volumeMeshes.has("lowerTorso")).toBe(true);
+    expect(internals.volumeMeshes.has("hips")).toBe(true);
     expect(internals.volumeMeshes.has("head")).toBe(true);
-    expect(internals.volumeMeshes.get("torso")?.visible).toBe(true);
-    expect(internals.volumeMeshes.get("pelvis")?.visible).toBe(true);
+    expect(internals.volumeMeshes.get("chest")?.visible).toBe(true);
+    expect(internals.volumeMeshes.get("lowerTorso")?.visible).toBe(true);
+    expect(internals.volumeMeshes.get("hips")?.visible).toBe(true);
     expect(internals.volumeMeshes.get("head")?.visible).toBe(true);
+    expect(internals.volumeMeshes.get("chest")?.position.y).toBeGreaterThan(
+      internals.volumeMeshes.get("lowerTorso")!.position.y
+    );
+    expect(internals.volumeMeshes.get("lowerTorso")?.position.y).toBeGreaterThan(
+      internals.volumeMeshes.get("hips")!.position.y
+    );
+    expect(internals.volumeMeshes.has("torso")).toBe(false);
+    expect(internals.volumeMeshes.has("pelvis")).toBe(false);
     expect(Array.from(internals.jointMeshes.keys()).sort()).toEqual(["handLeft", "handRight"]);
 
     renderer.sync(scene, null);
 
     expect(segmentMeshes.every((mesh) => mesh.visible === false)).toBe(true);
+    expect(Array.from(internals.volumeMeshes.values()).every((mesh) => mesh.visible === false)).toBe(true);
     expect(Array.from(internals.jointMeshes.values()).every((mesh) => mesh.visible === false)).toBe(true);
     expect(internals.torsoCueMesh?.visible).toBe(false);
     expect(internals.headCueMesh?.visible).toBe(false);

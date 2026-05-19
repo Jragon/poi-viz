@@ -22,7 +22,7 @@ export function buildBodyHumanoidScene(
   const leftPose = worldPoses[rigIds?.left ?? DEFAULT_VISUALIZER_BODY_RIG_IDS.left] ?? null;
   const rightPose = worldPoses[rigIds?.right ?? DEFAULT_VISUALIZER_BODY_RIG_IDS.right] ?? null;
 
-  if (!leftPose || !rightPose) {
+  if (!leftPose && !rightPose) {
     return null;
   }
 
@@ -32,8 +32,8 @@ export function buildBodyHumanoidScene(
   const pose = solveBodyRigFrame(
     body,
     {
-      leftHandTarget: leftPose.handPosition,
-      rightHandTarget: rightPose.handPosition
+      leftHandTarget: leftPose?.handPosition ?? body.defaultLeftHandTarget,
+      rightHandTarget: rightPose?.handPosition ?? body.defaultRightHandTarget
     },
     projectionSettings ?? DEFAULT_PLANE_PROJECTION_SETTINGS
   );

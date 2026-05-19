@@ -16,6 +16,7 @@ import {
   provideVisualizerWorkspace
 } from "@/visualizer/visualizerWorkspace";
 import { sampleMultiRigWorldTrails } from "@/visualizer/worldTrailSampling";
+import type { RigId } from "@/engine/types";
 
 import Three3DDebugCanvas from "./Three3DDebugCanvas.vue";
 import { buildBodyHumanoidScene } from "./bodyHumanoidScene";
@@ -51,10 +52,22 @@ const trailLengthSteps = computed({
 const sceneState = computed(() =>
   buildThreeDDebugSceneState(core.worldPoses.value, core.sceneWorldRadius.value)
 );
-const bodyRigIds = computed(() => ({
-  left: core.rigOrder.value[0],
-  right: core.rigOrder.value[1]
-}));
+function resolveBodyRigIds(rigOrder: readonly RigId[]) {
+  const hasLeft = rigOrder.includes("left");
+  const hasRight = rigOrder.includes("right");
+  const firstCustomRig = rigOrder.find((rigId) => rigId !== "left" && rigId !== "right");
+
+  return {
+    left: hasLeft ? "left" : hasRight ? "left" : firstCustomRig ?? "left",
+    right: hasRight
+      ? "right"
+      : hasLeft
+        ? "right"
+        : rigOrder.find((rigId) => rigId !== firstCustomRig) ?? "right"
+  };
+}
+
+const bodyRigIds = computed(() => resolveBodyRigIds(core.rigOrder.value));
 const bodyScene = computed(() => buildBodyHumanoidScene(core.worldPoses.value, undefined, bodyRigIds.value));
 const worldTrails = computed(() => {
   const prepared = core.session.playback.prepared.value;

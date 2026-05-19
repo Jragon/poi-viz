@@ -68,16 +68,22 @@ describe("buildBodyHumanoidScene", () => {
     expect(result!.joints.handRight.x).toBeCloseTo(0.5, 3);
   });
 
-  it("returns null when only left rig is present", () => {
+  it("uses the default right hand target when only left rig is present", () => {
     const worldPoses: WorldMultiRigPose = { left: leftPose };
+    const result = buildBodyHumanoidScene(worldPoses);
 
-    expect(buildBodyHumanoidScene(worldPoses)).toBeNull();
+    expect(result).not.toBeNull();
+    expect(result!.joints.handLeft.x).toBeCloseTo(leftPose.handPosition.x, 3);
+    expect(result!.joints.handRight.x).toBeGreaterThan(0);
   });
 
-  it("returns null when only right rig is present", () => {
+  it("uses the default left hand target when only right rig is present", () => {
     const worldPoses: WorldMultiRigPose = { right: rightPose };
+    const result = buildBodyHumanoidScene(worldPoses);
 
-    expect(buildBodyHumanoidScene(worldPoses)).toBeNull();
+    expect(result).not.toBeNull();
+    expect(result!.joints.handLeft.x).toBeLessThan(0);
+    expect(result!.joints.handRight.x).toBeCloseTo(rightPose.handPosition.x, 3);
   });
 
   it("returns orientation cue with unit-length up, forward, and right vectors", () => {

@@ -661,7 +661,9 @@ function computeWorldShoulderOffset(
   const targetOffset = subtract3(handTarget, shoulder);
   const targetOffsetX = dot3(targetOffset, shoulders.torsoRight);
   const targetForward = dot3(targetOffset, shoulders.torsoForward);
-  const targetHeight = Math.max(0, dot3(targetOffset, shoulders.worldUp));
+  const targetVertical = dot3(targetOffset, shoulders.worldUp);
+  const targetHeight = Math.max(0, targetVertical);
+  const targetDrop = Math.max(0, -targetVertical);
   const targetDistance = length3(targetOffset);
   const shoulderMidpoint = scale3(add3(shoulders.leftShoulder, shoulders.rightShoulder), 0.5);
   const targetCenterDistance = Math.abs(dot3(subtract3(handTarget, shoulderMidpoint), shoulders.torsoRight));
@@ -673,6 +675,7 @@ function computeWorldShoulderOffset(
     1
   );
   const overheadFactor = clamp(targetHeight / Math.max(maxReach, Number.EPSILON), 0, 1);
+  const lowFactor = clamp(targetDrop / Math.max(maxReach, Number.EPSILON), 0, 1);
   const liftActivation = clamp(
     activation * 0.6 + overheadFactor * shoulderPolicy.overheadLiftBias,
     0,
@@ -681,13 +684,14 @@ function computeWorldShoulderOffset(
   const sideDistance = Math.abs(targetOffsetX);
   const lateralRatio = clamp(sideDistance / Math.max(maxReach, Number.EPSILON), 0, 1);
   const overheadActive = overheadFactor >= 0.55;
+  const lowActive = lowFactor >= 0.55;
   const overheadAmbiguous = overheadActive && targetCenterDistance <= shoulderPolicy.overheadAmbiguityRadius;
   const rawLateralFade = smoothstep(
     shoulderPolicy.overheadAmbiguityRadius,
     shoulderPolicy.overheadLateralFadeRadius,
     targetCenterDistance
   );
-  const lateralFade = overheadActive ? rawLateralFade : 1;
+  const lateralFade = overheadActive || lowActive ? rawLateralFade : 1;
   const outwardSign = armSide === "right" ? 1 : -1;
   const isOutward = targetOffsetX === 0 ? true : Math.sign(targetOffsetX) === outwardSign;
   const maxLateral = isOutward ? shoulderPolicy.maxOutwardReach : shoulderPolicy.maxCrossBodyReach;

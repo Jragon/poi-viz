@@ -77,9 +77,16 @@ function getSegmentBaseSpan(category: SkeletonSegmentCategory): number {
 }
 
 const VOLUME_RADIUS = {
-  torso: 0.095,
-  pelvisVolume: 0.075,
+  chest: 0.13,
+  lowerTorso: 0.09,
+  hips: 0.095,
   head: 0.11
+} as const;
+
+const VOLUME_BODY_LENGTH = {
+  chest: 0.22,
+  lowerTorso: 0.16,
+  hips: 0.18
 } as const;
 
 export class BodyHumanoidRenderer {
@@ -102,25 +109,62 @@ export class BodyHumanoidRenderer {
   }
 
   private syncVolumes(scene: THREE.Scene, frame: BodySkeletonFrame): void {
-    this.syncCapsuleVolume(scene, "torso", frame.joints.pelvisCenter, frame.joints.chest, VOLUME_RADIUS.torso, "#cbd5e1");
-    this.syncCapsuleVolume(scene, "pelvis", frame.joints.hipLeft, frame.joints.hipRight, VOLUME_RADIUS.pelvisVolume, "#94a3b8");
+    const up = new THREE.Vector3(frame.orientation.up.x, frame.orientation.up.y, frame.orientation.up.z);
+    const right = new THREE.Vector3(frame.orientation.right.x, frame.orientation.right.y, frame.orientation.right.z);
+    const chest = new THREE.Vector3(frame.joints.chest.x, frame.joints.chest.y, frame.joints.chest.z);
+    const pelvis = new THREE.Vector3(
+      frame.joints.pelvisCenter.x,
+      frame.joints.pelvisCenter.y,
+      frame.joints.pelvisCenter.z
+    );
+    const torsoAxis = new THREE.Vector3().subVectors(chest, pelvis);
+    const lowerTorsoCenter = new THREE.Vector3().lerpVectors(pelvis, chest, 0.42);
+    const hipCenter = new THREE.Vector3().lerpVectors(
+      new THREE.Vector3(frame.joints.hipLeft.x, frame.joints.hipLeft.y, frame.joints.hipLeft.z),
+      new THREE.Vector3(frame.joints.hipRight.x, frame.joints.hipRight.y, frame.joints.hipRight.z),
+      0.5
+    );
+    const chestWidth = Math.max(
+      new THREE.Vector3(
+        frame.joints.clavicleRight.x - frame.joints.clavicleLeft.x,
+        frame.joints.clavicleRight.y - frame.joints.clavicleLeft.y,
+        frame.joints.clavicleRight.z - frame.joints.clavicleLeft.z
+      ).length() * 0.75,
+      VOLUME_BODY_LENGTH.chest
+    );
+    const hipWidth = Math.max(
+      new THREE.Vector3(
+        frame.joints.hipRight.x - frame.joints.hipLeft.x,
+        frame.joints.hipRight.y - frame.joints.hipLeft.y,
+        frame.joints.hipRight.z - frame.joints.hipLeft.z
+      ).length() * 0.8,
+      VOLUME_BODY_LENGTH.hips
+    );
+
+    this.syncFloatingCapsuleVolume(scene, "chest", chest, right, chestWidth, VOLUME_RADIUS.chest, "#38bdf8");
+    this.syncFloatingCapsuleVolume(
+      scene,
+      "lowerTorso",
+      lowerTorsoCenter,
+      torsoAxis.lengthSq() > 1e-12 ? torsoAxis.normalize() : up,
+      VOLUME_BODY_LENGTH.lowerTorso,
+      VOLUME_RADIUS.lowerTorso,
+      "#a78bfa"
+    );
+    this.syncFloatingCapsuleVolume(scene, "hips", hipCenter, right, hipWidth, VOLUME_RADIUS.hips, "#f472b6");
     this.syncSphereVolume(scene, "head", frame.joints.headCenter, VOLUME_RADIUS.head, "#e2e8f0");
   }
 
-  private syncCapsuleVolume(
+  private syncFloatingCapsuleVolume(
     scene: THREE.Scene,
     key: string,
-    from: { x: number; y: number; z: number },
-    to: { x: number; y: number; z: number },
+    center: THREE.Vector3,
+    axis: THREE.Vector3,
+    bodyLength: number,
     radius: number,
     color: string
   ): void {
-    const fromV = new THREE.Vector3(from.x, from.y, from.z);
-    const toV = new THREE.Vector3(to.x, to.y, to.z);
-    const dir = new THREE.Vector3().subVectors(toV, fromV);
-    const length = dir.length();
-    dir.normalize();
-    const mid = new THREE.Vector3().lerpVectors(fromV, toV, 0.5);
+    const normalizedAxis = axis.lengthSq() > 1e-12 ? axis.clone().normalize() : Y_AXIS;
     let mesh = this.volumeMeshes.get(key);
     if (!mesh) {
       mesh = new THREE.Mesh(
@@ -130,13 +174,9 @@ export class BodyHumanoidRenderer {
       this.volumeMeshes.set(key, mesh);
       scene.add(mesh);
     }
-    mesh.position.copy(mid);
-    mesh.scale.set(1, length / (UNIT_CAPSULE_BODY_LENGTH + radius * 2), 1);
-    if (length > 1e-6) {
-      mesh.quaternion.setFromUnitVectors(Y_AXIS, dir);
-    } else {
-      mesh.quaternion.identity();
-    }
+    mesh.position.copy(center);
+    mesh.scale.set(1, bodyLength / UNIT_CAPSULE_BODY_LENGTH, 1);
+    mesh.quaternion.setFromUnitVectors(Y_AXIS, normalizedAxis);
     mesh.visible = true;
   }
 

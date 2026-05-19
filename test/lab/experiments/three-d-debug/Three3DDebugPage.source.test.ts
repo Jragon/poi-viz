@@ -71,14 +71,17 @@ describe("Three3DDebugPage task 4 body scene wiring", () => {
     expect(source).toContain(':body-scene="bodyScene"');
   });
 
-  it("passes the current rig order into buildBodyHumanoidScene", () => {
+  it("resolves body rig sides before building the humanoid scene", () => {
     const source = readFileSync(THREE_D_DEBUG_PAGE_FILE, "utf8");
 
-    expect(source).toContain("const bodyRigIds = computed(() => ({");
-    expect(source).toContain("left: core.rigOrder.value[0],");
-    expect(source).toContain("right: core.rigOrder.value[1]");
+    expect(source).toContain("function resolveBodyRigIds");
+    expect(source).toContain('rigOrder.includes("left")');
+    expect(source).toContain('rigOrder.includes("right")');
+    expect(source).toContain("const bodyRigIds = computed(() => resolveBodyRigIds(core.rigOrder.value));");
     expect(source).toContain(
       "const bodyScene = computed(() => buildBodyHumanoidScene(core.worldPoses.value, undefined, bodyRigIds.value));"
     );
+    expect(source).not.toContain("left: core.rigOrder.value[0],");
+    expect(source).not.toContain("right: core.rigOrder.value[1]");
   });
 });
