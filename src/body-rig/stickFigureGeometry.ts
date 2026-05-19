@@ -255,7 +255,11 @@ interface CandidateScore {
 
 interface ShoulderOffset {
   readonly lift: number;
+  readonly protraction: number;
+  readonly retraction: number;
   readonly lateral: number;
+  readonly overheadAmbiguous: boolean;
+  readonly limitHit: boolean;
 }
 
 interface ShoulderPassResult {
@@ -360,6 +364,14 @@ function rotateAroundAxis(vector: Vec3, axis: Vec3, angleRad: number): Vec3 {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
+}
+
+function smoothstep(edge0: number, edge1: number, value: number): number {
+  if (edge1 <= edge0) {
+    return value >= edge1 ? 1 : 0;
+  }
+  const t = clamp((value - edge0) / (edge1 - edge0), 0, 1);
+  return t * t * (3 - 2 * t);
 }
 
 function getDefaultDirection(armSide: ArmSide): Vec2 {
@@ -545,11 +557,11 @@ function buildWorldShoulderGirdleState(
     clavicleVector: subtract3(shoulderSocket, chest.center),
     shoulderSocket,
     lift: offset.lift,
-    protraction: 0,
-    retraction: 0,
+    protraction: offset.protraction,
+    retraction: offset.retraction,
     lateralTravel: offset.lateral,
-    overheadAmbiguous: false,
-    limitHit
+    overheadAmbiguous: offset.overheadAmbiguous,
+    limitHit: limitHit || offset.limitHit
   };
 }
 
@@ -621,8 +633,11 @@ function computeWorldShoulderOffset(
 ): ShoulderOffset {
   const targetOffset = subtract3(handTarget, shoulder);
   const targetOffsetX = dot3(targetOffset, shoulders.torsoRight);
+  const targetForward = dot3(targetOffset, shoulders.torsoForward);
   const targetHeight = Math.max(0, dot3(targetOffset, shoulders.worldUp));
   const targetDistance = length3(targetOffset);
+  const shoulderMidpoint = scale3(add3(shoulders.leftShoulder, shoulders.rightShoulder), 0.5);
+  const targetCenterDistance = Math.abs(dot3(subtract3(handTarget, shoulderMidpoint), shoulders.torsoRight));
   const extensionRatio = targetDistance / Math.max(maxReach, Number.EPSILON);
   const activation = clamp(
     (extensionRatio - shoulderPolicy.activationExtensionRatio) /
@@ -636,14 +651,28 @@ function computeWorldShoulderOffset(
     0,
     1
   );
-  const lateralRatio = clamp(Math.abs(targetOffsetX) / Math.max(maxReach, Number.EPSILON), 0, 1);
+  const sideDistance = Math.abs(targetOffsetX);
+  const lateralRatio = clamp(sideDistance / Math.max(maxReach, Number.EPSILON), 0, 1);
+  const overheadAmbiguous =
+    overheadFactor >= 0.55 && targetCenterDistance <= shoulderPolicy.overheadAmbiguityRadius;
+  const lateralFade = smoothstep(
+    shoulderPolicy.overheadAmbiguityRadius,
+    shoulderPolicy.overheadLateralFadeRadius,
+    targetCenterDistance
+  );
   const outwardSign = armSide === "right" ? 1 : -1;
   const isOutward = targetOffsetX === 0 ? true : Math.sign(targetOffsetX) === outwardSign;
   const maxLateral = isOutward ? shoulderPolicy.maxOutwardReach : shoulderPolicy.maxCrossBodyReach;
+  const forwardFactor = clamp(Math.max(0, targetForward) / Math.max(maxReach, Number.EPSILON), 0, 1);
+  const backwardFactor = clamp(Math.max(0, -targetForward) / Math.max(maxReach, Number.EPSILON), 0, 1);
 
   return {
     lift: shoulderPolicy.maxLift * liftActivation,
-    lateral: Math.sign(targetOffsetX) * maxLateral * activation * lateralRatio
+    protraction: shoulderPolicy.maxProtraction * Math.max(forwardFactor * activation, overheadFactor * 0.35),
+    retraction: shoulderPolicy.maxRetraction * backwardFactor * activation,
+    lateral: Math.sign(targetOffsetX) * maxLateral * activation * lateralRatio * lateralFade,
+    overheadAmbiguous,
+    limitHit: false
   };
 }
 
@@ -671,17 +700,23 @@ function applyWorldShoulderPolicy(
   );
   let leftShoulder = add3(
     add3(
-      projectedShoulders.leftShoulder,
-      scale3(projectedShoulders.torsoRight, leftOffset.lateral)
+      add3(
+        projectedShoulders.leftShoulder,
+        scale3(projectedShoulders.torsoRight, leftOffset.lateral)
+      ),
+      scale3(projectedShoulders.worldUp, leftOffset.lift)
     ),
-    scale3(projectedShoulders.worldUp, leftOffset.lift)
+    scale3(projectedShoulders.torsoForward, leftOffset.protraction - leftOffset.retraction)
   );
   let rightShoulder = add3(
     add3(
-      projectedShoulders.rightShoulder,
-      scale3(projectedShoulders.torsoRight, rightOffset.lateral)
+      add3(
+        projectedShoulders.rightShoulder,
+        scale3(projectedShoulders.torsoRight, rightOffset.lateral)
+      ),
+      scale3(projectedShoulders.worldUp, rightOffset.lift)
     ),
-    scale3(projectedShoulders.worldUp, rightOffset.lift)
+    scale3(projectedShoulders.torsoForward, rightOffset.protraction - rightOffset.retraction)
   );
   let shoulderLimitHit = false;
   const minEffectiveSpan = config.baseShoulderSpan * config.shoulderPolicy.minEffectiveSpanRatio;
@@ -791,7 +826,11 @@ function computeShoulderOffset(
 
   return {
     lift: shoulderPolicy.maxLift * liftActivation,
-    lateral: Math.sign(targetOffsetX) * maxLateral * activation * lateralRatio
+    protraction: 0,
+    retraction: 0,
+    lateral: Math.sign(targetOffsetX) * maxLateral * activation * lateralRatio,
+    overheadAmbiguous: false,
+    limitHit: false
   };
 }
 

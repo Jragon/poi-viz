@@ -827,4 +827,70 @@ describe("solveWorldBodyRig", () => {
       -leftBiased.shoulderGirdle.left.lateralTravel
     );
   });
+
+  it("fades lateral shoulder travel near the overhead ambiguity zone", () => {
+    const config = buildBodyRigConfigFromArmReach(1.25);
+    const solveAtOffset = (offsetX: number) =>
+      solveWorldBodyRig({
+        root: {
+          shoulderCenter: { x: 0, y: 1.4, z: 0 },
+          neutralPelvisCenter: { x: 0, y: 0.8, z: 0 },
+          neutralChestCenter: { x: 0, y: 1.35, z: 0 },
+          worldUp: { x: 0, y: 1, z: 0 },
+          neutralForward: { x: 0, y: 0, z: 1 },
+          scale: 1
+        },
+        config,
+        goals: {
+          leftHandTarget: { x: offsetX, y: 2.35, z: 0 },
+          rightHandTarget: { x: offsetX, y: 2.35, z: 0 }
+        },
+        yawSearchSteps: 96
+      });
+
+    const left = solveAtOffset(-0.03);
+    const center = solveAtOffset(0);
+    const right = solveAtOffset(0.03);
+
+    expect(center.diagnostics.leftShoulder.overheadAmbiguous).toBe(true);
+    expect(center.diagnostics.rightShoulder.overheadAmbiguous).toBe(true);
+    expect(Math.abs(center.shoulderGirdle.left.lateralTravel)).toBeLessThan(0.01);
+    expect(Math.abs(center.shoulderGirdle.right.lateralTravel)).toBeLessThan(0.01);
+    expect(Math.abs(left.shoulderGirdle.left.lateralTravel - center.shoulderGirdle.left.lateralTravel)).toBeLessThan(0.04);
+    expect(Math.abs(right.shoulderGirdle.right.lateralTravel - center.shoulderGirdle.right.lateralTravel)).toBeLessThan(0.04);
+    expect(center.shoulderGirdle.left.lift).toBeGreaterThan(0);
+    expect(center.shoulderGirdle.right.lift).toBeGreaterThan(0);
+    expect(center.shoulderGirdle.left.protraction).toBeGreaterThan(0);
+    expect(center.shoulderGirdle.right.protraction).toBeGreaterThan(0);
+  });
+
+  it("keeps shoulder sockets stable as a shared overhead target crosses center", () => {
+    const config = buildBodyRigConfigFromArmReach(1.25);
+    const root = {
+      shoulderCenter: { x: 0, y: 1.4, z: 0 },
+      neutralPelvisCenter: { x: 0, y: 0.8, z: 0 },
+      neutralChestCenter: { x: 0, y: 1.35, z: 0 },
+      worldUp: { x: 0, y: 1, z: 0 },
+      neutralForward: { x: 0, y: 0, z: 1 },
+      scale: 1
+    };
+    const solves = [-0.04, -0.02, 0, 0.02, 0.04].map((offsetX) =>
+      solveWorldBodyRig({
+        root,
+        config,
+        goals: {
+          leftHandTarget: { x: offsetX, y: 2.3, z: 0 },
+          rightHandTarget: { x: offsetX, y: 2.3, z: 0 }
+        },
+        yawSearchSteps: 96
+      })
+    );
+
+    for (let index = 1; index < solves.length; index += 1) {
+      expect(Math.abs(solves[index].leftArm.shoulder.x - solves[index - 1].leftArm.shoulder.x)).toBeLessThan(0.08);
+      expect(Math.abs(solves[index].rightArm.shoulder.x - solves[index - 1].rightArm.shoulder.x)).toBeLessThan(0.08);
+      expect(solves[index].leftArm.elbowPole.z).toBeGreaterThan(0);
+      expect(solves[index].rightArm.elbowPole.z).toBeGreaterThan(0);
+    }
+  });
 });
