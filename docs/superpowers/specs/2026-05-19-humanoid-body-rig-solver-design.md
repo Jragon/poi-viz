@@ -93,7 +93,7 @@ Rules:
 - Wall-plane readability is the optimization target. It is acceptable if wheel or floor plane body motion looks slightly strange when projected from the wall-plane normalization, provided the projection behavior is deterministic and explicit.
 - If the upgraded pelvis/chest/shoulder solver changes the canonical overlap circle, the canonical origin and unit radius must update with the solver rather than being patched in a renderer.
 
-The existing shared-overlap concept should become part of the authoritative body-rig contract, not a helper that only the 2D visualizer understands.
+The canonical pattern-space and canonical overlap circle should be part of the authoritative body-rig contract, not helpers that only the 2D visualizer understands.
 
 ### Body Pose State
 

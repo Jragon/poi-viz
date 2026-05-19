@@ -47,7 +47,7 @@ describe("body-tracing.md documentation", () => {
     expect(doc).toContain("adapters over the solved skeleton");
   });
 
-  it("does not contain stale largest shared overlap-circle phrasing", () => {
+  it("does not contain stale legacy overlap-circle phrasing", () => {
     expect(doc).not.toMatch(/largest\s+shared.hand\s+overlap\s+circle/i);
   });
 });

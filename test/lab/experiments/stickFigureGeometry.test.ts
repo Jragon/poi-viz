@@ -149,7 +149,7 @@ describe("solveStickArm", () => {
     expect(distance(leftArm.elbow, leftArm.hand)).toBeCloseTo(30);
   });
 
-  it("points both elbows outward for an overhead shared hand target", () => {
+  it("points both elbows outward when both arms use the same overhead target", () => {
     const sharedHandTarget = { x: 0, y: -80 };
     const leftArm = solveStickArm({
       shoulder: { x: -45, y: 0 },
