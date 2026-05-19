@@ -65,3 +65,26 @@ export const planeBreakDemoSequence: MultiRigSequence = {
     }
   ]
 };
+
+export const threeDDebugSequence: MultiRigSequence = {
+  rigs: [
+    {
+      rigId: "left",
+      sequence: {
+        segments: [
+          { ...makeSegmentAt(2 * PI, 0, PI, 1, 1), planeId: "wall" },
+          { ...makeSegmentAt(2 * PI, PI, 0, 1, -2), planeId: "wall" }
+        ]
+      }
+    },
+    {
+      rigId: "right",
+      sequence: {
+        segments: [
+          { ...makeSegmentAt(2 * PI, 0, PI / 2, 1, 1), planeId: "wheel" },
+          { ...makeSegmentAt(2 * PI, PI / 2, PI, -1, 1), planeId: "floor" }
+        ]
+      }
+    }
+  ]
+};
