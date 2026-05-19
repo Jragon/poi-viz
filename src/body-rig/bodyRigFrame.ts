@@ -100,15 +100,16 @@ export interface BodyRigPose {
 
 function projectBodyRigFrame(
   body: BodyRigFrame,
+  solve: BodyRigWorldSolveResult,
   settings: PlaneProjectionSettings
 ): ProjectedBodyRigStaticFrame {
   return {
     headCenter: projectWorldPoint(body.headCenter, settings),
     headRadius: body.headRadius,
     neck: projectWorldPoint(body.neck, settings),
-    chest: projectWorldPoint(body.chest, settings),
+    chest: projectWorldPoint(solve.chest.center, settings),
     shoulderCenter: projectWorldPoint(body.shoulderCenter, settings),
-    pelvisCenter: projectWorldPoint(body.pelvisCenter, settings),
+    pelvisCenter: projectWorldPoint(solve.pelvis.center, settings),
     hipLeft: projectWorldPoint(body.hipLeft, settings),
     hipRight: projectWorldPoint(body.hipRight, settings),
     kneeLeft: projectWorldPoint(body.kneeLeft, settings),
@@ -267,7 +268,7 @@ export function solveBodyRigFrame(
   return {
     body,
     skeleton,
-    projectedBody: projectBodyRigFrame(body, projectionSettings),
+    projectedBody: projectBodyRigFrame(body, solve, projectionSettings),
     shoulders: {
       leftShoulder: projected.leftShoulder,
       rightShoulder: projected.rightShoulder,

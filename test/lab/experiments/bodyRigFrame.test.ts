@@ -4,6 +4,7 @@ import {
   DEFAULT_BODY_ARM_REACH,
   buildBodyRigDimensionsForSharedHandRadius,
   buildBodyRigFrame,
+  buildBodyRigFrameFromDimensions,
   buildDefaultBodyRigDimensions,
   getBodyRigArmPoints,
   solveBodyRigFrame
@@ -91,5 +92,29 @@ describe("bodyRigFrame", () => {
     );
     expect(pose.solve.leftArm.elbow.z).toBeGreaterThan(0);
     expect(pose.solve.rightArm.elbow.z).toBeGreaterThan(0);
+  });
+
+  it("projectedBody.chest and projectedBody.pelvisCenter reflect solved body state, not neutral", () => {
+    const dimensions = buildDefaultBodyRigDimensions();
+    const body = buildBodyRigFrameFromDimensions(dimensions);
+    // Both hands biased right forces a lateral pelvis shift (handMidpoint.x > shoulderCenter.x)
+    const pose = solveBodyRigFrame(
+      body,
+      {
+        leftHandTarget: { x: 0.3, y: 0.75, z: 0 },
+        rightHandTarget: { x: 0.6, y: 0.75, z: 0 }
+      },
+      DEFAULT_PLANE_PROJECTION_SETTINGS
+    );
+
+    // Verify the solve produced a nonzero lateral pelvis shift
+    expect(pose.solve.pelvis.center.x).not.toBeCloseTo(body.pelvisCenter.x);
+    // Verify solve produced a nonzero chest y-lift (chest is above neutral due to pelvis relationship)
+    expect(pose.solve.chest.center.y).not.toBeCloseTo(body.chest.y);
+
+    // projectedBody must reflect solved positions (not stale neutral body positions)
+    // With orthographic projection: projected.x == world.x, projected.y == world.y
+    expect(pose.projectedBody.pelvisCenter.x).toBeCloseTo(pose.solve.pelvis.center.x);
+    expect(pose.projectedBody.chest.y).toBeCloseTo(pose.solve.chest.center.y);
   });
 });
