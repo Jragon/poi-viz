@@ -71,10 +71,6 @@ let gridHelper: THREE.GridHelper | null = null;
 let resizeObserver: ResizeObserver | null = null;
 let bodyFigureRenderer: BodyStickFigureRenderer | null = null;
 
-function vectorFromPoint(point: Vec3): THREE.Vector3 {
-  return new THREE.Vector3(point.x, point.y, point.z);
-}
-
 function disposeMaterial(material: THREE.Material | THREE.Material[]) {
   if (Array.isArray(material)) {
     material.forEach((entry) => entry.dispose());

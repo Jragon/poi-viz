@@ -22,6 +22,7 @@ const HEAD_CUE_COLOR = "#f8fafc";
 
 const CAPSULE_CAP_SEGS = 4;
 const CAPSULE_RADIAL_SEGS = 8;
+const UNIT_CAPSULE_BODY_LENGTH = 1;
 
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
@@ -32,24 +33,45 @@ function makeSphereGeometry(name: SkeletonJointName): THREE.SphereGeometry {
 }
 
 function makeSphereColor(name: SkeletonJointName): string {
-  if (name === "headCenter" || name === "neck") return CATEGORY_COLORS.head;
-  if (
-    name === "shoulderLeft" ||
-    name === "shoulderRight" ||
-    name === "shoulderCenter" ||
-    name === "pelvis" ||
-    name === "hipLeft" ||
-    name === "hipRight"
-  )
-    return CATEGORY_COLORS.spine;
-  if (
-    name === "elbowLeft" ||
-    name === "elbowRight" ||
-    name === "handLeft" ||
-    name === "handRight"
-  )
-    return CATEGORY_COLORS.arm;
-  return CATEGORY_COLORS.leg;
+  switch (name) {
+    case "headCenter":
+    case "neck":
+      return CATEGORY_COLORS.head;
+    case "shoulderCenter":
+    case "shoulderLeft":
+    case "shoulderRight":
+    case "pelvis":
+    case "hipLeft":
+    case "hipRight":
+      return CATEGORY_COLORS.spine;
+    case "elbowLeft":
+    case "elbowRight":
+    case "handLeft":
+    case "handRight":
+      return CATEGORY_COLORS.arm;
+    case "kneeLeft":
+    case "kneeRight":
+    case "footLeft":
+    case "footRight":
+      return CATEGORY_COLORS.leg;
+    default: {
+      const unreachableName: never = name;
+      throw new Error(`Unhandled joint color for ${unreachableName}`);
+    }
+  }
+}
+
+function makeSegmentGeometry(category: SkeletonSegmentCategory): THREE.CapsuleGeometry {
+  return new THREE.CapsuleGeometry(
+    LIMB_RADIUS[category],
+    UNIT_CAPSULE_BODY_LENGTH,
+    CAPSULE_CAP_SEGS,
+    CAPSULE_RADIAL_SEGS
+  );
+}
+
+function getSegmentBaseSpan(category: SkeletonSegmentCategory): number {
+  return UNIT_CAPSULE_BODY_LENGTH + LIMB_RADIUS[category] * 2;
 }
 
 export class BodyStickFigureRenderer {
@@ -81,29 +103,23 @@ export class BodyStickFigureRenderer {
       const length = dir.length();
       dir.normalize();
       const mid = new THREE.Vector3().lerpVectors(fromV, toV, 0.5);
-      const radius = LIMB_RADIUS[seg.category];
 
       let mesh = this.segmentMeshes.get(key);
       if (!mesh) {
         mesh = new THREE.Mesh(
-          new THREE.CapsuleGeometry(radius, Math.max(0, length), CAPSULE_CAP_SEGS, CAPSULE_RADIAL_SEGS),
+          makeSegmentGeometry(seg.category),
           new THREE.MeshBasicMaterial({ color: CATEGORY_COLORS[seg.category] })
         );
         this.segmentMeshes.set(key, mesh);
         scene.add(mesh);
-      } else {
-        mesh.geometry.dispose();
-        mesh.geometry = new THREE.CapsuleGeometry(
-          radius,
-          Math.max(0, length),
-          CAPSULE_CAP_SEGS,
-          CAPSULE_RADIAL_SEGS
-        );
       }
 
       mesh.position.copy(mid);
+      mesh.scale.set(1, length / getSegmentBaseSpan(seg.category), 1);
       if (length > 1e-6) {
         mesh.quaternion.setFromUnitVectors(Y_AXIS, dir);
+      } else {
+        mesh.quaternion.identity();
       }
       mesh.visible = true;
     }
