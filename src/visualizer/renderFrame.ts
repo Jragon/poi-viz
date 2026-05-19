@@ -130,7 +130,7 @@ function bodyArmElbow(pose: BodyOverlayFrame["pose"], side: ArmSide): Vec2 {
 }
 
 function bodyArmShoulder(pose: BodyOverlayFrame["pose"], side: ArmSide): Vec2 {
-  return side === "left" ? pose.shoulders.leftShoulder : pose.shoulders.rightShoulder;
+  return side === "left" ? pose.leftArm.shoulder : pose.rightArm.shoulder;
 }
 
 function drawBodyArm(
@@ -210,8 +210,8 @@ function renderBodyOverlay(
   );
   drawLine(
     ctx,
-    toCanvas(pose.shoulders.leftShoulder),
-    toCanvas(pose.shoulders.rightShoulder),
+    toCanvas(bodyArmShoulder(pose, "left")),
+    toCanvas(bodyArmShoulder(pose, "right")),
     limbStroke,
     geometry.bodyLineWidth
   );
@@ -251,8 +251,8 @@ function renderBodyOverlay(
 
   for (const point of [
     body.neck,
-    pose.shoulders.leftShoulder,
-    pose.shoulders.rightShoulder,
+    bodyArmShoulder(pose, "left"),
+    bodyArmShoulder(pose, "right"),
     body.pelvisCenter,
     body.hipLeft,
     body.hipRight,

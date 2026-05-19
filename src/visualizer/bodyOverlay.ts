@@ -1,6 +1,7 @@
 import {
   type BodyRigDimensions,
-  type BodyRigPose
+  type BodyRigPose,
+  type SkeletonSolverDiagnostics
 } from "@/body-rig";
 import type { PlaneProjectionSettings } from "@/engine/planeProjection";
 import type { Vec2, WorldMultiRigPose } from "@/engine/types";
@@ -17,6 +18,7 @@ export { DEFAULT_VISUALIZER_BODY_RIG_IDS as DEFAULT_BODY_OVERLAY_RIG_IDS };
 
 export interface BodyOverlayFrame {
   readonly pose: BodyRigPose;
+  readonly solverDiagnostics: SkeletonSolverDiagnostics;
   readonly dimensions: BodyRigDimensions;
   readonly rigIds: BodyOverlayRigIds;
   readonly behindBodySides: {
@@ -75,6 +77,7 @@ export function computeBodyOverlay(input: BodyOverlayInput): BodyOverlayFrame | 
 
   return {
     pose: solved.pose,
+    solverDiagnostics: solved.pose.skeleton.solverDiagnostics,
     dimensions: solved.dimensions,
     rigIds: solved.rigIds,
     behindBodySides: {

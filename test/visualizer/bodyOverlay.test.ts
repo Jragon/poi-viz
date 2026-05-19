@@ -108,6 +108,20 @@ describe("bodyOverlay", () => {
     expect(overlay?.pose.solve.rightArm.handTarget).toEqual({ x: 0.75, y: 0.35, z: 0.2 });
   });
 
+  it("exposes solved skeleton joints and diagnostics on overlay poses", () => {
+    const overlay = computeBodyOverlay({
+      worldPoses: createWorldPoses(),
+      layout: createSceneLayout({ cssWidth: 400, cssHeight: 300 }),
+      projectionSettings
+    });
+
+    expect(overlay).not.toBeNull();
+    expect(overlay?.pose.skeleton.joints.chest).toBeDefined();
+    expect(overlay?.pose.skeleton.joints.pelvisCenter).toBeDefined();
+    expect(overlay?.pose.skeleton.joints.clavicleLeft).toBeDefined();
+    expect(overlay?.solverDiagnostics.leftShoulder).toBeDefined();
+  });
+
   it("defaults behindBodySides to false when behindBody is absent from world poses", () => {
     const layout = createSceneLayout({ cssWidth: 400, cssHeight: 300 });
     const overlay = computeBodyOverlay({
