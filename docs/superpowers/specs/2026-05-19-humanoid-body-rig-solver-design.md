@@ -4,19 +4,19 @@ Date: 2026-05-19
 
 ## Problem Statement
 
-The current body rig produces a usable procedural stick figure, but the underlying body motion is not good enough. Shoulder motion is especially unstable: when hands move overhead, the shoulders can flip from one side to the other. The pelvis and hips are also too static, which makes the body feel like a line overlay rather than a coherent humanoid rig.
+The previous body rig produced a usable procedural body overlay, but the underlying body motion was not good enough. Shoulder motion was especially unstable: when hands moved overhead, the shoulders could flip from one side to the other. The pelvis and hips were also too static, which made the body feel like a line overlay rather than a coherent humanoid rig.
 
-This work should improve the body solver first. Rendering volumes are useful, but they are secondary: the 2D and 3D figures should both consume the same better body-rig output rather than maintain separate shoulder and hip heuristics.
+Task 10 implemented the solver-first migration. Rendering volumes are useful, but they are secondary: 2D and 3D consumers now adapt the same solved body-rig skeleton rather than maintaining separate shoulder and hip heuristics.
 
 ## Goals
 
 - Make the body-rig solve more anatomically plausible while staying deterministic and testable.
 - Fix overhead shoulder flipping with explicit singularity-safe shoulder-girdle behavior.
 - Add pelvis and chest state so torso, hips, and shoulders are real solved body regions rather than renderer guesses.
-- Define the canonical body-local pattern space from the largest circle both hands can overlap for the full pattern.
-- Migrate 2D and 3D body consumers to the same upgraded body-rig contract with no compatibility shim.
+- Define `canonicalPatternSpace` as the canonical wall-plane body-local normalization imported into other planes.
+- Migrate 2D and 3D body consumers to the same upgraded body-rig contract with no legacy compatibility layer.
 - Keep projection and rendering as adapters over the solved body state.
-- Add simple volumes so the figure is no longer just a stick figure, without making stylized cuteness the primary goal.
+- Add simple volumes so the figure is no longer only line segments, without making stylized cuteness the primary goal.
 
 ## Non-Goals
 
@@ -56,13 +56,24 @@ Tradeoffs: interesting for a later avatar lab, but too much dependency surface a
 
 ## Recommendation
 
-Choose Option B.
+Option B was implemented.
 
-The first implementation should make the body-rig solve better and move all body visualizers onto the upgraded contract. Renderer volumes should be simple consumers of that solve: torso, pelvis, head, and limb volumes that reveal the improved pose without adding separate motion logic.
+The implementation makes the body-rig solve better and moves body visualizers onto the upgraded contract. Renderer volumes are simple consumers of that solve: torso, pelvis, head, and segment capsules reveal the improved pose without adding separate motion logic.
+
+## Final Implementation Notes
+
+- `BodyRigPose.skeleton` exposes the shared renderer-agnostic `BodySkeletonFrame` contract.
+- `BodySkeletonFrame` contains semantic humanoid joints, segment descriptors, orientation cues, support-pose metadata, and solver diagnostics.
+- The semantic joints are `headCenter`, `neck`, `chest`, `clavicleLeft`, `clavicleRight`, `shoulderLeft`, `shoulderRight`, `elbowLeft`, `elbowRight`, `handLeft`, `handRight`, `pelvisCenter`, `hipLeft`, `hipRight`, `kneeLeft`, `kneeRight`, `footLeft`, and `footRight`.
+- Shoulder solve diagnostics include lift, protraction, retraction, lateral travel, overhead ambiguity, and limit-hit state per side. Arm diagnostics include clamping, reach range, and distance to hand.
+- Canonical pattern normalization is represented by `canonicalPatternSpace`. It is computed in wall-plane body-local space, using a wall origin and unit radius, and wheel/floor projections import that wall-plane normalization rather than defining independent body-normalization spaces.
+- 2D and 3D rendering are adapters over the solved skeleton. They may project, draw, or volume-render the pose, but they do not own shoulder side, pelvis yaw, clavicle offset, elbow pole, or reach-limit solving.
+- The 3D debug renderer is `BodyHumanoidRenderer` in `bodyHumanoidRenderer.ts`. It renders simple torso, pelvis, and head volumes, skeletal segment capsules, and hand-only joint nodes.
+- The migration intentionally removed old aliases and compatibility layers. Docs should describe only the current contract.
 
 ## Architecture
 
-The body solve should be organized into ordered passes:
+The body solve is organized into ordered passes:
 
 1. **Base frame pass**: establish performer axes, torso yaw, and initial body dimensions from existing inputs.
 2. **Pelvis pass**: solve pelvis orientation and small position offset from torso yaw, hand midpoint drift, and reach asymmetry.
@@ -70,34 +81,34 @@ The body solve should be organized into ordered passes:
 4. **Shoulder-girdle pass**: solve side-specific shoulder lift, protraction/retraction, lateral travel, and diagnostics.
 5. **Arm pass**: solve shoulder socket to elbow to hand after shoulder-girdle offsets.
 6. **Head/neck pass**: connect head and neck to chest without letting head targets destabilize shoulders.
-7. **Skeleton frame pass**: export the renderer-agnostic frame used by both 2D and 3D consumers.
+7. **Skeleton frame pass**: export `BodySkeletonFrame`, the renderer-agnostic frame used by both 2D and 3D consumers.
 
 The main source area is [src/body-rig](../../../src/body-rig). The 3D renderer in [src/lab/experiments/three-d-debug](../../../src/lab/experiments/three-d-debug) and 2D visualizer paths should become consumers of the same final skeleton frame.
 
 ## Output Contract
 
-The body-rig output should expose body semantics, not mesh details.
+The body-rig output exposes body semantics, not mesh details.
 
 ### Canonical Pattern Space
 
-The body-rig layer should define the canonical body-local space used by pattern authoring and visualization. This space is based on the largest circle that both hands can overlap for the whole pattern.
+The body-rig layer defines the canonical body-local space used by pattern authoring and visualization. The implemented field is `canonicalPatternSpace`.
 
 Rules:
 
-- Compute the largest shared hand-overlap circle on the wall plane from the solved body dimensions, shoulder policy, yaw/projection limits, and arm reach range.
-- The center of that shared overlap circle is the body-local origin.
-- Unit length `1` is the radius of that shared overlap circle.
+- Compute `canonicalPatternSpace` from the solved body dimensions, shoulder policy, yaw/projection limits, and arm reach range in the wall plane.
+- The canonical wall-plane center is the body-local origin.
+- Unit length `1` is the canonical wall-plane unit radius.
 - A sequence with both arm radii at `1` should mean both hands can reach the entire unit circle for the full pattern, subject only to explicit boundary diagnostics.
 - 2D and 3D consumers must use this same origin and unit scale. The 2D visualizer should not keep a separate normalization path.
-- Wheel and floor plane projections import the wall-plane origin and unit radius rather than recomputing their own largest circles.
+- Wheel and floor plane projections import the wall-plane origin and unit radius rather than recomputing independent body normalization.
 - Wall-plane readability is the optimization target. It is acceptable if wheel or floor plane body motion looks slightly strange when projected from the wall-plane normalization, provided the projection behavior is deterministic and explicit.
-- If the upgraded pelvis/chest/shoulder solver changes the shared overlap circle, the canonical origin and unit radius must update with the solver rather than being patched in a renderer.
+- If the pelvis/chest/shoulder solver changes the canonical wall-plane normalization, the canonical origin and unit radius must update with the solver rather than being patched in a renderer.
 
-The existing shared-overlap concept should become part of the authoritative body-rig contract, not a helper that only the 2D visualizer understands.
+`canonicalPatternSpace` is part of the authoritative body-rig contract, not a helper that only the 2D visualizer understands.
 
 ### Body Pose State
 
-Add explicit solved state for:
+The solver exposes explicit solved state for:
 
 - `pelvisCenter`, `pelvisForward`, `pelvisRight`, `pelvisUp`
 - `chestCenter`, `chestForward`, `chestRight`, `chestUp`
@@ -112,11 +123,14 @@ Add explicit solved state for:
 
 ### Skeleton Frame State
 
-Extend the skeleton contract with semantic joints needed by consumers:
+`BodySkeletonFrame` exposes semantic joints needed by consumers:
 
-- `pelvisCenter` if the existing pelvis point is overloaded
+- `pelvisCenter`
 - `chest`
-- `leftClavicle` and `rightClavicle`, or equivalent shoulder-girdle proxy joints
+- `clavicleLeft` and `clavicleRight`
+- `shoulderLeft`, `shoulderRight`, `elbowLeft`, `elbowRight`, `handLeft`, and `handRight`
+- `hipLeft`, `hipRight`, `kneeLeft`, `kneeRight`, `footLeft`, and `footRight`
+- `neck` and `headCenter`
 
 Segments should then describe the humanoid structure clearly:
 
@@ -131,7 +145,7 @@ This remains renderer-agnostic. It must not include Three.js meshes, materials, 
 
 ### Pelvis
 
-The pelvis is the anchor for the lower body. It should not remain a fixed decoration below shoulder center.
+The pelvis is the anchor for the lower body. It should not remain a fixed decoration below the chest and shoulder girdle.
 
 Rules:
 
@@ -167,28 +181,28 @@ Head and neck should attach to the solved chest frame. Head target influence can
 
 ## 2D And 3D Migration
 
-There should be one authoritative body solve.
+There is one authoritative body solve.
 
 - 3D debug rendering consumes the upgraded `BodySkeletonFrame`.
-- 2D stick figure rendering consumes the same upgraded `BodySkeletonFrame`, then projects it into 2D.
+- 2D body rendering consumes the same upgraded `BodySkeletonFrame`, then projects it into 2D.
 - Any 2D-only shoulder, pelvis, or elbow heuristic should be removed or replaced by the shared solver output.
 - Projection is an adapter. It can draw lines, capsules, labels, or simple volumes, but it must not solve shoulder side, pelvis yaw, clavicle offset, elbow pole, or reach limits.
 
-No compatibility shim should preserve old 2D behavior. If contracts change, update all call sites and tests in the same pass.
+No legacy compatibility layer preserves previous 2D behavior. If contracts change, update all call sites and tests in the same pass.
 
 ## Volumetric Figure Follow-Through
 
 Volumes are required as a consumer-level improvement, but they are not the core solver design.
 
-The first volume pass should be simple:
+The implemented 3D debug volume pass is simple:
 
-- torso as a rounded or capsule-like volume from pelvis to chest/neck
+- torso as a capsule-like volume from pelvis to chest
 - pelvis as a separate rounded volume
 - head as a slightly larger solid volume
-- limbs as capsules with segment-specific radii and visible gaps at joints
-- reduced or removed joint spheres unless needed for diagnostics
+- humanoid skeleton segments as capsules with segment-specific radii
+- hand-only joint nodes, with other joint spheres removed from the normal renderer
 
-This should read as a solid humanoid, not a stick figure, but it should not be optimized for cuteness. Visual style can be tuned after the solver is stable.
+This should read as a solid humanoid, not only a line overlay, but it should not be optimized for cuteness. Visual style can be tuned after the solver is stable.
 
 ## Diagnostics And Boundary Behavior
 
@@ -244,8 +258,8 @@ Expected target areas:
 - [src/body-rig/bodyRigFrame.ts](../../../src/body-rig/bodyRigFrame.ts)
 - [src/body-rig/stickFigureGeometry.ts](../../../src/body-rig/stickFigureGeometry.ts)
 - [src/body-rig/bodySkeletonFrame.ts](../../../src/body-rig/bodySkeletonFrame.ts)
-- 2D body/stick figure visualizer consumers
-- [src/lab/experiments/three-d-debug/bodyStickFigureRenderer.ts](../../../src/lab/experiments/three-d-debug/bodyStickFigureRenderer.ts)
+- 2D body visualizer consumers
+- [src/lab/experiments/three-d-debug/bodyHumanoidRenderer.ts](../../../src/lab/experiments/three-d-debug/bodyHumanoidRenderer.ts)
 - body-rig, visualizer, and lab tests
 
 Docs and source must stay aligned. If the public skeleton contract changes, update docs and tests in the same implementation branch.

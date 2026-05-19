@@ -39,14 +39,16 @@ describe("SKELETON_JOINT_NAMES", () => {
     const expected: readonly SkeletonJointName[] = [
       "headCenter",
       "neck",
-      "shoulderCenter",
+      "chest",
+      "clavicleLeft",
+      "clavicleRight",
       "shoulderLeft",
       "shoulderRight",
       "elbowLeft",
       "elbowRight",
       "handLeft",
       "handRight",
-      "pelvis",
+      "pelvisCenter",
       "hipLeft",
       "hipRight",
       "kneeLeft",
@@ -65,10 +67,14 @@ describe("SKELETON_SEGMENTS", () => {
   it("has entries for every expected bone pair", () => {
     const pairs: Array<[SkeletonJointName, SkeletonJointName]> = [
       ["headCenter", "neck"],
-      ["neck", "shoulderCenter"],
-      ["shoulderCenter", "pelvis"],
-      ["shoulderCenter", "shoulderLeft"],
-      ["shoulderCenter", "shoulderRight"],
+      ["neck", "chest"],
+      ["chest", "pelvisCenter"],
+      ["chest", "clavicleLeft"],
+      ["clavicleLeft", "shoulderLeft"],
+      ["chest", "clavicleRight"],
+      ["clavicleRight", "shoulderRight"],
+      ["pelvisCenter", "hipLeft"],
+      ["pelvisCenter", "hipRight"],
       ["shoulderLeft", "elbowLeft"],
       ["elbowLeft", "handLeft"],
       ["shoulderRight", "elbowRight"],
@@ -83,7 +89,7 @@ describe("SKELETON_SEGMENTS", () => {
       const found = SKELETON_SEGMENTS.some((s) => s.from === from && s.to === to);
       expect(found, `expected segment ${from} -> ${to}`).toBe(true);
     }
-    expect(SKELETON_SEGMENTS).toHaveLength(15);
+    expect(SKELETON_SEGMENTS).toHaveLength(17);
   });
 
   it("uses only valid segment categories", () => {
@@ -110,6 +116,19 @@ describe("SKELETON_SEGMENTS", () => {
 });
 
 describe("buildBodySkeletonFrame", () => {
+  it("solveBodyRigFrame exposes the same skeleton frame used by renderers", () => {
+    const { pose } = makePose();
+
+    expect(pose.skeleton.joints.chest).toEqual(pose.solve.chest.center);
+    expect(pose.skeleton.joints.pelvisCenter).toEqual(pose.solve.pelvis.center);
+    expect(pose.skeleton.joints.shoulderLeft).toEqual(
+      pose.solve.shoulderGirdle.left.shoulderSocket
+    );
+    expect(pose.skeleton.solverDiagnostics.bestEffortReasons).toEqual(
+      pose.solve.diagnostics.bestEffortReasons
+    );
+  });
+
   it("returns joints record with all joint names as keys", () => {
     const { pose } = makePose();
     const frame = buildBodySkeletonFrame(pose.body, pose.solve);
@@ -120,14 +139,14 @@ describe("buildBodySkeletonFrame", () => {
     expect(Object.keys(frame.joints)).toHaveLength(SKELETON_JOINT_NAMES.length);
   });
 
-  it("static joint positions match the source BodyRigFrame", () => {
+  it("core joint positions match body and solve sources", () => {
     const { pose } = makePose();
     const frame = buildBodySkeletonFrame(pose.body, pose.solve);
 
     expect(frame.joints.headCenter).toEqual(pose.body.headCenter);
     expect(frame.joints.neck).toEqual(pose.body.neck);
-    expect(frame.joints.shoulderCenter).toEqual(pose.body.shoulderCenter);
-    expect(frame.joints.pelvis).toEqual(pose.body.pelvis);
+    expect(frame.joints.chest).toEqual(pose.solve.chest.center);
+    expect(frame.joints.pelvisCenter).toEqual(pose.solve.pelvis.center);
     expect(frame.joints.hipLeft).toEqual(pose.body.hipLeft);
     expect(frame.joints.hipRight).toEqual(pose.body.hipRight);
     expect(frame.joints.kneeLeft).toEqual(pose.body.kneeLeft);
@@ -136,12 +155,14 @@ describe("buildBodySkeletonFrame", () => {
     expect(frame.joints.footRight).toEqual(pose.body.footRight);
   });
 
-  it("arm joint positions match the solve result", () => {
+  it("shoulder and arm joint positions match the solve result", () => {
     const { pose } = makePose();
     const frame = buildBodySkeletonFrame(pose.body, pose.solve);
 
-    expect(frame.joints.shoulderLeft).toEqual(pose.solve.shoulders.leftShoulder);
-    expect(frame.joints.shoulderRight).toEqual(pose.solve.shoulders.rightShoulder);
+    expect(frame.joints.clavicleLeft).toEqual(pose.solve.shoulderGirdle.left.shoulderBase);
+    expect(frame.joints.clavicleRight).toEqual(pose.solve.shoulderGirdle.right.shoulderBase);
+    expect(frame.joints.shoulderLeft).toEqual(pose.solve.shoulderGirdle.left.shoulderSocket);
+    expect(frame.joints.shoulderRight).toEqual(pose.solve.shoulderGirdle.right.shoulderSocket);
     expect(frame.joints.elbowLeft).toEqual(pose.solve.leftArm.elbow);
     expect(frame.joints.elbowRight).toEqual(pose.solve.rightArm.elbow);
     expect(frame.joints.handLeft).toEqual(pose.solve.leftArm.hand);
@@ -202,6 +223,28 @@ describe("buildBodySkeletonFrame", () => {
       pose.solve.rightArm.distanceToHand
     );
     expect(frame.solverDiagnostics.yawRad).toBeCloseTo(pose.solve.yawRad);
+    expect(frame.solverDiagnostics.pelvisYawRad).toBeCloseTo(pose.solve.pelvis.yawRad);
+    expect(frame.solverDiagnostics.chestYawRad).toBeCloseTo(pose.solve.chest.yawRad);
+    expect(frame.solverDiagnostics.pelvisLimitHit).toBe(pose.solve.pelvis.limitHit);
+    expect(frame.solverDiagnostics.leftShoulder).toEqual({
+      lift: pose.solve.shoulderGirdle.left.lift,
+      protraction: pose.solve.shoulderGirdle.left.protraction,
+      retraction: pose.solve.shoulderGirdle.left.retraction,
+      lateralTravel: pose.solve.shoulderGirdle.left.lateralTravel,
+      overheadAmbiguous: pose.solve.shoulderGirdle.left.overheadAmbiguous,
+      limitHit: pose.solve.shoulderGirdle.left.limitHit
+    });
+    expect(frame.solverDiagnostics.rightShoulder).toEqual({
+      lift: pose.solve.shoulderGirdle.right.lift,
+      protraction: pose.solve.shoulderGirdle.right.protraction,
+      retraction: pose.solve.shoulderGirdle.right.retraction,
+      lateralTravel: pose.solve.shoulderGirdle.right.lateralTravel,
+      overheadAmbiguous: pose.solve.shoulderGirdle.right.overheadAmbiguous,
+      limitHit: pose.solve.shoulderGirdle.right.limitHit
+    });
+    expect(frame.solverDiagnostics.bestEffortReasons).toBe(
+      pose.solve.diagnostics.bestEffortReasons
+    );
   });
 
 });

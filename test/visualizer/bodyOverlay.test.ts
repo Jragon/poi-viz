@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildBodyRigDimensionsForSharedHandRadius } from "@/body-rig";
+import { buildBodyRigDimensionsForCanonicalUnitRadius } from "@/body-rig";
 import type { PlaneProjectionSettings } from "@/engine/planeProjection";
 import type { WorldMultiRigPose } from "@/engine/types";
 import { computeBodyOverlay, getBodyOverlaySceneExtent } from "@/visualizer/bodyOverlay";
@@ -108,6 +108,20 @@ describe("bodyOverlay", () => {
     expect(overlay?.pose.solve.rightArm.handTarget).toEqual({ x: 0.75, y: 0.35, z: 0.2 });
   });
 
+  it("exposes solved skeleton joints and diagnostics on overlay poses", () => {
+    const overlay = computeBodyOverlay({
+      worldPoses: createWorldPoses(),
+      layout: createSceneLayout({ cssWidth: 400, cssHeight: 300 }),
+      projectionSettings
+    });
+
+    expect(overlay).not.toBeNull();
+    expect(overlay?.pose.skeleton.joints.chest).toBeDefined();
+    expect(overlay?.pose.skeleton.joints.pelvisCenter).toBeDefined();
+    expect(overlay?.pose.skeleton.joints.clavicleLeft).toBeDefined();
+    expect(overlay?.solverDiagnostics.leftShoulder).toBeDefined();
+  });
+
   it("defaults behindBodySides to false when behindBody is absent from world poses", () => {
     const layout = createSceneLayout({ cssWidth: 400, cssHeight: 300 });
     const overlay = computeBodyOverlay({
@@ -156,18 +170,19 @@ describe("bodyOverlay", () => {
     );
   });
 
-  it("scales default dimensions so radius one is the shared hand circle", () => {
+  it("scales default dimensions so radius one is the canonical wall-plane unit", () => {
     const overlay = computeBodyOverlay({
       worldPoses: createWorldPoses(),
       layout: createSceneLayout({ cssWidth: 400, cssHeight: 300 }),
       projectionSettings
     });
 
-    expect(overlay?.dimensions.sharedHandOverlapCircle.radius).toBeCloseTo(1);
+    expect(overlay?.dimensions.canonicalPatternSpace.sourcePlane).toBe("wall");
+    expect(overlay?.dimensions.canonicalPatternSpace.unitRadius).toBeCloseTo(1);
   });
 
   it("computes body-aware scene framing from sequence radius and body dimensions", () => {
-    const dimensions = buildBodyRigDimensionsForSharedHandRadius(1);
+    const dimensions = buildBodyRigDimensionsForCanonicalUnitRadius(1);
     const extent = getBodyOverlaySceneExtent({
       sequenceRadiusWorld: 2,
       dimensions

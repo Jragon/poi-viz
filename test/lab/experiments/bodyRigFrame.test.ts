@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   DEFAULT_BODY_ARM_REACH,
-  buildBodyRigDimensionsForSharedHandRadius,
+  buildBodyRigDimensionsForCanonicalUnitRadius,
   buildBodyRigFrame,
+  buildBodyRigFrameFromDimensions,
   buildDefaultBodyRigDimensions,
   getBodyRigArmPoints,
   solveBodyRigFrame
@@ -13,6 +14,10 @@ import type { Vec3 } from "@/engine/types";
 
 function distance3(a: Vec3, b: Vec3): number {
   return Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
+}
+
+function dot3(a: Vec3, b: Vec3): number {
+  return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
 describe("bodyRigFrame", () => {
@@ -26,13 +31,13 @@ describe("bodyRigFrame", () => {
     expect(dimensions.torsoHeight).toBeCloseTo(DEFAULT_BODY_ARM_REACH * 0.86);
     expect(dimensions.hipSpan).toBeCloseTo(dimensions.shoulderSpan * 0.72);
     expect(dimensions.headRadius).toBeCloseTo(DEFAULT_BODY_ARM_REACH * 0.21);
-    expect(dimensions.sharedHandOverlapCircle.radius).toBeGreaterThan(0);
+    expect(dimensions.canonicalPatternSpace.unitRadius).toBeGreaterThan(0);
   });
 
-  it("scales default body dimensions to a target shared hand radius", () => {
-    const dimensions = buildBodyRigDimensionsForSharedHandRadius(1);
+  it("scales default body dimensions to a target canonical wall unit radius", () => {
+    const dimensions = buildBodyRigDimensionsForCanonicalUnitRadius(1);
 
-    expect(dimensions.sharedHandOverlapCircle.radius).toBeCloseTo(1);
+    expect(dimensions.canonicalPatternSpace.unitRadius).toBeCloseTo(1);
     expect(dimensions.config.upperArmLength + dimensions.config.forearmLength).toBeCloseTo(
       dimensions.armReach
     );
@@ -42,7 +47,7 @@ describe("bodyRigFrame", () => {
   it("solves a y-up world-space body frame before projection", () => {
     const dimensions = buildDefaultBodyRigDimensions();
     const body = buildBodyRigFrame({
-      shoulderCenter: dimensions.rootShoulderCenter,
+      shoulderGirdleCenter: dimensions.rootShoulderGirdleCenter,
       rigConfig: dimensions.config,
       torsoHeight: dimensions.torsoHeight,
       hipSpan: dimensions.hipSpan,
@@ -63,14 +68,20 @@ describe("bodyRigFrame", () => {
       DEFAULT_PLANE_PROJECTION_SETTINGS
     );
 
-    expect(body.headCenter.y).toBeGreaterThan(body.shoulderCenter.y);
-    expect(body.pelvis.y).toBeLessThan(body.shoulderCenter.y);
-    expect(pose.projectedBody.headCenter.y).toBeGreaterThan(pose.projectedBody.pelvis.y);
-    expect(pose.solve.shoulders.leftShoulder.x).toBeLessThan(body.shoulderCenter.x);
-    expect(pose.solve.shoulders.rightShoulder.x).toBeGreaterThan(body.shoulderCenter.x);
+    expect(body.headCenter.y).toBeGreaterThan(body.shoulderGirdleCenter.y);
+    expect(body.pelvisCenter.y).toBeLessThan(body.shoulderGirdleCenter.y);
+    expect(pose.projectedBody.headCenter.y).toBeGreaterThan(
+      pose.projectedBody.pelvisCenter.y
+    );
+    expect(pose.solve.shoulders.leftShoulder.x).toBeLessThan(body.shoulderGirdleCenter.x);
+    expect(pose.solve.shoulders.rightShoulder.x).toBeGreaterThan(body.shoulderGirdleCenter.x);
     expect(getBodyRigArmPoints(pose, "left")).toHaveLength(3);
-    expect(pose.solve.leftArm.elbowPole.x).toBeLessThanOrEqual(0);
-    expect(pose.solve.rightArm.elbowPole.x).toBeGreaterThanOrEqual(0);
+    expect(dot3(pose.solve.leftArm.elbowPole, pose.solve.shoulders.torsoForward)).toBeGreaterThan(
+      0.95
+    );
+    expect(dot3(pose.solve.rightArm.elbowPole, pose.solve.shoulders.torsoForward)).toBeGreaterThan(
+      0.95
+    );
     expect(pose.solve.leftArm.elbowPole.z).toBeGreaterThan(0);
     expect(pose.solve.rightArm.elbowPole.z).toBeGreaterThan(0);
     expect(distance3(pose.solve.leftArm.shoulder, pose.solve.leftArm.elbow)).toBeCloseTo(
@@ -81,5 +92,29 @@ describe("bodyRigFrame", () => {
     );
     expect(pose.solve.leftArm.elbow.z).toBeGreaterThan(0);
     expect(pose.solve.rightArm.elbow.z).toBeGreaterThan(0);
+  });
+
+  it("projectedBody.chest and projectedBody.pelvisCenter reflect solved body state, not neutral", () => {
+    const dimensions = buildDefaultBodyRigDimensions();
+    const body = buildBodyRigFrameFromDimensions(dimensions);
+    // Both hands biased right forces a lateral pelvis shift from the shoulder-girdle root.
+    const pose = solveBodyRigFrame(
+      body,
+      {
+        leftHandTarget: { x: 0.3, y: 0.75, z: 0 },
+        rightHandTarget: { x: 0.6, y: 0.75, z: 0 }
+      },
+      DEFAULT_PLANE_PROJECTION_SETTINGS
+    );
+
+    // Verify the solve produced a nonzero lateral pelvis shift
+    expect(pose.solve.pelvis.center.x).not.toBeCloseTo(body.pelvisCenter.x);
+    // Verify solve produced a nonzero chest y-lift (chest is above neutral due to pelvis relationship)
+    expect(pose.solve.chest.center.y).not.toBeCloseTo(body.chest.y);
+
+    // projectedBody must reflect solved positions (not stale neutral body positions)
+    // With orthographic projection: projected.x == world.x, projected.y == world.y
+    expect(pose.projectedBody.pelvisCenter.x).toBeCloseTo(pose.solve.pelvis.center.x);
+    expect(pose.projectedBody.chest.y).toBeCloseTo(pose.solve.chest.center.y);
   });
 });

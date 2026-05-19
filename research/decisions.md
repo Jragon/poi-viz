@@ -92,3 +92,20 @@ Driver selection owns the motion law and that driver's options.
 - Point-to-point output phase is geometric `atan2`, not a monotonic clock. Metronome hand and relative sources opt out while hand point-to-point is active; absolute head sources remain available.
 - Authored point-to-point controls are deferred. Engine-to-authored round-trip fails explicitly for point-to-point rather than losing endpoint data.
 - A temporary localStorage migration maps old authored `node.radiusProfile` fields to `node.driver.radiusProfile`; remove after 2026-05-27.
+
+## 2026-05-19: Humanoid Body Rig Solver Migration
+
+Decision: migrate body rendering to a solver-first humanoid rig contract centered on `BodyRigPose.skeleton` and `BodySkeletonFrame`.
+
+Rationale: 2D and 3D consumers need one deterministic solved skeleton rather than separate shoulder, pelvis, and elbow heuristics. The shared contract exposes semantic humanoid joints, segment descriptors, orientation cues, support-pose metadata, and solver diagnostics without renderer-specific mesh state.
+
+Consequences:
+
+- `BodySkeletonFrame` is the renderer-agnostic body pose contract for 2D and 3D adapters.
+- Semantic joints include chest, pelvis center, clavicles, shoulders, elbows, hands, hips, knees, feet, neck, and head center.
+- `canonicalPatternSpace` owns canonical wall-plane origin/unit-radius normalization; wheel and floor projections import that normalization instead of recomputing plane-local body scale.
+- Shoulder-girdle solving exposes lift, protraction, retraction, lateral travel, overhead ambiguity, and limit diagnostics per side.
+- `BodyHumanoidRenderer` renders simple torso, pelvis, and head volumes plus skeletal segment capsules and hand-only joint nodes.
+- No old aliases, legacy compatibility layers, or deprecated body-rig field names are part of the migrated contract.
+
+Validation: body-rig, visualizer, and lab tests cover the migrated skeleton contract, canonical pattern space, shoulder diagnostics, and renderer adapter behavior. Completion requires `pnpm test`, `pnpm typecheck`, `pnpm lint`, and a stale-term documentation search.

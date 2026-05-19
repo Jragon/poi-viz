@@ -4,13 +4,13 @@ import { onBeforeUnmount, onMounted, ref } from "vue";
 import {
   buildBodyRigConfigFromArmReach,
   buildBodyRigFrame,
-  computeSharedHandOverlapCircle,
+  computeBodyRigCanonicalPatternSpace,
   getBodyRigArmDrawOrder,
-  getBodyRigArmPoints,
   solveBodyRigFrame,
   type ArmSide,
   type BodyRigFrame,
-  type BodyRigPose
+  type BodyRigPose,
+  type SkeletonJointName
 } from "@/body-rig";
 import { DEFAULT_PLANE_PROJECTION_SETTINGS } from "@/engine/planeProjection";
 import type { Vec2, Vec3 } from "@/engine/types";
@@ -68,11 +68,11 @@ function buildBodyFrame(layout: CanvasLayout): BodyRigFrame {
   const shoulderY = Math.max(height * 0.27, 110);
   const torsoHeight = Math.min(scale * 0.29, 160);
   const headRadius = Math.min(scale * 0.09, 38);
-  const shoulderCenter = { x: centerX, y: -shoulderY, z: 0 };
+  const shoulderGirdleCenter = { x: centerX, y: -shoulderY, z: 0 };
   const thighLength = Math.min(scale * 0.2, 116);
   const shinLength = Math.min(scale * 0.19, 108);
   return buildBodyRigFrame({
-    shoulderCenter,
+    shoulderGirdleCenter,
     rigConfig,
     torsoHeight,
     hipSpan: rigConfig.baseShoulderSpan * 0.6,
@@ -144,18 +144,22 @@ function drawLimb(
   ctx.stroke();
 }
 
-function getSharedHandGuide(body: BodyRigFrame) {
-  return computeSharedHandOverlapCircle({
+function getCanonicalPatternSpace(frame: BodyRigFrame) {
+  return computeBodyRigCanonicalPatternSpace({
     root: {
-      torsoCenter: { x: body.shoulderCenter.x, y: body.shoulderCenter.y },
-      shoulderY: body.shoulderCenter.y
+      shoulderGirdleCenter: frame.shoulderGirdleCenter,
+      neutralPelvisCenter: frame.pelvisCenter,
+      neutralChestCenter: frame.chest,
+      worldUp: { x: 0, y: 1, z: 0 },
+      neutralForward: { x: 0, y: 0, z: 1 },
+      scale: 1
     },
-    config: body.rigConfig,
+    config: frame.rigConfig,
     useMaxYawCompression: true
   });
 }
 
-function drawSharedHandGuide(ctx: CanvasRenderingContext2D, center: Vec2, radius: number) {
+function drawCanonicalPatternGuide(ctx: CanvasRenderingContext2D, center: Vec2, radius: number) {
   ctx.save();
   ctx.setLineDash([8, 8]);
   ctx.beginPath();
@@ -168,6 +172,27 @@ function drawSharedHandGuide(ctx: CanvasRenderingContext2D, center: Vec2, radius
 
 function getArmStroke(side: ArmSide): string {
   return side === "left" ? "rgba(125, 211, 252, 0.9)" : "rgba(252, 211, 77, 0.92)";
+}
+
+function drawCapsuleSegment(
+  ctx: CanvasRenderingContext2D,
+  from: Vec2,
+  to: Vec2,
+  width: number,
+  stroke: string
+) {
+  ctx.beginPath();
+  ctx.moveTo(from.x, from.y);
+  ctx.lineTo(to.x, to.y);
+  ctx.lineWidth = width;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = stroke;
+  ctx.stroke();
+}
+
+function getSkeletonCanvasPoint(pose: FigurePose, jointName: SkeletonJointName): Vec2 {
+  const joint = pose.skeleton.joints[jointName];
+  return projectedPointToCanvas({ x: joint.x, y: joint.y });
 }
 
 function draw() {
@@ -201,65 +226,75 @@ function draw() {
   const leftStroke = "rgba(186, 230, 253, 1)";
   const rightFill = "rgba(245, 158, 11, 0.96)";
   const rightStroke = "rgba(254, 240, 138, 1)";
-  const body = pose.projectedBody;
-  const sharedHandGuide = getSharedHandGuide(pose.body);
+  const skeleton = pose.skeleton;
+  const canonicalPatternSpace = getCanonicalPatternSpace(pose.body);
   const toCanvas = projectedPointToCanvas;
 
-  drawSharedHandGuide(ctx, toCanvas(sharedHandGuide.center), sharedHandGuide.radius);
-  drawLimb(ctx, [toCanvas(body.headCenter), toCanvas(body.neck)], 6, secondaryStroke);
-  drawLimb(
+  drawCanonicalPatternGuide(
     ctx,
-    [toCanvas(pose.shoulders.leftShoulder), toCanvas(pose.shoulders.rightShoulder)],
-    12,
-    limbStroke
-  );
-  drawLimb(ctx, [toCanvas(body.neck), toCanvas(body.pelvis)], 14, limbStroke);
-  drawLimb(ctx, [toCanvas(body.hipLeft), toCanvas(body.hipRight)], 12, secondaryStroke);
-  drawLimb(
-    ctx,
-    [toCanvas(body.hipLeft), toCanvas(body.kneeLeft), toCanvas(body.footLeft)],
-    12,
-    limbStroke
-  );
-  drawLimb(
-    ctx,
-    [toCanvas(body.hipRight), toCanvas(body.kneeRight), toCanvas(body.footRight)],
-    12,
-    limbStroke
+    toCanvas({ x: canonicalPatternSpace.origin.x, y: canonicalPatternSpace.origin.y }),
+    canonicalPatternSpace.unitRadius
   );
 
-  for (const side of getBodyRigArmDrawOrder(pose)) {
-    drawLimb(ctx, getBodyRigArmPoints(pose, side).map(toCanvas), 12, getArmStroke(side));
+  for (const segment of skeleton.segments) {
+    if (segment.category === "arm") {
+      continue;
+    }
+    const width =
+      segment.category === "head" ? 6 : segment.category === "leg" ? 12 : 16;
+    const stroke = segment.category === "leg" ? limbStroke : secondaryStroke;
+    drawCapsuleSegment(
+      ctx,
+      getSkeletonCanvasPoint(pose, segment.from),
+      getSkeletonCanvasPoint(pose, segment.to),
+      width,
+      stroke
+    );
   }
 
-  const headCenter = toCanvas(body.headCenter);
+  const headCenter = getSkeletonCanvasPoint(pose, "headCenter");
   ctx.beginPath();
-  ctx.arc(headCenter.x, headCenter.y, body.headRadius, 0, Math.PI * 2);
+  ctx.arc(headCenter.x, headCenter.y, pose.body.headRadius, 0, Math.PI * 2);
   ctx.lineWidth = 10;
   ctx.strokeStyle = limbStroke;
   ctx.stroke();
 
+  for (const side of getBodyRigArmDrawOrder(pose)) {
+    const shoulder = getSkeletonCanvasPoint(
+      pose,
+      side === "left" ? "shoulderLeft" : "shoulderRight"
+    );
+    const elbow = getSkeletonCanvasPoint(
+      pose,
+      side === "left" ? "elbowLeft" : "elbowRight"
+    );
+    const hand = getSkeletonCanvasPoint(
+      pose,
+      side === "left" ? "handLeft" : "handRight"
+    );
+    drawCapsuleSegment(ctx, shoulder, elbow, 12, getArmStroke(side));
+    drawCapsuleSegment(ctx, elbow, hand, 10, getArmStroke(side));
+  }
+
   const staticNodes = [
-    body.neck,
-    pose.shoulders.leftShoulder,
-    pose.shoulders.rightShoulder,
-    pose.leftArm.elbow,
-    pose.rightArm.elbow,
-    body.pelvis,
-    body.hipLeft,
-    body.hipRight,
-    body.kneeLeft,
-    body.kneeRight,
-    body.footLeft,
-    body.footRight
+    getSkeletonCanvasPoint(pose, "neck"),
+    getSkeletonCanvasPoint(pose, "elbowLeft"),
+    getSkeletonCanvasPoint(pose, "elbowRight"),
+    getSkeletonCanvasPoint(pose, "pelvisCenter"),
+    getSkeletonCanvasPoint(pose, "hipLeft"),
+    getSkeletonCanvasPoint(pose, "hipRight"),
+    getSkeletonCanvasPoint(pose, "kneeLeft"),
+    getSkeletonCanvasPoint(pose, "kneeRight"),
+    getSkeletonCanvasPoint(pose, "footLeft"),
+    getSkeletonCanvasPoint(pose, "footRight")
   ];
 
   for (const point of staticNodes) {
-    drawJoint(ctx, toCanvas(point), 5.5, nodeFill, nodeStroke);
+    drawJoint(ctx, point, 5.5, nodeFill, nodeStroke);
   }
 
-  drawJoint(ctx, toCanvas(pose.leftArm.hand), 8.5, leftFill, leftStroke);
-  drawJoint(ctx, toCanvas(pose.rightArm.hand), 8.5, rightFill, rightStroke);
+  drawJoint(ctx, getSkeletonCanvasPoint(pose, "handLeft"), 8.5, leftFill, leftStroke);
+  drawJoint(ctx, getSkeletonCanvasPoint(pose, "handRight"), 8.5, rightFill, rightStroke);
 }
 
 function getCanvasPoint(event: PointerEvent): Vec2 | null {
@@ -441,9 +476,9 @@ function getStatusText(): string {
   const diagnostics = ` / cost ${pose.solve.cost.toFixed(1)}${pose.solve.diagnostics.isBestEffort ? " / clamped" : ""}`;
   const leftHand = projectedPointToCanvas(pose.leftArm.hand);
   const rightHand = projectedPointToCanvas(pose.rightArm.hand);
-  const projectedShoulderSpan = Math.abs(
-    pose.shoulders.rightShoulder.x - pose.shoulders.leftShoulder.x
-  );
+  const leftShoulder = pose.skeleton.joints.shoulderLeft;
+  const rightShoulder = pose.skeleton.joints.shoulderRight;
+  const projectedShoulderSpan = Math.abs(rightShoulder.x - leftShoulder.x);
 
   return `left ${Math.round(leftHand.x)},${Math.round(leftHand.y)} / right ${Math.round(rightHand.x)},${Math.round(rightHand.y)} / yaw ${Math.round(pose.yawDeg)}deg / shoulders ${Math.round(projectedShoulderSpan)}px${diagnostics}`;
 }

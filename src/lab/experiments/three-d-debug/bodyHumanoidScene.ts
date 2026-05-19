@@ -1,7 +1,6 @@
 import {
-  buildBodyRigDimensionsForSharedHandRadius,
+  buildBodyRigDimensionsForCanonicalUnitRadius,
   buildBodyRigFrameFromDimensions,
-  buildBodySkeletonFrame,
   solveBodyRigFrame,
   type BodySkeletonFrame
 } from "@/body-rig";
@@ -15,7 +14,7 @@ import {
   type VisualizerBodyRigIds
 } from "@/visualizer/bodyRigSolve";
 
-export function buildBodyStickFigureScene(
+export function buildBodyHumanoidScene(
   worldPoses: WorldMultiRigPose,
   projectionSettings?: PlaneProjectionSettings,
   rigIds?: Partial<VisualizerBodyRigIds>
@@ -23,21 +22,21 @@ export function buildBodyStickFigureScene(
   const leftPose = worldPoses[rigIds?.left ?? DEFAULT_VISUALIZER_BODY_RIG_IDS.left] ?? null;
   const rightPose = worldPoses[rigIds?.right ?? DEFAULT_VISUALIZER_BODY_RIG_IDS.right] ?? null;
 
-  if (!leftPose || !rightPose) {
+  if (!leftPose && !rightPose) {
     return null;
   }
 
-  const dimensions = buildBodyRigDimensionsForSharedHandRadius(1);
+  const dimensions = buildBodyRigDimensionsForCanonicalUnitRadius(1);
   const body = buildBodyRigFrameFromDimensions(dimensions);
 
   const pose = solveBodyRigFrame(
     body,
     {
-      leftHandTarget: leftPose.handPosition,
-      rightHandTarget: rightPose.handPosition
+      leftHandTarget: leftPose?.handPosition ?? body.defaultLeftHandTarget,
+      rightHandTarget: rightPose?.handPosition ?? body.defaultRightHandTarget
     },
     projectionSettings ?? DEFAULT_PLANE_PROJECTION_SETTINGS
   );
 
-  return buildBodySkeletonFrame(pose.body, pose.solve);
+  return pose.skeleton;
 }

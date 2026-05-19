@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { buildBodyRigConfigFromArmReach, type BodyRigConfig } from "@/body-rig/bodyRigConfig";
 import {
-  computeSharedHandOverlapCircle,
+  computeCanonicalWallOverlapCircle,
+  computeBodyRigCanonicalPatternSpace,
   projectShoulderLine,
   solveBodyRig,
   solveStickArm,
@@ -148,7 +149,7 @@ describe("solveStickArm", () => {
     expect(distance(leftArm.elbow, leftArm.hand)).toBeCloseTo(30);
   });
 
-  it("points both elbows outward for an overhead shared hand target", () => {
+  it("points both elbows outward when both arms use the same overhead target", () => {
     const sharedHandTarget = { x: 0, y: -80 };
     const leftArm = solveStickArm({
       shoulder: { x: -45, y: 0 },
@@ -360,7 +361,7 @@ describe("solveWorldStickArm", () => {
 
   it("keeps a yawed full-body horizontal crossing forward instead of snapping backward", () => {
     const config = buildBodyRigConfigFromArmReach(1.25);
-    const sharedHandOverlapCircle = computeSharedHandOverlapCircle({
+    const canonicalWallCircle = computeCanonicalWallOverlapCircle({
       root: {
         torsoCenter: { x: 0, y: 0 },
         shoulderY: 0
@@ -371,17 +372,17 @@ describe("solveWorldStickArm", () => {
     const solveAtY = (y: number) =>
       solveWorldBodyRig({
         root: {
-          shoulderCenter: { x: 0, y: 0, z: 0 },
+          shoulderGirdleCenter: { x: 0, y: 0, z: 0 },
           worldUp: { x: 0, y: 1, z: 0 },
           neutralForward: { x: 0, y: 0, z: 1 },
           scale: 1
         },
         config,
         goals: {
-          leftHandTarget: { x: 0, y: y * sharedHandOverlapCircle.radius, z: 0 },
+          leftHandTarget: { x: 0, y: y * canonicalWallCircle.radius, z: 0 },
           rightHandTarget: {
-            x: sharedHandOverlapCircle.radius,
-            y: y * sharedHandOverlapCircle.radius,
+            x: canonicalWallCircle.radius,
+            y: y * canonicalWallCircle.radius,
             z: 0
           }
         }
@@ -416,9 +417,9 @@ describe("solveWorldStickArm", () => {
   });
 });
 
-describe("computeSharedHandOverlapCircle", () => {
-  it("computes the largest neutral shared-hand circle inside both arm reaches", () => {
-    const result = computeSharedHandOverlapCircle({
+describe("computeCanonicalWallOverlapCircle", () => {
+  it("computes the largest neutral canonical wall overlap circle inside both arm reaches", () => {
+    const result = computeCanonicalWallOverlapCircle({
       root: {
         torsoCenter: { x: 0, y: 0 },
         shoulderY: 0
@@ -438,7 +439,7 @@ describe("computeSharedHandOverlapCircle", () => {
   });
 
   it("uses the compressed shoulder span when asked for the maximum yaw overlap circle", () => {
-    const result = computeSharedHandOverlapCircle({
+    const result = computeCanonicalWallOverlapCircle({
       root: {
         torsoCenter: { x: 0, y: 0 },
         shoulderY: 0
@@ -458,7 +459,7 @@ describe("computeSharedHandOverlapCircle", () => {
   });
 
   it("keeps sampled boundary points reachable with both hands exactly overlapped", () => {
-    const circle = computeSharedHandOverlapCircle({
+    const circle = computeCanonicalWallOverlapCircle({
       root: {
         torsoCenter: { x: 200, y: 120 },
         shoulderY: 120
@@ -507,7 +508,7 @@ describe("computeSharedHandOverlapCircle", () => {
   });
 
   it("marks a sufficiently outside point as best effort even with shoulder contribution", () => {
-    const circle = computeSharedHandOverlapCircle({
+    const circle = computeCanonicalWallOverlapCircle({
       root: {
         torsoCenter: { x: 200, y: 120 },
         shoulderY: 120
@@ -543,6 +544,48 @@ describe("computeSharedHandOverlapCircle", () => {
 
     expect(solve.diagnostics.isBestEffort).toBe(true);
     expect(solve.leftArm.isClamped || solve.rightArm.isClamped).toBe(true);
+  });
+});
+
+describe("computeBodyRigCanonicalPatternSpace", () => {
+  it("uses the wall-plane overlap circle as origin and unit radius", () => {
+    const config = buildBodyRigConfigFromArmReach(1.25);
+    const result = computeBodyRigCanonicalPatternSpace({
+      root: {
+        shoulderGirdleCenter: { x: 0.25, y: 1.4, z: 0.5 },
+        worldUp: { x: 0, y: 1, z: 0 },
+        neutralForward: { x: 0, y: 0, z: 1 },
+        scale: 1
+      },
+      config,
+      useMaxYawCompression: true
+    });
+
+    expect(result.sourcePlane).toBe("wall");
+    expect(result.origin).toEqual({ x: 0.25, y: 1.4, z: 0.5 });
+    expect(result.unitRadius).toBeCloseTo(result.wallCircle.radius);
+    expect(result.wallCircle.usesMaxYawCompression).toBe(true);
+  });
+
+  it("imports the same wall-plane origin and radius for wheel and floor projections", () => {
+    const config = buildBodyRigConfigFromArmReach(1.25);
+    const canonical = computeBodyRigCanonicalPatternSpace({
+      root: {
+        shoulderGirdleCenter: { x: 0, y: 1.4, z: 0 },
+        worldUp: { x: 0, y: 1, z: 0 },
+        neutralForward: { x: 0, y: 0, z: 1 },
+        scale: 1
+      },
+      config,
+      useMaxYawCompression: true
+    });
+
+    expect(canonical.projections.wall.origin).toEqual(canonical.origin);
+    expect(canonical.projections.wheel.origin).toEqual(canonical.origin);
+    expect(canonical.projections.floor.origin).toEqual(canonical.origin);
+    expect(canonical.projections.wall.unitRadius).toBe(canonical.unitRadius);
+    expect(canonical.projections.wheel.unitRadius).toBe(canonical.unitRadius);
+    expect(canonical.projections.floor.unitRadius).toBe(canonical.unitRadius);
   });
 });
 
@@ -713,7 +756,7 @@ describe("solveWorldBodyRig", () => {
   it("keeps a balanced wall-plane pose neutral while solving in Vec3", () => {
     const result = solveWorldBodyRig({
       root: {
-        shoulderCenter: { x: 200, y: 118, z: 0 },
+        shoulderGirdleCenter: { x: 200, y: 118, z: 0 },
         worldUp: { x: 0, y: 1, z: 0 },
         neutralForward: { x: 0, y: 0, z: 1 },
         scale: 1
@@ -747,7 +790,7 @@ describe("solveWorldBodyRig", () => {
   it("lifts shoulders in world space for overhead targets", () => {
     const result = solveWorldBodyRig({
       root: {
-        shoulderCenter: { x: 200, y: 118, z: 0 },
+        shoulderGirdleCenter: { x: 200, y: 118, z: 0 },
         worldUp: { x: 0, y: 1, z: 0 },
         neutralForward: { x: 0, y: 0, z: 1 },
         scale: 1
@@ -763,5 +806,237 @@ describe("solveWorldBodyRig", () => {
     expect(result.diagnostics.rightShoulderLift).toBeGreaterThan(0);
     expect(result.shoulders.leftShoulder.y).toBeGreaterThan(118);
     expect(result.shoulders.rightShoulder.y).toBeGreaterThan(118);
+  });
+
+  it("exposes pelvis, chest, and shoulder-girdle state from the world solve", () => {
+    const result = solveWorldBodyRig({
+      root: {
+        shoulderGirdleCenter: { x: 0, y: 1.4, z: 0 },
+        neutralPelvisCenter: { x: 0, y: 0.8, z: 0 },
+        neutralChestCenter: { x: 0, y: 1.35, z: 0 },
+        worldUp: { x: 0, y: 1, z: 0 },
+        neutralForward: { x: 0, y: 0, z: 1 },
+        scale: 1
+      },
+      config: buildBodyRigConfigFromArmReach(1.25),
+      goals: {
+        leftHandTarget: { x: -0.55, y: 1.1, z: 0.2 },
+        rightHandTarget: { x: 0.65, y: 1.25, z: 0.25 }
+      },
+      yawSearchSteps: 72
+    });
+
+    expect(result.pelvis.center.y).toBeCloseTo(0.8, 1);
+    expect(Math.abs(result.pelvis.yawRad)).toBeLessThanOrEqual(Math.abs(result.yawRad) + 1e-9);
+    expect(result.chest.center.y).toBeGreaterThan(result.pelvis.center.y);
+    expect(result.shoulderGirdle.left.shoulderBase).toBeDefined();
+    expect(result.shoulderGirdle.left.shoulderSocket).toEqual(result.leftArm.shoulder);
+    expect(result.shoulderGirdle.right.shoulderSocket).toEqual(result.rightArm.shoulder);
+    expect(result.diagnostics.pelvisYawLimitHit).toBe(false);
+    expect(result.diagnostics.leftShoulder.overheadAmbiguous).toBe(false);
+  });
+
+  it("mirrors pelvis and shoulder-girdle state for mirrored world inputs", () => {
+    const config = buildBodyRigConfigFromArmReach(1.25);
+    const root = {
+      shoulderGirdleCenter: { x: 0, y: 1.4, z: 0 },
+      neutralPelvisCenter: { x: 0, y: 0.8, z: 0 },
+      neutralChestCenter: { x: 0, y: 1.35, z: 0 },
+      worldUp: { x: 0, y: 1, z: 0 },
+      neutralForward: { x: 0, y: 0, z: 1 },
+      scale: 1
+    };
+    const rightBiased = solveWorldBodyRig({
+      root,
+      config,
+      goals: {
+        leftHandTarget: { x: 0.05, y: 1.2, z: 0 },
+        rightHandTarget: { x: 0.85, y: 1.2, z: 0 }
+      }
+    });
+    const leftBiased = solveWorldBodyRig({
+      root,
+      config,
+      goals: {
+        leftHandTarget: { x: -0.85, y: 1.2, z: 0 },
+        rightHandTarget: { x: -0.05, y: 1.2, z: 0 }
+      }
+    });
+
+    expect(rightBiased.yawRad).toBeCloseTo(-leftBiased.yawRad);
+    expect(rightBiased.pelvis.center.x).toBeCloseTo(-leftBiased.pelvis.center.x);
+    expect(rightBiased.chest.center.x).toBeCloseTo(-leftBiased.chest.center.x);
+    expect(rightBiased.shoulderGirdle.right.lateralTravel).toBeCloseTo(
+      -leftBiased.shoulderGirdle.left.lateralTravel
+    );
+  });
+
+  it("fades lateral shoulder travel near the overhead ambiguity zone", () => {
+    const config = buildBodyRigConfigFromArmReach(1.25);
+    const solveAtOffset = (offsetX: number) =>
+      solveWorldBodyRig({
+        root: {
+          shoulderGirdleCenter: { x: 0, y: 1.4, z: 0 },
+          neutralPelvisCenter: { x: 0, y: 0.8, z: 0 },
+          neutralChestCenter: { x: 0, y: 1.35, z: 0 },
+          worldUp: { x: 0, y: 1, z: 0 },
+          neutralForward: { x: 0, y: 0, z: 1 },
+          scale: 1
+        },
+        config,
+        goals: {
+          leftHandTarget: { x: offsetX, y: 2.35, z: 0 },
+          rightHandTarget: { x: offsetX, y: 2.35, z: 0 }
+        },
+        yawSearchSteps: 96
+      });
+
+    const left = solveAtOffset(-0.03);
+    const center = solveAtOffset(0);
+    const right = solveAtOffset(0.03);
+
+    expect(center.diagnostics.leftShoulder.overheadAmbiguous).toBe(true);
+    expect(center.diagnostics.rightShoulder.overheadAmbiguous).toBe(true);
+    expect(Math.abs(center.shoulderGirdle.left.lateralTravel)).toBeLessThan(0.01);
+    expect(Math.abs(center.shoulderGirdle.right.lateralTravel)).toBeLessThan(0.01);
+    expect(Math.abs(left.shoulderGirdle.left.lateralTravel - center.shoulderGirdle.left.lateralTravel)).toBeLessThan(0.04);
+    expect(Math.abs(right.shoulderGirdle.right.lateralTravel - center.shoulderGirdle.right.lateralTravel)).toBeLessThan(0.04);
+    expect(center.shoulderGirdle.left.lift).toBeGreaterThan(0);
+    expect(center.shoulderGirdle.right.lift).toBeGreaterThan(0);
+    expect(center.shoulderGirdle.left.protraction).toBeGreaterThan(0);
+    expect(center.shoulderGirdle.right.protraction).toBeGreaterThan(0);
+  });
+
+  it("recovers lateral shoulder travel smoothly across the overhead fade band", () => {
+    const config = buildBodyRigConfigFromArmReach(1.25);
+    const root = {
+      shoulderGirdleCenter: { x: 0, y: 1.4, z: 0 },
+      neutralPelvisCenter: { x: 0, y: 0.8, z: 0 },
+      neutralChestCenter: { x: 0, y: 1.35, z: 0 },
+      worldUp: { x: 0, y: 1, z: 0 },
+      neutralForward: { x: 0, y: 0, z: 1 },
+      scale: 1
+    };
+    const solveAtOffset = (offsetX: number) =>
+      solveWorldBodyRig({
+        root,
+        config,
+        goals: {
+          leftHandTarget: { x: offsetX, y: 2.35, z: 0 },
+          rightHandTarget: { x: offsetX, y: 2.35, z: 0 }
+        },
+        yawSearchSteps: 96
+      });
+
+    const justInside = solveAtOffset(0.224);
+    const justOutside = solveAtOffset(0.226);
+    const midFade = solveAtOffset(0.29);
+    const outsideFade = solveAtOffset(0.42);
+
+    expect(justInside.diagnostics.leftShoulder.overheadAmbiguous).toBe(true);
+    expect(justOutside.diagnostics.leftShoulder.overheadAmbiguous).toBe(false);
+    expect(
+      Math.abs(justOutside.shoulderGirdle.left.lateralTravel - justInside.shoulderGirdle.left.lateralTravel)
+    ).toBeLessThan(0.01);
+    expect(Math.abs(midFade.shoulderGirdle.left.lateralTravel)).toBeGreaterThan(
+      Math.abs(justOutside.shoulderGirdle.left.lateralTravel)
+    );
+    expect(Math.abs(midFade.shoulderGirdle.left.lateralTravel)).toBeLessThan(
+      Math.abs(outsideFade.shoulderGirdle.left.lateralTravel)
+    );
+  });
+
+  it("recovers lateral shoulder travel smoothly across the low-hand fade band", () => {
+    const config = buildBodyRigConfigFromArmReach(1.25);
+    const root = {
+      shoulderGirdleCenter: { x: 0, y: 1.4, z: 0 },
+      neutralPelvisCenter: { x: 0, y: 0.8, z: 0 },
+      neutralChestCenter: { x: 0, y: 1.35, z: 0 },
+      worldUp: { x: 0, y: 1, z: 0 },
+      neutralForward: { x: 0, y: 0, z: 1 },
+      scale: 1
+    };
+    const solveAtOffset = (offsetX: number) =>
+      solveWorldBodyRig({
+        root,
+        config,
+        goals: {
+          leftHandTarget: { x: offsetX, y: 0.2, z: 0 },
+          rightHandTarget: { x: offsetX, y: 0.2, z: 0 }
+        },
+        yawSearchSteps: 96
+      });
+
+    const justInside = solveAtOffset(0.224);
+    const justOutside = solveAtOffset(0.226);
+    const midFade = solveAtOffset(0.29);
+    const outsideFade = solveAtOffset(0.42);
+
+    expect(justInside.diagnostics.leftShoulder.overheadAmbiguous).toBe(false);
+    expect(justOutside.diagnostics.leftShoulder.overheadAmbiguous).toBe(false);
+    expect(
+      Math.abs(justOutside.shoulderGirdle.left.lateralTravel - justInside.shoulderGirdle.left.lateralTravel)
+    ).toBeLessThan(0.01);
+    expect(Math.abs(midFade.shoulderGirdle.left.lateralTravel)).toBeGreaterThan(
+      Math.abs(justOutside.shoulderGirdle.left.lateralTravel)
+    );
+    expect(Math.abs(midFade.shoulderGirdle.left.lateralTravel)).toBeLessThan(
+      Math.abs(outsideFade.shoulderGirdle.left.lateralTravel)
+    );
+  });
+
+  it("does not apply overhead lateral fade to non-overhead forward reaches", () => {
+    const config = buildBodyRigConfigFromArmReach(1.25);
+    const result = solveWorldBodyRig({
+      root: {
+        shoulderGirdleCenter: { x: 0, y: 1.4, z: 0 },
+        neutralPelvisCenter: { x: 0, y: 0.8, z: 0 },
+        neutralChestCenter: { x: 0, y: 1.35, z: 0 },
+        worldUp: { x: 0, y: 1, z: 0 },
+        neutralForward: { x: 0, y: 0, z: 1 },
+        scale: 1
+      },
+      config,
+      goals: {
+        leftHandTarget: { x: 0.45, y: 1.4, z: 1.25 },
+        rightHandTarget: { x: 0.45, y: 1.4, z: 1.25 }
+      },
+      yawSearchSteps: 96
+    });
+
+    expect(result.diagnostics.leftShoulder.overheadAmbiguous).toBe(false);
+    expect(result.diagnostics.rightShoulder.overheadAmbiguous).toBe(false);
+    expect(Math.abs(result.shoulderGirdle.left.lateralTravel)).toBeGreaterThan(0.01);
+    expect(Math.abs(result.shoulderGirdle.right.lateralTravel)).toBeGreaterThan(0.01);
+  });
+
+  it("keeps shoulder sockets stable as a shared overhead target crosses center", () => {
+    const config = buildBodyRigConfigFromArmReach(1.25);
+    const root = {
+      shoulderGirdleCenter: { x: 0, y: 1.4, z: 0 },
+      neutralPelvisCenter: { x: 0, y: 0.8, z: 0 },
+      neutralChestCenter: { x: 0, y: 1.35, z: 0 },
+      worldUp: { x: 0, y: 1, z: 0 },
+      neutralForward: { x: 0, y: 0, z: 1 },
+      scale: 1
+    };
+    const solves = [-0.04, -0.02, 0, 0.02, 0.04].map((offsetX) =>
+      solveWorldBodyRig({
+        root,
+        config,
+        goals: {
+          leftHandTarget: { x: offsetX, y: 2.3, z: 0 },
+          rightHandTarget: { x: offsetX, y: 2.3, z: 0 }
+        },
+        yawSearchSteps: 96
+      })
+    );
+
+    for (let index = 1; index < solves.length; index += 1) {
+      expect(Math.abs(solves[index].leftArm.shoulder.x - solves[index - 1].leftArm.shoulder.x)).toBeLessThan(0.08);
+      expect(Math.abs(solves[index].rightArm.shoulder.x - solves[index - 1].rightArm.shoulder.x)).toBeLessThan(0.08);
+      expect(solves[index].leftArm.elbowPole.z).toBeGreaterThan(0);
+      expect(solves[index].rightArm.elbowPole.z).toBeGreaterThan(0);
+    }
   });
 });

@@ -62,10 +62,10 @@ describe("Three3DDebugCanvas source maintenance", () => {
 });
 
 describe("Three3DDebugPage body scene wiring", () => {
-  it("imports and uses buildBodyStickFigureScene", () => {
+  it("imports and uses buildBodyHumanoidScene", () => {
     const source = readFileSync(THREE_D_DEBUG_PAGE_FILE, "utf8");
 
-    expect(source).toContain("buildBodyStickFigureScene");
+    expect(source).toContain("buildBodyHumanoidScene");
   });
 
   it("computes bodyScene and passes it to the canvas", () => {
@@ -75,16 +75,18 @@ describe("Three3DDebugPage body scene wiring", () => {
     expect(source).toContain(':body-scene="bodyScene"');
   });
 
-  it("passes the current rig order into buildBodyStickFigureScene", () => {
+  it("resolves body rig sides before building the humanoid scene", () => {
     const source = readFileSync(THREE_D_DEBUG_PAGE_FILE, "utf8");
 
-    expect(source).toContain("const bodyRigIds = computed(() => ({");
-    expect(source).toContain("left: core.rigOrder.value[0],");
-    expect(source).toContain("right: core.rigOrder.value[1]");
-    expect(source).toContain("const bodyScene = computed(() =>");
+    expect(source).toContain("function resolveBodyRigIds");
+    expect(source).toContain('rigOrder.includes("left")');
+    expect(source).toContain('rigOrder.includes("right")');
+    expect(source).toContain("const bodyRigIds = computed(() => resolveBodyRigIds(core.rigOrder.value));");
     expect(source).toContain(
-      "buildBodyStickFigureScene(core.worldPoses.value, undefined, bodyRigIds.value)"
+      "const bodyScene = computed(() => buildBodyHumanoidScene(core.worldPoses.value, undefined, bodyRigIds.value));"
     );
+    expect(source).not.toContain("left: core.rigOrder.value[0],");
+    expect(source).not.toContain("right: core.rigOrder.value[1]");
   });
 });
 

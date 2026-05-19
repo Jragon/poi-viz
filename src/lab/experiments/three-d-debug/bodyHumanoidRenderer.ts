@@ -37,10 +37,12 @@ function makeSphereColor(name: SkeletonJointName): string {
     case "headCenter":
     case "neck":
       return CATEGORY_COLORS.head;
-    case "shoulderCenter":
+    case "chest":
+    case "clavicleLeft":
+    case "clavicleRight":
     case "shoulderLeft":
     case "shoulderRight":
-    case "pelvis":
+    case "pelvisCenter":
     case "hipLeft":
     case "hipRight":
       return CATEGORY_COLORS.spine;
@@ -74,8 +76,22 @@ function getSegmentBaseSpan(category: SkeletonSegmentCategory): number {
   return UNIT_CAPSULE_BODY_LENGTH + LIMB_RADIUS[category] * 2;
 }
 
-export class BodyStickFigureRenderer {
+const VOLUME_RADIUS = {
+  chest: 0.13,
+  lowerTorso: 0.09,
+  hips: 0.095,
+  head: 0.11
+} as const;
+
+const VOLUME_BODY_LENGTH = {
+  chest: 0.22,
+  lowerTorso: 0.16,
+  hips: 0.18
+} as const;
+
+export class BodyHumanoidRenderer {
   private readonly segmentMeshes = new Map<string, THREE.Mesh>();
+  private readonly volumeMeshes = new Map<string, THREE.Mesh>();
   private readonly jointMeshes = new Map<SkeletonJointName, THREE.Mesh>();
   private torsoCueMesh: THREE.Mesh | null = null;
   private headCueMesh: THREE.Mesh | null = null;
@@ -86,9 +102,102 @@ export class BodyStickFigureRenderer {
       return;
     }
 
+    this.syncVolumes(scene, frame);
     this.syncSegments(scene, frame);
     this.syncJoints(scene, frame);
     this.syncOrientationCues(scene, frame);
+  }
+
+  private syncVolumes(scene: THREE.Scene, frame: BodySkeletonFrame): void {
+    const up = new THREE.Vector3(frame.orientation.up.x, frame.orientation.up.y, frame.orientation.up.z);
+    const right = new THREE.Vector3(frame.orientation.right.x, frame.orientation.right.y, frame.orientation.right.z);
+    const chest = new THREE.Vector3(frame.joints.chest.x, frame.joints.chest.y, frame.joints.chest.z);
+    const pelvis = new THREE.Vector3(
+      frame.joints.pelvisCenter.x,
+      frame.joints.pelvisCenter.y,
+      frame.joints.pelvisCenter.z
+    );
+    const torsoAxis = new THREE.Vector3().subVectors(chest, pelvis);
+    const lowerTorsoCenter = new THREE.Vector3().lerpVectors(pelvis, chest, 0.42);
+    const hipCenter = new THREE.Vector3().lerpVectors(
+      new THREE.Vector3(frame.joints.hipLeft.x, frame.joints.hipLeft.y, frame.joints.hipLeft.z),
+      new THREE.Vector3(frame.joints.hipRight.x, frame.joints.hipRight.y, frame.joints.hipRight.z),
+      0.5
+    );
+    const chestWidth = Math.max(
+      new THREE.Vector3(
+        frame.joints.clavicleRight.x - frame.joints.clavicleLeft.x,
+        frame.joints.clavicleRight.y - frame.joints.clavicleLeft.y,
+        frame.joints.clavicleRight.z - frame.joints.clavicleLeft.z
+      ).length() * 0.75,
+      VOLUME_BODY_LENGTH.chest
+    );
+    const hipWidth = Math.max(
+      new THREE.Vector3(
+        frame.joints.hipRight.x - frame.joints.hipLeft.x,
+        frame.joints.hipRight.y - frame.joints.hipLeft.y,
+        frame.joints.hipRight.z - frame.joints.hipLeft.z
+      ).length() * 0.8,
+      VOLUME_BODY_LENGTH.hips
+    );
+
+    this.syncFloatingCapsuleVolume(scene, "chest", chest, right, chestWidth, VOLUME_RADIUS.chest, "#38bdf8");
+    this.syncFloatingCapsuleVolume(
+      scene,
+      "lowerTorso",
+      lowerTorsoCenter,
+      torsoAxis.lengthSq() > 1e-12 ? torsoAxis.normalize() : up,
+      VOLUME_BODY_LENGTH.lowerTorso,
+      VOLUME_RADIUS.lowerTorso,
+      "#a78bfa"
+    );
+    this.syncFloatingCapsuleVolume(scene, "hips", hipCenter, right, hipWidth, VOLUME_RADIUS.hips, "#f472b6");
+    this.syncSphereVolume(scene, "head", frame.joints.headCenter, VOLUME_RADIUS.head, "#e2e8f0");
+  }
+
+  private syncFloatingCapsuleVolume(
+    scene: THREE.Scene,
+    key: string,
+    center: THREE.Vector3,
+    axis: THREE.Vector3,
+    bodyLength: number,
+    radius: number,
+    color: string
+  ): void {
+    const normalizedAxis = axis.lengthSq() > 1e-12 ? axis.clone().normalize() : Y_AXIS;
+    let mesh = this.volumeMeshes.get(key);
+    if (!mesh) {
+      mesh = new THREE.Mesh(
+        new THREE.CapsuleGeometry(radius, UNIT_CAPSULE_BODY_LENGTH, CAPSULE_CAP_SEGS, CAPSULE_RADIAL_SEGS),
+        new THREE.MeshBasicMaterial({ color })
+      );
+      this.volumeMeshes.set(key, mesh);
+      scene.add(mesh);
+    }
+    mesh.position.copy(center);
+    mesh.scale.set(1, bodyLength / UNIT_CAPSULE_BODY_LENGTH, 1);
+    mesh.quaternion.setFromUnitVectors(Y_AXIS, normalizedAxis);
+    mesh.visible = true;
+  }
+
+  private syncSphereVolume(
+    scene: THREE.Scene,
+    key: string,
+    center: { x: number; y: number; z: number },
+    radius: number,
+    color: string
+  ): void {
+    let mesh = this.volumeMeshes.get(key);
+    if (!mesh) {
+      mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(radius, 16, 16),
+        new THREE.MeshBasicMaterial({ color })
+      );
+      this.volumeMeshes.set(key, mesh);
+      scene.add(mesh);
+    }
+    mesh.position.set(center.x, center.y, center.z);
+    mesh.visible = true;
   }
 
   private syncSegments(scene: THREE.Scene, frame: BodySkeletonFrame): void {
@@ -127,6 +236,9 @@ export class BodyStickFigureRenderer {
 
   private syncJoints(scene: THREE.Scene, frame: BodySkeletonFrame): void {
     for (const name of SKELETON_JOINT_NAMES) {
+      if (name !== "handLeft" && name !== "handRight") {
+        continue;
+      }
       const pos = frame.joints[name];
       let mesh = this.jointMeshes.get(name);
       if (!mesh) {
@@ -152,7 +264,7 @@ export class BodyStickFigureRenderer {
     const upV = new THREE.Vector3(orientation.up.x, orientation.up.y, orientation.up.z);
 
     // Torso cue: amber cone at chest level, pointing forward to indicate facing direction
-    const shoulderCenter = joints.shoulderCenter;
+    const chest = joints.chest;
     if (!this.torsoCueMesh) {
       this.torsoCueMesh = new THREE.Mesh(
         new THREE.ConeGeometry(0.04, 0.10, 8),
@@ -164,9 +276,9 @@ export class BodyStickFigureRenderer {
       .addScaledVector(forwardV, 0.07)
       .addScaledVector(upV, -0.05);
     this.torsoCueMesh.position.set(
-      shoulderCenter.x + torsoOffset.x,
-      shoulderCenter.y + torsoOffset.y,
-      shoulderCenter.z + torsoOffset.z
+      chest.x + torsoOffset.x,
+      chest.y + torsoOffset.y,
+      chest.z + torsoOffset.z
     );
     this.torsoCueMesh.quaternion.setFromUnitVectors(Y_AXIS, forwardV);
     this.torsoCueMesh.visible = true;
@@ -196,6 +308,13 @@ export class BodyStickFigureRenderer {
     }
     this.segmentMeshes.clear();
 
+    for (const mesh of this.volumeMeshes.values()) {
+      scene.remove(mesh);
+      mesh.geometry.dispose();
+      (mesh.material as THREE.Material).dispose();
+    }
+    this.volumeMeshes.clear();
+
     for (const mesh of this.jointMeshes.values()) {
       scene.remove(mesh);
       mesh.geometry.dispose();
@@ -216,6 +335,9 @@ export class BodyStickFigureRenderer {
 
   private setAllVisible(visible: boolean): void {
     for (const mesh of this.segmentMeshes.values()) {
+      mesh.visible = visible;
+    }
+    for (const mesh of this.volumeMeshes.values()) {
       mesh.visible = visible;
     }
     for (const mesh of this.jointMeshes.values()) {
