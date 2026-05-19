@@ -50,6 +50,7 @@ interface TrailObjects {
 interface RigMarkerObjects {
   readonly hand: THREE.Mesh;
   readonly head: THREE.Mesh;
+  readonly tether: THREE.Line;
 }
 
 interface PlaneObjects {
@@ -147,8 +148,16 @@ function createRigMarkerObjects(
     new THREE.SphereGeometry(0.1, 24, 24),
     new THREE.MeshBasicMaterial({ color: entry.headColor })
   );
+  const tether = new THREE.Line(
+    new THREE.BufferGeometry(),
+    new THREE.LineBasicMaterial({
+      color: entry.headColor,
+      transparent: true,
+      opacity: 0.35
+    })
+  );
 
-  return { hand, head };
+  return { hand, head, tether };
 }
 
 function createTrailObjects(
@@ -198,18 +207,25 @@ function syncRigMarkers() {
     if (!objects) {
       objects = createRigMarkerObjects(entry);
       rigMarkerObjects.set(entry.rigId, objects);
-      currentScene.add(objects.hand, objects.head);
+      currentScene.add(objects.tether, objects.hand, objects.head);
     }
 
     const handMaterial = objects.hand.material as THREE.MeshBasicMaterial;
     const headMaterial = objects.head.material as THREE.MeshBasicMaterial;
+    const tetherMaterial = objects.tether.material as THREE.LineBasicMaterial;
 
     handMaterial.color.set(entry.handColor);
     headMaterial.color.set(entry.headColor);
+    tetherMaterial.color.set(entry.headColor);
+    setLineGeometryPoints(objects.tether.geometry as THREE.BufferGeometry, [
+      entry.handPosition,
+      entry.headPosition
+    ]);
     objects.hand.position.set(entry.handPosition.x, entry.handPosition.y, entry.handPosition.z);
     objects.head.position.set(entry.headPosition.x, entry.headPosition.y, entry.headPosition.z);
     objects.hand.visible = true;
     objects.head.visible = true;
+    objects.tether.visible = true;
   });
 
   for (const [rigId, objects] of rigMarkerObjects.entries()) {
@@ -219,6 +235,7 @@ function syncRigMarkers() {
 
     objects.hand.visible = false;
     objects.head.visible = false;
+    objects.tether.visible = false;
   }
 
   renderScene();
@@ -347,6 +364,8 @@ function disposeRigMarkerObjects(objects: RigMarkerObjects) {
   disposeMaterial(objects.hand.material);
   objects.head.geometry.dispose();
   disposeMaterial(objects.head.material);
+  objects.tether.geometry.dispose();
+  disposeMaterial(objects.tether.material);
 }
 
 function disposeTrailObjects(objects: TrailObjects) {
@@ -377,7 +396,7 @@ function disposeThreeSceneResources() {
   bodyFigureRenderer = null;
 
   for (const objects of rigMarkerObjects.values()) {
-    scene?.remove(objects.hand, objects.head);
+    scene?.remove(objects.tether, objects.hand, objects.head);
     disposeRigMarkerObjects(objects);
   }
   rigMarkerObjects.clear();

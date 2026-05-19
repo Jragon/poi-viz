@@ -41,10 +41,11 @@ describe("Three3DDebugCanvas task 4 stick figure wiring", () => {
     expect(source).toMatch(/disposeThreeSceneResources[\s\S]*bodyFigureRenderer/);
   });
 
-  it("does not contain the old tether line in its rig object path", () => {
+  it("keeps the live poi hand-to-head tether in its rig marker path", () => {
     const source = readFileSync(THREE_D_DEBUG_CANVAS_FILE, "utf8");
 
-    expect(source).not.toContain("readonly tether: THREE.Line");
+    expect(source).toContain("readonly tether: THREE.Line");
+    expect(source).toContain("setLineGeometryPoints(objects.tether.geometry as THREE.BufferGeometry");
   });
 
   it("renders head and hand spheres inside the stick figure renderer", () => {
@@ -61,13 +62,13 @@ describe("Three3DDebugCanvas task 4 stick figure wiring", () => {
     expect(source).toContain("objects.head.visible = props.showHeadTrails && headPoints.length >= 2;");
   });
 
-  it("keeps live poi hand/head rig markers in the canvas without restoring the old tether", () => {
+  it("keeps live poi hand/head rig markers and connector in the canvas", () => {
     const source = readFileSync(THREE_D_DEBUG_CANVAS_FILE, "utf8");
 
     expect(source).toContain("interface RigMarkerObjects");
     expect(source).toContain("const rigMarkerObjects = new Map<RigId, RigMarkerObjects>()");
     expect(source).toContain("function createRigMarkerObjects(");
-    expect(source).not.toContain("readonly tether: THREE.Line");
+    expect(source).toContain("objects.tether.visible = true;");
   });
 
   it("uses CapsuleGeometry for limb segments instead of THREE.Line", () => {
