@@ -84,14 +84,14 @@ The body-rig layer should define the canonical body-local space used by pattern 
 
 Rules:
 
-- Compute the largest shared hand-overlap circle on the wall plane from the solved body dimensions, shoulder policy, yaw/projection limits, and arm reach range.
-- The center of that shared overlap circle is the body-local origin.
-- Unit length `1` is the radius of that shared overlap circle.
+- Compute the canonical wall-plane overlap circle from the solved body dimensions, shoulder policy, yaw/projection limits, and arm reach range.
+- The center of that canonical overlap circle is the body-local origin.
+- Unit length `1` is the radius of that canonical overlap circle.
 - A sequence with both arm radii at `1` should mean both hands can reach the entire unit circle for the full pattern, subject only to explicit boundary diagnostics.
 - 2D and 3D consumers must use this same origin and unit scale. The 2D visualizer should not keep a separate normalization path.
 - Wheel and floor plane projections import the wall-plane origin and unit radius rather than recomputing their own largest circles.
 - Wall-plane readability is the optimization target. It is acceptable if wheel or floor plane body motion looks slightly strange when projected from the wall-plane normalization, provided the projection behavior is deterministic and explicit.
-- If the upgraded pelvis/chest/shoulder solver changes the shared overlap circle, the canonical origin and unit radius must update with the solver rather than being patched in a renderer.
+- If the upgraded pelvis/chest/shoulder solver changes the canonical overlap circle, the canonical origin and unit radius must update with the solver rather than being patched in a renderer.
 
 The existing shared-overlap concept should become part of the authoritative body-rig contract, not a helper that only the 2D visualizer understands.
 

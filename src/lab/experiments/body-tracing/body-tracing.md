@@ -9,7 +9,7 @@
 
 # Body tracing sandbox
 
-This starts from a deliberately small body model: a basic stick figure on canvas with both hands draggable. The rig draws from the shared humanoid skeleton output, including pelvis and chest solving and full shoulder-girdle placement. Both hands are draggable; the rig infers torso yaw from the two hand positions, solves the pelvis/chest/shoulder-girdle chain, and normalises the shared hand guide to the canonical wall-plane pattern space.
+This starts from a deliberately small body model: a basic stick figure on canvas with both hands draggable. The rig draws from the shared humanoid skeleton output, including pelvis and chest solving and full shoulder-girdle placement. Both hands are draggable; the rig infers torso yaw from the two hand positions, solves the pelvis/chest/shoulder-girdle chain, and normalises the canonical pattern guide to the canonical wall-plane pattern space.
 
 <BodyTracingStickFigureCanvas />
 

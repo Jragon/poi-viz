@@ -418,7 +418,7 @@ describe("solveWorldStickArm", () => {
 });
 
 describe("computeCanonicalWallOverlapCircle", () => {
-  it("computes the largest neutral shared-hand circle inside both arm reaches", () => {
+  it("computes the largest neutral canonical wall overlap circle inside both arm reaches", () => {
     const result = computeCanonicalWallOverlapCircle({
       root: {
         torsoCenter: { x: 0, y: 0 },

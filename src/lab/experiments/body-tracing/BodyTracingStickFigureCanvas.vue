@@ -159,7 +159,7 @@ function getCanonicalPatternSpace(frame: BodyRigFrame) {
   });
 }
 
-function drawSharedHandGuide(ctx: CanvasRenderingContext2D, center: Vec2, radius: number) {
+function drawCanonicalPatternGuide(ctx: CanvasRenderingContext2D, center: Vec2, radius: number) {
   ctx.save();
   ctx.setLineDash([8, 8]);
   ctx.beginPath();
@@ -230,7 +230,7 @@ function draw() {
   const canonicalPatternSpace = getCanonicalPatternSpace(pose.body);
   const toCanvas = projectedPointToCanvas;
 
-  drawSharedHandGuide(
+  drawCanonicalPatternGuide(
     ctx,
     toCanvas({ x: canonicalPatternSpace.origin.x, y: canonicalPatternSpace.origin.y }),
     canonicalPatternSpace.unitRadius

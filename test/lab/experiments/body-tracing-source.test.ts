@@ -21,9 +21,10 @@ describe("BodyTracingStickFigureCanvas source", () => {
     expect(source).not.toContain(["body", "pelvis"].join("."));
   });
 
-  it("uses canonical wall-plane pattern space for the shared hand guide", () => {
+  it("uses canonical wall-plane pattern space for the canonical pattern guide", () => {
     expect(source).toContain("computeBodyRigCanonicalPatternSpace");
     expect(source).toContain("canonicalPatternSpace.unitRadius");
+    expect(source).toContain("drawCanonicalPatternGuide");
   });
 });
 
@@ -46,7 +47,7 @@ describe("body-tracing.md documentation", () => {
     expect(doc).toContain("adapters over the solved skeleton");
   });
 
-  it("does not contain stale largest-shared-hand-overlap-circle phrasing", () => {
-    expect(doc).not.toContain("largest shared-hand overlap circle");
+  it("does not contain stale largest shared overlap-circle phrasing", () => {
+    expect(doc).not.toMatch(/largest\s+shared.hand\s+overlap\s+circle/i);
   });
 });
