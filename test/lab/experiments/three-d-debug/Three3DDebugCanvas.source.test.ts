@@ -44,8 +44,9 @@ describe("Three3DDebugCanvas task 4 stick figure wiring", () => {
   it("keeps the live poi hand-to-head tether in its rig marker path", () => {
     const source = readFileSync(THREE_D_DEBUG_CANVAS_FILE, "utf8");
 
-    expect(source).toContain("readonly tether: THREE.Line");
-    expect(source).toContain("setLineGeometryPoints(objects.tether.geometry as THREE.BufferGeometry");
+    expect(source).toContain("readonly tether: THREE.Mesh");
+    expect(source).toContain("new THREE.CylinderGeometry(TETHER_RADIUS");
+    expect(source).toContain("objects.tether.quaternion.setFromUnitVectors");
   });
 
   it("renders head and hand spheres inside the stick figure renderer", () => {

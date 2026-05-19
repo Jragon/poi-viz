@@ -16,6 +16,10 @@ import {
 import { BodyStickFigureRenderer } from "./bodyStickFigureRenderer";
 import { setLineGeometryPoints } from "./trailLineGeometry";
 
+const TETHER_RADIUS = 0.012;
+const UNIT_TETHER_LENGTH = 1;
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
+
 const props = withDefaults(
   defineProps<{
     poses: WorldMultiRigPose;
@@ -50,7 +54,7 @@ interface TrailObjects {
 interface RigMarkerObjects {
   readonly hand: THREE.Mesh;
   readonly head: THREE.Mesh;
-  readonly tether: THREE.Line;
+  readonly tether: THREE.Mesh;
 }
 
 interface PlaneObjects {
@@ -148,12 +152,12 @@ function createRigMarkerObjects(
     new THREE.SphereGeometry(0.1, 24, 24),
     new THREE.MeshBasicMaterial({ color: entry.headColor })
   );
-  const tether = new THREE.Line(
-    new THREE.BufferGeometry(),
-    new THREE.LineBasicMaterial({
+  const tether = new THREE.Mesh(
+    new THREE.CylinderGeometry(TETHER_RADIUS, TETHER_RADIUS, UNIT_TETHER_LENGTH, 8),
+    new THREE.MeshBasicMaterial({
       color: entry.headColor,
       transparent: true,
-      opacity: 0.35
+      opacity: 0.5
     })
   );
 
@@ -212,15 +216,30 @@ function syncRigMarkers() {
 
     const handMaterial = objects.hand.material as THREE.MeshBasicMaterial;
     const headMaterial = objects.head.material as THREE.MeshBasicMaterial;
-    const tetherMaterial = objects.tether.material as THREE.LineBasicMaterial;
+    const tetherMaterial = objects.tether.material as THREE.MeshBasicMaterial;
+    const handPosition = new THREE.Vector3(
+      entry.handPosition.x,
+      entry.handPosition.y,
+      entry.handPosition.z
+    );
+    const headPosition = new THREE.Vector3(
+      entry.headPosition.x,
+      entry.headPosition.y,
+      entry.headPosition.z
+    );
+    const tetherDirection = new THREE.Vector3().subVectors(headPosition, handPosition);
+    const tetherLength = tetherDirection.length();
 
     handMaterial.color.set(entry.handColor);
     headMaterial.color.set(entry.headColor);
     tetherMaterial.color.set(entry.headColor);
-    setLineGeometryPoints(objects.tether.geometry as THREE.BufferGeometry, [
-      entry.handPosition,
-      entry.headPosition
-    ]);
+    objects.tether.position.lerpVectors(handPosition, headPosition, 0.5);
+    objects.tether.scale.set(1, Math.max(tetherLength, 1e-6), 1);
+    if (tetherLength > 1e-6) {
+      objects.tether.quaternion.setFromUnitVectors(Y_AXIS, tetherDirection.normalize());
+    } else {
+      objects.tether.quaternion.identity();
+    }
     objects.hand.position.set(entry.handPosition.x, entry.handPosition.y, entry.handPosition.z);
     objects.head.position.set(entry.headPosition.x, entry.headPosition.y, entry.headPosition.z);
     objects.hand.visible = true;
