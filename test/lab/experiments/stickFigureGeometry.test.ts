@@ -764,4 +764,67 @@ describe("solveWorldBodyRig", () => {
     expect(result.shoulders.leftShoulder.y).toBeGreaterThan(118);
     expect(result.shoulders.rightShoulder.y).toBeGreaterThan(118);
   });
+
+  it("exposes pelvis, chest, and shoulder-girdle state from the world solve", () => {
+    const result = solveWorldBodyRig({
+      root: {
+        shoulderCenter: { x: 0, y: 1.4, z: 0 },
+        neutralPelvisCenter: { x: 0, y: 0.8, z: 0 },
+        neutralChestCenter: { x: 0, y: 1.35, z: 0 },
+        worldUp: { x: 0, y: 1, z: 0 },
+        neutralForward: { x: 0, y: 0, z: 1 },
+        scale: 1
+      },
+      config: buildBodyRigConfigFromArmReach(1.25),
+      goals: {
+        leftHandTarget: { x: -0.55, y: 1.1, z: 0.2 },
+        rightHandTarget: { x: 0.65, y: 1.25, z: 0.25 }
+      },
+      yawSearchSteps: 72
+    });
+
+    expect(result.pelvis.center.y).toBeCloseTo(0.8, 1);
+    expect(Math.abs(result.pelvis.yawRad)).toBeLessThanOrEqual(Math.abs(result.yawRad) + 1e-9);
+    expect(result.chest.center.y).toBeGreaterThan(result.pelvis.center.y);
+    expect(result.shoulderGirdle.left.shoulderBase).toBeDefined();
+    expect(result.shoulderGirdle.left.shoulderSocket).toEqual(result.leftArm.shoulder);
+    expect(result.shoulderGirdle.right.shoulderSocket).toEqual(result.rightArm.shoulder);
+    expect(result.diagnostics.pelvisYawLimitHit).toBe(false);
+    expect(result.diagnostics.leftShoulder.overheadAmbiguous).toBe(false);
+  });
+
+  it("mirrors pelvis and shoulder-girdle state for mirrored world inputs", () => {
+    const config = buildBodyRigConfigFromArmReach(1.25);
+    const root = {
+      shoulderCenter: { x: 0, y: 1.4, z: 0 },
+      neutralPelvisCenter: { x: 0, y: 0.8, z: 0 },
+      neutralChestCenter: { x: 0, y: 1.35, z: 0 },
+      worldUp: { x: 0, y: 1, z: 0 },
+      neutralForward: { x: 0, y: 0, z: 1 },
+      scale: 1
+    };
+    const rightBiased = solveWorldBodyRig({
+      root,
+      config,
+      goals: {
+        leftHandTarget: { x: 0.05, y: 1.2, z: 0 },
+        rightHandTarget: { x: 0.85, y: 1.2, z: 0 }
+      }
+    });
+    const leftBiased = solveWorldBodyRig({
+      root,
+      config,
+      goals: {
+        leftHandTarget: { x: -0.85, y: 1.2, z: 0 },
+        rightHandTarget: { x: -0.05, y: 1.2, z: 0 }
+      }
+    });
+
+    expect(rightBiased.yawRad).toBeCloseTo(-leftBiased.yawRad);
+    expect(rightBiased.pelvis.center.x).toBeCloseTo(-leftBiased.pelvis.center.x);
+    expect(rightBiased.chest.center.x).toBeCloseTo(-leftBiased.chest.center.x);
+    expect(rightBiased.shoulderGirdle.right.lateralTravel).toBeCloseTo(
+      -leftBiased.shoulderGirdle.left.lateralTravel
+    );
+  });
 });

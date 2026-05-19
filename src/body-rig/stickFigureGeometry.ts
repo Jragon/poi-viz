@@ -104,6 +104,8 @@ export interface BodyRigSolveResult {
 
 export interface BodyRigWorldRoot {
   readonly shoulderCenter: Vec3;
+  readonly neutralPelvisCenter?: Vec3;
+  readonly neutralChestCenter?: Vec3;
   readonly worldUp: Vec3;
   readonly neutralForward: Vec3;
   readonly scale: number;
@@ -150,6 +152,41 @@ export interface BodyRigWorldShoulders {
   readonly worldUp: Vec3;
 }
 
+export interface BodyRigWorldFrameState {
+  readonly center: Vec3;
+  readonly forward: Vec3;
+  readonly right: Vec3;
+  readonly up: Vec3;
+  readonly yawRad: number;
+  readonly limitHit: boolean;
+}
+
+export interface BodyRigWorldShoulderGirdleState {
+  readonly shoulderBase: Vec3;
+  readonly clavicleVector: Vec3;
+  readonly shoulderSocket: Vec3;
+  readonly lift: number;
+  readonly protraction: number;
+  readonly retraction: number;
+  readonly lateralTravel: number;
+  readonly overheadAmbiguous: boolean;
+  readonly limitHit: boolean;
+}
+
+export interface BodyRigWorldShoulderGirdlePair {
+  readonly left: BodyRigWorldShoulderGirdleState;
+  readonly right: BodyRigWorldShoulderGirdleState;
+}
+
+export interface BodyRigWorldShoulderDiagnostics {
+  readonly lift: number;
+  readonly protraction: number;
+  readonly retraction: number;
+  readonly lateralTravel: number;
+  readonly overheadAmbiguous: boolean;
+  readonly limitHit: boolean;
+}
+
 export interface BodyRigWorldSolveRequest {
   readonly root: BodyRigWorldRoot;
   readonly config: BodyRigConfig;
@@ -174,13 +211,21 @@ export interface BodyRigWorldSolveDiagnostics {
   readonly handMidpointOffset: Vec3;
   readonly leftElbowPole: Vec3;
   readonly rightElbowPole: Vec3;
+  readonly pelvisYawLimitHit: boolean;
+  readonly pelvisShiftLimitHit: boolean;
   readonly shoulderLimitHit: boolean;
+  readonly leftShoulder: BodyRigWorldShoulderDiagnostics;
+  readonly rightShoulder: BodyRigWorldShoulderDiagnostics;
+  readonly bestEffortReasons: readonly string[];
   readonly isBestEffort: boolean;
 }
 
 export interface BodyRigWorldSolveResult {
   readonly yawRad: number;
+  readonly pelvis: BodyRigWorldFrameState;
+  readonly chest: BodyRigWorldFrameState;
   readonly shoulders: BodyRigWorldShoulders;
+  readonly shoulderGirdle: BodyRigWorldShoulderGirdlePair;
   readonly leftArm: WorldStickArmResult;
   readonly rightArm: WorldStickArmResult;
   readonly diagnostics: BodyRigWorldSolveDiagnostics;
@@ -230,6 +275,8 @@ interface WorldCandidateScore {
 
 interface WorldShoulderPassResult {
   readonly shoulders: BodyRigWorldShoulders;
+  readonly projectedLeftShoulder: Vec3;
+  readonly projectedRightShoulder: Vec3;
   readonly leftOffset: ShoulderOffset;
   readonly rightOffset: ShoulderOffset;
   readonly shoulderLimitHit: boolean;
@@ -407,6 +454,142 @@ function getWorldPreferredYawSign(
   return offset > 0 ? 1 : -1;
 }
 
+function getRootPelvisCenter(
+  root: BodyRigWorldRoot,
+  worldUp: Vec3,
+  config: ResolvedBodyRigConfig
+): Vec3 {
+  return (
+    root.neutralPelvisCenter ??
+    add3(root.shoulderCenter, scale3(worldUp, -config.baseShoulderSpan * 0.86))
+  );
+}
+
+function getRootChestCenter(root: BodyRigWorldRoot): Vec3 {
+  return root.neutralChestCenter ?? root.shoulderCenter;
+}
+
+function solveWorldPelvisState(
+  input: BodyRigWorldSolveRequest,
+  config: ResolvedBodyRigConfig,
+  yawRad: number,
+  handMidpointOffset: Vec3,
+  neutralBasis: ReturnType<typeof getWorldBasis>
+): BodyRigWorldFrameState {
+  const pelvisYawRad = yawRad * config.pelvisPolicy.yawFollowRatio;
+  const pelvisBasis = getWorldBasis(input.root, pelvisYawRad);
+  const lateralRaw = -dot3(handMidpointOffset, neutralBasis.torsoRight) * 0.08;
+  const forwardRaw = dot3(handMidpointOffset, neutralBasis.torsoForward) * 0.05;
+  const lateralShift = clamp(
+    lateralRaw,
+    -config.pelvisPolicy.maxLateralShift,
+    config.pelvisPolicy.maxLateralShift
+  );
+  const forwardShift = clamp(
+    forwardRaw,
+    -config.pelvisPolicy.maxForwardShift,
+    config.pelvisPolicy.maxForwardShift
+  );
+  const neutralCenter = getRootPelvisCenter(input.root, neutralBasis.worldUp, config);
+  const center = add3(
+    add3(neutralCenter, scale3(neutralBasis.torsoRight, lateralShift)),
+    scale3(neutralBasis.torsoForward, forwardShift)
+  );
+
+  return {
+    center,
+    forward: pelvisBasis.torsoForward,
+    right: pelvisBasis.torsoRight,
+    up: pelvisBasis.worldUp,
+    yawRad: pelvisYawRad,
+    limitHit:
+      Math.abs(lateralRaw - lateralShift) > SCORE_EPSILON ||
+      Math.abs(forwardRaw - forwardShift) > SCORE_EPSILON
+  };
+}
+
+function solveWorldChestState(
+  input: BodyRigWorldSolveRequest,
+  config: ResolvedBodyRigConfig,
+  yawRad: number,
+  pelvis: BodyRigWorldFrameState,
+  neutralBasis: ReturnType<typeof getWorldBasis>
+): BodyRigWorldFrameState {
+  const chestYawRad = yawRad * config.chestPolicy.yawFollowRatio;
+  const chestBasis = getWorldBasis(input.root, chestYawRad);
+  const neutralCenter = getRootChestCenter(input.root);
+  const pelvisToChest = subtract3(neutralCenter, pelvis.center);
+  const lift =
+    Math.max(0, dot3(pelvisToChest, neutralBasis.worldUp)) * config.chestPolicy.centerLiftRatio;
+  const center = add3(neutralCenter, scale3(neutralBasis.worldUp, lift));
+
+  return {
+    center,
+    forward: chestBasis.torsoForward,
+    right: chestBasis.torsoRight,
+    up: chestBasis.worldUp,
+    yawRad: chestYawRad,
+    limitHit: false
+  };
+}
+
+function buildWorldShoulderGirdleState(
+  shoulderBase: Vec3,
+  shoulderSocket: Vec3,
+  chest: BodyRigWorldFrameState,
+  offset: ShoulderOffset,
+  limitHit: boolean
+): BodyRigWorldShoulderGirdleState {
+  return {
+    shoulderBase,
+    clavicleVector: subtract3(shoulderSocket, chest.center),
+    shoulderSocket,
+    lift: offset.lift,
+    protraction: 0,
+    retraction: 0,
+    lateralTravel: offset.lateral,
+    overheadAmbiguous: false,
+    limitHit
+  };
+}
+
+function buildWorldShoulderDiagnostics(
+  girdle: BodyRigWorldShoulderGirdleState
+): BodyRigWorldShoulderDiagnostics {
+  return {
+    lift: girdle.lift,
+    protraction: girdle.protraction,
+    retraction: girdle.retraction,
+    lateralTravel: girdle.lateralTravel,
+    overheadAmbiguous: girdle.overheadAmbiguous,
+    limitHit: girdle.limitHit
+  };
+}
+
+function getWorldBestEffortReasons(
+  leftReachError: number,
+  rightReachError: number,
+  pelvisShiftLimitHit: boolean,
+  shoulderLimitHit: boolean
+): string[] {
+  const reasons: string[] = [];
+
+  if (leftReachError > SCORE_EPSILON) {
+    reasons.push("left-reach");
+  }
+  if (rightReachError > SCORE_EPSILON) {
+    reasons.push("right-reach");
+  }
+  if (pelvisShiftLimitHit) {
+    reasons.push("pelvis-shift-limit");
+  }
+  if (shoulderLimitHit) {
+    reasons.push("shoulder-limit");
+  }
+
+  return reasons;
+}
+
 function solveWorldShoulders(
   input: BodyRigWorldSolveRequest,
   config: ResolvedBodyRigConfig,
@@ -517,6 +700,8 @@ function applyWorldShoulderPolicy(
       leftShoulder,
       rightShoulder
     },
+    projectedLeftShoulder: projectedShoulders.leftShoulder,
+    projectedRightShoulder: projectedShoulders.rightShoulder,
     leftOffset,
     rightOffset,
     shoulderLimitHit
@@ -852,6 +1037,30 @@ function scoreWorldYawCandidate(
   const handMidpoint = scale3(add3(input.goals.leftHandTarget, input.goals.rightHandTarget), 0.5);
   const handMidpointOffset = subtract3(handMidpoint, input.root.shoulderCenter);
   const neutralBasis = getWorldBasis(input.root, 0);
+  const pelvis = solveWorldPelvisState(
+    input,
+    config,
+    shoulders.yawRad,
+    handMidpointOffset,
+    neutralBasis
+  );
+  const chest = solveWorldChestState(input, config, shoulders.yawRad, pelvis, neutralBasis);
+  const shoulderGirdle: BodyRigWorldShoulderGirdlePair = {
+    left: buildWorldShoulderGirdleState(
+      shoulderPass.projectedLeftShoulder,
+      leftArm.shoulder,
+      chest,
+      shoulderPass.leftOffset,
+      shoulderPass.shoulderLimitHit
+    ),
+    right: buildWorldShoulderGirdleState(
+      shoulderPass.projectedRightShoulder,
+      rightArm.shoulder,
+      chest,
+      shoulderPass.rightOffset,
+      shoulderPass.shoulderLimitHit
+    )
+  };
   const neutralDeadzone = config.neutralDeadzonePx ?? config.baseShoulderSpan * 0.08;
   const preferredYawSign = getWorldPreferredYawSign(
     handMidpointOffset,
@@ -864,11 +1073,21 @@ function scoreWorldYawCandidate(
       ? 0
       : config.solverWeights.sideBiasPenalty;
   const cost = reachPenalty + extensionPenalty + yawPenalty + sideBiasPenalty;
+  const pelvisYawLimitHit = false;
+  const bestEffortReasons = getWorldBestEffortReasons(
+    leftArm.reachError,
+    rightArm.reachError,
+    pelvis.limitHit,
+    shoulderPass.shoulderLimitHit
+  );
 
   return {
     result: {
       yawRad: shoulders.yawRad,
+      pelvis,
+      chest,
       shoulders,
+      shoulderGirdle,
       leftArm,
       rightArm,
       cost,
@@ -889,8 +1108,13 @@ function scoreWorldYawCandidate(
         handMidpointOffset,
         leftElbowPole: leftArm.elbowPole,
         rightElbowPole: rightArm.elbowPole,
+        pelvisYawLimitHit,
+        pelvisShiftLimitHit: pelvis.limitHit,
         shoulderLimitHit: shoulderPass.shoulderLimitHit,
-        isBestEffort: leftArm.reachError > SCORE_EPSILON || rightArm.reachError > SCORE_EPSILON
+        leftShoulder: buildWorldShoulderDiagnostics(shoulderGirdle.left),
+        rightShoulder: buildWorldShoulderDiagnostics(shoulderGirdle.right),
+        bestEffortReasons,
+        isBestEffort: bestEffortReasons.length > 0
       }
     },
     absYaw: Math.abs(shoulders.yawRad),
