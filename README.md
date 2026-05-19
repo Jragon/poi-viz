@@ -1,14 +1,14 @@
-# poi-v2 segmentation-first engine experiment
+# poi-v2 segmentation-first poi visualizer
 
-Minimal TypeScript-only scaffold for a V2 poi segmentation-first engine.
+TypeScript scaffold for a V2 poi segmentation-first engine and visualizer experiments.
 
 ## Scope
 
-- Engine-only (no UI, generators, rendering, or solver)
+- Engine behavior remains deterministic and test-first; UI/lab surfaces are visual adapters over engine output
 - Current engine evaluation is local 2D motion with atomic plane metadata
 - Generic plane-side metadata is preserved by the engine for later body-tracing work
 - Two-node chain: hand -> head
-- Atomic plane breaks support `wall`, `wheel`, and `floor` with projected Canvas output
+- Atomic plane breaks support `wall`, `wheel`, and `floor` with projected Canvas output and a narrow Three.js debug visualizer
 
 ## Commands
 

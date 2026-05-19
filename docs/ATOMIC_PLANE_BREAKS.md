@@ -124,7 +124,7 @@ This phase one does not support:
 - automatic zero-point proof,
 - stall physics or non-uniform hand timing,
 - point-to-point authored controls,
-- WebGL or Three.js,
+- production WebGL/Three.js rendering beyond the narrow debug visualizer,
 - explicit boundary mode fields,
 - zero-point kind metadata.
 
@@ -132,7 +132,7 @@ These are not failures of the atomic-plane model. They are separate later scopes
 
 ## Visual Follow-Up
 
-The implemented visual path stays on the existing 2D canvas:
+The source-aligned visual path includes the existing 2D canvas:
 
 - current pose projection for `wall`, `wheel`, and `floor`,
 - projected trail sampling,
@@ -140,9 +140,11 @@ The implemented visual path stays on the existing 2D canvas:
 - automatic projection preference that keeps wall-only sequences front orthographic,
 - configurable tilted orthographic projection with yaw and pitch controls for non-wall planes or manual override.
 
+The lab also includes a narrow Three.js debug visualizer for world-pose inspection. It renders the actual poi hand/head markers, tether, trails, origin plane sheets, and a procedural stick-figure body overlay. This remains a visual adapter over evaluated world poses; it does not add arbitrary 3D paths or body-aware topology to the engine runtime.
+
 Phase atlases, stronger plane guides, and active plane highlighting are still visual follow-ups.
 
-WebGL becomes useful later for body-aware 3D motion, camera orbit, occlusion, and continuous manifold paths.
+Broader WebGL scope remains useful later for body-aware 3D motion, camera orbit, occlusion, and continuous manifold paths.
 
 ## Iteration Path
 

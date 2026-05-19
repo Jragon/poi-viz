@@ -305,8 +305,9 @@ function syncTrailObjects() {
 }
 
 function createPlaneObjects(color: string): PlaneObjects {
+  const planeGeometry = new THREE.PlaneGeometry(1, 1);
   const surface = new THREE.Mesh(
-    new THREE.PlaneGeometry(1, 1),
+    planeGeometry,
     new THREE.MeshBasicMaterial({
       color,
       transparent: true,
@@ -316,7 +317,7 @@ function createPlaneObjects(color: string): PlaneObjects {
     })
   );
   const edge = new THREE.LineSegments(
-    new THREE.EdgesGeometry(new THREE.PlaneGeometry(1, 1)),
+    new THREE.EdgesGeometry(planeGeometry),
     new THREE.LineBasicMaterial({
       color,
       transparent: true,
