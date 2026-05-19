@@ -116,6 +116,19 @@ describe("SKELETON_SEGMENTS", () => {
 });
 
 describe("buildBodySkeletonFrame", () => {
+  it("solveBodyRigFrame exposes the same skeleton frame used by renderers", () => {
+    const { pose } = makePose();
+
+    expect(pose.skeleton.joints.chest).toEqual(pose.solve.chest.center);
+    expect(pose.skeleton.joints.pelvisCenter).toEqual(pose.solve.pelvis.center);
+    expect(pose.skeleton.joints.shoulderLeft).toEqual(
+      pose.solve.shoulderGirdle.left.shoulderSocket
+    );
+    expect(pose.skeleton.solverDiagnostics.bestEffortReasons).toEqual(
+      pose.solve.diagnostics.bestEffortReasons
+    );
+  });
+
   it("returns joints record with all joint names as keys", () => {
     const { pose } = makePose();
     const frame = buildBodySkeletonFrame(pose.body, pose.solve);

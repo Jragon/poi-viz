@@ -215,7 +215,13 @@ function renderBodyOverlay(
     limbStroke,
     geometry.bodyLineWidth
   );
-  drawLine(ctx, toCanvas(body.neck), toCanvas(body.pelvis), limbStroke, geometry.bodyLineWidth);
+  drawLine(
+    ctx,
+    toCanvas(body.neck),
+    toCanvas(body.pelvisCenter),
+    limbStroke,
+    geometry.bodyLineWidth
+  );
   drawLine(
     ctx,
     toCanvas(body.hipLeft),
@@ -247,7 +253,7 @@ function renderBodyOverlay(
     body.neck,
     pose.shoulders.leftShoulder,
     pose.shoulders.rightShoulder,
-    body.pelvis,
+    body.pelvisCenter,
     body.hipLeft,
     body.hipRight,
     body.kneeLeft,

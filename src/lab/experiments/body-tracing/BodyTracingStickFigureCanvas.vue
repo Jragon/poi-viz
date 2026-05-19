@@ -213,7 +213,7 @@ function draw() {
     12,
     limbStroke
   );
-  drawLimb(ctx, [toCanvas(body.neck), toCanvas(body.pelvis)], 14, limbStroke);
+  drawLimb(ctx, [toCanvas(body.neck), toCanvas(body.pelvisCenter)], 14, limbStroke);
   drawLimb(ctx, [toCanvas(body.hipLeft), toCanvas(body.hipRight)], 12, secondaryStroke);
   drawLimb(
     ctx,
@@ -245,7 +245,7 @@ function draw() {
     pose.shoulders.rightShoulder,
     pose.leftArm.elbow,
     pose.rightArm.elbow,
-    body.pelvis,
+    body.pelvisCenter,
     body.hipLeft,
     body.hipRight,
     body.kneeLeft,

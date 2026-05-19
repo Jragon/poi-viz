@@ -9,6 +9,10 @@ import {
   type ProjectedBodyRigFrame
 } from "./bodyRigProjection";
 import {
+  buildBodySkeletonFrame,
+  type BodySkeletonFrame
+} from "./bodySkeletonFrame";
+import {
   solveWorldBodyRig,
   type ArmSide,
   type BodyRigWorldGoals,
@@ -19,9 +23,10 @@ export interface BodyRigFrame {
   readonly headCenter: Vec3;
   readonly headRadius: number;
   readonly neck: Vec3;
+  readonly chest: Vec3;
   readonly rigConfig: BodyRigConfig;
   readonly shoulderCenter: Vec3;
-  readonly pelvis: Vec3;
+  readonly pelvisCenter: Vec3;
   readonly hipLeft: Vec3;
   readonly hipRight: Vec3;
   readonly kneeLeft: Vec3;
@@ -36,8 +41,9 @@ export interface ProjectedBodyRigStaticFrame {
   readonly headCenter: Vec2;
   readonly headRadius: number;
   readonly neck: Vec2;
+  readonly chest: Vec2;
   readonly shoulderCenter: Vec2;
-  readonly pelvis: Vec2;
+  readonly pelvisCenter: Vec2;
   readonly hipLeft: Vec2;
   readonly hipRight: Vec2;
   readonly kneeLeft: Vec2;
@@ -77,6 +83,7 @@ export interface BuildBodyRigFrameInput {
 
 export interface BodyRigPose {
   readonly body: BodyRigFrame;
+  readonly skeleton: BodySkeletonFrame;
   readonly projectedBody: ProjectedBodyRigStaticFrame;
   readonly shoulders: {
     readonly leftShoulder: Vec2;
@@ -99,8 +106,9 @@ function projectBodyRigFrame(
     headCenter: projectWorldPoint(body.headCenter, settings),
     headRadius: body.headRadius,
     neck: projectWorldPoint(body.neck, settings),
+    chest: projectWorldPoint(body.chest, settings),
     shoulderCenter: projectWorldPoint(body.shoulderCenter, settings),
-    pelvis: projectWorldPoint(body.pelvis, settings),
+    pelvisCenter: projectWorldPoint(body.pelvisCenter, settings),
     hipLeft: projectWorldPoint(body.hipLeft, settings),
     hipRight: projectWorldPoint(body.hipRight, settings),
     kneeLeft: projectWorldPoint(body.kneeLeft, settings),
@@ -148,13 +156,26 @@ export function buildBodyRigFrame(input: BuildBodyRigFrameInput): BodyRigFrame {
   };
   const defaultHandTargetXRatio = input.defaultHandTargetXRatio ?? 0;
   const defaultHandTargetYRatio = input.defaultHandTargetYRatio ?? 0;
-  const pelvis = {
+  const pelvisCenter = {
     x: input.shoulderCenter.x,
     y: shoulderY - input.torsoHeight,
     z: shoulderZ
   };
-  const hipLeft = { x: input.shoulderCenter.x - input.hipSpan * 0.5, y: pelvis.y, z: shoulderZ };
-  const hipRight = { x: input.shoulderCenter.x + input.hipSpan * 0.5, y: pelvis.y, z: shoulderZ };
+  const chest = {
+    x: input.shoulderCenter.x,
+    y: shoulderY - input.torsoHeight * 0.12,
+    z: shoulderZ
+  };
+  const hipLeft = {
+    x: input.shoulderCenter.x - input.hipSpan * 0.5,
+    y: pelvisCenter.y,
+    z: shoulderZ
+  };
+  const hipRight = {
+    x: input.shoulderCenter.x + input.hipSpan * 0.5,
+    y: pelvisCenter.y,
+    z: shoulderZ
+  };
   const kneeLeft = {
     x: hipLeft.x - input.stanceWidth,
     y: hipLeft.y - input.thighLength,
@@ -178,9 +199,10 @@ export function buildBodyRigFrame(input: BuildBodyRigFrameInput): BodyRigFrame {
       y: shoulderY + input.neckOffset,
       z: shoulderZ
     },
+    chest,
     rigConfig: input.rigConfig,
     shoulderCenter: input.shoulderCenter,
-    pelvis,
+    pelvisCenter,
     hipLeft,
     hipRight,
     kneeLeft,
@@ -229,6 +251,8 @@ export function solveBodyRigFrame(
   const solve = solveWorldBodyRig({
     root: {
       shoulderCenter: body.shoulderCenter,
+      neutralPelvisCenter: body.pelvisCenter,
+      neutralChestCenter: body.chest,
       worldUp: { x: 0, y: 1, z: 0 },
       neutralForward: { x: 0, y: 0, z: 1 },
       scale: 1
@@ -238,9 +262,11 @@ export function solveBodyRigFrame(
     ...(yawSearchSteps === undefined ? {} : { yawSearchSteps })
   });
   const projected = projectWorldBodyRig(solve, projectionSettings);
+  const skeleton = buildBodySkeletonFrame(body, solve);
 
   return {
     body,
+    skeleton,
     projectedBody: projectBodyRigFrame(body, projectionSettings),
     shoulders: {
       leftShoulder: projected.leftShoulder,

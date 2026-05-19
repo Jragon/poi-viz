@@ -68,8 +68,10 @@ describe("bodyRigFrame", () => {
     );
 
     expect(body.headCenter.y).toBeGreaterThan(body.shoulderCenter.y);
-    expect(body.pelvis.y).toBeLessThan(body.shoulderCenter.y);
-    expect(pose.projectedBody.headCenter.y).toBeGreaterThan(pose.projectedBody.pelvis.y);
+    expect(body.pelvisCenter.y).toBeLessThan(body.shoulderCenter.y);
+    expect(pose.projectedBody.headCenter.y).toBeGreaterThan(
+      pose.projectedBody.pelvisCenter.y
+    );
     expect(pose.solve.shoulders.leftShoulder.x).toBeLessThan(body.shoulderCenter.x);
     expect(pose.solve.shoulders.rightShoulder.x).toBeGreaterThan(body.shoulderCenter.x);
     expect(getBodyRigArmPoints(pose, "left")).toHaveLength(3);
