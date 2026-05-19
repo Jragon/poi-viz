@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
+import type { BodySkeletonFrame } from "@/body-rig";
 import type { PlaneId, RigId, Vec3, WorldMultiRigPose } from "@/engine/types";
 import type { WorldMultiRigTrailSamples } from "@/visualizer/worldTrailSampling";
 
@@ -12,6 +13,7 @@ import {
   buildOriginPlaneSheetStates,
   resolveSceneRadiusWorld
 } from "./worldPoseScene";
+import { BodyStickFigureRenderer } from "./bodyStickFigureRenderer";
 import { setLineGeometryPoints } from "./trailLineGeometry";
 
 const props = withDefaults(
@@ -19,6 +21,7 @@ const props = withDefaults(
     poses: WorldMultiRigPose;
     trails: WorldMultiRigTrailSamples;
     rigOrder: RigId[];
+    bodyScene: BodySkeletonFrame | null;
     sceneRadiusWorld: number;
     sceneCenterWorld: Vec3;
     activePlanes: PlaneId[];
@@ -39,16 +42,11 @@ const props = withDefaults(
   }
 );
 
-interface RigObjects {
-  readonly hand: THREE.Mesh;
-  readonly head: THREE.Mesh;
-  readonly tether: THREE.Line;
-}
-
 interface TrailObjects {
   readonly hand: THREE.Line;
   readonly head: THREE.Line;
 }
+
 
 interface PlaneObjects {
   readonly group: THREE.Group;
@@ -61,7 +59,6 @@ const rendererError = ref<string | null>(null);
 const backgroundColor = new THREE.Color("#020617");
 const resolvedSceneRadius = computed(() => resolveSceneRadiusWorld(props.sceneRadiusWorld));
 
-const rigObjects = new Map<RigId, RigObjects>();
 const trailObjects = new Map<RigId, TrailObjects>();
 const planeObjects = new Map<PlaneId, PlaneObjects>();
 
@@ -72,6 +69,7 @@ let orbitControls: OrbitControls | null = null;
 let axesHelper: THREE.AxesHelper | null = null;
 let gridHelper: THREE.GridHelper | null = null;
 let resizeObserver: ResizeObserver | null = null;
+let bodyFigureRenderer: BodyStickFigureRenderer | null = null;
 
 function vectorFromPoint(point: Vec3): THREE.Vector3 {
   return new THREE.Vector3(point.x, point.y, point.z);
@@ -137,26 +135,6 @@ function resizeRenderer() {
   renderScene();
 }
 
-function createRigObjects(entry: ReturnType<typeof buildDebugRigSceneEntries>[number]): RigObjects {
-  const hand = new THREE.Mesh(
-    new THREE.SphereGeometry(0.05, 24, 24),
-    new THREE.MeshBasicMaterial({ color: entry.handColor })
-  );
-  const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.1, 24, 24),
-    new THREE.MeshBasicMaterial({ color: entry.headColor })
-  );
-  const tether = new THREE.Line(
-    new THREE.BufferGeometry().setFromPoints([
-      vectorFromPoint(entry.handPosition),
-      vectorFromPoint(entry.headPosition)
-    ]),
-    new THREE.LineBasicMaterial({ color: entry.tetherColor })
-  );
-
-  return { hand, head, tether };
-}
-
 function createTrailObjects(
   entry: ReturnType<typeof buildDebugRigSceneEntries>[number]
 ): TrailObjects {
@@ -180,54 +158,12 @@ function createTrailObjects(
   return { hand, head };
 }
 
-function syncRigObjects() {
-  if (!scene) {
+function syncBodyScene() {
+  if (!scene || !bodyFigureRenderer) {
     return;
   }
 
-  const currentScene = scene;
-
-  const entries = buildDebugRigSceneEntries(props.poses, props.rigOrder);
-  const activeRigIds = new Set(entries.map((entry) => entry.rigId));
-
-  entries.forEach((entry) => {
-    let objects = rigObjects.get(entry.rigId);
-
-    if (!objects) {
-      objects = createRigObjects(entry);
-      rigObjects.set(entry.rigId, objects);
-      currentScene.add(objects.hand, objects.head, objects.tether);
-    }
-
-    const handMaterial = objects.hand.material as THREE.MeshBasicMaterial;
-    const headMaterial = objects.head.material as THREE.MeshBasicMaterial;
-    const tetherMaterial = objects.tether.material as THREE.LineBasicMaterial;
-
-    handMaterial.color.set(entry.handColor);
-    headMaterial.color.set(entry.headColor);
-    tetherMaterial.color.set(entry.tetherColor);
-
-    objects.hand.visible = true;
-    objects.head.visible = true;
-    objects.tether.visible = true;
-    objects.hand.position.copy(vectorFromPoint(entry.handPosition));
-    objects.head.position.copy(vectorFromPoint(entry.headPosition));
-    (objects.tether.geometry as THREE.BufferGeometry).setFromPoints([
-      vectorFromPoint(entry.handPosition),
-      vectorFromPoint(entry.headPosition)
-    ]);
-  });
-
-  for (const [rigId, objects] of rigObjects.entries()) {
-    if (activeRigIds.has(rigId)) {
-      continue;
-    }
-
-    objects.hand.visible = false;
-    objects.head.visible = false;
-    objects.tether.visible = false;
-  }
-
+  bodyFigureRenderer.sync(scene, props.bodyScene);
   renderScene();
 }
 
@@ -349,15 +285,6 @@ function syncHelpers() {
   renderScene();
 }
 
-function disposeRigObjects(objects: RigObjects) {
-  objects.hand.geometry.dispose();
-  disposeMaterial(objects.hand.material);
-  objects.head.geometry.dispose();
-  disposeMaterial(objects.head.material);
-  objects.tether.geometry.dispose();
-  disposeMaterial(objects.tether.material);
-}
-
 function disposeTrailObjects(objects: TrailObjects) {
   objects.hand.geometry.dispose();
   disposeMaterial(objects.hand.material);
@@ -380,11 +307,10 @@ function disposeThreeSceneResources() {
   orbitControls?.dispose();
   orbitControls = null;
 
-  for (const objects of rigObjects.values()) {
-    scene?.remove(objects.hand, objects.head, objects.tether);
-    disposeRigObjects(objects);
+  if (bodyFigureRenderer && scene) {
+    bodyFigureRenderer.dispose(scene);
   }
-  rigObjects.clear();
+  bodyFigureRenderer = null;
 
   for (const objects of trailObjects.values()) {
     scene?.remove(objects.hand, objects.head);
@@ -463,8 +389,9 @@ onMounted(() => {
     });
     resizeObserver.observe(mountRef.value);
 
+    bodyFigureRenderer = new BodyStickFigureRenderer();
     syncHelpers();
-    syncRigObjects();
+    syncBodyScene();
     syncTrailObjects();
     resizeRenderer();
   } catch (error) {
@@ -476,11 +403,11 @@ onMounted(() => {
 });
 
 watch(
-  () => [props.poses, props.rigOrder],
+  () => props.bodyScene,
   () => {
-    syncRigObjects();
+    syncBodyScene();
   },
-  { deep: true, immediate: true }
+  { immediate: true }
 );
 
 watch(
@@ -543,7 +470,7 @@ onBeforeUnmount(() => {
       v-else
       class="pointer-events-none absolute left-4 top-4 rounded-md border border-slate-800 bg-slate-950/80 px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-slate-400 backdrop-blur-sm"
     >
-      Hand / head / tether / trails debug
+      Stick figure / trails debug
     </div>
   </div>
 </template>

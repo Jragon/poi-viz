@@ -49,12 +49,25 @@ describe("Three3DDebugCanvas task 4 maintenance", () => {
     );
   });
 
-  it("renders smaller hand markers and separate hand/head trail visibility", () => {
+  it("renders separate hand/head trail visibility in the canvas trail sync", () => {
     const source = readFileSync(THREE_D_DEBUG_CANVAS_FILE, "utf8");
 
-    expect(source).toContain("new THREE.SphereGeometry(0.05, 24, 24)");
-    expect(source).toContain("new THREE.SphereGeometry(0.1, 24, 24)");
     expect(source).toContain("objects.hand.visible = props.showHandTrails && handPoints.length >= 2;");
     expect(source).toContain("objects.head.visible = props.showHeadTrails && headPoints.length >= 2;");
+  });
+});
+
+describe("Three3DDebugPage task 4 body scene wiring", () => {
+  it("imports and uses buildBodyStickFigureScene", () => {
+    const source = readFileSync(THREE_D_DEBUG_PAGE_FILE, "utf8");
+
+    expect(source).toContain("buildBodyStickFigureScene");
+  });
+
+  it("computes bodyScene and passes it to the canvas", () => {
+    const source = readFileSync(THREE_D_DEBUG_PAGE_FILE, "utf8");
+
+    expect(source).toContain("bodyScene");
+    expect(source).toContain(':body-scene="bodyScene"');
   });
 });

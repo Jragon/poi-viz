@@ -176,7 +176,7 @@ describe("buildBodySkeletonFrame", () => {
   });
 
   it("support pose reflects the rig config arm reach and shoulder span", () => {
-    const { pose, dimensions } = makePose();
+    const { pose } = makePose();
     const frame = buildBodySkeletonFrame(pose.body, pose.solve);
 
     const expectedReach =
