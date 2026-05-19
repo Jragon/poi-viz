@@ -145,7 +145,7 @@ This remains renderer-agnostic. It must not include Three.js meshes, materials, 
 
 ### Pelvis
 
-The pelvis is the anchor for the lower body. It should not remain a fixed decoration below shoulder center.
+The pelvis is the anchor for the lower body. It should not remain a fixed decoration below the chest and shoulder girdle.
 
 Rules:
 
