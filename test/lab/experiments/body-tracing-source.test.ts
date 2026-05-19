@@ -37,4 +37,16 @@ describe("body-tracing.md documentation", () => {
     expect(doc).not.toContain("pelvis, torso center, and neck stay fixed");
     expect(doc).not.toContain("shoulder span compresses as a 2D proxy");
   });
+
+  it("describes canonical wall-plane scale as the unit radius contract", () => {
+    expect(doc).toContain("canonical wall-plane unit radius");
+  });
+
+  it("states that projection and rendering are adapters over the solved skeleton", () => {
+    expect(doc).toContain("adapters over the solved skeleton");
+  });
+
+  it("does not contain stale largest-shared-hand-overlap-circle phrasing", () => {
+    expect(doc).not.toContain("largest shared-hand overlap circle");
+  });
 });

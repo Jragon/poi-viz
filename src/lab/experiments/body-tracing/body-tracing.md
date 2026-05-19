@@ -15,7 +15,7 @@ This starts from a deliberately small body model: a basic stick figure on canvas
 
 ## Sequence-driven overlay POC
 
-This second demo exercises the main visualizer body overlay while reusing the visualizer backend for sequence timing and rig evaluation. It is wall-plane focused: poi and trails draw through the shared viewport, and the solved body follows the authored left and right hand tracks. Sequence radius 1 maps to the largest circle where both hands can occupy the exact same point, and the selector can load any authored sequence.
+This second demo exercises the main visualizer body overlay while reusing the visualizer backend for sequence timing and rig evaluation. It is wall-plane focused: poi and trails draw through the shared viewport, and the solved body follows the authored left and right hand tracks. Sequence radius 1 maps to the canonical wall-plane unit radius, and the selector can load any authored sequence. Projection and rendering are adapters over the solved skeleton.
 
 <BodyTracingSequenceOverlayCanvas />
 
@@ -28,7 +28,7 @@ The visualizer already knows how to render poi paths, but body tracing needs a s
 - Front-view stick figure only.
 - Both hands are draggable.
 - Main-visualizer wall-plane sequence demo with poi and body overlay.
-- Sequence radius 1 is normalized to the largest shared-hand overlap circle.
+- Sequence radius 1 is normalized to the canonical wall-plane unit radius.
 - Authored sequences can be selected inside the POC.
 - The rig infers a best-fit torso yaw from the two hand targets.
 - Pelvis, chest, and shoulder-girdle are solved by the shared body-rig layer; feet remain planted.
