@@ -588,7 +588,7 @@ onBeforeUnmount(() => {
       v-else
       class="pointer-events-none absolute left-4 top-4 rounded-md border border-slate-800 bg-slate-950/80 px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-slate-400 backdrop-blur-sm"
     >
-      Stick figure / trails debug
+      Humanoid body / trails debug
     </div>
   </div>
 </template>

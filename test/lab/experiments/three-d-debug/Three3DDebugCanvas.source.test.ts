@@ -100,4 +100,11 @@ describe("Three3DDebugCanvas task 8 humanoid body-volume wiring", () => {
 
     expect(rendererSource).toContain("headCueMesh");
   });
+
+  it("shows the humanoid body label in the canvas UI, not the stale stick figure label", () => {
+    const source = readFileSync(THREE_D_DEBUG_CANVAS_FILE, "utf8");
+
+    expect(source).not.toContain("Stick figure / trails debug");
+    expect(source).toContain("Humanoid body / trails debug");
+  });
 });
