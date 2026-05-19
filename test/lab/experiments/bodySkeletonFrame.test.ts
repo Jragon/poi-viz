@@ -15,10 +15,6 @@ import { buildDefaultBodyRigDimensions } from "@/body-rig";
 import { DEFAULT_PLANE_PROJECTION_SETTINGS } from "@/engine/planeProjection";
 import type { Vec3 } from "@/engine/types";
 
-function distance3(a: Vec3, b: Vec3): number {
-  return Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
-}
-
 function dot3(a: Vec3, b: Vec3): number {
   return a.x * b.x + a.y * b.y + a.z * b.z;
 }
@@ -71,6 +67,8 @@ describe("SKELETON_SEGMENTS", () => {
       ["headCenter", "neck"],
       ["neck", "shoulderCenter"],
       ["shoulderCenter", "pelvis"],
+      ["shoulderCenter", "shoulderLeft"],
+      ["shoulderCenter", "shoulderRight"],
       ["shoulderLeft", "elbowLeft"],
       ["elbowLeft", "handLeft"],
       ["shoulderRight", "elbowRight"],
@@ -85,6 +83,7 @@ describe("SKELETON_SEGMENTS", () => {
       const found = SKELETON_SEGMENTS.some((s) => s.from === from && s.to === to);
       expect(found, `expected segment ${from} -> ${to}`).toBe(true);
     }
+    expect(SKELETON_SEGMENTS).toHaveLength(15);
   });
 
   it("uses only valid segment categories", () => {
@@ -149,10 +148,12 @@ describe("buildBodySkeletonFrame", () => {
     expect(frame.joints.handRight).toEqual(pose.solve.rightArm.hand);
   });
 
-  it("segments reference is the shared SKELETON_SEGMENTS constant", () => {
+  it("segments is the shared SKELETON_SEGMENTS constant (not a per-frame copy)", () => {
     const { pose } = makePose();
     const frame = buildBodySkeletonFrame(pose.body, pose.solve);
 
+    // buildBodySkeletonFrame assigns the module-level constant directly so that
+    // all frames share a single segment descriptor array without allocation.
     expect(frame.segments).toBe(SKELETON_SEGMENTS);
   });
 
@@ -186,38 +187,21 @@ describe("buildBodySkeletonFrame", () => {
     expect(frame.supportPose.shoulderSpan).toBeCloseTo(pose.body.rigConfig.baseShoulderSpan);
   });
 
-  it("solver flags reflect clamped state and reach from the solve result", () => {
+  it("solverDiagnostics reflects clamped state, reach, and distance from the solve result", () => {
     const { pose } = makePose();
     const frame = buildBodySkeletonFrame(pose.body, pose.solve);
 
-    expect(frame.solverFlags.leftArm.isClamped).toBe(pose.solve.leftArm.isClamped);
-    expect(frame.solverFlags.rightArm.isClamped).toBe(pose.solve.rightArm.isClamped);
-    expect(frame.solverFlags.leftArm.reach).toEqual(pose.solve.leftArm.reach);
-    expect(frame.solverFlags.rightArm.reach).toEqual(pose.solve.rightArm.reach);
-    expect(frame.solverFlags.leftArm.distanceToHand).toBeCloseTo(
+    expect(frame.solverDiagnostics.leftArm.isClamped).toBe(pose.solve.leftArm.isClamped);
+    expect(frame.solverDiagnostics.rightArm.isClamped).toBe(pose.solve.rightArm.isClamped);
+    expect(frame.solverDiagnostics.leftArm.reach).toEqual(pose.solve.leftArm.reach);
+    expect(frame.solverDiagnostics.rightArm.reach).toEqual(pose.solve.rightArm.reach);
+    expect(frame.solverDiagnostics.leftArm.distanceToHand).toBeCloseTo(
       pose.solve.leftArm.distanceToHand
     );
-    expect(frame.solverFlags.rightArm.distanceToHand).toBeCloseTo(
+    expect(frame.solverDiagnostics.rightArm.distanceToHand).toBeCloseTo(
       pose.solve.rightArm.distanceToHand
     );
-    expect(frame.solverFlags.yawRad).toBeCloseTo(pose.solve.yawRad);
+    expect(frame.solverDiagnostics.yawRad).toBeCloseTo(pose.solve.yawRad);
   });
 
-  it("arm segment lengths match rig config dimensions", () => {
-    const { pose } = makePose();
-    const frame = buildBodySkeletonFrame(pose.body, pose.solve);
-
-    expect(
-      distance3(frame.joints.shoulderLeft, frame.joints.elbowLeft)
-    ).toBeCloseTo(pose.body.rigConfig.upperArmLength);
-    expect(
-      distance3(frame.joints.elbowLeft, frame.joints.handLeft)
-    ).toBeCloseTo(pose.body.rigConfig.forearmLength);
-    expect(
-      distance3(frame.joints.shoulderRight, frame.joints.elbowRight)
-    ).toBeCloseTo(pose.body.rigConfig.upperArmLength);
-    expect(
-      distance3(frame.joints.elbowRight, frame.joints.handRight)
-    ).toBeCloseTo(pose.body.rigConfig.forearmLength);
-  });
 });

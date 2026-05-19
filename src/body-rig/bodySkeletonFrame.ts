@@ -57,6 +57,8 @@ export const SKELETON_SEGMENTS: readonly SkeletonSegmentDescriptor[] = [
   { from: "headCenter", to: "neck", category: "head" },
   { from: "neck", to: "shoulderCenter", category: "spine" },
   { from: "shoulderCenter", to: "pelvis", category: "spine" },
+  { from: "shoulderCenter", to: "shoulderLeft", category: "spine", side: "left" },
+  { from: "shoulderCenter", to: "shoulderRight", category: "spine", side: "right" },
   { from: "pelvis", to: "hipLeft", category: "spine", side: "left" },
   { from: "pelvis", to: "hipRight", category: "spine", side: "right" },
   { from: "shoulderLeft", to: "elbowLeft", category: "arm", side: "left" },
@@ -88,16 +90,16 @@ export interface SkeletonSupportPoseMetadata {
 
 // ── Solver flags ─────────────────────────────────────────────────────────────
 
-export interface SkeletonArmSolverFlags {
+export interface SkeletonArmSolverDiagnostics {
   readonly isClamped: boolean;
   readonly reach: ArmReachRange;
   readonly distanceToHand: number;
 }
 
-export interface SkeletonSolverFlags {
+export interface SkeletonSolverDiagnostics {
   readonly yawRad: number;
-  readonly leftArm: SkeletonArmSolverFlags;
-  readonly rightArm: SkeletonArmSolverFlags;
+  readonly leftArm: SkeletonArmSolverDiagnostics;
+  readonly rightArm: SkeletonArmSolverDiagnostics;
 }
 
 // ── Frame ────────────────────────────────────────────────────────────────────
@@ -107,7 +109,7 @@ export interface BodySkeletonFrame {
   readonly segments: readonly SkeletonSegmentDescriptor[];
   readonly orientation: SkeletonOrientationCue;
   readonly supportPose: SkeletonSupportPoseMetadata;
-  readonly solverFlags: SkeletonSolverFlags;
+  readonly solverDiagnostics: SkeletonSolverDiagnostics;
 }
 
 // ── Builder ──────────────────────────────────────────────────────────────────
@@ -148,7 +150,7 @@ export function buildBodySkeletonFrame(
     shoulderSpan: body.rigConfig.baseShoulderSpan
   };
 
-  const solverFlags: SkeletonSolverFlags = {
+  const solverDiagnostics: SkeletonSolverDiagnostics = {
     yawRad: solve.yawRad,
     leftArm: {
       isClamped: solve.leftArm.isClamped,
@@ -162,5 +164,5 @@ export function buildBodySkeletonFrame(
     }
   };
 
-  return { joints, segments: SKELETON_SEGMENTS, orientation, supportPose, solverFlags };
+  return { joints, segments: SKELETON_SEGMENTS, orientation, supportPose, solverDiagnostics };
 }
