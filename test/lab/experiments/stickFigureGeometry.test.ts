@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildBodyRigConfigFromArmReach, type BodyRigConfig } from "@/body-rig/bodyRigConfig";
 import {
+  computeBodyRigCanonicalPatternSpace,
   computeSharedHandOverlapCircle,
   projectShoulderLine,
   solveBodyRig,
@@ -543,6 +544,48 @@ describe("computeSharedHandOverlapCircle", () => {
 
     expect(solve.diagnostics.isBestEffort).toBe(true);
     expect(solve.leftArm.isClamped || solve.rightArm.isClamped).toBe(true);
+  });
+});
+
+describe("computeBodyRigCanonicalPatternSpace", () => {
+  it("uses the wall-plane overlap circle as origin and unit radius", () => {
+    const config = buildBodyRigConfigFromArmReach(1.25);
+    const result = computeBodyRigCanonicalPatternSpace({
+      root: {
+        shoulderCenter: { x: 0.25, y: 1.4, z: 0.5 },
+        worldUp: { x: 0, y: 1, z: 0 },
+        neutralForward: { x: 0, y: 0, z: 1 },
+        scale: 1
+      },
+      config,
+      useMaxYawCompression: true
+    });
+
+    expect(result.sourcePlane).toBe("wall");
+    expect(result.origin).toEqual({ x: 0.25, y: 1.4, z: 0.5 });
+    expect(result.unitRadius).toBeCloseTo(result.wallCircle.radius);
+    expect(result.wallCircle.usesMaxYawCompression).toBe(true);
+  });
+
+  it("imports the same wall-plane origin and radius for wheel and floor projections", () => {
+    const config = buildBodyRigConfigFromArmReach(1.25);
+    const canonical = computeBodyRigCanonicalPatternSpace({
+      root: {
+        shoulderCenter: { x: 0, y: 1.4, z: 0 },
+        worldUp: { x: 0, y: 1, z: 0 },
+        neutralForward: { x: 0, y: 0, z: 1 },
+        scale: 1
+      },
+      config,
+      useMaxYawCompression: true
+    });
+
+    expect(canonical.projections.wall.origin).toEqual(canonical.origin);
+    expect(canonical.projections.wheel.origin).toEqual(canonical.origin);
+    expect(canonical.projections.floor.origin).toEqual(canonical.origin);
+    expect(canonical.projections.wall.unitRadius).toBe(canonical.unitRadius);
+    expect(canonical.projections.wheel.unitRadius).toBe(canonical.unitRadius);
+    expect(canonical.projections.floor.unitRadius).toBe(canonical.unitRadius);
   });
 });
 

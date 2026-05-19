@@ -2,8 +2,8 @@ import type { Vec2, Vec3 } from "@/engine/types";
 
 import { buildBodyRigConfigFromArmReach, type BodyRigConfig } from "./bodyRigConfig";
 import {
-  computeSharedHandOverlapCircle,
-  type SharedHandOverlapCircleResult
+  computeBodyRigCanonicalPatternSpace,
+  type BodyRigCanonicalPatternSpaceResult
 } from "./stickFigureGeometry";
 
 export interface BodyRigDimensions {
@@ -21,7 +21,7 @@ export interface BodyRigDimensions {
   readonly stanceWidth: number;
   readonly cameraCenterWorld: Vec2;
   readonly rootShoulderCenter: Vec3;
-  readonly sharedHandOverlapCircle: SharedHandOverlapCircleResult;
+  readonly canonicalPatternSpace: BodyRigCanonicalPatternSpaceResult;
 }
 
 export const DEFAULT_BODY_ARM_REACH = 1.25;
@@ -42,10 +42,12 @@ export function buildDefaultBodyRigDimensions(
 ): BodyRigDimensions {
   const config = buildBodyRigConfigFromArmReach(armReach);
   const shoulderSpan = config.baseShoulderSpan;
-  const sharedHandOverlapCircle = computeSharedHandOverlapCircle({
+  const canonicalPatternSpace = computeBodyRigCanonicalPatternSpace({
     root: {
-      torsoCenter: { x: 0, y: 0 },
-      shoulderY: 0
+      shoulderCenter: DEFAULT_BODY_ROOT_SHOULDER_CENTER,
+      worldUp: { x: 0, y: 1, z: 0 },
+      neutralForward: { x: 0, y: 0, z: 1 },
+      scale: 1
     },
     config,
     useMaxYawCompression: true
@@ -66,7 +68,7 @@ export function buildDefaultBodyRigDimensions(
     stanceWidth: shoulderSpan * DEFAULT_BODY_STANCE_SHOULDER_RATIO,
     cameraCenterWorld: DEFAULT_BODY_CAMERA_CENTER_WORLD,
     rootShoulderCenter: DEFAULT_BODY_ROOT_SHOULDER_CENTER,
-    sharedHandOverlapCircle
+    canonicalPatternSpace
   };
 }
 
@@ -74,5 +76,5 @@ export function buildBodyRigDimensionsForSharedHandRadius(targetRadius = 1): Bod
   const base = buildDefaultBodyRigDimensions(1);
   const radius = Number.isFinite(targetRadius) && targetRadius > 0 ? targetRadius : 1;
 
-  return buildDefaultBodyRigDimensions(radius / base.sharedHandOverlapCircle.radius);
+  return buildDefaultBodyRigDimensions(radius / base.canonicalPatternSpace.unitRadius);
 }

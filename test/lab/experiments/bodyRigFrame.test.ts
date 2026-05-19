@@ -26,13 +26,13 @@ describe("bodyRigFrame", () => {
     expect(dimensions.torsoHeight).toBeCloseTo(DEFAULT_BODY_ARM_REACH * 0.86);
     expect(dimensions.hipSpan).toBeCloseTo(dimensions.shoulderSpan * 0.72);
     expect(dimensions.headRadius).toBeCloseTo(DEFAULT_BODY_ARM_REACH * 0.21);
-    expect(dimensions.sharedHandOverlapCircle.radius).toBeGreaterThan(0);
+    expect(dimensions.canonicalPatternSpace.unitRadius).toBeGreaterThan(0);
   });
 
   it("scales default body dimensions to a target shared hand radius", () => {
     const dimensions = buildBodyRigDimensionsForSharedHandRadius(1);
 
-    expect(dimensions.sharedHandOverlapCircle.radius).toBeCloseTo(1);
+    expect(dimensions.canonicalPatternSpace.unitRadius).toBeCloseTo(1);
     expect(dimensions.config.upperArmLength + dimensions.config.forearmLength).toBeCloseTo(
       dimensions.armReach
     );

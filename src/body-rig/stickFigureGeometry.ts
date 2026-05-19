@@ -247,6 +247,27 @@ export interface SharedHandOverlapCircleResult {
   readonly usesMaxYawCompression: boolean;
 }
 
+export type BodyRigProjectionPlaneId = "wall" | "wheel" | "floor";
+
+export interface BodyRigCanonicalPlaneSpace {
+  readonly origin: Vec3;
+  readonly unitRadius: number;
+}
+
+export interface BodyRigCanonicalPatternSpaceInput {
+  readonly root: BodyRigWorldRoot;
+  readonly config: BodyRigConfig;
+  readonly useMaxYawCompression?: boolean;
+}
+
+export interface BodyRigCanonicalPatternSpaceResult {
+  readonly sourcePlane: "wall";
+  readonly origin: Vec3;
+  readonly unitRadius: number;
+  readonly wallCircle: SharedHandOverlapCircleResult;
+  readonly projections: Record<BodyRigProjectionPlaneId, BodyRigCanonicalPlaneSpace>;
+}
+
 interface CandidateScore {
   readonly result: BodyRigSolveResult;
   readonly absYaw: number;
@@ -1286,6 +1307,40 @@ export function computeSharedHandOverlapCircle(
     shoulders,
     projectedShoulderSpan: shoulders.projectedShoulderSpan,
     usesMaxYawCompression
+  };
+}
+
+export function computeBodyRigCanonicalPatternSpace(
+  input: BodyRigCanonicalPatternSpaceInput
+): BodyRigCanonicalPatternSpaceResult {
+  const wallCircle = computeSharedHandOverlapCircle({
+    root: {
+      torsoCenter: { x: input.root.shoulderCenter.x, y: input.root.shoulderCenter.y },
+      shoulderY: input.root.shoulderCenter.y
+    },
+    config: input.config,
+    ...(input.useMaxYawCompression === undefined
+      ? {}
+      : { useMaxYawCompression: input.useMaxYawCompression })
+  });
+  const origin = {
+    x: wallCircle.center.x,
+    y: wallCircle.center.y,
+    z: input.root.shoulderCenter.z
+  };
+  const unitRadius = wallCircle.radius;
+  const planeSpace = { origin, unitRadius };
+
+  return {
+    sourcePlane: "wall",
+    origin,
+    unitRadius,
+    wallCircle,
+    projections: {
+      wall: planeSpace,
+      wheel: planeSpace,
+      floor: planeSpace
+    }
   };
 }
 

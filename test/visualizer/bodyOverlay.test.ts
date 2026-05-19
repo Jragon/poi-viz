@@ -156,14 +156,15 @@ describe("bodyOverlay", () => {
     );
   });
 
-  it("scales default dimensions so radius one is the shared hand circle", () => {
+  it("scales default dimensions so radius one is the canonical wall-plane unit", () => {
     const overlay = computeBodyOverlay({
       worldPoses: createWorldPoses(),
       layout: createSceneLayout({ cssWidth: 400, cssHeight: 300 }),
       projectionSettings
     });
 
-    expect(overlay?.dimensions.sharedHandOverlapCircle.radius).toBeCloseTo(1);
+    expect(overlay?.dimensions.canonicalPatternSpace.sourcePlane).toBe("wall");
+    expect(overlay?.dimensions.canonicalPatternSpace.unitRadius).toBeCloseTo(1);
   });
 
   it("computes body-aware scene framing from sequence radius and body dimensions", () => {
