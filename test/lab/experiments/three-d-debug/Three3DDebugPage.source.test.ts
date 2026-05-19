@@ -12,7 +12,7 @@ const THREE_D_DEBUG_CANVAS_FILE = resolve(
   "src/lab/experiments/three-d-debug/Three3DDebugCanvas.vue"
 );
 
-describe("Three3DDebugPage task 4 wiring", () => {
+describe("Three3DDebugPage source wiring", () => {
   it("keeps motion inspection controls wired", () => {
     const source = readFileSync(THREE_D_DEBUG_PAGE_FILE, "utf8");
 
@@ -25,12 +25,12 @@ describe("Three3DDebugPage task 4 wiring", () => {
     expect(source).toContain("<DocumentSelector");
   });
 
-  it("skips world trail sampling when both hand and head trails are hidden", () => {
+  it("routes world trail sampling through the shared visibility gate", () => {
     const source = readFileSync(THREE_D_DEBUG_PAGE_FILE, "utf8");
 
     expect(source).toContain("const showHandTrails = ref(true);");
     expect(source).toContain("const showHeadTrails = ref(true);");
-    expect(source).toContain("if (!prepared || (!showHandTrails.value && !showHeadTrails.value)) {");
+    expect(source).toContain("shouldSampleThreeDDebugWorldTrails");
   });
   it("checks trail length input model", () => {
     const source = readFileSync(THREE_D_DEBUG_PAGE_FILE, "utf8");
@@ -38,7 +38,7 @@ describe("Three3DDebugPage task 4 wiring", () => {
   });
 });
 
-describe("Three3DDebugCanvas task 4 maintenance", () => {
+describe("Three3DDebugCanvas source maintenance", () => {
   it("uses one trail sync path and shared cleanup", () => {
     const source = readFileSync(THREE_D_DEBUG_CANVAS_FILE, "utf8");
 
@@ -52,12 +52,16 @@ describe("Three3DDebugCanvas task 4 maintenance", () => {
   it("renders separate hand/head trail visibility in the canvas trail sync", () => {
     const source = readFileSync(THREE_D_DEBUG_CANVAS_FILE, "utf8");
 
-    expect(source).toContain("objects.hand.visible = props.showHandTrails && handPoints.length >= 2;");
-    expect(source).toContain("objects.head.visible = props.showHeadTrails && headPoints.length >= 2;");
+    expect(source).toContain(
+      "objects.hand.visible = props.showHandTrails && handPoints.length >= 2;"
+    );
+    expect(source).toContain(
+      "objects.head.visible = props.showHeadTrails && headPoints.length >= 2;"
+    );
   });
 });
 
-describe("Three3DDebugPage task 4 body scene wiring", () => {
+describe("Three3DDebugPage body scene wiring", () => {
   it("imports and uses buildBodyStickFigureScene", () => {
     const source = readFileSync(THREE_D_DEBUG_PAGE_FILE, "utf8");
 
@@ -77,8 +81,34 @@ describe("Three3DDebugPage task 4 body scene wiring", () => {
     expect(source).toContain("const bodyRigIds = computed(() => ({");
     expect(source).toContain("left: core.rigOrder.value[0],");
     expect(source).toContain("right: core.rigOrder.value[1]");
+    expect(source).toContain("const bodyScene = computed(() =>");
     expect(source).toContain(
-      "const bodyScene = computed(() => buildBodyStickFigureScene(core.worldPoses.value, undefined, bodyRigIds.value));"
+      "buildBodyStickFigureScene(core.worldPoses.value, undefined, bodyRigIds.value)"
     );
+  });
+});
+
+describe("Three3DDebugPage fire poi wiring", () => {
+  it("stores fire settings and passes them to the canvas", () => {
+    const source = readFileSync(THREE_D_DEBUG_PAGE_FILE, "utf8");
+
+    expect(source).toContain("reconcileStoredFirePoiSettings");
+    expect(source).toContain("const firePoiPanelOpen = useStorage(");
+    expect(source).toContain("const firePoiSettings = useStorage(");
+    expect(source).toContain(':fire-poi-settings="resolvedFirePoiSettings"');
+  });
+
+  it("uses the task 3 trail-sampling gate so fire poi can keep sampling alive", () => {
+    const source = readFileSync(THREE_D_DEBUG_PAGE_FILE, "utf8");
+
+    expect(source).toContain("shouldSampleThreeDDebugWorldTrails");
+  });
+
+  it("renders a fire poi toggle and fire controls button", () => {
+    const source = readFileSync(THREE_D_DEBUG_PAGE_FILE, "utf8");
+
+    expect(source).toContain(">Fire Poi<");
+    expect(source).toContain("Fire Controls");
+    expect(source).toContain("<FirePoiControlPanel");
   });
 });

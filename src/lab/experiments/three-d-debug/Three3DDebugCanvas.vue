@@ -7,14 +7,17 @@ import type { BodySkeletonFrame } from "@/body-rig";
 import type { PlaneId, RigId, Vec3, WorldMultiRigPose } from "@/engine/types";
 import type { WorldMultiRigTrailSamples } from "@/visualizer/worldTrailSampling";
 
+import { BodyStickFigureRenderer } from "./bodyStickFigureRenderer";
+import { FirePoiEffectController } from "./firePoiEffectController";
+import { syncRecoverableFirePoiEffect } from "./firePoiEffectSync";
+import type { FirePoiSettings } from "./firePoiSettings";
+import { setLineGeometryPoints } from "./trailLineGeometry";
 import {
   buildDebugRigSceneEntries,
   buildDefaultCameraViewState,
   buildOriginPlaneSheetStates,
   resolveSceneRadiusWorld
 } from "./worldPoseScene";
-import { BodyStickFigureRenderer } from "./bodyStickFigureRenderer";
-import { setLineGeometryPoints } from "./trailLineGeometry";
 
 const TETHER_RADIUS = 0.012;
 const UNIT_TETHER_LENGTH = 1;
@@ -34,6 +37,7 @@ const props = withDefaults(
     showHandTrails?: boolean;
     showHeadTrails?: boolean;
     showPlaneSheets?: boolean;
+    firePoiSettings: FirePoiSettings;
     cameraResetVersion?: number;
   }>(),
   {
@@ -80,6 +84,7 @@ let axesHelper: THREE.AxesHelper | null = null;
 let gridHelper: THREE.GridHelper | null = null;
 let resizeObserver: ResizeObserver | null = null;
 let bodyFigureRenderer: BodyStickFigureRenderer | null = null;
+let firePoiEffectController: FirePoiEffectController | null = null;
 
 function disposeMaterial(material: THREE.Material | THREE.Material[]) {
   if (Array.isArray(material)) {
@@ -196,6 +201,21 @@ function syncBodyScene() {
   renderScene();
 }
 
+function syncFirePoiEffect() {
+  firePoiEffectController = syncRecoverableFirePoiEffect({
+    scene,
+    controller: firePoiEffectController,
+    createController: () => new FirePoiEffectController(),
+    input: {
+      poses: props.poses,
+      trails: props.trails,
+      rigOrder: props.rigOrder,
+      settings: props.firePoiSettings
+    },
+    renderScene
+  });
+}
+
 function syncRigMarkers() {
   if (!scene) {
     return;
@@ -243,7 +263,7 @@ function syncRigMarkers() {
     objects.hand.position.set(entry.handPosition.x, entry.handPosition.y, entry.handPosition.z);
     objects.head.position.set(entry.headPosition.x, entry.headPosition.y, entry.headPosition.z);
     objects.hand.visible = true;
-    objects.head.visible = true;
+    objects.head.visible = !props.firePoiSettings.enabled;
     objects.tether.visible = true;
   });
 
@@ -415,6 +435,11 @@ function disposeThreeSceneResources() {
   }
   bodyFigureRenderer = null;
 
+  if (firePoiEffectController && scene) {
+    firePoiEffectController.dispose(scene);
+  }
+  firePoiEffectController = null;
+
   for (const objects of rigMarkerObjects.values()) {
     scene?.remove(objects.tether, objects.hand, objects.head);
     disposeRigMarkerObjects(objects);
@@ -503,6 +528,7 @@ onMounted(() => {
     syncBodyScene();
     syncRigMarkers();
     syncTrailObjects();
+    syncFirePoiEffect();
     resizeRenderer();
   } catch (error) {
     rendererError.value =
@@ -521,7 +547,7 @@ watch(
 );
 
 watch(
-  () => [props.poses, props.rigOrder],
+  () => [props.poses, props.rigOrder, props.firePoiSettings],
   () => {
     syncRigMarkers();
   },
@@ -532,6 +558,14 @@ watch(
   () => [props.trails, props.rigOrder, props.showHandTrails, props.showHeadTrails],
   () => {
     syncTrailObjects();
+  },
+  { deep: true, immediate: true }
+);
+
+watch(
+  () => [props.poses, props.trails, props.rigOrder, props.firePoiSettings],
+  () => {
+    syncFirePoiEffect();
   },
   { deep: true, immediate: true }
 );
