@@ -37,10 +37,12 @@ function makeSphereColor(name: SkeletonJointName): string {
     case "headCenter":
     case "neck":
       return CATEGORY_COLORS.head;
-    case "shoulderCenter":
+    case "chest":
+    case "clavicleLeft":
+    case "clavicleRight":
     case "shoulderLeft":
     case "shoulderRight":
-    case "pelvis":
+    case "pelvisCenter":
     case "hipLeft":
     case "hipRight":
       return CATEGORY_COLORS.spine;
@@ -152,7 +154,7 @@ export class BodyStickFigureRenderer {
     const upV = new THREE.Vector3(orientation.up.x, orientation.up.y, orientation.up.z);
 
     // Torso cue: amber cone at chest level, pointing forward to indicate facing direction
-    const shoulderCenter = joints.shoulderCenter;
+    const chest = joints.chest;
     if (!this.torsoCueMesh) {
       this.torsoCueMesh = new THREE.Mesh(
         new THREE.ConeGeometry(0.04, 0.10, 8),
@@ -164,9 +166,9 @@ export class BodyStickFigureRenderer {
       .addScaledVector(forwardV, 0.07)
       .addScaledVector(upV, -0.05);
     this.torsoCueMesh.position.set(
-      shoulderCenter.x + torsoOffset.x,
-      shoulderCenter.y + torsoOffset.y,
-      shoulderCenter.z + torsoOffset.z
+      chest.x + torsoOffset.x,
+      chest.y + torsoOffset.y,
+      chest.z + torsoOffset.z
     );
     this.torsoCueMesh.quaternion.setFromUnitVectors(Y_AXIS, forwardV);
     this.torsoCueMesh.visible = true;

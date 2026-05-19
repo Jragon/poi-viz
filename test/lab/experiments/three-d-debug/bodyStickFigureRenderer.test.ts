@@ -11,14 +11,16 @@ function makeFrame(
   const joints: Record<SkeletonJointName, { x: number; y: number; z: number }> = {
     headCenter: { x: 0, y: 1.65, z: 0 },
     neck: { x: 0, y: 1.52, z: 0 },
-    shoulderCenter: { x: 0, y: 1.4, z: 0 },
+    chest: { x: 0, y: 1.4, z: 0 },
+    clavicleLeft: { x: -0.12, y: 1.42, z: 0.02 },
+    clavicleRight: { x: 0.12, y: 1.42, z: 0.02 },
     shoulderLeft: { x: -0.18, y: 1.4, z: 0 },
     shoulderRight: { x: 0.18, y: 1.4, z: 0 },
     elbowLeft: { x: -0.45, y: 1.25, z: 0.05 },
     elbowRight: { x: 0.45, y: 1.25, z: 0.05 },
     handLeft: { x: -0.68, y: 1.05, z: 0.12 },
     handRight: { x: 0.68, y: 1.05, z: 0.12 },
-    pelvis: { x: 0, y: 0.95, z: 0 },
+    pelvisCenter: { x: 0, y: 0.95, z: 0 },
     hipLeft: { x: -0.14, y: 0.95, z: 0 },
     hipRight: { x: 0.14, y: 0.95, z: 0 },
     kneeLeft: { x: -0.14, y: 0.52, z: 0.02 },
@@ -43,6 +45,9 @@ function makeFrame(
     },
     solverDiagnostics: {
       yawRad: 0,
+      pelvisYawRad: 0,
+      chestYawRad: 0,
+      pelvisLimitHit: false,
       leftArm: {
         isClamped: false,
         reach: { min: 0, max: 0.65 },
@@ -52,7 +57,24 @@ function makeFrame(
         isClamped: false,
         reach: { min: 0, max: 0.65 },
         distanceToHand: 0.6
-      }
+      },
+      leftShoulder: {
+        lift: 0,
+        protraction: 0,
+        retraction: 0,
+        lateralTravel: 0,
+        overheadAmbiguous: false,
+        limitHit: false
+      },
+      rightShoulder: {
+        lift: 0,
+        protraction: 0,
+        retraction: 0,
+        lateralTravel: 0,
+        overheadAmbiguous: false,
+        limitHit: false
+      },
+      bestEffortReasons: []
     }
   };
 }
