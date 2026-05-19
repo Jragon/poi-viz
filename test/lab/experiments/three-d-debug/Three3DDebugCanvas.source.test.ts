@@ -61,6 +61,15 @@ describe("Three3DDebugCanvas task 4 stick figure wiring", () => {
     expect(source).toContain("objects.head.visible = props.showHeadTrails && headPoints.length >= 2;");
   });
 
+  it("keeps live poi hand/head rig markers in the canvas without restoring the old tether", () => {
+    const source = readFileSync(THREE_D_DEBUG_CANVAS_FILE, "utf8");
+
+    expect(source).toContain("interface RigMarkerObjects");
+    expect(source).toContain("const rigMarkerObjects = new Map<RigId, RigMarkerObjects>()");
+    expect(source).toContain("function createRigMarkerObjects(");
+    expect(source).not.toContain("readonly tether: THREE.Line");
+  });
+
   it("uses CapsuleGeometry for limb segments instead of THREE.Line", () => {
     const rendererSource = readFileSync(BODY_STICK_FIGURE_RENDERER_FILE, "utf8");
 

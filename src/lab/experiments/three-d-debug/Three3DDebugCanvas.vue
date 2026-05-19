@@ -47,6 +47,10 @@ interface TrailObjects {
   readonly head: THREE.Line;
 }
 
+interface RigMarkerObjects {
+  readonly hand: THREE.Mesh;
+  readonly head: THREE.Mesh;
+}
 
 interface PlaneObjects {
   readonly group: THREE.Group;
@@ -59,6 +63,7 @@ const rendererError = ref<string | null>(null);
 const backgroundColor = new THREE.Color("#020617");
 const resolvedSceneRadius = computed(() => resolveSceneRadiusWorld(props.sceneRadiusWorld));
 
+const rigMarkerObjects = new Map<RigId, RigMarkerObjects>();
 const trailObjects = new Map<RigId, TrailObjects>();
 const planeObjects = new Map<PlaneId, PlaneObjects>();
 
@@ -131,6 +136,21 @@ function resizeRenderer() {
   renderScene();
 }
 
+function createRigMarkerObjects(
+  entry: ReturnType<typeof buildDebugRigSceneEntries>[number]
+): RigMarkerObjects {
+  const hand = new THREE.Mesh(
+    new THREE.SphereGeometry(0.05, 24, 24),
+    new THREE.MeshBasicMaterial({ color: entry.handColor })
+  );
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(0.1, 24, 24),
+    new THREE.MeshBasicMaterial({ color: entry.headColor })
+  );
+
+  return { hand, head };
+}
+
 function createTrailObjects(
   entry: ReturnType<typeof buildDebugRigSceneEntries>[number]
 ): TrailObjects {
@@ -160,6 +180,47 @@ function syncBodyScene() {
   }
 
   bodyFigureRenderer.sync(scene, props.bodyScene);
+  renderScene();
+}
+
+function syncRigMarkers() {
+  if (!scene) {
+    return;
+  }
+
+  const currentScene = scene;
+  const entries = buildDebugRigSceneEntries(props.poses, props.rigOrder);
+  const activeRigIds = new Set(entries.map((entry) => entry.rigId));
+
+  entries.forEach((entry) => {
+    let objects = rigMarkerObjects.get(entry.rigId);
+
+    if (!objects) {
+      objects = createRigMarkerObjects(entry);
+      rigMarkerObjects.set(entry.rigId, objects);
+      currentScene.add(objects.hand, objects.head);
+    }
+
+    const handMaterial = objects.hand.material as THREE.MeshBasicMaterial;
+    const headMaterial = objects.head.material as THREE.MeshBasicMaterial;
+
+    handMaterial.color.set(entry.handColor);
+    headMaterial.color.set(entry.headColor);
+    objects.hand.position.set(entry.handPosition.x, entry.handPosition.y, entry.handPosition.z);
+    objects.head.position.set(entry.headPosition.x, entry.headPosition.y, entry.headPosition.z);
+    objects.hand.visible = true;
+    objects.head.visible = true;
+  });
+
+  for (const [rigId, objects] of rigMarkerObjects.entries()) {
+    if (activeRigIds.has(rigId)) {
+      continue;
+    }
+
+    objects.hand.visible = false;
+    objects.head.visible = false;
+  }
+
   renderScene();
 }
 
@@ -281,6 +342,13 @@ function syncHelpers() {
   renderScene();
 }
 
+function disposeRigMarkerObjects(objects: RigMarkerObjects) {
+  objects.hand.geometry.dispose();
+  disposeMaterial(objects.hand.material);
+  objects.head.geometry.dispose();
+  disposeMaterial(objects.head.material);
+}
+
 function disposeTrailObjects(objects: TrailObjects) {
   objects.hand.geometry.dispose();
   disposeMaterial(objects.hand.material);
@@ -307,6 +375,12 @@ function disposeThreeSceneResources() {
     bodyFigureRenderer.dispose(scene);
   }
   bodyFigureRenderer = null;
+
+  for (const objects of rigMarkerObjects.values()) {
+    scene?.remove(objects.hand, objects.head);
+    disposeRigMarkerObjects(objects);
+  }
+  rigMarkerObjects.clear();
 
   for (const objects of trailObjects.values()) {
     scene?.remove(objects.hand, objects.head);
@@ -388,6 +462,7 @@ onMounted(() => {
     bodyFigureRenderer = new BodyStickFigureRenderer();
     syncHelpers();
     syncBodyScene();
+    syncRigMarkers();
     syncTrailObjects();
     resizeRenderer();
   } catch (error) {
@@ -404,6 +479,14 @@ watch(
     syncBodyScene();
   },
   { immediate: true }
+);
+
+watch(
+  () => [props.poses, props.rigOrder],
+  () => {
+    syncRigMarkers();
+  },
+  { deep: true, immediate: true }
 );
 
 watch(
