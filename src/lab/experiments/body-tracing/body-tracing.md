@@ -9,7 +9,7 @@
 
 # Body tracing sandbox
 
-This starts from a deliberately small body model: a basic stick figure on canvas with both hands draggable. The feet and hips stay planted, the rig infers torso yaw from the two hand positions, and both elbows are solved from fixed two-bone arms so the wrists can move without stretching the limbs.
+This starts from a deliberately small body model: a basic stick figure on canvas with both hands draggable. The rig draws from the shared humanoid skeleton output, including pelvis and chest solving and full shoulder-girdle placement. Both hands are draggable; the rig infers torso yaw from the two hand positions, solves the pelvis/chest/shoulder-girdle chain, and normalises the shared hand guide to the canonical wall-plane pattern space.
 
 <BodyTracingStickFigureCanvas />
 
