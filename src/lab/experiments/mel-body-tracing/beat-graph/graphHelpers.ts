@@ -206,6 +206,45 @@ export function setPoiBeatGraphTrackInitialPhase(
   };
 }
 
+export function shiftPoiBeatGraphTrackRows(
+  graph: PoiBeatGraph,
+  trackId: string,
+  deltaSteps: number
+): PoiBeatGraph {
+  if (!Number.isInteger(deltaSteps) || deltaSteps === 0) return graph;
+  const cycleSteps = graph.cycleSteps;
+  if (cycleSteps <= 0) return graph;
+
+  const normalizeStep = (step: number): number => {
+    return (((step + deltaSteps) % cycleSteps) + cycleSteps) % cycleSteps;
+  };
+  const shouldFlipInitialPhase = Math.abs(deltaSteps) % 2 === 1;
+
+  return {
+    ...graph,
+    tracks: graph.tracks.map((track) => {
+      if (track.id !== trackId) return track;
+
+      const shiftedRows = track.rows
+        .map((row) => ({
+          ...row,
+          step: normalizeStep(row.step)
+        }))
+        .sort((a, b) => a.step - b.step);
+
+      return {
+        ...track,
+        initialPhase: shouldFlipInitialPhase
+          ? track.initialPhase === "up"
+            ? "down"
+            : "up"
+          : track.initialPhase,
+        rows: shiftedRows
+      };
+    })
+  };
+}
+
 export function filterPoiBeatGraphTracks(
   graph: PoiBeatGraph,
   trackIds: readonly string[]

@@ -15,6 +15,7 @@ import {
   movePoiBeatGraphRowLane,
   setPoiBeatGraphTrackDirection,
   setPoiBeatGraphTrackInitialPhase,
+  shiftPoiBeatGraphTrackRows,
   togglePoiBeatGraphRowSide
 } from "@/lab/experiments/mel-body-tracing/beat-graph/graphHelpers";
 import {
@@ -245,6 +246,55 @@ describe("PoiBeatGraph lower-wrap seed", () => {
     };
 
     expect(deletePoiBeatGraphLastRow(minimumGraph)).toBe(minimumGraph);
+  });
+
+  it("shifts one track rows down by one step with wraparound", () => {
+    const graph = createLowCommonCosmoBeatGraph();
+    const shifted = shiftPoiBeatGraphTrackRows(graph, "left", 1);
+
+    expect(getTrack(shifted, "left").rows.map((row) => row.step)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+    expect(getTrack(shifted, "left").rows.map((row) => row.laneId)).toEqual([
+      "center",
+      "right-low",
+      "right-low",
+      "center",
+      "center",
+      "right-low",
+      "right-low",
+      "center"
+    ]);
+    expect(getTrack(shifted, "left").initialPhase).toBe("down");
+    expect(getTrack(graph, "right").rows).toEqual(getTrack(shifted, "right").rows);
+    expect(getTrack(graph, "right").initialPhase).toBe(getTrack(shifted, "right").initialPhase);
+  });
+
+  it("shifts one track rows up by one step with wraparound", () => {
+    const graph = createLowCommonCosmoBeatGraph();
+    const shifted = shiftPoiBeatGraphTrackRows(graph, "right", -1);
+
+    expect(getTrack(shifted, "right").rows.map((row) => row.step)).toEqual([
+      0, 1, 2, 3, 4, 5, 6, 7
+    ]);
+    expect(getTrack(shifted, "right").rows.map((row) => row.laneId)).toEqual([
+      "left-low",
+      "center",
+      "center",
+      "left-low",
+      "left-low",
+      "center",
+      "center",
+      "left-low"
+    ]);
+    expect(getTrack(shifted, "right").initialPhase).toBe("down");
+    expect(getTrack(graph, "left").rows).toEqual(getTrack(shifted, "left").rows);
+    expect(getTrack(graph, "left").initialPhase).toBe(getTrack(shifted, "left").initialPhase);
+  });
+
+  it("keeps initial phase unchanged for even-step offsets", () => {
+    const graph = createLowCommonCosmoBeatGraph();
+    const shifted = shiftPoiBeatGraphTrackRows(graph, "left", 2);
+
+    expect(getTrack(shifted, "left").initialPhase).toBe(getTrack(graph, "left").initialPhase);
   });
 });
 
