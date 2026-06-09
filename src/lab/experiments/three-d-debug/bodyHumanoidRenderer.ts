@@ -194,8 +194,8 @@ export class BodyHumanoidRenderer {
       PELVIS_WOOD_COLOR
     );
 
-    this.syncRibcage(scene, frame, config.ribcage);
-    this.syncPelvis(scene, frame, config.pelvis);
+    this.syncRibcage(scene, frame);
+    this.syncPelvis(scene, frame);
     this.syncHead(scene, frame, config.head);
   }
 
@@ -244,14 +244,12 @@ export class BodyHumanoidRenderer {
 
   private syncRibcage(
     scene: THREE.Scene,
-    frame: BodySkeletonFrame,
-    config: MannequinPieceConfig
+    frame: BodySkeletonFrame
   ): void {
     const shoulderLeft = toVector3(frame.joints.shoulderLeft);
     const shoulderRight = toVector3(frame.joints.shoulderRight);
     const pelvis = toVector3(frame.joints.pelvisCenter);
     const shoulderMid = new THREE.Vector3().lerpVectors(shoulderLeft, shoulderRight, 0.5);
-    const shoulderWidth = Math.max(shoulderLeft.distanceTo(shoulderRight), frame.supportPose.shoulderSpan);
     const availableTorsoDrop = Math.max(shoulderMid.distanceTo(pelvis), 1e-4);
     const right = toVector3(frame.orientation.right);
     const up = toVector3(frame.orientation.up);
@@ -296,11 +294,8 @@ export class BodyHumanoidRenderer {
 
   private syncPelvis(
     scene: THREE.Scene,
-    frame: BodySkeletonFrame,
-    config: MannequinPieceConfig
+    frame: BodySkeletonFrame
   ): void {
-    const hipLeft = toVector3(frame.joints.hipLeft);
-    const hipRight = toVector3(frame.joints.hipRight);
     const pelvis = toVector3(frame.joints.pelvisCenter);
     const right = toVector3(frame.orientation.right);
     const up = toVector3(frame.orientation.up);
