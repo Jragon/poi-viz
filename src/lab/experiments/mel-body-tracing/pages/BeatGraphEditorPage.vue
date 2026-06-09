@@ -14,6 +14,7 @@ import {
   movePoiBeatGraphRowLane,
   setPoiBeatGraphTrackDirection,
   setPoiBeatGraphTrackInitialPhase,
+  shiftPoiBeatGraphTrackRows,
   togglePoiBeatGraphRowSide
 } from "@/lab/experiments/mel-body-tracing/beat-graph/graphHelpers";
 import type {
@@ -124,6 +125,10 @@ function setTrackDirection(trackId: string, direction: PoiBeatDirection) {
 
 function setTrackInitialPhase(trackId: string, phase: PoiBeatPhaseLabel) {
   graph.value = setPoiBeatGraphTrackInitialPhase(graph.value, trackId, phase);
+}
+
+function shiftTrackRows(trackId: string, deltaSteps: number) {
+  graph.value = shiftPoiBeatGraphTrackRows(graph.value, trackId, deltaSteps);
 }
 
 function setShowStickFigure(event: Event) {
@@ -301,6 +306,26 @@ function phaseButtonClass(track: PoiBeatTrack, phase: PoiBeatPhaseLabel): string
                 >
                   Down
                 </button>
+              </div>
+
+              <div class="mt-2 grid grid-cols-[auto_1fr] items-center gap-2">
+                <p class="text-xs uppercase tracking-[0.12em] text-slate-500">Offset</p>
+                <div class="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    class="rounded-md border border-slate-700 px-2 py-1 text-xs font-medium text-slate-300 transition hover:border-slate-500 hover:text-slate-100"
+                    @click="shiftTrackRows(track.id, -1)"
+                  >
+                    -
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-md border border-slate-700 px-2 py-1 text-xs font-medium text-slate-300 transition hover:border-slate-500 hover:text-slate-100"
+                    @click="shiftTrackRows(track.id, 1)"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
             </div>
           </div>
