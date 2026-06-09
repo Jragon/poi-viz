@@ -29,6 +29,7 @@ const props = withDefaults(
     trails: WorldMultiRigTrailSamples;
     rigOrder: RigId[];
     bodyScene: BodySkeletonFrame | null;
+    showSkeleton?: boolean;
     sceneRadiusWorld: number;
     sceneCenterWorld: Vec3;
     activePlanes: PlaneId[];
@@ -197,7 +198,7 @@ function syncBodyScene() {
     return;
   }
 
-  bodyFigureRenderer.sync(scene, props.bodyScene);
+  bodyFigureRenderer.sync(scene, props.bodyScene, props.showSkeleton ?? false);
   renderScene();
 }
 
@@ -539,7 +540,7 @@ onMounted(() => {
 });
 
 watch(
-  () => props.bodyScene,
+  () => [props.bodyScene, props.showSkeleton],
   () => {
     syncBodyScene();
   },

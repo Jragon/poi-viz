@@ -54,6 +54,7 @@ const showGrid = ref(true);
 const showHandTrails = ref(true);
 const showHeadTrails = ref(true);
 const showPlaneSheets = ref(true);
+const showSkeleton = ref(false);
 const firePoiPanelOpen = useStorage("poi-v2:three-d-debug-fire-poi-panel-open", false);
 const firePoiSettings = useStorage(
   "poi-v2:three-d-debug-fire-poi-settings",
@@ -181,6 +182,7 @@ function updateFirePoiSettings(next: FirePoiSettings) {
           :trails="worldTrails"
           :rig-order="core.rigOrder.value"
           :body-scene="bodyScene"
+          :show-skeleton="showSkeleton"
           :scene-radius-world="sceneState.sceneRadiusWorld"
           :scene-center-world="sceneState.sceneCenterWorld"
           :active-planes="sceneState.activePlanes"
@@ -276,6 +278,13 @@ function updateFirePoiSettings(next: FirePoiSettings) {
         >
           <span>Plane Sheets</span>
           <input v-model="showPlaneSheets" type="checkbox" class="h-4 w-4 accent-sky-400" />
+        </label>
+
+        <label
+          class="flex items-center justify-between gap-3 rounded-lg border border-slate-800 px-3 py-2"
+        >
+          <span>Skeleton Overlay</span>
+          <input v-model="showSkeleton" type="checkbox" class="h-4 w-4 accent-slate-200" />
         </label>
 
         <label
