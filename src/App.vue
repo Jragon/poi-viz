@@ -27,7 +27,7 @@ watch(
   <div
     class="min-h-screen bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.10),transparent_35%),linear-gradient(180deg,rgba(15,23,42,1),rgba(2,6,23,1))] text-slate-100"
   >
-    <nav class="z-20 border-b border-slate-800/80 bg-slate-950/85 backdrop-blur">
+    <nav class="relative z-50 border-b border-slate-800/80 bg-slate-950/85 backdrop-blur">
       <div
         class="mx-auto flex w-full max-w-360 flex-col items-stretch gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between md:px-6"
       >
