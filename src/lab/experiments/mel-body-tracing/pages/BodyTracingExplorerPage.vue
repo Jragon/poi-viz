@@ -27,7 +27,6 @@ const {
   resolvedDirectionsLabel,
   summaryLabel,
   visibleTrackIds,
-  visualizerTitle,
   toggleTrackVisibility,
   resetVisibleTracks
 } = useExplorerBeatGraph({ activeTab, reelConfig, wrapConfig, cosmoConfig });
@@ -71,7 +70,7 @@ const beatGraphEditorLocation = computed<RouteLocationRaw>(() => {
 
 core.session.setProjectionMode("tilted");
 core.session.setPlaneSideSeparationWorld(0.2);
-transport.setSpeed(0.5);
+transport.setSpeed(1);
 display.setOverlayVisibility("showHandTrails", false);
 display.setOverlayVisibility("showHeadTrails", true);
 
@@ -87,10 +86,6 @@ watch(activeTab, resetVisibleTracks);
 
 function setActiveTab(tab: BodyTracingExplorerTab): void {
   activeTab.value = tab;
-}
-
-function setShowStickFigure(event: Event): void {
-  showStickFigure.value = (event.target as HTMLInputElement).checked;
 }
 
 function togglePlayback(): void {
@@ -119,7 +114,7 @@ function tabButtonClass(tab: BodyTracingExplorerTab): string {
           <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Mel body tracing</p>
           <h1 class="mt-2 text-2xl font-semibold text-slate-50">Body Tracing Explorer</h1>
           <p class="mt-2 text-sm leading-6 text-slate-400">
-            Play with reels, wraps, and cosmos from Ivan “Mel” Gorbunov’s
+            Play with reels, wraps, and cosmos from Mel's
             <a
               href="https://antispinner.gitbook.io/btf"
               target="_blank"
@@ -193,27 +188,8 @@ function tabButtonClass(tab: BodyTracingExplorerTab): string {
       </div>
 
       <div class="grid content-start gap-6">
-        <label
-          class="ml-auto flex items-center gap-2 text-xs font-medium text-slate-400 transition hover:text-slate-100"
-        >
-          <input
-            type="checkbox"
-            :checked="showStickFigure"
-            class="h-3.5 w-3.5 accent-amber-400"
-            @change="setShowStickFigure"
-          />
-          Stick figure
-        </label>
-
         <section class="overflow-hidden rounded-lg border border-slate-800 bg-slate-950/80">
-          <header
-            class="grid gap-3 border-b border-slate-800 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start"
-          >
-            <div class="min-w-0">
-              <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Visualizer</p>
-              <h2 class="mt-1 text-lg font-semibold text-slate-100">{{ visualizerTitle }}</h2>
-            </div>
-
+          <header class="flex justify-end border-b border-slate-800 px-4 py-3">
             <dl class="grid grid-cols-2 gap-x-5 gap-y-1 text-xs text-slate-400 md:text-right">
               <div>
                 <dt class="uppercase tracking-[0.18em] text-slate-600">Time</dt>

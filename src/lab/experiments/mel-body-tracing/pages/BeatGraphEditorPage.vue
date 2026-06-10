@@ -36,7 +36,7 @@ const { graph } = useBeatGraphUrlState(createLowCommonCosmoBeatGraph);
 const compilerOptions = DEFAULT_POI_BEAT_COMPILER_OPTIONS;
 const editingTrackId = ref(graph.value.tracks[0]?.id ?? "");
 const visibleTrackIds = ref(graph.value.tracks.map((track) => track.id));
-const showStickFigure = ref(false);
+const showStickFigure = ref(true);
 const visibleGraph = computed(() => filterPoiBeatGraphTracks(graph.value, visibleTrackIds.value));
 const compiled = computed(() => compilePoiBeatGraph(visibleGraph.value, compilerOptions));
 const workspace = provideVisualizerWorkspace(
@@ -75,6 +75,7 @@ const activePlanesLabel = computed(() => {
 // core.session.setProjectionMode("orthographic");
 core.session.setProjectionMode("tilted");
 core.session.setPlaneSideSeparationWorld(0.2);
+transport.setSpeed(1);
 display.setOverlayVisibility("showHandTrails", false);
 display.setOverlayVisibility("showHeadTrails", true);
 
@@ -129,10 +130,6 @@ function setTrackInitialPhase(trackId: string, phase: PoiBeatPhaseLabel) {
 
 function shiftTrackRows(trackId: string, deltaSteps: number) {
   graph.value = shiftPoiBeatGraphTrackRows(graph.value, trackId, deltaSteps);
-}
-
-function setShowStickFigure(event: Event) {
-  showStickFigure.value = (event.target as HTMLInputElement).checked;
 }
 
 function appendRow() {
@@ -203,16 +200,9 @@ function phaseButtonClass(track: PoiBeatTrack, phase: PoiBeatPhaseLabel): string
               <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Mel body tracing</p>
               <h1 class="mt-2 text-2xl font-semibold text-slate-50">Beat Graph Editor</h1>
             </div>
-            <RouterLink
-              to="/lab/body-tracing-explorer"
-              class="rounded-md border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-slate-500 hover:bg-slate-800 hover:text-slate-100"
-            >
-              Back to Explorer
-            </RouterLink>
           </div>
           <p class="mt-2 text-sm leading-6 text-slate-400">
-            One shared grid edits mirrored left and right hand tracks against the same half-beat
-            rows. The beat graph model comes directly from Mel's
+            Play around with the beat graphs from Mel's
             <a
               href="https://antispinner.gitbook.io/btf"
               target="_blank"
@@ -220,7 +210,8 @@ function phaseButtonClass(track: PoiBeatTrack, phase: PoiBeatPhaseLabel): string
               class="font-medium text-sky-300 underline decoration-sky-500/50 underline-offset-4 transition hover:text-sky-200"
             >
               Body Tracing Framework </a
-            >.
+            >. Click the columns to move the beat graph around, click twice to change it to behind
+            body (dotted line).
           </p>
         </header>
 
@@ -347,31 +338,8 @@ function phaseButtonClass(track: PoiBeatTrack, phase: PoiBeatPhaseLabel): string
       </div>
 
       <div class="grid content-start gap-6">
-        <label
-          class="ml-auto flex items-center gap-2 text-xs font-medium text-slate-400 transition hover:text-slate-100"
-        >
-          <input
-            type="checkbox"
-            :checked="showStickFigure"
-            class="h-3.5 w-3.5 accent-amber-400"
-            @change="setShowStickFigure"
-          />
-          Stick figure
-        </label>
-
         <section class="overflow-hidden rounded-lg border border-slate-800 bg-slate-950/80">
-          <header
-            class="grid gap-3 border-b border-slate-800 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start"
-          >
-            <div class="min-w-0">
-              <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Live Cell</p>
-              <h2 class="mt-1 text-lg font-semibold text-slate-100">Compiled low common cosmo</h2>
-              <p class="mt-1 text-sm leading-6 text-slate-400">
-                Visible hand tracks compile into separate rigs with authored front/behind side
-                metadata.
-              </p>
-            </div>
-
+          <header class="flex justify-end border-b border-slate-800 px-4 py-3">
             <dl class="grid grid-cols-2 gap-x-5 gap-y-1 text-xs text-slate-400 md:text-right">
               <div>
                 <dt class="uppercase tracking-[0.18em] text-slate-600">Time</dt>
