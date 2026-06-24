@@ -38,6 +38,22 @@ As with many things in poi, it's worth breaking it down into the most managable 
 - can we actually make a stall point with any anti spin? From reading Zaltymbunk's cap math document I realised that we get much cleaner stall points if we reduce the length of the tether relative to the arm span.
 - We probably need to go through and start mapping what actually constitutes a stall.
 
+#### 15 jun 2026 super interesting notes from tim.
+
+- currently in the visualiser we say same time and quarter time because I didn't have know what to call not split time. There's already nominclature for 3d / qt.
+- infinite L, same L, and split L.
+
+```
+infinite L: quarter time.
+same L: hands meet at a cardinal (doing two full cirlces they'd meet at two cardinals. ie wall and wheel plane circles in same they'd meet at the top and bottom. hence same time ish)
+split L: hands never meet but share an axis at two points. Again in wall and wheel, instead here there's one hand up one hand down.
+```
+
+- also nice drill, make in spins at 45 degs between stalls to make the training easier.
+- should make chasing and mirrored patterns.
+- think it would be cool to have a page dedicated to these quarter plane brake / quater stall patterns.
+- would also be nice to have a checkbox style thing
+
 ## What's actually next what are we doing here?
 
 - Okay next I want to make a component with elementary quarter time quarters. In forward there should be x: ie wall plane, 0 to 90, 90 to 180, 180 to 270 and 270 to 0. In wheel and floor lets only have the forward facing ones.

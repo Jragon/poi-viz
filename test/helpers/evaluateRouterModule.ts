@@ -41,6 +41,10 @@ const eagerPageModules = new Map<string, { default: { name: string } }>([
   [
     "@/lab/experiments/mel-body-tracing/pages/BeatGraphEditorPage.vue",
     { default: { name: "BeatGraphEditorPage" } }
+  ],
+  [
+    "@/lab/experiments/qt-stall-graph/StallGraphJournalPage.vue",
+    { default: { name: "StallGraphJournalPage" } }
   ]
 ]);
 

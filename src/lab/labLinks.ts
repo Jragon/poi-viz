@@ -6,6 +6,10 @@ export const labLinks = [
     to: "/lab/quarter-time-3d"
   },
   {
+    label: "Stall Graph",
+    to: "/lab/qt-stall-graph"
+  },
+  {
     label: "Archer Weaves",
     to: "/lab/archer-weaves"
   },
