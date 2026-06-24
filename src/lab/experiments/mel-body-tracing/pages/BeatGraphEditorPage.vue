@@ -23,6 +23,7 @@ import type {
   PoiBeatPhaseLabel,
   PoiBeatTrack
 } from "@/lab/experiments/mel-body-tracing/beat-graph/types";
+import { useBeatGraphPngSequenceExport } from "@/lab/experiments/mel-body-tracing/beat-graph/useBeatGraphPngSequenceExport";
 import { useBeatGraphUrlState } from "@/lab/experiments/mel-body-tracing/beat-graph/useBeatGraphUrlState";
 import PoiBeatGraph from "@/lab/experiments/mel-body-tracing/components/PoiBeatGraph.vue";
 import PoiBeatGraphDebugPanel from "@/lab/experiments/mel-body-tracing/components/PoiBeatGraphDebugPanel.vue";
@@ -37,6 +38,8 @@ const compilerOptions = DEFAULT_POI_BEAT_COMPILER_OPTIONS;
 const editingTrackId = ref(graph.value.tracks[0]?.id ?? "");
 const visibleTrackIds = ref(graph.value.tracks.map((track) => track.id));
 const showStickFigure = ref(true);
+const beatGraphExportRoot = ref<HTMLElement | null>(null);
+const activeStepOverride = ref<number | null>(null);
 const visibleGraph = computed(() => filterPoiBeatGraphTracks(graph.value, visibleTrackIds.value));
 const compiled = computed(() => compilePoiBeatGraph(visibleGraph.value, compilerOptions));
 const workspace = provideVisualizerWorkspace(
@@ -61,6 +64,13 @@ const activeStep = computed(() =>
     compilerOptions.halfBeatDuration
   )
 );
+const renderedActiveStep = computed(() => activeStepOverride.value ?? activeStep.value);
+const graphPngExport = useBeatGraphPngSequenceExport({
+  getRootElement: () => beatGraphExportRoot.value,
+  setActiveStepOverride: (step) => {
+    activeStepOverride.value = step;
+  }
+});
 const currentTimeLabel = computed(() => transport.currentTime.value.toFixed(2));
 const durationLabel = computed(() => transport.duration.value.toFixed(2));
 const activePlanesLabel = computed(() => {
@@ -151,6 +161,16 @@ function onScrub(event: Event) {
 function setSpeed(value: number) {
   transport.setSpeed(value);
 }
+
+function exportGraphPngSequence() {
+  void graphPngExport
+    .exportGraph({ graph: graph.value, halfBeatDuration: compilerOptions.halfBeatDuration })
+    .catch(() => {});
+}
+
+const graphPngExportButtonLabel = computed(() =>
+  graphPngExport.state.status === "running" ? "Exporting..." : "Export graph PNG sequence"
+);
 
 function isEditingTrack(trackId: string): boolean {
   return editingTrackId.value === trackId;
@@ -322,18 +342,27 @@ function phaseButtonClass(track: PoiBeatTrack, phase: PoiBeatPhaseLabel): string
           </div>
         </section>
 
-        <div class="order-3 lg:order-2">
+        <div ref="beatGraphExportRoot" class="order-3 lg:order-2">
           <PoiBeatGraph
             :graph="graph"
             :track-id="editingTrackId"
             :visible-track-ids="visibleTrackIds"
             :half-beat-duration="compilerOptions.halfBeatDuration"
-            :active-step="activeStep"
+            :active-step="renderedActiveStep"
             @select-lane="moveActiveLane"
             @toggle-side="toggleActiveRowSide"
             @append-row="appendRow"
             @delete-row="deleteRow"
           />
+
+          <button
+            type="button"
+            class="mt-3 hidden w-full rounded-md border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white disabled:cursor-wait disabled:border-slate-800 disabled:text-slate-500 md:block"
+            :disabled="graphPngExport.state.status === 'running'"
+            @click="exportGraphPngSequence"
+          >
+            {{ graphPngExportButtonLabel }}
+          </button>
         </div>
       </div>
 

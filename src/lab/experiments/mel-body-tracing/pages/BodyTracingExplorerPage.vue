@@ -5,6 +5,7 @@ import type { LocationQueryRaw, RouteLocationRaw } from "vue-router";
 import { encodeBeatGraphToUrlParams } from "@/lab/experiments/mel-body-tracing/beat-graph/beatGraphUrlCodec";
 import { DEFAULT_POI_BEAT_COMPILER_OPTIONS } from "@/lab/experiments/mel-body-tracing/beat-graph/compileBeatGraph";
 import { findActivePoiBeatStep } from "@/lab/experiments/mel-body-tracing/beat-graph/graphHelpers";
+import { useBeatGraphPngSequenceExport } from "@/lab/experiments/mel-body-tracing/beat-graph/useBeatGraphPngSequenceExport";
 import CosmoControls from "@/lab/experiments/mel-body-tracing/components/CosmoControls.vue";
 import PoiBeatGraph from "@/lab/experiments/mel-body-tracing/components/PoiBeatGraph.vue";
 import PoiBeatGraphDebugPanel from "@/lab/experiments/mel-body-tracing/components/PoiBeatGraphDebugPanel.vue";
@@ -31,6 +32,8 @@ const {
   resetVisibleTracks
 } = useExplorerBeatGraph({ activeTab, reelConfig, wrapConfig, cosmoConfig });
 const showStickFigure = ref(true);
+const beatGraphExportRoot = ref<HTMLElement | null>(null);
+const activeStepOverride = ref<number | null>(null);
 
 const workspace = provideVisualizerWorkspace(
   createVisualizerWorkspace(() => compiled.value.sequence, {
@@ -47,6 +50,13 @@ const activeStep = computed(() =>
     compilerOptions.halfBeatDuration
   )
 );
+const renderedActiveStep = computed(() => activeStepOverride.value ?? activeStep.value);
+const graphPngExport = useBeatGraphPngSequenceExport({
+  getRootElement: () => beatGraphExportRoot.value,
+  setActiveStepOverride: (step) => {
+    activeStepOverride.value = step;
+  }
+});
 const currentTimeLabel = computed(() => transport.currentTime.value.toFixed(2));
 const durationLabel = computed(() => transport.duration.value.toFixed(2));
 const activePlanesLabel = computed(() => {
@@ -100,6 +110,16 @@ function setSpeed(value: number): void {
   transport.setSpeed(value);
 }
 
+function exportGraphPngSequence(): void {
+  void graphPngExport
+    .exportGraph({ graph: graph.value, halfBeatDuration: compilerOptions.halfBeatDuration })
+    .catch(() => {});
+}
+
+const graphPngExportButtonLabel = computed(() =>
+  graphPngExport.state.status === "running" ? "Exporting..." : "Export graph PNG sequence"
+);
+
 function tabButtonClass(tab: BodyTracingExplorerTab): string {
   if (activeTab.value === tab) return "border-sky-300 bg-sky-300 text-slate-950";
   return "border-slate-700 text-slate-300 hover:border-slate-500 hover:bg-slate-800";
@@ -141,14 +161,23 @@ function tabButtonClass(tab: BodyTracingExplorerTab): string {
         </div>
 
         <div class="order-5 grid gap-3 lg:order-3">
-          <div class="order-2 lg:order-1">
+          <div ref="beatGraphExportRoot" class="order-2 lg:order-1">
             <PoiBeatGraph
               :graph="graph"
               :visible-track-ids="visibleTrackIds"
               :half-beat-duration="DEFAULT_POI_BEAT_COMPILER_OPTIONS.halfBeatDuration"
-              :active-step="activeStep"
+              :active-step="renderedActiveStep"
               readonly
             />
+
+            <button
+              type="button"
+              class="mt-3 hidden w-full rounded-md border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white disabled:cursor-wait disabled:border-slate-800 disabled:text-slate-500 md:block"
+              :disabled="graphPngExport.state.status === 'running'"
+              @click="exportGraphPngSequence"
+            >
+              {{ graphPngExportButtonLabel }}
+            </button>
           </div>
 
           <RouterLink
