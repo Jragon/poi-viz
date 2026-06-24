@@ -1,5 +1,6 @@
 import { PI } from "@/engine/constants";
 import { evalPreparedMultiRigSequenceAt, prepareMultiRigSequence } from "@/engine/multirig";
+import { decodeBeatGraphFromUrlParams } from "@/lab/experiments/mel-body-tracing/beat-graph/beatGraphUrlCodec";
 import {
   compilePoiBeatGraph,
   DEFAULT_POI_BEAT_COMPILER_OPTIONS
@@ -27,6 +28,195 @@ import type { PoiBeatGraph } from "@/lab/experiments/mel-body-tracing/beat-graph
 import { describe, expect, it } from "vitest";
 
 const HALF_BEAT_DURATION = 0.5;
+
+const KNOWN_GOOD_BEAT_GRAPH_CASES = [
+  {
+    name: "low common cosmo",
+    url: "?s=8&lt=cw-down-4b4b3a3b4a4a3b3a&rt=ccw-down-2b2b3a3b2a2a3b3a",
+    rows: {
+      left: [
+        "right-low:b",
+        "right-low:b",
+        "center:a",
+        "center:b",
+        "right-low:a",
+        "right-low:a",
+        "center:b",
+        "center:a"
+      ],
+      right: [
+        "left-low:b",
+        "left-low:b",
+        "center:a",
+        "center:b",
+        "left-low:a",
+        "left-low:a",
+        "center:b",
+        "center:a"
+      ]
+    },
+    samples: {
+      left: [
+        [0.5, -0.35],
+        [0.5, -0.35],
+        [0.5, -0.35],
+        [0.29, -0.35],
+        [-0.29, -0.35],
+        [-0.5, -0.35],
+        [-0.29, -0.35],
+        [0.29, -0.35],
+        [0.5, -0.35],
+        [0.5, -0.35],
+        [0.5, -0.35],
+        [0.29, -0.35],
+        [-0.29, -0.35],
+        [-0.5, -0.35],
+        [-0.29, -0.35],
+        [0.29, -0.35],
+        [0.5, -0.35]
+      ],
+      right: [
+        [-0.5, -0.35],
+        [-0.5, -0.35],
+        [-0.5, -0.35],
+        [-0.29, -0.35],
+        [0.29, -0.35],
+        [0.5, -0.35],
+        [0.29, -0.35],
+        [-0.29, -0.35],
+        [-0.5, -0.35],
+        [-0.5, -0.35],
+        [-0.5, -0.35],
+        [-0.29, -0.35],
+        [0.29, -0.35],
+        [0.5, -0.35],
+        [0.29, -0.35],
+        [-0.29, -0.35],
+        [-0.5, -0.35]
+      ]
+    }
+  },
+  {
+    name: "direct low reel",
+    url: "?s=6&lt=cw-up-2b2b3a4b4b3a&rt=ccw-up-4b4b3a2b2b3a",
+    rows: {
+      left: ["left-low:b", "left-low:b", "center:a", "right-low:b", "right-low:b", "center:a"],
+      right: ["right-low:b", "right-low:b", "center:a", "left-low:b", "left-low:b", "center:a"]
+    },
+    samples: {
+      left: [
+        [-0.5, -0.35],
+        [-0.5, -0.35],
+        [-0.5, -0.35],
+        [-0.396, -0.35],
+        [0, -0.35],
+        [0.396, -0.35],
+        [0.5, -0.35],
+        [0.5, -0.35],
+        [0.5, -0.35],
+        [0.396, -0.35],
+        [0, -0.35],
+        [-0.396, -0.35],
+        [-0.5, -0.35]
+      ],
+      right: [
+        [0.5, -0.35],
+        [0.5, -0.35],
+        [0.5, -0.35],
+        [0.396, -0.35],
+        [0, -0.35],
+        [-0.396, -0.35],
+        [-0.5, -0.35],
+        [-0.5, -0.35],
+        [-0.5, -0.35],
+        [-0.396, -0.35],
+        [0, -0.35],
+        [0.396, -0.35],
+        [0.5, -0.35]
+      ]
+    }
+  },
+  {
+    name: "BTB low and high reels",
+    url: "?s=6&lt=cw-down-4a4a3b2a2a3b&rt=ccw-down-1a1a3b5a5a3b",
+    rows: {
+      left: ["right-low:a", "right-low:a", "center:b", "left-low:a", "left-low:a", "center:b"],
+      right: ["left-high:a", "left-high:a", "center:b", "right-high:a", "right-high:a", "center:b"]
+    },
+    samples: {
+      left: [
+        [0.5, -0.35],
+        [0.5, -0.35],
+        [0.5, -0.35],
+        [0.396, -0.35],
+        [0, -0.35],
+        [-0.396, -0.35],
+        [-0.5, -0.35],
+        [-0.5, -0.35],
+        [-0.5, -0.35],
+        [-0.396, -0.35],
+        [0, -0.35],
+        [0.396, -0.35],
+        [0.5, -0.35]
+      ],
+      right: [
+        [-0.5, 0.35],
+        [-0.5, 0.35],
+        [-0.5, 0.35],
+        [-0.396, 0.35],
+        [0, 0.35],
+        [0.396, 0.35],
+        [0.5, 0.35],
+        [0.5, 0.35],
+        [0.5, 0.35],
+        [0.396, 0.35],
+        [0, 0.35],
+        [-0.396, 0.35],
+        [-0.5, 0.35]
+      ]
+    }
+  },
+  {
+    name: "diagonal and vertical transfers",
+    url: "?s=6&lt=cw-up-1b1b3a4b4b3a&rt=ccw-up-5b5b3a4b4b3a",
+    rows: {
+      left: ["left-high:b", "left-high:b", "center:a", "right-low:b", "right-low:b", "center:a"],
+      right: ["right-high:b", "right-high:b", "center:a", "right-low:b", "right-low:b", "center:a"]
+    },
+    samples: {
+      left: [
+        [-0.5, 0.35],
+        [-0.5, 0.35],
+        [-0.5, 0.35],
+        [-0.396, 0.278],
+        [0, 0],
+        [0.396, -0.278],
+        [0.5, -0.35],
+        [0.5, -0.35],
+        [0.5, -0.35],
+        [0.396, -0.278],
+        [0, 0],
+        [-0.396, 0.278],
+        [-0.5, 0.35]
+      ],
+      right: [
+        [0.5, 0.35],
+        [0.5, 0.35],
+        [0.5, 0.35],
+        [0.5, 0.278],
+        [0.5, 0],
+        [0.5, -0.278],
+        [0.5, -0.35],
+        [0.5, -0.35],
+        [0.5, -0.35],
+        [0.5, -0.278],
+        [0.5, 0],
+        [0.5, 0.278],
+        [0.5, 0.35]
+      ]
+    }
+  }
+] as const;
 
 function getLowerWrapTrack() {
   const graph = createLowerWrapBeatGraph();
@@ -80,6 +270,40 @@ function handPointAt(
     x: handPose.radius * Math.cos(handPose.phaseAbs),
     y: handPose.radius * Math.sin(handPose.phaseAbs)
   };
+}
+
+function decodeGraphFromUrl(url: string): PoiBeatGraph {
+  const params = new URLSearchParams(url);
+  const decoded = decodeBeatGraphFromUrlParams({
+    s: params.get("s"),
+    lt: params.get("lt"),
+    rt: params.get("rt")
+  });
+
+  if (!decoded.ok) {
+    throw new Error(`expected valid beat graph URL: ${decoded.reason}`);
+  }
+
+  return decoded.graph;
+}
+
+function rowCodes(graph: PoiBeatGraph, trackId: string): readonly string[] {
+  return getTrack(graph, trackId).rows.map((row) => `${row.laneId}:${row.planeSide ?? "d"}`);
+}
+
+function roundSample(value: number): number {
+  return Math.round(value * 1000) / 1000;
+}
+
+function roundedHandSamples(
+  prepared: ReturnType<typeof prepareMultiRigSequence>,
+  rigId: string,
+  cycleSteps: number
+): readonly (readonly [number, number])[] {
+  return Array.from({ length: cycleSteps * 2 + 1 }, (_, sampleIndex) => {
+    const point = handPointAt(prepared, sampleIndex * (HALF_BEAT_DURATION / 2), rigId);
+    return [roundSample(point.x), roundSample(point.y)] as const;
+  });
 }
 
 describe("PoiBeatGraph lower-wrap seed", () => {
@@ -787,6 +1011,137 @@ describe("compilePoiBeatGraph", () => {
     expect(visibleGraph.tracks.map((track) => track.id)).toEqual(["right"]);
     expect(result.sequence.rigs.map((rig) => rig.rigId)).toEqual(["right"]);
     expect(result.diagnostics).toEqual([]);
+  });
+
+  it.each(KNOWN_GOOD_BEAT_GRAPH_CASES)(
+    "characterizes hand path samples for known-good URL: $name",
+    ({ url, rows, samples }) => {
+      const graph = decodeGraphFromUrl(url);
+      const result = compilePoiBeatGraph(graph);
+      const prepared = prepareMultiRigSequence(result.sequence);
+
+      expect(result.diagnostics).toEqual([]);
+      expect(prepared.ok).toBe(true);
+      expect(rowCodes(graph, "left")).toEqual(rows.left);
+      expect(rowCodes(graph, "right")).toEqual(rows.right);
+      expect(roundedHandSamples(prepared, "left", graph.cycleSteps)).toEqual(samples.left);
+      expect(roundedHandSamples(prepared, "right", graph.cycleSteps)).toEqual(samples.right);
+    }
+  );
+
+  it("holds same-lane repeated-center reels at their source lanes", () => {
+    const graph = decodeGraphFromUrl("?s=4&lt=cw-up-2b2b3a3a&rt=ccw-up-4b4b3a3a");
+    const result = compilePoiBeatGraph(graph);
+    const prepared = prepareMultiRigSequence(result.sequence);
+    const leftRig = result.sequence.rigs.find((rig) => rig.rigId === "left");
+    const rightRig = result.sequence.rigs.find((rig) => rig.rigId === "right");
+
+    expect(result.diagnostics).toEqual([]);
+    expect(leftRig?.sequence.segments[2]?.hand.driver.kind).toBe("runtime");
+    expect(rightRig?.sequence.segments[2]?.hand.driver.kind).toBe("runtime");
+
+    for (const t of [0.5, 1, 1.25, 1.5, 2]) {
+      expect(handPointAt(prepared, t, "left").x).toBeCloseTo(
+        -DEFAULT_POI_BEAT_COMPILER_OPTIONS.handHorizontalOffset
+      );
+      expect(handPointAt(prepared, t, "left").y).toBeCloseTo(
+        -DEFAULT_POI_BEAT_COMPILER_OPTIONS.handVerticalOffset
+      );
+      expect(handPointAt(prepared, t, "right").x).toBeCloseTo(
+        DEFAULT_POI_BEAT_COMPILER_OPTIONS.handHorizontalOffset
+      );
+      expect(handPointAt(prepared, t, "right").y).toBeCloseTo(
+        -DEFAULT_POI_BEAT_COMPILER_OPTIONS.handVerticalOffset
+      );
+    }
+  });
+
+  it("moves same-lateral repeated-center transfers along the native high-low lane", () => {
+    const graph: PoiBeatGraph = {
+      cycleSteps: 4,
+      lanes: createLowerWrapBeatGraph().lanes,
+      tracks: [
+        {
+          id: "right",
+          hand: "right",
+          poiDirection: "counterclockwise",
+          initialPhase: "up",
+          rows: [
+            { step: 0, laneId: "right-high" },
+            { step: 1, laneId: "center" },
+            { step: 2, laneId: "center" },
+            { step: 3, laneId: "right-low" }
+          ]
+        }
+      ]
+    };
+    const result = compilePoiBeatGraph(graph);
+    const prepared = prepareMultiRigSequence(result.sequence);
+    const rig = result.sequence.rigs[0];
+
+    expect(result.diagnostics).toEqual([]);
+    expect(rig?.sequence.segments[1]?.hand.driver.kind).toBe("runtime");
+
+    const start = handPointAt(prepared, 0, "right");
+    const midpoint = handPointAt(prepared, 0.75, "right");
+    const end = handPointAt(prepared, 1.5, "right");
+
+    expect(start.x).toBeCloseTo(DEFAULT_POI_BEAT_COMPILER_OPTIONS.handHorizontalOffset);
+    expect(start.y).toBeCloseTo(DEFAULT_POI_BEAT_COMPILER_OPTIONS.handVerticalOffset);
+    expect(midpoint.x).toBeCloseTo(DEFAULT_POI_BEAT_COMPILER_OPTIONS.handHorizontalOffset);
+    expect(midpoint.y).toBeCloseTo(0);
+    expect(end.x).toBeCloseTo(DEFAULT_POI_BEAT_COMPILER_OPTIONS.handHorizontalOffset);
+    expect(end.y).toBeCloseTo(-DEFAULT_POI_BEAT_COMPILER_OPTIONS.handVerticalOffset);
+  });
+
+  it("treats repeated centers as setup before vertical cosmo side switches", () => {
+    const graph = decodeGraphFromUrl("?s=8&lt=cw-up-3a3a3b4a4a3b1b1b&rt=ccw-up-3a3a4b4b3b1a1a3b");
+    const leftTrack = getTrack(graph, "left");
+    const leftIntervals = deriveLoopIntervals(leftTrack, HALF_BEAT_DURATION);
+    const result = compilePoiBeatGraph(graph);
+    const prepared = prepareMultiRigSequence(result.sequence);
+    const leftRig = result.sequence.rigs.find((rig) => rig.rigId === "left");
+
+    expect(rowCodes(graph, "left")).toEqual([
+      "center:a",
+      "center:a",
+      "center:b",
+      "right-low:a",
+      "right-low:a",
+      "center:b",
+      "left-high:b",
+      "left-high:b"
+    ]);
+    expect([7, 0, 1, 2].map((index) => leftIntervals[index]?.kind)).toEqual([
+      "lane-switch",
+      "same-lane",
+      "center-side-switch",
+      "lane-switch"
+    ]);
+    expect(result.diagnostics).toEqual([]);
+    expect(leftRig?.sequence.segments[0]?.hand.driver.kind).toBe("runtime");
+    expect(leftRig?.sequence.segments[1]?.hand.driver.kind).toBe("runtime");
+
+    const source = handPointAt(prepared, 3.5, "left");
+    const setupApproach = handPointAt(prepared, 4, "left");
+    const setup = handPointAt(prepared, 4.5, "left");
+    const continuationMidpoint = handPointAt(prepared, 5, "left");
+    const destination = handPointAt(prepared, 5.5, "left");
+
+    expect(source.x).toBeCloseTo(-DEFAULT_POI_BEAT_COMPILER_OPTIONS.handHorizontalOffset);
+    expect(source.y).toBeCloseTo(DEFAULT_POI_BEAT_COMPILER_OPTIONS.handVerticalOffset);
+    expect(setupApproach.x).toBeCloseTo(-DEFAULT_POI_BEAT_COMPILER_OPTIONS.handHorizontalOffset);
+    expect(setupApproach.y).toBeCloseTo(0);
+    expect(setup.x).toBeCloseTo(-DEFAULT_POI_BEAT_COMPILER_OPTIONS.handHorizontalOffset);
+    expect(setup.y).toBeCloseTo(-DEFAULT_POI_BEAT_COMPILER_OPTIONS.handVerticalOffset);
+    expect(continuationMidpoint.x).toBeCloseTo(
+      -DEFAULT_POI_BEAT_COMPILER_OPTIONS.handHorizontalOffset
+    );
+    expect(continuationMidpoint.y).toBeCloseTo(
+      -DEFAULT_POI_BEAT_COMPILER_OPTIONS.handVerticalOffset
+    );
+    expect(destination.x).toBeCloseTo(DEFAULT_POI_BEAT_COMPILER_OPTIONS.handHorizontalOffset);
+    expect(destination.y).toBeCloseTo(-DEFAULT_POI_BEAT_COMPILER_OPTIONS.handVerticalOffset);
   });
 
   it("treats center rows as pass-through points during lane switch chains", () => {

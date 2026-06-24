@@ -19,6 +19,7 @@ import type {
   PoiBeatGraph,
   PoiBeatInterval,
   PoiBeatLaneId,
+  PoiBeatRow,
   PoiBeatTrack
 } from "@/lab/experiments/mel-body-tracing/beat-graph/types";
 
@@ -89,6 +90,25 @@ interface HandPathWindow {
   readonly keys: readonly HandPathKey[];
   readonly localOffset: number;
   readonly label: string;
+}
+
+type CenterMediatedTransferKind =
+  | "direct-transfer"
+  | "repeated-center-transfer"
+  | "cosmo-bounce"
+  | "setup-plus-bounce";
+
+interface CenterMediatedTransferWindow {
+  readonly kind: CenterMediatedTransferKind;
+  readonly sourceRow: PoiBeatRow;
+  readonly destinationRow: PoiBeatRow;
+  readonly centerRows: readonly PoiBeatRow[];
+  readonly coveredIntervals: readonly PoiBeatInterval[];
+  readonly entryInterval: PoiBeatInterval;
+  readonly exitInterval: PoiBeatInterval;
+  readonly localOffset: number;
+  readonly totalDuration: number;
+  readonly setupDuration?: number;
 }
 
 function evalHandPathPoint(
@@ -228,63 +248,240 @@ function intervalIndexAt(intervals: readonly PoiBeatInterval[], index: number): 
   return ((index % intervals.length) + intervals.length) % intervals.length;
 }
 
-function makeCosmoBounceWindow(
+function rowIsCenter(row: PoiBeatRow): boolean {
+  return row.laneId === "center";
+}
+
+function classifyCenterMediatedTransfer(
+  centerRows: readonly PoiBeatRow[]
+): CenterMediatedTransferKind | null {
+  const sideSequence = centerRows.map((row) => deriveRowSide(row));
+
+  if (sideSequence.length === 1) return "direct-transfer";
+
+  if (sideSequence.length === 2) {
+    return sideSequence[0] === sideSequence[1] ? "repeated-center-transfer" : "cosmo-bounce";
+  }
+
+  if (
+    sideSequence.length === 3 &&
+    sideSequence[0] === sideSequence[1] &&
+    sideSequence[1] !== sideSequence[2]
+  ) {
+    return "setup-plus-bounce";
+  }
+
+  return null;
+}
+
+function getWindowLocalOffset(
+  intervals: readonly PoiBeatInterval[],
+  coveredIntervalIndices: readonly number[],
+  activeIntervalIndex: number
+): number | null {
+  let localOffset = 0;
+
+  for (const coveredIntervalIndex of coveredIntervalIndices) {
+    if (coveredIntervalIndex === activeIntervalIndex) return localOffset;
+
+    const interval = intervals[coveredIntervalIndex];
+    if (!interval) return null;
+    localOffset += interval.durationUnits;
+  }
+
+  return null;
+}
+
+function detectCenterMediatedTransferWindow(
+  intervals: readonly PoiBeatInterval[],
+  intervalIndex: number
+): CenterMediatedTransferWindow | null {
+  if (intervals.length < 2) return null;
+
+  for (let centerRowCount = 3; centerRowCount >= 1; centerRowCount -= 1) {
+    for (
+      let entryIndex = intervalIndex - centerRowCount;
+      entryIndex <= intervalIndex;
+      entryIndex += 1
+    ) {
+      const entry = intervalAt(intervals, entryIndex);
+      const exit = intervalAt(intervals, entryIndex + centerRowCount);
+      if (!entry || !exit) continue;
+      if (entry.kind !== "lane-switch" || !rowIsCenter(entry.toRow)) continue;
+      if (rowIsCenter(entry.fromRow)) continue;
+      if (exit.kind !== "lane-switch" || !rowIsCenter(exit.fromRow)) continue;
+      if (rowIsCenter(exit.toRow)) continue;
+
+      const centerRows: PoiBeatRow[] = [entry.toRow];
+      const centerIntervals: PoiBeatInterval[] = [];
+      let centerBlockIsValid = true;
+
+      for (let centerOffset = 1; centerOffset < centerRowCount; centerOffset += 1) {
+        const centerInterval = intervalAt(intervals, entryIndex + centerOffset);
+        if (
+          !centerInterval ||
+          !rowIsCenter(centerInterval.fromRow) ||
+          !rowIsCenter(centerInterval.toRow)
+        ) {
+          centerBlockIsValid = false;
+          break;
+        }
+
+        centerIntervals.push(centerInterval);
+        centerRows.push(centerInterval.toRow);
+      }
+
+      if (!centerBlockIsValid) continue;
+
+      const coveredIntervalIndices = Array.from({ length: centerRowCount + 1 }, (_, offset) =>
+        intervalIndexAt(intervals, entryIndex + offset)
+      );
+      if (new Set(coveredIntervalIndices).size !== coveredIntervalIndices.length) continue;
+      if (!coveredIntervalIndices.includes(intervalIndex)) continue;
+
+      const kind = classifyCenterMediatedTransfer(centerRows);
+      if (!kind) continue;
+      if (kind === "repeated-center-transfer" && centerIntervals[0]?.kind !== "same-lane") {
+        continue;
+      }
+      if (kind === "cosmo-bounce" && centerIntervals[0]?.kind !== "center-side-switch") continue;
+      if (
+        kind === "setup-plus-bounce" &&
+        (centerIntervals[0]?.kind !== "same-lane" ||
+          centerIntervals[1]?.kind !== "center-side-switch")
+      ) {
+        continue;
+      }
+
+      const localOffset = getWindowLocalOffset(intervals, coveredIntervalIndices, intervalIndex);
+      if (localOffset === null) continue;
+
+      const coveredIntervals = coveredIntervalIndices.map((coveredIntervalIndex) => {
+        const interval = intervals[coveredIntervalIndex];
+        if (!interval) throw new Error("expected center-mediated interval index to be valid");
+        return interval;
+      });
+      const totalDuration = coveredIntervals.reduce(
+        (duration, interval) => duration + interval.durationUnits,
+        0
+      );
+      const setupDuration =
+        kind === "setup-plus-bounce"
+          ? entry.durationUnits + (centerIntervals[0]?.durationUnits ?? 0)
+          : undefined;
+
+      return {
+        kind,
+        sourceRow: entry.fromRow,
+        destinationRow: exit.toRow,
+        centerRows,
+        coveredIntervals,
+        entryInterval: entry,
+        exitInterval: exit,
+        localOffset,
+        totalDuration,
+        ...(setupDuration === undefined ? {} : { setupDuration })
+      };
+    }
+  }
+
+  return null;
+}
+
+function makeCosmoBouncePathWindow(
+  window: CenterMediatedTransferWindow,
+  options: PoiBeatCompilerOptions
+): HandPathWindow | null {
+  const bounceReferenceLaneId = getCosmoBounceReferenceLane(
+    window.entryInterval,
+    window.exitInterval
+  );
+  if (!bounceReferenceLaneId) return null;
+
+  const bounceLaneId = mirrorPoiBeatLane(bounceReferenceLaneId);
+  if (!bounceLaneId) return null;
+
+  return {
+    localOffset: window.localOffset,
+    label: `cosmo bounce ${window.sourceRow.laneId} through ${bounceLaneId} to ${window.destinationRow.laneId}`,
+    keys: [
+      { tOffset: 0, point: laneToHandPoint(window.sourceRow.laneId, options) },
+      { tOffset: window.totalDuration / 2, point: laneToHandPoint(bounceLaneId, options) },
+      {
+        tOffset: window.totalDuration,
+        point: laneToHandPoint(window.destinationRow.laneId, options)
+      }
+    ]
+  };
+}
+
+function makeSetupPlusBouncePathWindow(
+  window: CenterMediatedTransferWindow,
+  options: PoiBeatCompilerOptions
+): HandPathWindow | null {
+  if (!deriveRowIsBTB(window.destinationRow) || !window.setupDuration) return null;
+
+  const setupLaneId = mirrorPoiBeatLane(window.destinationRow.laneId);
+  if (!setupLaneId) return null;
+
+  const continuationMidpoint =
+    window.setupDuration + (window.totalDuration - window.setupDuration) / 2;
+
+  return {
+    localOffset: window.localOffset,
+    label: `center setup bounce ${window.sourceRow.laneId} through ${setupLaneId} to ${window.destinationRow.laneId}`,
+    keys: [
+      { tOffset: 0, point: laneToHandPoint(window.sourceRow.laneId, options) },
+      { tOffset: window.setupDuration, point: laneToHandPoint(setupLaneId, options) },
+      { tOffset: continuationMidpoint, point: laneToHandPoint(setupLaneId, options) },
+      {
+        tOffset: window.totalDuration,
+        point: laneToHandPoint(window.destinationRow.laneId, options)
+      }
+    ]
+  };
+}
+
+function makeCenterMediatedHandPathWindow(
   intervals: readonly PoiBeatInterval[],
   intervalIndex: number,
   options: PoiBeatCompilerOptions
 ): HandPathWindow | null {
-  if (intervals.length < 3) return null;
+  const window = detectCenterMediatedTransferWindow(intervals, intervalIndex);
+  if (!window) return null;
 
-  for (const entryIndex of [intervalIndex, intervalIndex - 1, intervalIndex - 2]) {
-    const sideSwitchIndex = entryIndex + 1;
-    const exitIndex = entryIndex + 2;
-    const entry = intervalAt(intervals, entryIndex);
-    const sideSwitch = intervalAt(intervals, sideSwitchIndex);
-    const exit = intervalAt(intervals, exitIndex);
-    if (!entry || !sideSwitch || !exit) continue;
-    if (
-      ![
-        intervalIndexAt(intervals, entryIndex),
-        intervalIndexAt(intervals, sideSwitchIndex),
-        intervalIndexAt(intervals, exitIndex)
-      ].includes(intervalIndex)
-    ) {
-      continue;
-    }
+  const start = laneToHandPoint(window.sourceRow.laneId, options);
+  const end = laneToHandPoint(window.destinationRow.laneId, options);
 
-    if (entry.kind !== "lane-switch" || entry.toRow.laneId !== "center") continue;
-    if (sideSwitch.kind !== "center-side-switch") continue;
-    if (exit.kind !== "lane-switch" || exit.fromRow.laneId !== "center") continue;
+  switch (window.kind) {
+    case "direct-transfer":
+      if (distance2(start, end) <= 1e-9) return null;
 
-    const bounceReferenceLaneId = getCosmoBounceReferenceLane(entry, exit);
-    if (!bounceReferenceLaneId) continue;
-
-    const bounceLaneId = mirrorPoiBeatLane(bounceReferenceLaneId);
-    if (!bounceLaneId) continue;
-
-    const entryDuration = entry.durationUnits;
-    const switchDuration = sideSwitch.durationUnits;
-    const exitDuration = exit.durationUnits;
-    const totalDuration = entryDuration + switchDuration + exitDuration;
-    const localOffset =
-      intervalIndex === intervalIndexAt(intervals, entryIndex)
-        ? 0
-        : intervalIndex === intervalIndexAt(intervals, sideSwitchIndex)
-          ? entryDuration
-          : entryDuration + switchDuration;
-
-    return {
-      localOffset,
-      label: `cosmo bounce ${entry.fromRow.laneId} through ${bounceLaneId} to ${exit.toRow.laneId}`,
-      keys: [
-        { tOffset: 0, point: laneToHandPoint(entry.fromRow.laneId, options) },
-        { tOffset: totalDuration / 2, point: laneToHandPoint(bounceLaneId, options) },
-        { tOffset: totalDuration, point: laneToHandPoint(exit.toRow.laneId, options) }
-      ]
-    };
+      return {
+        localOffset: window.localOffset,
+        label: `front transfer ${window.sourceRow.laneId} through center to ${window.destinationRow.laneId}`,
+        keys: [
+          { tOffset: 0, point: start },
+          { tOffset: window.totalDuration, point: end }
+        ]
+      };
+    case "repeated-center-transfer":
+      return {
+        localOffset: window.localOffset,
+        label:
+          distance2(start, end) <= 1e-9
+            ? `center hold ${window.sourceRow.laneId} through center`
+            : `front transfer ${window.sourceRow.laneId} through repeated center to ${window.destinationRow.laneId}`,
+        keys: [
+          { tOffset: 0, point: start },
+          { tOffset: window.totalDuration, point: distance2(start, end) <= 1e-9 ? start : end }
+        ]
+      };
+    case "cosmo-bounce":
+      return makeCosmoBouncePathWindow(window, options);
+    case "setup-plus-bounce":
+      return makeSetupPlusBouncePathWindow(window, options);
   }
-
-  return null;
 }
 
 // TODO: Keep this as a local experiment workaround for now. If more pass-through
@@ -294,54 +491,7 @@ function makeHandPathWindow(
   intervalIndex: number,
   options: PoiBeatCompilerOptions
 ): HandPathWindow | null {
-  const cosmoBounceWindow = makeCosmoBounceWindow(intervals, intervalIndex, options);
-  if (cosmoBounceWindow) return cosmoBounceWindow;
-
-  const interval = intervals[intervalIndex];
-  if (!interval || interval.kind !== "lane-switch") return null;
-
-  const previous = intervals[(intervalIndex - 1 + intervals.length) % intervals.length];
-  const next = intervals[(intervalIndex + 1) % intervals.length];
-
-  if (
-    interval.toRow.laneId === "center" &&
-    next?.kind === "lane-switch" &&
-    deriveRowSide(next.fromRow) === interval.planeSide
-  ) {
-    const start = laneToHandPoint(interval.fromRow.laneId, options);
-    const end = laneToHandPoint(next.toRow.laneId, options);
-    if (distance2(start, end) <= 1e-9) return null;
-
-    return {
-      localOffset: 0,
-      label: `front transfer ${interval.fromRow.laneId} through center to ${next.toRow.laneId}`,
-      keys: [
-        { tOffset: 0, point: start },
-        { tOffset: interval.durationUnits + next.durationUnits, point: end }
-      ]
-    };
-  }
-
-  if (
-    interval.fromRow.laneId === "center" &&
-    previous?.kind === "lane-switch" &&
-    previous.planeSide === deriveRowSide(interval.fromRow)
-  ) {
-    const start = laneToHandPoint(previous.fromRow.laneId, options);
-    const end = laneToHandPoint(interval.toRow.laneId, options);
-    if (distance2(start, end) <= 1e-9) return null;
-
-    return {
-      localOffset: previous.durationUnits,
-      label: `front transfer ${previous.fromRow.laneId} through center to ${interval.toRow.laneId}`,
-      keys: [
-        { tOffset: 0, point: start },
-        { tOffset: previous.durationUnits + interval.durationUnits, point: end }
-      ]
-    };
-  }
-
-  return null;
+  return makeCenterMediatedHandPathWindow(intervals, intervalIndex, options);
 }
 
 function compileTrack(
