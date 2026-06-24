@@ -1,0 +1,48 @@
+http://localhost:5173/lab/beat-graph?s=8&lt=ccw-down-5d3b1d3d4d4d3d5d&rt=cw-down-1d3b5d3d2d2d3d1d stiff frst pattern
+
+http://localhost:5173/lab/beat-graph?s=8&lt=cw-up-3d4d4d3d3d5d3b1d&rt=ccw-down-1d3b5d3d2d2d3d1d original benni's pattern
+
+
+
+# original Benni
+http://localhost:5173/lab/beat-graph?s=8&lt=cw-up-3d4d4d3d3d5d3b1d&rt=ccw-down-1d3b5d3d2d2d3d1d
+http://localhost:5173/lab/beat-graph?s=8&lt=cw-up-3d4d4d3d3d5d3b1d&rt=ccw-up-1d1d3b5d3d2d2d3d
+http://localhost:5173/lab/beat-graph?s=8&lt=cw-up-3d4d4d3d3d5d3b1d&rt=ccw-down-3d1d1d3b5d3d2d2d
+http://localhost:5173/lab/beat-graph?s=8&lt=cw-up-3d4d4d3d3d5d3b1d&rt=ccw-up-2d3d1d1d3b5d3d2d xxxxxx
+http://localhost:5173/lab/beat-graph?s=8&lt=cw-up-3d4d4d3d3d5d3b1d&rt=ccw-down-2d2d3d1d1d3b5d3d
+http://localhost:5173/lab/beat-graph?s=8&lt=cw-up-3d4d4d3d3d5d3b1d&rt=ccw-up-3d2d2d3d1d1d3b5d
+http://localhost:5173/lab/beat-graph?s=8&lt=cw-up-3d4d4d3d3d5d3b1d&rt=ccw-down-5d3d2d2d3d1d1d3b
+http://localhost:5173/lab/beat-graph?s=8&lt=cw-up-3d4d4d3d3d5d3b1d&rt=ccw-up-3b5d3d2d2d3d1d1d
+
+
+
+http://localhost:5173/lab/beat-graph?s=8&lt=cw-down-5d3b1d3d4d4d3d5d&rt=ccw-down-1d3b5d3d2d2d3d1d - in opoosites
+
+okay final good patterns:
+not super possible:
+http://localhost:5173/lab/beat-graph?s=8&lt=cw-down-5d3b1d3d4d4d3d5d&rt=ccw-up-1d1d3b5d3d2d2d3d
+http://localhost:5173/lab/beat-graph?s=8&lt=cw-down-5d3b1d3d4d4d3d5d&rt=ccw-up-3b5d3d2d2d3d1d1d
+
+benni's pattern 
+http://localhost:5173/lab/beat-graph?s=8&lt=cw-down-5d3b1d3d4d4d3d5d&rt=ccw-up-2d3d1d1d3b5d3d2d
+http://localhost:5173/lab/beat-graph?s=8&lt=cw-down-5d3b1d3d4d4d3d5d&rt=ccw-up-3d2d2d3d1d1d3b5d
+
+https://jragon.github.io/poi-viz/lab/beat-graph?s=8&lt=cw-down-5d3b1d3d4d4d3d5d&rt=ccw-up-2d3d1d1d3b5d3d2d
+https://jragon.github.io/poi-viz/lab/beat-graph?s=8&lt=cw-down-5d3b1d3d4d4d3d5d&rt=ccw-up-3d2d2d3d1d1d3b5d
+
+bennis in outwards:
+https://jragon.github.io/poi-viz/lab/beat-graph?s=8&lt=ccw-down-1d3b5d3d3d4d4d3d&rt=cw-down-5d3b1d3d3d2d2d3d
+
+outwrads inspin: https://jragon.github.io/poi-viz/lab/beat-graph?s=8&lt=ccw-down-5d3b1d1d3d4d4d3d&rt=cw-down-1d3b5d5d3d2d2d3d
+
+Okay so the base pattern for the right hand:
+
+benni's original pattern: s=8&lt=cw-down-5d3b1d3d4d4d3d5d&rt=ccw-up-2d3d1d1d3b5d3d2d
+
+outwards:
+inspin: s=8&lt=ccw-down-5d3b1d1d3d4d4d3d&rt=cw-down-1d3b5d5d3d2d2d3d
+antispin: s=8&lt=ccw-down-1d3b5d3d3d4d4d3d&rt=cw-down-5d3b1d3d3d2d2d3d
+
+inwards:
+inspin: s=8&lt=cw-down-1d3b5d3d4d4d3d1d&rt=ccw-down-5d3b1d3d2d2d3d5d
+antispin: s=8&lt=cw-down-5d3b1d3d4d4d3d5d&rt=ccw-down-1d3b5d3d2d2d3d1d
