@@ -144,7 +144,7 @@ function makeDisplayRows(pathTrack: PoiBeatTrack): readonly DisplayRowState[] {
   const states = deriveRowStates(pathTrack).map((state) => ({
     ...state,
     key: `${pathTrack.id}-step-${state.row.step}`,
-    label: String(state.row.step),
+    label: String(state.row.step + 1),
     isLoopClosure: false,
     sourceStep: state.row.step
   }));

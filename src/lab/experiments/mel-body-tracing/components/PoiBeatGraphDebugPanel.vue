@@ -82,7 +82,7 @@ const sequenceRows = computed<readonly SequenceDebugRow[]>(() => {
 const currentTimeLabel = computed(() => props.currentTime.toFixed(2));
 const durationLabel = computed(() => props.duration.toFixed(2));
 const activeStepLabel = computed(() =>
-  props.activeStep === null ? "none" : String(props.activeStep)
+  props.activeStep === null ? "none" : String(props.activeStep + 1)
 );
 const playbackLabel = computed(() => (props.isPlaying ? "playing" : "paused"));
 
@@ -100,7 +100,11 @@ function trackHeaderClass(track: PoiBeatTrack): string {
 
 function intervalLabel(cell: TrackStepCell): string {
   if (!cell.interval) return "-";
-  return `${cell.interval.index} ${cell.interval.kind}`;
+  return `${cell.interval.index + 1} ${cell.interval.kind}`;
+}
+
+function displayStep(step: number): number {
+  return step + 1;
 }
 </script>
 
@@ -187,7 +191,7 @@ function intervalLabel(cell: TrackStepCell): string {
                 :data-active-debug-row="row.isActive ? 'true' : undefined"
               >
                 <td class="whitespace-nowrap px-3 py-2 font-semibold">
-                  {{ row.step }}
+                  {{ displayStep(row.step) }}
                 </td>
                 <td class="whitespace-nowrap px-3 py-2 text-slate-400">
                   {{ formatTime(row.time) }}
