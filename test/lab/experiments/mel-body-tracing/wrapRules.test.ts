@@ -1,8 +1,9 @@
+import { encodeBeatGraphToUrlParams } from "@/lab/experiments/mel-body-tracing/beat-graph/beatGraphUrlCodec";
 import { deriveRowStates } from "@/lab/experiments/mel-body-tracing/beat-graph/graphHelpers";
 import type { PoiBeatTrack } from "@/lab/experiments/mel-body-tracing/beat-graph/types";
 import type { ReelPosition } from "@/lab/experiments/mel-body-tracing/explorers/reelTypes";
-import type { WrapConfig } from "@/lab/experiments/mel-body-tracing/explorers/wrapTypes";
 import {
+  buildVerticalWrapHandTrackParts,
   buildWrapBeatGraph,
   buildWrapHandRows,
   deriveWrapInitialPhase,
@@ -10,12 +11,19 @@ import {
   isValidWrapPair,
   rotateWrapRows
 } from "@/lab/experiments/mel-body-tracing/explorers/wrapRules";
+import type { WrapConfig } from "@/lab/experiments/mel-body-tracing/explorers/wrapTypes";
 import { describe, expect, it } from "vitest";
 
 function getTrack(graph: ReturnType<typeof buildWrapBeatGraph>, trackId: string): PoiBeatTrack {
   const track = graph.tracks.find((candidate) => candidate.id === trackId);
   if (!track) throw new Error(`expected ${trackId} track`);
   return track;
+}
+
+function encodeGraphQuery(config: WrapConfig): string {
+  const encoded = encodeBeatGraphToUrlParams(buildWrapBeatGraph(config));
+  if (!encoded) throw new Error("expected graph to encode");
+  return `?s=${encoded.s}&lt=${encoded.lt}&rt=${encoded.rt}`;
 }
 
 describe("wrapRules", () => {
@@ -98,10 +106,123 @@ describe("wrapRules", () => {
     expect(deriveWrapInitialPhase("right", "clockwise", true, 5)).toBe("up");
   });
 
+  it("builds table-driven vertical native wrap hand parts", () => {
+    expect(
+      buildVerticalWrapHandTrackParts({ a: "high-native", b: "low-native" }, "left", "clockwise")
+    ).toEqual({
+      initialPhase: "up",
+      rows: [
+        { step: 0, laneId: "center" },
+        { step: 1, laneId: "center" },
+        { step: 2, laneId: "left-low" },
+        { step: 3, laneId: "left-low" },
+        { step: 4, laneId: "left-high" },
+        { step: 5, laneId: "left-high" }
+      ]
+    });
+
+    expect(
+      buildVerticalWrapHandTrackParts({ a: "low-native", b: "high-native" }, "right", "clockwise")
+    ).toEqual({
+      initialPhase: "down",
+      rows: [
+        { step: 0, laneId: "center" },
+        { step: 1, laneId: "center" },
+        { step: 2, laneId: "right-high" },
+        { step: 3, laneId: "right-high" },
+        { step: 4, laneId: "right-low" },
+        { step: 5, laneId: "right-low" }
+      ]
+    });
+  });
+
+  it("builds table-driven vertical non-native wrap hand parts", () => {
+    expect(
+      buildVerticalWrapHandTrackParts(
+        { a: "high-non-native", b: "low-non-native" },
+        "left",
+        "clockwise"
+      )
+    ).toEqual({
+      initialPhase: "down",
+      rows: [
+        { step: 0, laneId: "center" },
+        { step: 1, laneId: "center" },
+        { step: 2, laneId: "right-high" },
+        { step: 3, laneId: "right-high" },
+        { step: 4, laneId: "right-low" },
+        { step: 5, laneId: "right-low" }
+      ]
+    });
+
+    expect(
+      buildVerticalWrapHandTrackParts(
+        { a: "low-non-native", b: "high-non-native" },
+        "right",
+        "counterclockwise"
+      )
+    ).toEqual({
+      initialPhase: "down",
+      rows: [
+        { step: 0, laneId: "center" },
+        { step: 1, laneId: "center" },
+        { step: 2, laneId: "left-high" },
+        { step: 3, laneId: "left-high" },
+        { step: 4, laneId: "left-low" },
+        { step: 5, laneId: "left-low" }
+      ]
+    });
+  });
+
+  it.each<[string, WrapConfig, string]>([
+    [
+      "vertical native inward",
+      {
+        left: { a: "high-native", b: "low-native" },
+        right: { a: "high-native", b: "low-native" },
+        direction: { mode: "opposite", flow: "inwards" },
+        offset: 0
+      },
+      "?s=6&lt=cw-up-3d3d2d2d1d1d&rt=ccw-up-3d3d4d4d5d5d"
+    ],
+    [
+      "vertical native outward",
+      {
+        left: { a: "high-native", b: "low-native" },
+        right: { a: "high-native", b: "low-native" },
+        direction: { mode: "opposite", flow: "outwards" },
+        offset: 0
+      },
+      "?s=6&lt=ccw-down-3d3d1d1d2d2d&rt=cw-down-3d3d5d5d4d4d"
+    ],
+    [
+      "vertical non-native inward",
+      {
+        left: { a: "high-non-native", b: "low-non-native" },
+        right: { a: "high-non-native", b: "low-non-native" },
+        direction: { mode: "opposite", flow: "inwards" },
+        offset: 0
+      },
+      "?s=6&lt=cw-down-3d3d5d5d4d4d&rt=ccw-down-3d3d1d1d2d2d"
+    ],
+    [
+      "vertical non-native outward",
+      {
+        left: { a: "high-non-native", b: "low-non-native" },
+        right: { a: "high-non-native", b: "low-non-native" },
+        direction: { mode: "opposite", flow: "outwards" },
+        offset: 0
+      },
+      "?s=6&lt=cw-up-3d3d4d4d5d5d&rt=ccw-up-3d3d2d2d1d1d"
+    ]
+  ])("encodes the corrected %s graph", (_name, config, expectedUrl) => {
+    expect(encodeGraphQuery(config)).toBe(expectedUrl);
+  });
+
   it("builds a six-step graph with derived track direction and global phase", () => {
     const config: WrapConfig = {
-      left: { a: "high-native", b: "low-native" },
-      right: { a: "high-native", b: "low-native" },
+      left: { a: "high-native", b: "low-non-native" },
+      right: { a: "high-native", b: "low-non-native" },
       direction: { mode: "same", direction: "clockwise" },
       offset: 5
     };
@@ -119,8 +240,8 @@ describe("wrapRules", () => {
     expect(right.rows.map((row) => row.laneId)).toEqual([
       "right-high",
       "center",
-      "right-low",
-      "right-low",
+      "left-low",
+      "left-low",
       "center",
       "right-high"
     ]);

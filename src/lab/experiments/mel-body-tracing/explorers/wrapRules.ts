@@ -3,6 +3,7 @@ import type {
   PoiBeatDirection,
   PoiBeatGraph,
   PoiBeatHand,
+  PoiBeatLaneId,
   PoiBeatPhaseLabel,
   PoiBeatRow
 } from "@/lab/experiments/mel-body-tracing/beat-graph/types";
@@ -14,12 +15,55 @@ import {
   REEL_POSITION_OPTIONS,
   resolveDirections
 } from "@/lab/experiments/mel-body-tracing/explorers/reelRules";
-import type { ReelBodySide, ReelPosition } from "@/lab/experiments/mel-body-tracing/explorers/reelTypes";
+import type {
+  ReelBodySide,
+  ReelPosition
+} from "@/lab/experiments/mel-body-tracing/explorers/reelTypes";
 import type {
   WrapConfig,
   WrapOffset,
   WrapPositionPair
 } from "@/lab/experiments/mel-body-tracing/explorers/wrapTypes";
+
+type VerticalWrapKind = "native" | "non-native";
+type VerticalWrapLaneOrder = "low-high" | "high-low";
+
+interface VerticalWrapHandTrackParts {
+  readonly initialPhase: PoiBeatPhaseLabel;
+  readonly rows: readonly PoiBeatRow[];
+}
+
+const VERTICAL_WRAP_HAND_TEMPLATES = {
+  native: {
+    left: {
+      clockwise: { initialPhase: "up", laneOrder: "low-high" },
+      counterclockwise: { initialPhase: "down", laneOrder: "high-low" }
+    },
+    right: {
+      clockwise: { initialPhase: "down", laneOrder: "high-low" },
+      counterclockwise: { initialPhase: "up", laneOrder: "low-high" }
+    }
+  },
+  "non-native": {
+    left: {
+      clockwise: { initialPhase: "down", laneOrder: "high-low" },
+      counterclockwise: { initialPhase: "up", laneOrder: "low-high" }
+    },
+    right: {
+      clockwise: { initialPhase: "up", laneOrder: "low-high" },
+      counterclockwise: { initialPhase: "down", laneOrder: "high-low" }
+    }
+  }
+} as const satisfies Record<
+  VerticalWrapKind,
+  Record<
+    PoiBeatHand,
+    Record<
+      PoiBeatDirection,
+      { readonly initialPhase: PoiBeatPhaseLabel; readonly laneOrder: VerticalWrapLaneOrder }
+    >
+  >
+>;
 
 export const DEFAULT_WRAP_CONFIG: WrapConfig = {
   left: { a: "low-native", b: "low-non-native" },
@@ -53,6 +97,69 @@ export function getValidPartners(positionA: ReelPosition): readonly ReelPosition
 
 export function hasBTBPosition(pair: WrapPositionPair): boolean {
   return isBackPosition(pair.a) || isBackPosition(pair.b);
+}
+
+function getVerticalWrapKind(pair: WrapPositionPair): VerticalWrapKind | null {
+  const positions = new Set([pair.a, pair.b]);
+
+  if (positions.has("high-native") && positions.has("low-native")) return "native";
+  if (positions.has("high-non-native") && positions.has("low-non-native")) return "non-native";
+
+  return null;
+}
+
+function verticalWrapLane(
+  positionKind: VerticalWrapKind,
+  hand: PoiBeatHand,
+  vertical: "low" | "high"
+) {
+  const position = `${vertical}-${positionKind}` as ReelPosition;
+  return mapPositionToLane(position, hand);
+}
+
+function resolveWrapHandDirection(
+  pair: WrapPositionPair,
+  hand: PoiBeatHand,
+  config: WrapConfig,
+  fallbackDirection: PoiBeatDirection
+): PoiBeatDirection {
+  const kind = getVerticalWrapKind(pair);
+  if (kind !== "non-native" || config.direction.mode !== "opposite") return fallbackDirection;
+
+  return hand === "left" ? "clockwise" : "counterclockwise";
+}
+
+export function buildVerticalWrapHandTrackParts(
+  pair: WrapPositionPair,
+  hand: PoiBeatHand,
+  handDirection: PoiBeatDirection,
+  oppositeFlow?: "inwards" | "outwards"
+): VerticalWrapHandTrackParts | null {
+  const kind = getVerticalWrapKind(pair);
+  if (!kind) return null;
+
+  const template =
+    kind === "non-native" && oppositeFlow === "outwards"
+      ? VERTICAL_WRAP_HAND_TEMPLATES[kind][hand][
+          handDirection === "clockwise" ? "counterclockwise" : "clockwise"
+        ]
+      : VERTICAL_WRAP_HAND_TEMPLATES[kind][hand][handDirection];
+  const lanes: readonly PoiBeatLaneId[] =
+    template.laneOrder === "low-high"
+      ? [verticalWrapLane(kind, hand, "low"), verticalWrapLane(kind, hand, "high")]
+      : [verticalWrapLane(kind, hand, "high"), verticalWrapLane(kind, hand, "low")];
+
+  return {
+    initialPhase: template.initialPhase,
+    rows: [
+      { step: 0, laneId: "center" },
+      { step: 1, laneId: "center" },
+      { step: 2, laneId: lanes[0] },
+      { step: 3, laneId: lanes[0] },
+      { step: 4, laneId: lanes[1] },
+      { step: 5, laneId: lanes[1] }
+    ]
+  };
 }
 
 export function buildWrapHandRows(
@@ -100,8 +207,23 @@ export function deriveWrapInitialPhase(
 
 export function buildWrapBeatGraph(config: WrapConfig): PoiBeatGraph {
   const directions = resolveDirections(config.direction);
+  const leftDirection = resolveWrapHandDirection(config.left, "left", config, directions.left);
+  const rightDirection = resolveWrapHandDirection(config.right, "right", config, directions.right);
   const leftSide = mapPositionToBodySide(config.left.a, "left");
   const rightSide = mapPositionToBodySide(config.right.a, "right");
+  const oppositeFlow = config.direction.mode === "opposite" ? config.direction.flow : undefined;
+  const leftVertical = buildVerticalWrapHandTrackParts(
+    config.left,
+    "left",
+    leftDirection,
+    oppositeFlow
+  );
+  const rightVertical = buildVerticalWrapHandTrackParts(
+    config.right,
+    "right",
+    rightDirection,
+    oppositeFlow
+  );
 
   return {
     cycleSteps: 6,
@@ -110,16 +232,23 @@ export function buildWrapBeatGraph(config: WrapConfig): PoiBeatGraph {
       {
         id: "left",
         hand: "left",
-        poiDirection: directions.left,
-        initialPhase: deriveWrapInitialPhase(leftSide, directions.left, false, config.offset),
-        rows: buildWrapHandRows(config.left, "left")
+        poiDirection: leftDirection,
+        initialPhase:
+          leftVertical?.initialPhase ??
+          deriveWrapInitialPhase(leftSide, leftDirection, false, config.offset),
+        rows: leftVertical?.rows ?? buildWrapHandRows(config.left, "left")
       },
       {
         id: "right",
         hand: "right",
-        poiDirection: directions.right,
-        initialPhase: deriveWrapInitialPhase(rightSide, directions.right, true, config.offset),
-        rows: rotateWrapRows(buildWrapHandRows(config.right, "right"), config.offset)
+        poiDirection: rightDirection,
+        initialPhase:
+          rightVertical?.initialPhase ??
+          deriveWrapInitialPhase(rightSide, rightDirection, true, config.offset),
+        rows: rotateWrapRows(
+          rightVertical?.rows ?? buildWrapHandRows(config.right, "right"),
+          config.offset
+        )
       }
     ]
   };
