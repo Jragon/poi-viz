@@ -25,6 +25,7 @@ const props = withDefaults(
     ariaLabel?: string;
     showCardinalLabels?: boolean;
     fitToContainer?: boolean;
+    fillContainer?: boolean;
     editingHand?: StallPatternHand | undefined;
   }>(),
   {
@@ -34,7 +35,8 @@ const props = withDefaults(
     activeBeat: null,
     ariaLabel: "Quarter-time stall pattern graph",
     showCardinalLabels: true,
-    fitToContainer: true
+    fitToContainer: true,
+    fillContainer: false
   }
 );
 
@@ -82,7 +84,13 @@ function pointRadius(point: StallGraphPointView): number {
     :width="geometry.width"
     :height="geometry.height"
     class="block text-slate-400"
-    :class="props.fitToContainer ? 'h-auto max-w-full' : 'max-w-none'"
+    :class="
+      props.fillContainer
+        ? 'h-full w-full'
+        : props.fitToContainer
+          ? 'h-auto max-w-full'
+          : 'max-w-none'
+    "
     :data-orientation="geometry.orientation"
   >
     <g aria-hidden="true">

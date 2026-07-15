@@ -35,7 +35,7 @@ const selection = computed(() => {
 
 <template>
   <section class="not-prose my-6 grid min-w-0 gap-4">
-    <div class="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="grid min-w-0 items-stretch gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <StallPatternCard
         v-for="codec in props.codecs"
         :key="codec"

@@ -18,29 +18,34 @@ const decoded = computed(() => decodeStallPattern(props.codec));
 
 <template>
   <article
-    class="min-w-0 overflow-hidden rounded-lg border bg-slate-950/60 transition"
+    class="flex h-full min-w-0 flex-col overflow-hidden rounded-lg border bg-slate-950/60 transition"
     :class="props.selected ? 'border-amber-400/70' : 'border-slate-800 hover:border-slate-600'"
   >
     <button
       type="button"
-      class="block w-full p-3 text-left"
+      class="block w-full shrink-0 p-3 text-left"
       :aria-pressed="props.selected"
       :disabled="!decoded.ok"
       @click="emit('select', props.codec)"
     >
-      <StallPatternGraph
-        v-if="decoded.ok"
-        :draft="decoded.draft"
-        orientation="horizontal"
-        density="thumbnail"
-        :aria-label="`Pattern thumbnail for ${props.codec}`"
-      />
-      <span v-else class="block min-h-24 text-xs text-red-300">
-        {{ decoded.error.message }}
+      <span class="grid h-44 w-full place-items-center overflow-hidden">
+        <StallPatternGraph
+          v-if="decoded.ok"
+          :draft="decoded.draft"
+          orientation="horizontal"
+          density="thumbnail"
+          :fill-container="true"
+          :aria-label="`Pattern thumbnail for ${props.codec}`"
+        />
+        <span v-else class="text-xs text-red-300">
+          {{ decoded.error.message }}
+        </span>
       </span>
     </button>
 
-    <footer class="flex min-w-0 items-center gap-2 border-t border-slate-800 px-3 py-2">
+    <footer
+      class="mt-auto flex h-11 min-w-0 shrink-0 items-center gap-2 border-t border-slate-800 px-3"
+    >
       <code class="min-w-0 flex-1 truncate text-[10px] text-slate-500">{{ props.codec }}</code>
       <RouterLink
         v-if="decoded.ok"

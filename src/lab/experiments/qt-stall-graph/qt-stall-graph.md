@@ -33,6 +33,14 @@ An article can keep a small local registry of codec strings. The full-pattern gr
 
 <StallPatternGallery :codecs="articlePatterns" />
 
+### Relationships worth comparing
+
+- **Phase orbit:** `q1.4.URDL.URDL`, `q1.4.URDL.RDLU`, `q1.4.URDL.DLUR`, and `q1.4.URDL.LURD` keep the left-hand wall loop fixed while advancing the right hand by zero, one, two, and three beats. These are the four discrete quarter-time phase relationships of the same pair of paths.
+- **Direction reversal:** `q1.4.URDL.ULDR` starts both hands at U, then sends them around the same wall loop in opposite directions. They coincide again at D halfway through the cycle.
+- **Plane substitution:** `URDL` is the wall great-circle loop, `UFDB` is its wheel-plane counterpart, and `RFLB` is the floor-plane counterpart. Compare `q1.4.URDL.UFDB` with `q1.4.UFDB.RFLB`: the four-beat rhythm is unchanged while the spatial plane pair changes.
+- **Turn around and retrace:** `q1.8.URDLULDR.RDLULDRU` traverses a wall loop in one direction for four beats and reverses it for four, with the right hand one beat ahead. It has an eight-beat authored period even though both halves use the same four stalls.
+- **Authored period versus visible repetition:** `q1.4.URDL.RDLU`, `q1.8.URDLURDL.RDLURDLU`, and the 24-beat codec repeat the same phase-offset wall pair once, twice, and six times. The geometry repeats, but the explicit cycle duration and beat numbering do not.
+
 ## Cardinal → plane lookup
 
 | Transition                 | Plane |
@@ -48,9 +56,14 @@ import StallGraphEditor from "./StallGraphEditor.vue";
 import StallPatternGallery from "./StallPatternGallery.vue";
 
 const articlePatterns = [
+  "q1.4.URDL.URDL",
   "q1.4.URDL.RDLU",
   "q1.4.URDL.DLUR",
-  "q1.4.FUBD.UBDF",
+  "q1.4.URDL.LURD",
+  "q1.4.URDL.ULDR",
+  "q1.4.URDL.UFDB",
+  "q1.4.UFDB.RFLB",
+  "q1.8.URDLULDR.RDLULDRU",
   "q1.8.URDLURDL.RDLURDLU",
   `q1.24.${"URDL".repeat(6)}.${"RDLU".repeat(6)}`
 ];
