@@ -204,8 +204,7 @@ export class VrmStandingPoseAdapter {
 
     humanoid.resetNormalizedPose();
     scene.position.set(0, 0, 0);
-    scene.scale.set(1, 1, 1);
-    scene.quaternion.fromArray(this.profile.modelToTargetRotation);
+    this.applySceneTransform(1);
     scene.updateMatrixWorld(true);
 
     const modelArmReach = this.profile.modelArmReach;
@@ -216,7 +215,7 @@ export class VrmStandingPoseAdapter {
       throw new Error("Body rig arm reach does not match the loaded VRM rig profile.");
     }
 
-    scene.scale.setScalar(scale);
+    this.applySceneTransform(scale);
     scene.updateMatrixWorld(true);
 
     const { modelAnchor, targetAnchor, translation } = this.alignFootAnchors(frame);
@@ -250,8 +249,7 @@ export class VrmStandingPoseAdapter {
       calibration.translation.y,
       calibration.translation.z
     );
-    this.vrm.scene.scale.setScalar(this.profile.scale);
-    this.vrm.scene.quaternion.fromArray(this.profile.modelToTargetRotation);
+    this.applySceneTransform(this.profile.scale);
     this.vrm.scene.updateMatrixWorld(true);
 
     const hips = getRequiredBone(this.vrm, "hips");
@@ -358,17 +356,25 @@ export class VrmStandingPoseAdapter {
     return rotation;
   }
 
+  private applySceneTransform(scale: number): void {
+    const signs = this.profile.modelToTargetScaleSigns;
+    this.vrm.scene.scale.set(signs.x * scale, signs.y * scale, signs.z * scale);
+    this.vrm.scene.quaternion.fromArray(this.profile.modelToTargetRotation);
+  }
+
   private applyWorldYaw(name: VRMHumanBoneName, bone: THREE.Object3D, angleRad: number): void {
-    const parentWorldRotation = new THREE.Quaternion();
-    bone.parent?.getWorldQuaternion(parentWorldRotation);
-    const baseWorldRotation = parentWorldRotation.clone().multiply(this.restRotation(name));
-    const desiredWorldRotation = new THREE.Quaternion()
-      .setFromAxisAngle(WORLD_UP, angleRad)
-      .multiply(baseWorldRotation);
-    bone.quaternion
-      .copy(parentWorldRotation.clone().invert())
-      .multiply(desiredWorldRotation)
-      .normalize();
+    const parent = bone.parent;
+    if (!parent) {
+      throw new Error(`VRM normalized bone ${name} has no parent transform.`);
+    }
+
+    parent.updateWorldMatrix(true, false);
+    const inverseParent = parent.matrixWorld.clone().invert();
+    const localAxis = WORLD_UP.clone().transformDirection(inverseParent);
+    const determinant = new THREE.Matrix3().setFromMatrix4(parent.matrixWorld).determinant();
+    const handedAngle = determinant < 0 ? -angleRad : angleRad;
+    const localDelta = new THREE.Quaternion().setFromAxisAngle(localAxis, handedAngle);
+    bone.quaternion.copy(localDelta).multiply(this.restRotation(name)).normalize();
     bone.updateWorldMatrix(false, true);
   }
 
@@ -453,17 +459,23 @@ export class VrmStandingPoseAdapter {
 
     localChildDirection.normalize();
     targetDirection.normalize();
-    const parentWorldRotation = new THREE.Quaternion();
-    bone.parent?.getWorldQuaternion(parentWorldRotation);
-    const baseWorldRotation = parentWorldRotation.clone().multiply(this.restRotation(boneName));
-    const restWorldDirection = localChildDirection.clone().applyQuaternion(baseWorldRotation);
-    const swing = new THREE.Quaternion().setFromUnitVectors(restWorldDirection, targetDirection);
-    const desiredWorldRotation = swing.multiply(baseWorldRotation);
+    const parent = bone.parent;
+    if (!parent) {
+      throw new Error(`VRM normalized bone ${boneName} has no parent transform.`);
+    }
 
-    bone.quaternion
-      .copy(parentWorldRotation.clone().invert())
-      .multiply(desiredWorldRotation)
-      .normalize();
+    parent.updateWorldMatrix(true, false);
+    const desiredLocalDirection = targetDirection.transformDirection(
+      parent.matrixWorld.clone().invert()
+    );
+    const restRotation = this.restRotation(boneName);
+    const restLocalDirection = localChildDirection.applyQuaternion(restRotation);
+    const swing = new THREE.Quaternion().setFromUnitVectors(
+      restLocalDirection,
+      desiredLocalDirection
+    );
+
+    bone.quaternion.copy(swing).multiply(restRotation).normalize();
     bone.updateWorldMatrix(false, true);
   }
 

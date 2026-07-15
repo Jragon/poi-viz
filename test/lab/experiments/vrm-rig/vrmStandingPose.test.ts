@@ -143,7 +143,13 @@ describe("VrmStandingPoseAdapter", () => {
     expect(profile.dimensions.armReach).toBeCloseTo(profile.modelArmReach * profile.scale);
 
     vrm.scene.quaternion.fromArray(profile.modelToTargetRotation);
+    vrm.scene.scale.set(
+      profile.modelToTargetScaleSigns.x,
+      profile.modelToTargetScaleSigns.y,
+      profile.modelToTargetScaleSigns.z
+    );
     vrm.scene.updateMatrixWorld(true);
+    expect(profile.modelToTargetScaleSigns).toEqual({ x: -1, y: 1, z: 1 });
     expect(
       worldDirection(bones.get("leftUpperArm")!, bones.get("rightUpperArm")!).angleTo(
         new THREE.Vector3(1, 0, 0)

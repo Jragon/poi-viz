@@ -124,8 +124,8 @@ const targetSideMapping = computed(() => {
 });
 const viewModeSummary = computed(() =>
   mirroredView.value
-    ? "Mirror view · projection flipped · anatomy unchanged"
-    : "Audience view · projection unflipped · anatomy unchanged"
+    ? "Mirror view · final image flipped · anatomy unchanged"
+    : "Audience view · final image unflipped · anatomy unchanged"
 );
 const modelJointError = computed(() => vrmPoseDiagnostics.value?.maxJointError.toFixed(4) ?? "—");
 const pelvisError = computed(() => vrmPoseDiagnostics.value?.pelvisError.toFixed(4) ?? "—");

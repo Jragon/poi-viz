@@ -1,16 +1,14 @@
 import * as THREE from "three";
 
-/**
- * Mirrors only the rendered view. World coordinates, rig IDs, and anatomical
- * humanoid bone names remain unchanged.
- */
-export function updateVrmCameraProjection(
-  camera: THREE.PerspectiveCamera,
-  mirrored: boolean
-): void {
+export function updateVrmCameraProjection(camera: THREE.PerspectiveCamera): void {
   camera.updateProjectionMatrix();
-  if (mirrored) {
-    camera.projectionMatrix.elements[0] *= -1;
-  }
   camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
+}
+
+/**
+ * Mirrors the finished pixels rather than the camera projection. A negative
+ * projection reverses triangle winding and breaks single-sided VRM materials.
+ */
+export function resolveVrmCanvasTransform(mirrored: boolean): string {
+  return mirrored ? "scaleX(-1)" : "";
 }

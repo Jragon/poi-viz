@@ -17,7 +17,7 @@ import {
 import { buildVrmRigModelUrl } from "./vrmModel";
 import { type VrmPoseDiagnostics, VrmStandingPoseAdapter } from "./vrmStandingPose";
 import { buildVrmRigProfile, type VrmRigProfile } from "./vrmRigProfile";
-import { updateVrmCameraProjection } from "./vrmView";
+import { resolveVrmCanvasTransform, updateVrmCameraProjection } from "./vrmView";
 
 const props = withDefaults(
   defineProps<{
@@ -111,7 +111,7 @@ function syncCamera(resetPosition: boolean) {
 
   camera.near = view.near;
   camera.far = view.far;
-  updateVrmCameraProjection(camera, props.mirroredView);
+  updateVrmCameraProjection(camera);
 
   if (orbitControls) {
     orbitControls.target.set(view.target.x, view.target.y, view.target.z);
@@ -138,8 +138,17 @@ function resizeRenderer() {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(width, height, false);
   camera.aspect = width / height;
-  updateVrmCameraProjection(camera, props.mirroredView);
+  updateVrmCameraProjection(camera);
   renderScene();
+}
+
+function syncCanvasMirror() {
+  if (!renderer) {
+    return;
+  }
+
+  renderer.domElement.style.transform = resolveVrmCanvasTransform(props.mirroredView);
+  renderer.domElement.style.transformOrigin = "center";
 }
 
 function createPoiObjects(entry: ReturnType<typeof buildDebugRigSceneEntries>[number]): PoiObjects {
@@ -471,6 +480,7 @@ onMounted(() => {
 
     camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    syncCanvasMirror();
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.domElement.style.display = "block";
     renderer.domElement.style.width = "100%";
@@ -536,6 +546,7 @@ watch(
     props.mirroredView
   ],
   () => {
+    syncCanvasMirror();
     syncCamera(false);
     syncTargetRig();
     syncVrmPose();

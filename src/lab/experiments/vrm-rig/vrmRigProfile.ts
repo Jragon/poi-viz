@@ -32,8 +32,10 @@ export interface VrmRigProfile {
   readonly scale: number;
   readonly modelShoulderBaseSpan: number;
   readonly modelShoulderSocketSpan: number;
-  /** Rigidly aligns the model's measured humanoid rest basis to +X/+Y/+Z. */
+  /** Aligns the model's measured humanoid rest basis to +X/+Y/+Z. */
   readonly modelToTargetRotation: readonly [number, number, number, number];
+  /** Includes the handedness reflection required by the VRM 1.0 basis. */
+  readonly modelToTargetScaleSigns: Vec3;
   readonly arms: Readonly<Record<VrmAnatomicalSide, VrmArmProfile>>;
   readonly legs: Readonly<Record<VrmAnatomicalSide, VrmLegProfile>>;
   /** Anatomical side mapping. View mirroring never changes this contract. */
@@ -67,7 +69,10 @@ function midpoint(a: THREE.Vector3, b: THREE.Vector3): THREE.Vector3 {
   return a.clone().add(b).multiplyScalar(0.5);
 }
 
-function buildModelToTargetRotation(vrm: VRM): THREE.Quaternion {
+function buildModelToTargetTransform(vrm: VRM): {
+  readonly rotation: THREE.Quaternion;
+  readonly scaleSigns: Vec3;
+} {
   const targetToVrmSide: Readonly<Record<TargetRigSide, VrmAnatomicalSide>> = {
     left: "left",
     right: "right"
@@ -78,7 +83,7 @@ function buildModelToTargetRotation(vrm: VRM): THREE.Quaternion {
   const modelRight = targetRightSocket.clone().sub(targetLeftSocket).normalize();
   const torsoUp = socketMidpoint.clone().sub(position(vrm, "hips"));
   const modelUp = torsoUp.clone().addScaledVector(modelRight, -torsoUp.dot(modelRight)).normalize();
-  const modelForward = new THREE.Vector3().crossVectors(modelRight, modelUp).normalize();
+  const modelForward = new THREE.Vector3().crossVectors(modelUp, modelRight).normalize();
 
   if (
     modelRight.lengthSq() <= MIN_MEASUREMENT ||
@@ -89,7 +94,20 @@ function buildModelToTargetRotation(vrm: VRM): THREE.Quaternion {
   }
 
   const modelBasis = new THREE.Matrix4().makeBasis(modelRight, modelUp, modelForward);
-  return new THREE.Quaternion().setFromRotationMatrix(modelBasis).invert().normalize();
+  const modelToTarget = modelBasis.invert();
+  const translation = new THREE.Vector3();
+  const rotation = new THREE.Quaternion();
+  const scale = new THREE.Vector3();
+  modelToTarget.decompose(translation, rotation, scale);
+
+  return {
+    rotation: rotation.normalize(),
+    scaleSigns: {
+      x: Math.sign(scale.x) || 1,
+      y: Math.sign(scale.y) || 1,
+      z: Math.sign(scale.z) || 1
+    }
+  };
 }
 
 function average(a: number, b: number): number {
@@ -235,7 +253,7 @@ export function buildVrmRigProfile(vrm: VRM, targetPatternRadius = 1): VrmRigPro
     left: "left",
     right: "right"
   };
-  const modelToTargetRotation = buildModelToTargetRotation(vrm);
+  const modelToTarget = buildModelToTargetTransform(vrm);
 
   return {
     modelArmReach,
@@ -244,7 +262,8 @@ export function buildVrmRigProfile(vrm: VRM, targetPatternRadius = 1): VrmRigPro
     scale,
     modelShoulderBaseSpan: distance(vrm, "leftShoulder", "rightShoulder"),
     modelShoulderSocketSpan: distance(vrm, "leftUpperArm", "rightUpperArm"),
-    modelToTargetRotation: modelToTargetRotation.toArray(),
+    modelToTargetRotation: modelToTarget.rotation.toArray(),
+    modelToTargetScaleSigns: modelToTarget.scaleSigns,
     arms,
     legs,
     targetToVrmSide,
