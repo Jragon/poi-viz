@@ -70,9 +70,7 @@ describe("bodyRigFrame", () => {
 
     expect(body.headCenter.y).toBeGreaterThan(body.shoulderGirdleCenter.y);
     expect(body.pelvisCenter.y).toBeLessThan(body.shoulderGirdleCenter.y);
-    expect(pose.projectedBody.headCenter.y).toBeGreaterThan(
-      pose.projectedBody.pelvisCenter.y
-    );
+    expect(pose.projectedBody.headCenter.y).toBeGreaterThan(pose.projectedBody.pelvisCenter.y);
     expect(pose.solve.shoulders.leftShoulder.x).toBeLessThan(body.shoulderGirdleCenter.x);
     expect(pose.solve.shoulders.rightShoulder.x).toBeGreaterThan(body.shoulderGirdleCenter.x);
     expect(getBodyRigArmPoints(pose, "left")).toHaveLength(3);
@@ -96,7 +94,7 @@ describe("bodyRigFrame", () => {
     expect(pose.solve.rightArm.elbow.z).toBeGreaterThan(0);
   });
 
-  it("projects the solved pelvis while keeping the default chest center anatomically anchored", () => {
+  it("projects the complete solved skeleton while keeping the feet planted", () => {
     const dimensions = buildDefaultBodyRigDimensions();
     const body = buildBodyRigFrameFromDimensions(dimensions);
     // Both hands biased right forces a lateral pelvis shift from the shoulder-girdle root.
@@ -115,9 +113,30 @@ describe("bodyRigFrame", () => {
     // chest does not float upward independently from the spine.
     expect(pose.solve.chest.center).toEqual(body.chest);
 
-    // projectedBody must reflect solved positions (not stale neutral body positions)
-    // With orthographic projection: projected.x == world.x, projected.y == world.y
+    // projectedBody must reflect the same solved skeleton used by the 3D and VRM renderers.
+    // With orthographic projection: projected.x == world.x, projected.y == world.y.
     expect(pose.projectedBody.pelvisCenter.x).toBeCloseTo(pose.solve.pelvis.center.x);
     expect(pose.projectedBody.chest).toEqual({ x: body.chest.x, y: body.chest.y });
+    expect(pose.projectedBody.hipLeft).toEqual({
+      x: pose.skeleton.joints.hipLeft.x,
+      y: pose.skeleton.joints.hipLeft.y
+    });
+    expect(pose.projectedBody.kneeLeft).toEqual({
+      x: pose.skeleton.joints.kneeLeft.x,
+      y: pose.skeleton.joints.kneeLeft.y
+    });
+    expect(pose.projectedBody.hipLeft).not.toEqual({ x: body.hipLeft.x, y: body.hipLeft.y });
+    expect(pose.projectedBody.kneeLeft).not.toEqual({
+      x: body.kneeLeft.x,
+      y: body.kneeLeft.y
+    });
+    expect(pose.projectedBody.footLeft).toEqual({
+      x: body.footLeft.x,
+      y: body.footLeft.y
+    });
+    expect(pose.projectedBody.footRight).toEqual({
+      x: body.footRight.x,
+      y: body.footRight.y
+    });
   });
 });

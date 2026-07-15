@@ -8,10 +8,7 @@ import {
   projectWorldBodyRig,
   type ProjectedBodyRigFrame
 } from "./bodyRigProjection";
-import {
-  buildBodySkeletonFrame,
-  type BodySkeletonFrame
-} from "./bodySkeletonFrame";
+import { buildBodySkeletonFrame, type BodySkeletonFrame } from "./bodySkeletonFrame";
 import {
   solveWorldBodyRig,
   type ArmSide,
@@ -100,22 +97,29 @@ export interface BodyRigPose {
 
 function projectBodyRigFrame(
   body: BodyRigFrame,
-  solve: BodyRigWorldSolveResult,
+  skeleton: BodySkeletonFrame,
   settings: PlaneProjectionSettings
 ): ProjectedBodyRigStaticFrame {
+  const joints = skeleton.joints;
+  const shoulderGirdleCenter = {
+    x: (joints.clavicleLeft.x + joints.clavicleRight.x) * 0.5,
+    y: (joints.clavicleLeft.y + joints.clavicleRight.y) * 0.5,
+    z: (joints.clavicleLeft.z + joints.clavicleRight.z) * 0.5
+  };
+
   return {
-    headCenter: projectWorldPoint(body.headCenter, settings),
+    headCenter: projectWorldPoint(joints.headCenter, settings),
     headRadius: body.headRadius,
-    neck: projectWorldPoint(body.neck, settings),
-    chest: projectWorldPoint(solve.chest.center, settings),
-    shoulderGirdleCenter: projectWorldPoint(body.shoulderGirdleCenter, settings),
-    pelvisCenter: projectWorldPoint(solve.pelvis.center, settings),
-    hipLeft: projectWorldPoint(body.hipLeft, settings),
-    hipRight: projectWorldPoint(body.hipRight, settings),
-    kneeLeft: projectWorldPoint(body.kneeLeft, settings),
-    kneeRight: projectWorldPoint(body.kneeRight, settings),
-    footLeft: projectWorldPoint(body.footLeft, settings),
-    footRight: projectWorldPoint(body.footRight, settings),
+    neck: projectWorldPoint(joints.neck, settings),
+    chest: projectWorldPoint(joints.chest, settings),
+    shoulderGirdleCenter: projectWorldPoint(shoulderGirdleCenter, settings),
+    pelvisCenter: projectWorldPoint(joints.pelvisCenter, settings),
+    hipLeft: projectWorldPoint(joints.hipLeft, settings),
+    hipRight: projectWorldPoint(joints.hipRight, settings),
+    kneeLeft: projectWorldPoint(joints.kneeLeft, settings),
+    kneeRight: projectWorldPoint(joints.kneeRight, settings),
+    footLeft: projectWorldPoint(joints.footLeft, settings),
+    footRight: projectWorldPoint(joints.footRight, settings),
     defaultLeftHandTarget: projectWorldPoint(body.defaultLeftHandTarget, settings),
     defaultRightHandTarget: projectWorldPoint(body.defaultRightHandTarget, settings)
   };
@@ -272,7 +276,7 @@ export function solveBodyRigFrame(
   return {
     body,
     skeleton,
-    projectedBody: projectBodyRigFrame(body, solve, projectionSettings),
+    projectedBody: projectBodyRigFrame(body, skeleton, projectionSettings),
     shoulders: {
       leftShoulder: projected.leftShoulder,
       rightShoulder: projected.rightShoulder,
