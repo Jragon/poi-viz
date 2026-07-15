@@ -28,7 +28,7 @@ export interface VrmRigProfile {
   /** Rigidly aligns the model's measured humanoid rest basis to +X/+Y/+Z. */
   readonly modelToTargetRotation: readonly [number, number, number, number];
   readonly arms: Readonly<Record<VrmAnatomicalSide, VrmArmProfile>>;
-  /** Maps target world/display sides to VRM anatomical bone names. */
+  /** Anatomical side mapping. View mirroring never changes this contract. */
   readonly targetToVrmSide: Readonly<Record<TargetRigSide, VrmAnatomicalSide>>;
   readonly dimensions: BodyRigDimensions;
 }
@@ -59,10 +59,11 @@ function midpoint(a: THREE.Vector3, b: THREE.Vector3): THREE.Vector3 {
   return a.clone().add(b).multiplyScalar(0.5);
 }
 
-function buildModelToTargetRotation(
-  vrm: VRM,
-  targetToVrmSide: Readonly<Record<TargetRigSide, VrmAnatomicalSide>>
-): THREE.Quaternion {
+function buildModelToTargetRotation(vrm: VRM): THREE.Quaternion {
+  const targetToVrmSide: Readonly<Record<TargetRigSide, VrmAnatomicalSide>> = {
+    left: "left",
+    right: "right"
+  };
   const targetLeftSocket = position(vrm, `${targetToVrmSide.left}UpperArm` as VRMHumanBoneName);
   const targetRightSocket = position(vrm, `${targetToVrmSide.right}UpperArm` as VRMHumanBoneName);
   const socketMidpoint = midpoint(targetLeftSocket, targetRightSocket);
@@ -198,13 +199,11 @@ export function buildVrmRigProfile(
     throw new Error("VRM fixture has an invalid humanoid arm reach.");
   }
   const scale = targetArmReach / modelArmReach;
-  const leftSocketX = arms.left.shoulderSocket.x;
-  const rightSocketX = arms.right.shoulderSocket.x;
-  const targetToVrmSide: Readonly<Record<TargetRigSide, VrmAnatomicalSide>> =
-    leftSocketX <= rightSocketX
-      ? { left: "left", right: "right" }
-      : { left: "right", right: "left" };
-  const modelToTargetRotation = buildModelToTargetRotation(vrm, targetToVrmSide);
+  const targetToVrmSide: Readonly<Record<TargetRigSide, VrmAnatomicalSide>> = {
+    left: "left",
+    right: "right"
+  };
+  const modelToTargetRotation = buildModelToTargetRotation(vrm);
 
   return {
     modelArmReach,

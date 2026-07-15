@@ -185,19 +185,19 @@ describe("resolveVrmRigScale", () => {
 });
 
 describe("VrmStandingPoseAdapter", () => {
-  it("maps negative target X to the spatially negative VRM arm", () => {
+  it("keeps target and VRM sides anatomical", () => {
     const frame = makeFrame();
     const { vrm, bones } = makeFakeVrm();
     const profile = buildVrmRigProfile(vrm, frame.supportPose.armReach);
 
-    expect(profile.targetToVrmSide).toEqual({ left: "right", right: "left" });
+    expect(profile.targetToVrmSide).toEqual({ left: "left", right: "right" });
     expect(profile.dimensions.config.upperArmLength).toBeCloseTo(0.325);
     expect(profile.dimensions.config.forearmLength).toBeCloseTo(0.325);
 
     vrm.scene.quaternion.fromArray(profile.modelToTargetRotation);
     vrm.scene.updateMatrixWorld(true);
     expect(
-      worldDirection(bones.get("rightUpperArm")!, bones.get("leftUpperArm")!).angleTo(
+      worldDirection(bones.get("leftUpperArm")!, bones.get("rightUpperArm")!).angleTo(
         new THREE.Vector3(1, 0, 0)
       )
     ).toBeLessThan(1e-6);
@@ -218,15 +218,15 @@ describe("VrmStandingPoseAdapter", () => {
     expect(diagnostics.right.wristError).toBeLessThan(1e-6);
     expect(
       bones
-        .get("rightUpperArm")!
-        .getWorldPosition(new THREE.Vector3())
-        .distanceTo(bones.get("rightLowerArm")!.getWorldPosition(new THREE.Vector3()))
-    ).toBeCloseTo(0.325);
-    expect(
-      bones
         .get("leftUpperArm")!
         .getWorldPosition(new THREE.Vector3())
         .distanceTo(bones.get("leftLowerArm")!.getWorldPosition(new THREE.Vector3()))
+    ).toBeCloseTo(0.325);
+    expect(
+      bones
+        .get("rightUpperArm")!
+        .getWorldPosition(new THREE.Vector3())
+        .distanceTo(bones.get("rightLowerArm")!.getWorldPosition(new THREE.Vector3()))
     ).toBeCloseTo(0.325);
     expect(humanoidUpdate).not.toHaveBeenCalled();
     expect(constraintUpdate).not.toHaveBeenCalled();

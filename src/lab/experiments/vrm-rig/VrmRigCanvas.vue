@@ -17,6 +17,7 @@ import {
 import { buildVrmRigModelUrl } from "./vrmModel";
 import { type VrmPoseDiagnostics, VrmStandingPoseAdapter } from "./vrmStandingPose";
 import { buildVrmRigProfile, type VrmRigProfile } from "./vrmRigProfile";
+import { updateVrmCameraProjection } from "./vrmView";
 
 const props = withDefaults(
   defineProps<{
@@ -31,6 +32,7 @@ const props = withDefaults(
     showPoiTargets?: boolean;
     showAxes?: boolean;
     showGrid?: boolean;
+    mirroredView?: boolean;
     cameraResetVersion?: number;
   }>(),
   {
@@ -40,6 +42,7 @@ const props = withDefaults(
     showPoiTargets: true,
     showAxes: true,
     showGrid: true,
+    mirroredView: false,
     cameraResetVersion: 0
   }
 );
@@ -105,7 +108,7 @@ function syncCamera(resetPosition: boolean) {
 
   camera.near = view.near;
   camera.far = view.far;
-  camera.updateProjectionMatrix();
+  updateVrmCameraProjection(camera, props.mirroredView);
 
   if (orbitControls) {
     orbitControls.target.set(view.target.x, view.target.y, view.target.z);
@@ -132,7 +135,7 @@ function resizeRenderer() {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(width, height, false);
   camera.aspect = width / height;
-  camera.updateProjectionMatrix();
+  updateVrmCameraProjection(camera, props.mirroredView);
   renderScene();
 }
 
@@ -476,9 +479,11 @@ watch(
     props.showTargetRig,
     props.showVrmHelpers,
     props.showAxes,
-    props.showGrid
+    props.showGrid,
+    props.mirroredView
   ],
   () => {
+    syncCamera(false);
     syncTargetRig();
     syncVrmPose();
     syncHelpers();

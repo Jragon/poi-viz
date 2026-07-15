@@ -47,6 +47,7 @@ const showVrmHelpers = ref(false);
 const showPoiTargets = ref(true);
 const showAxes = ref(true);
 const showGrid = ref(true);
+const mirroredView = ref(false);
 const cameraResetVersion = ref(0);
 const poseSource = ref<"live" | VrmRigPoseCaseId>("live");
 const vrmRigProfile = shallowRef<VrmRigProfile | null>(null);
@@ -117,9 +118,14 @@ const rightReachError = computed(
 const targetSideMapping = computed(() => {
   const mapping = vrmRigProfile.value?.targetToVrmSide;
   return mapping
-    ? `world left → VRM ${mapping.left} · world right → VRM ${mapping.right}`
+    ? `anatomical left → VRM ${mapping.left} · anatomical right → VRM ${mapping.right}`
     : "measuring";
 });
+const viewModeSummary = computed(() =>
+  mirroredView.value
+    ? "Mirror view · projection flipped · anatomy unchanged"
+    : "Audience view · projection unflipped · anatomy unchanged"
+);
 const modelJointError = computed(() => vrmPoseDiagnostics.value?.maxJointError.toFixed(4) ?? "—");
 function formatArmJointErrors(side: "left" | "right") {
   const diagnostics = vrmPoseDiagnostics.value?.[side];
@@ -178,6 +184,7 @@ function resetView() {
           :show-poi-targets="showPoiTargets"
           :show-axes="showAxes"
           :show-grid="showGrid"
+          :mirrored-view="mirroredView"
           :camera-reset-version="cameraResetVersion"
           @rig-profile="vrmRigProfile = $event"
           @pose-diagnostics="vrmPoseDiagnostics = $event"
@@ -234,6 +241,11 @@ function resetView() {
             <span>Grid</span>
             <input v-model="showGrid" type="checkbox" />
           </label>
+          <label class="flex items-center justify-between gap-3">
+            <span>Mirror view</span>
+            <input v-model="mirroredView" type="checkbox" />
+          </label>
+          <p class="text-xs leading-5 text-slate-500">{{ viewModeSummary }}</p>
 
           <button
             type="button"
