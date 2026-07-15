@@ -36,10 +36,10 @@ it difficult to distinguish a bad body solve from bad model geometry or bone app
 
 Use option B for the standing-rig milestone.
 
-The lab loads a real VRM 1.0 file with `@pixiv/three-vrm`, drives its normalized humanoid bones from
-the existing deterministic `BodySkeletonFrame`, then lets the VRM library copy the normalized pose to
-the raw skinned skeleton and evaluate authored twist constraints. Locomotion and a general animation
-system remain out of scope until the standing arm solve is reliable.
+The lab loads VRM 0.x or VRM 1.0 with `@pixiv/three-vrm`, drives its normalized humanoid bones from the
+existing deterministic `BodySkeletonFrame`, then lets the VRM library copy the normalized pose to the
+raw skinned skeleton and evaluate any authored constraints. Locomotion and a general animation system
+remain out of scope until the standing arm solve is reliable.
 
 The implementation follows the lifecycle used by the upstream `three-vrm` examples:
 
@@ -62,7 +62,7 @@ prepared POI sequence
   -> pelvis placement + analytic planted-leg solves
   -> chest yaw + measured clavicle aim + analytic arm solves
   -> VRM normalized humanoid bones
-  -> VRM raw skeleton, twist constraints, and skinned mesh
+  -> VRM raw skeleton, optional constraints, and skinned mesh
 ```
 
 The adapter currently controls:
@@ -105,23 +105,32 @@ upper body. The default total turn ceiling is 80 degrees. Pelvis yaw is limited 
 prefers 45 percent of the requested turn; the remaining chest twist is limited to 45 degrees. This
 is a pose solve, not animation: there is no clip, timeline, or frame-to-frame state involved.
 
-## Fixture
+Canonical thigh and shin lengths are `0.82` and `0.765` times arm reach. Their combined `1.585`
+arm-reach ratio replaces the earlier short-legged `1.21875` ratio. Aurora's scaled arm reach differs
+from the target by about one percent, while its combined leg reach is about three percent longer than
+the target; this leaves a small intentional knee bend instead of the previous deep squat.
 
-The checked-in fixture is
-`public/models/vrm/VRM1_Constraint_Twist_Sample.vrm`, from the official VRM specification samples.
-It is valuable because it contains authored upper/lower-arm twist constraints and exercises the real
-VRM 1.0 import path. It is not the final visual design: the stylized body and large costume make it a
-poor neutral anatomical mannequin.
+## Assets
+
+The visual default is `public/models/vrm/Aurora.vrm`, a VRM 0.x avatar exported by Polygonal Mind with
+embedded CC0 metadata. It provides the complete torso, bilateral arm, bilateral leg, upper-chest, and
+finger humanoid mappings required by the current adapter. The rig profile still measures and validates
+its actual non-zero chain lengths at load time.
+
+`public/models/vrm/VRM1_Constraint_Twist_Sample.vrm` remains checked in as a regression fixture from
+the official VRM specification samples. It contains authored upper/lower-arm twist constraints and
+exercises the VRM 1.0 import path; it is no longer the visual default.
 
 Source and licence details are recorded beside the asset in `public/models/vrm/README.md`. The model is
 isolated behind `vrmModel.ts`, so replacing it should not alter the solver or pose adapter.
 
-### Replacement model contract
+### Model contract
 
-The intended Blender model must be exported as VRM 1.0 before it can replace the fixture. The current
-adapter requires valid normalized mappings for `hips`, `spine`, `chest`, bilateral `shoulder`,
-`upperArm`, `lowerArm`, `hand`, `upperLeg`, `lowerLeg`, and `foot` bones. Bone chains must have
-non-zero lengths, left/right labels must be anatomical, and the bind/rest pose must not be degenerate.
+The adapter accepts VRM 0.x and VRM 1.0 through the normalized `three-vrm` humanoid API, although VRM
+1.0 remains preferred for future exports. It requires valid normalized mappings for `hips`, `spine`,
+`chest`, bilateral `shoulder`, `upperArm`, `lowerArm`, `hand`, `upperLeg`, `lowerLeg`, and `foot`
+bones. Bone chains must have non-zero lengths, left/right labels must be anatomical, and the bind/rest
+pose must not be degenerate.
 
 Preferred asset characteristics are deliberately stricter than loader validity:
 
@@ -142,6 +151,8 @@ changed.
 - Identical `BodySkeletonFrame` inputs produce identical normalized bone rotations.
 - Model scale is derived explicitly from model and target canonical pattern radius; invalid radii
   throw, and the final target radius is asserted to be exactly one within tolerance.
+- Target/model arm and leg reach comparisons are visible in the lab so proportion mismatch cannot be
+  mistaken for an IK failure.
 - The measured model rest basis is aligned to the engine basis before posing.
 - Target and VRM sides remain anatomical; mirror view changes projection only.
 - Pelvis placement follows the solved body while both target feet remain fixed at their support
@@ -193,7 +204,8 @@ for model-versus-target visual inspection.
 The VRM layer remains a renderer/rig adapter rather than a general iterative IK system. The standing
 pose is now rooted through planted feet and a driven pelvis, but the following work remains separate:
 
-1. Add a neutral, uncluttered VRM asset while retaining the official constraint sample as a fixture.
+1. Visually evaluate Aurora's proportions and deformation across the canonical pose corpus; replace
+   it only if those measured results expose an asset defect.
 2. Add clavicle length to the target body contract so the body solver itself produces shoulder
    sockets on a physically reachable clavicle arc. The adapter already preserves the avatar's
    measured clavicle and reports any target mismatch.

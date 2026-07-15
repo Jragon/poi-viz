@@ -150,6 +150,8 @@ own scale and retargeting constraints.
   a history-dependent animation state or iterative full-body solver.
 - Hips and knees are rebuilt from the solved skeleton while feet remain at their neutral support
   points. Both the main canvas and 3D/VRM adapters consume that same solved skeleton.
+- Canonical thigh and shin ratios are `0.82` and `0.765` of arm reach. The combined `1.585` ratio
+  corrects the previous short-legged standing body while retaining a small planted-knee bend.
 
 Validation uses fixed far-side targets to require non-zero pelvis yaw, greater chest yaw, exact planted
 feet, preserved limb lengths, and successful bilateral hand reach where physically feasible.
@@ -166,3 +168,18 @@ preparation and evaluation. Defaults belong to consumers, not the runtime engine
   plane-normal separation is `0.12` world units.
 - Display fallback does not add `planeSide` to world/evaluated pose metadata, so loop continuity and
   engine behavior remain inspectable and unchanged.
+
+## 2026-07-15: Aurora as the Visual VRM Default
+
+Aurora replaces the stylized VRM 1.0 constraint sample as the lab's visual default. Aurora is a VRM
+0.x asset exported by Polygonal Mind with embedded CC0 metadata and a complete humanoid mapping.
+
+- Runtime posing continues through `three-vrm` normalized bones; no Aurora raw bone names enter the
+  body solver or adapter contract.
+- The existing measured rest-basis correction handles the avatar's source coordinate convention and
+  maps it onto engine `+X/+Y/+Z` semantics.
+- The official VRM 1.0 constraint sample stays checked in as the loader/constraint regression fixture.
+- An asset contract test parses the shipped GLB metadata and fails if required humanoid mappings or
+  the declared model identity disappear.
+- VRM 1.0 remains the preferred format for future Blender exports, but format conversion is not a
+  prerequisite for using a structurally valid VRM 0.x asset through the normalized API.

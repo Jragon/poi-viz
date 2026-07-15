@@ -19,6 +19,7 @@ import VrmRigCanvas from "./VrmRigCanvas.vue";
 import { buildVrmRigPoseCases, type VrmRigPoseCaseId } from "./rigPoseCases";
 import {
   VRM_RIG_MODEL_AUTHOR,
+  VRM_RIG_MODEL_FORMAT,
   VRM_RIG_MODEL_LICENSE,
   VRM_RIG_MODEL_NAME,
   VRM_RIG_MODEL_SOURCE
@@ -152,6 +153,27 @@ const patternRadius = computed(() =>
   canonicalBodyDimensions.canonicalPatternSpace.unitRadius.toFixed(4)
 );
 const avatarScale = computed(() => vrmRigProfile.value?.scale.toFixed(4) ?? "—");
+const armReachComparison = computed(() => {
+  const profile = vrmRigProfile.value;
+  return profile
+    ? `${canonicalBodyDimensions.armReach.toFixed(3)} · ${(profile.modelArmReach * profile.scale).toFixed(3)}`
+    : "—";
+});
+const legReachComparison = computed(() => {
+  const profile = vrmRigProfile.value;
+  if (!profile) {
+    return "—";
+  }
+  const modelLegReach =
+    ((profile.legs.left.upperLegLength +
+      profile.legs.left.lowerLegLength +
+      profile.legs.right.upperLegLength +
+      profile.legs.right.lowerLegLength) /
+      2) *
+    profile.scale;
+  const targetLegReach = canonicalBodyDimensions.thighLength + canonicalBodyDimensions.shinLength;
+  return `${targetLegReach.toFixed(3)} · ${modelLegReach.toFixed(3)}`;
+});
 function formatArmJointErrors(side: "left" | "right") {
   const diagnostics = vrmPoseDiagnostics.value?.[side];
   return diagnostics
@@ -173,8 +195,8 @@ function resetView() {
       <p class="text-xs uppercase tracking-[0.24em] text-slate-500">Lab Experiment</p>
       <h1 class="mt-2 text-3xl font-semibold text-slate-100">VRM Standing Rig</h1>
       <p class="mt-3 max-w-4xl text-sm leading-6 text-slate-400">
-        A real VRM 1.0 skinned humanoid driven procedurally from the current POI hand coordinates.
-        The translucent target rig exposes the solver result; the solid model exposes the actual
+        A skinned VRM humanoid driven procedurally from the current POI hand coordinates. The
+        translucent target rig exposes the solver result; the solid model exposes the actual
         normalized-bone and skinning result.
       </p>
     </section>
@@ -342,6 +364,14 @@ function resetView() {
             <span class="font-mono text-slate-200">{{ avatarScale }}</span>
           </p>
           <p class="flex justify-between gap-3 text-slate-400">
+            <span>Arm reach target/model</span>
+            <span class="font-mono text-slate-200">{{ armReachComparison }}</span>
+          </p>
+          <p class="flex justify-between gap-3 text-slate-400">
+            <span>Leg reach target/model</span>
+            <span class="font-mono text-slate-200">{{ legReachComparison }}</span>
+          </p>
+          <p class="flex justify-between gap-3 text-slate-400">
             <span>VRM max joint error</span>
             <span class="font-mono text-slate-200">{{ modelJointError }}</span>
           </p>
@@ -367,7 +397,7 @@ function resetView() {
           class="grid gap-2 rounded-xl border border-slate-800 bg-slate-900/65 p-4 text-xs leading-5 text-slate-400"
         >
           <p class="font-medium text-slate-200">{{ VRM_RIG_MODEL_NAME }}</p>
-          <p>{{ VRM_RIG_MODEL_AUTHOR }} · official VRM 1.0 constraint sample</p>
+          <p>{{ VRM_RIG_MODEL_AUTHOR }} · {{ VRM_RIG_MODEL_FORMAT }} · CC0</p>
           <div class="flex flex-wrap gap-x-3 gap-y-1">
             <a class="text-sky-300 hover:text-sky-200" :href="VRM_RIG_MODEL_SOURCE">Source</a>
             <a class="text-sky-300 hover:text-sky-200" :href="VRM_RIG_MODEL_LICENSE">Licence</a>

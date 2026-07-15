@@ -73,11 +73,11 @@ function makeFakeVrm() {
   const rightLowerArm = addBone("rightLowerArm", rightUpperArm, [-0.3, 0, 0]);
   addBone("rightHand", rightLowerArm, [-0.3, 0, 0]);
   const leftUpperLeg = addBone("leftUpperLeg", hips, [0.1, 0, 0]);
-  const leftLowerLeg = addBone("leftLowerLeg", leftUpperLeg, [0, -0.4, 0]);
-  addBone("leftFoot", leftLowerLeg, [0, -0.4, 0.08]);
+  const leftLowerLeg = addBone("leftLowerLeg", leftUpperLeg, [0, -0.48, 0]);
+  addBone("leftFoot", leftLowerLeg, [0, -0.48, 0.08]);
   const rightUpperLeg = addBone("rightUpperLeg", hips, [-0.1, 0, 0]);
-  const rightLowerLeg = addBone("rightLowerLeg", rightUpperLeg, [0, -0.4, 0]);
-  addBone("rightFoot", rightLowerLeg, [0, -0.4, 0.08]);
+  const rightLowerLeg = addBone("rightLowerLeg", rightUpperLeg, [0, -0.48, 0]);
+  addBone("rightFoot", rightLowerLeg, [0, -0.48, 0.08]);
 
   const humanoidUpdate = vi.fn();
   const constraintUpdate = vi.fn();

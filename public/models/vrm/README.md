@@ -1,5 +1,23 @@
 # VRM rig lab fixture
 
+## Visual default: Aurora
+
+`Aurora.vrm` is the lab's current visual default. Its embedded VRM 0.x metadata records:
+
+- Title: Aurora
+- Author: Polygonal Mind (`www.PolygonalMind.com`)
+- Version: 1.0
+- Licence: CC0
+- Permitted users: everyone
+- Commercial use: allowed
+
+The checked-in file is the user-supplied binary with SHA-256
+`9c205fb2b3188b6b37a7e089ee45a32f5602684929076fa71253fcd61f11151d`. It includes every humanoid
+bone required by the standing adapter. The loader uses `three-vrm`'s normalized humanoid contract, so
+the VRM 0.x asset does not introduce model-specific raw bone names into the solver.
+
+## Regression fixture
+
 `VRM1_Constraint_Twist_Sample.vrm` is copied from the official VRM
 specification samples:
 

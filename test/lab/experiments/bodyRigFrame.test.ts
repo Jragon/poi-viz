@@ -29,6 +29,11 @@ describe("bodyRigFrame", () => {
       DEFAULT_BODY_ARM_REACH
     );
     expect(dimensions.torsoHeight).toBeCloseTo(DEFAULT_BODY_ARM_REACH * 0.86);
+    expect(dimensions.thighLength).toBeCloseTo(DEFAULT_BODY_ARM_REACH * 0.82);
+    expect(dimensions.shinLength).toBeCloseTo(DEFAULT_BODY_ARM_REACH * 0.765);
+    expect((dimensions.thighLength + dimensions.shinLength) / dimensions.armReach).toBeCloseTo(
+      1.585
+    );
     expect(dimensions.hipSpan).toBeCloseTo(dimensions.shoulderSpan * 0.72);
     expect(dimensions.headRadius).toBeCloseTo(DEFAULT_BODY_ARM_REACH * 0.21);
     expect(dimensions.canonicalPatternSpace.unitRadius).toBeGreaterThan(0);

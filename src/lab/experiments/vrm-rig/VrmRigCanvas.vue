@@ -14,7 +14,7 @@ import {
   resolveSceneRadiusWorld
 } from "@/lab/experiments/three-d-debug/worldPoseScene";
 
-import { buildVrmRigModelUrl } from "./vrmModel";
+import { VRM_RIG_MODEL_FORMAT, buildVrmRigModelUrl } from "./vrmModel";
 import { type VrmPoseDiagnostics, VrmStandingPoseAdapter } from "./vrmStandingPose";
 import { buildVrmRigProfile, type VrmRigProfile } from "./vrmRigProfile";
 import { resolveVrmCanvasTransform, updateVrmCameraProjection } from "./vrmView";
@@ -68,7 +68,7 @@ const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
 const mountRef = ref<HTMLDivElement | null>(null);
 const loadState = ref<LoadState>("loading");
-const loadMessage = ref("Loading VRM 1.0 fixture…");
+const loadMessage = ref(`Loading ${VRM_RIG_MODEL_FORMAT} avatar…`);
 const resolvedSceneRadius = computed(() => resolveSceneRadiusWorld(props.sceneRadiusWorld));
 
 const poiObjects = new Map<RigId, PoiObjects>();
@@ -327,7 +327,7 @@ function replaceUnitCircle() {
   scene.add(unitCircle);
 }
 
-function loadVrmFixture() {
+function loadVrmModel() {
   if (!scene || !helperRoot) {
     return;
   }
@@ -375,7 +375,7 @@ function loadVrmFixture() {
       emit("rigProfile", rigProfile);
       scene.add(vrm.scene);
       loadState.value = "ready";
-      loadMessage.value = "VRM ready · normalized humanoid rig · twist constraints active";
+      loadMessage.value = `${VRM_RIG_MODEL_FORMAT} ready · normalized humanoid rig active`;
       void nextTick(() => {
         if (!disposed) {
           syncVrmPose();
@@ -385,13 +385,12 @@ function loadVrmFixture() {
     },
     (progress) => {
       if (progress.total > 0) {
-        loadMessage.value = `Loading VRM fixture · ${Math.round((progress.loaded / progress.total) * 100)}%`;
+        loadMessage.value = `Loading ${VRM_RIG_MODEL_FORMAT} avatar · ${Math.round((progress.loaded / progress.total) * 100)}%`;
       }
     },
     (error) => {
       loadState.value = "error";
-      loadMessage.value =
-        error instanceof Error ? error.message : "Unable to load the VRM fixture.";
+      loadMessage.value = error instanceof Error ? error.message : "Unable to load the VRM avatar.";
     }
   );
 }
@@ -512,7 +511,7 @@ onMounted(() => {
     resizeObserver = new ResizeObserver(resizeRenderer);
     resizeObserver.observe(mountRef.value);
     resizeRenderer();
-    loadVrmFixture();
+    loadVrmModel();
   } catch (error) {
     loadState.value = "error";
     loadMessage.value =

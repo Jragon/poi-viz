@@ -1,9 +1,11 @@
-export const VRM_RIG_MODEL_FILENAME = "VRM1_Constraint_Twist_Sample.vrm";
-export const VRM_RIG_MODEL_NAME = "VRM1 Constraint Twist Sample";
-export const VRM_RIG_MODEL_AUTHOR = "pixiv Inc.";
-export const VRM_RIG_MODEL_SOURCE =
-  "https://github.com/vrm-c/vrm-specification/tree/master/samples/VRM1_Constraint_Twist_Sample";
-export const VRM_RIG_MODEL_LICENSE = "https://vrm.dev/licenses/1.0/";
+export const VRM_RIG_MODEL_FILENAME = "Aurora.vrm";
+export const VRM_RIG_MODEL_NAME = "Aurora";
+export const VRM_RIG_MODEL_AUTHOR = "Polygonal Mind";
+export const VRM_RIG_MODEL_FORMAT = "VRM 0.x";
+export const VRM_RIG_MODEL_SOURCE = "https://www.polygonalmind.com/";
+export const VRM_RIG_MODEL_LICENSE = "https://creativecommons.org/publicdomain/zero/1.0/";
+
+export const VRM_CONSTRAINT_FIXTURE_FILENAME = "VRM1_Constraint_Twist_Sample.vrm";
 
 export function buildVrmRigModelUrl(baseUrl: string): string {
   const normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
