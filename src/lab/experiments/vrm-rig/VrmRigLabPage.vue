@@ -2,6 +2,7 @@
 import { computed, ref, shallowRef } from "vue";
 
 import { useAuthoringLibrary } from "@/authoring/useAuthoringLibrary";
+import { buildBodyRigDimensionsForCanonicalUnitRadius } from "@/body-rig";
 import type { RigId } from "@/engine/types";
 import { buildBodyHumanoidScene } from "@/lab/experiments/three-d-debug/bodyHumanoidScene";
 import { buildThreeDDebugSceneState } from "@/lab/experiments/three-d-debug/worldPoseScene";
@@ -53,7 +54,8 @@ const cameraResetVersion = ref(0);
 const poseSource = ref<"live" | VrmRigPoseCaseId>("live");
 const vrmRigProfile = shallowRef<VrmRigProfile | null>(null);
 const vrmPoseDiagnostics = shallowRef<VrmPoseDiagnostics | null>(null);
-const poseCases = computed(() => buildVrmRigPoseCases(vrmRigProfile.value?.dimensions));
+const canonicalBodyDimensions = buildBodyRigDimensionsForCanonicalUnitRadius(1);
+const poseCases = buildVrmRigPoseCases(canonicalBodyDimensions);
 
 function resolveBodyRigIds(rigOrder: readonly RigId[]) {
   const customIds = rigOrder.filter((rigId) => rigId !== "left" && rigId !== "right");
@@ -67,7 +69,7 @@ function resolveBodyRigIds(rigOrder: readonly RigId[]) {
 const activePoseCase = computed(() =>
   poseSource.value === "live"
     ? null
-    : (poseCases.value.find((entry) => entry.id === poseSource.value) ?? null)
+    : (poseCases.find((entry) => entry.id === poseSource.value) ?? null)
 );
 const activeWorldPoses = computed(() => activePoseCase.value?.worldPoses ?? core.worldPoses.value);
 const activeRigOrder = computed<readonly RigId[]>(() =>
@@ -82,7 +84,7 @@ const bodyFrame = computed(() =>
     activeWorldPoses.value,
     undefined,
     bodyRigIds.value,
-    vrmRigProfile.value?.dimensions
+    canonicalBodyDimensions
   )
 );
 const solverSummary = computed(() => {
@@ -135,8 +137,8 @@ const footErrors = computed(() => {
     ? `${diagnostics.leftFootError.toFixed(4)} · ${diagnostics.rightFootError.toFixed(4)}`
     : "—";
 });
-const patternRadius = computed(
-  () => vrmRigProfile.value?.dimensions.canonicalPatternSpace.unitRadius.toFixed(4) ?? "—"
+const patternRadius = computed(() =>
+  canonicalBodyDimensions.canonicalPatternSpace.unitRadius.toFixed(4)
 );
 const avatarScale = computed(() => vrmRigProfile.value?.scale.toFixed(4) ?? "—");
 function formatArmJointErrors(side: "left" | "right") {

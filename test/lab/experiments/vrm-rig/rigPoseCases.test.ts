@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import type { BodySkeletonFrame } from "@/body-rig";
+import {
+  buildBodyRigDimensionsForCanonicalUnitRadius,
+  buildBodyRigFrameFromDimensions,
+  type BodySkeletonFrame
+} from "@/body-rig";
 import { buildBodyHumanoidScene } from "@/lab/experiments/three-d-debug/bodyHumanoidScene";
 import {
   buildVrmRigPoseCases,
@@ -8,10 +12,7 @@ import {
   type VrmRigPoseCaseId
 } from "@/lab/experiments/vrm-rig/rigPoseCases";
 
-function distance3(
-  a: { x: number; y: number; z: number },
-  b: { x: number; y: number; z: number }
-) {
+function distance3(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) {
   return Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
 }
 
@@ -86,6 +87,27 @@ describe("VRM rig canonical pose cases", () => {
     expect(frame.solverDiagnostics.leftArm.reachError).toBeCloseTo(
       frame.solverDiagnostics.rightArm.reachError
     );
+  });
+
+  it("exercises straight side reach and useful clearance above the canonical head", () => {
+    const dimensions = buildBodyRigDimensionsForCanonicalUnitRadius(1);
+    const body = buildBodyRigFrameFromDimensions(dimensions);
+    const tPose = getVrmRigPoseCase("t-pose");
+    const overhead = getVrmRigPoseCase("overhead");
+    const minimumOverheadClearance = dimensions.config.forearmLength;
+
+    expect(tPose.worldPoses.left.handPosition.x).toBeLessThan(
+      -dimensions.shoulderSpan * 0.5 - dimensions.armReach * 0.9
+    );
+    expect(tPose.worldPoses.right.handPosition.x).toBeGreaterThan(
+      dimensions.shoulderSpan * 0.5 + dimensions.armReach * 0.9
+    );
+    expect(
+      overhead.worldPoses.left.handPosition.y - (body.headCenter.y + body.headRadius)
+    ).toBeGreaterThan(minimumOverheadClearance);
+    expect(
+      overhead.worldPoses.right.handPosition.y - (body.headCenter.y + body.headRadius)
+    ).toBeGreaterThan(minimumOverheadClearance);
   });
 
   it.each<VrmRigPoseCaseId>([

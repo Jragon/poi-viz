@@ -1,12 +1,7 @@
 import type { VRM, VRMHumanBoneName } from "@pixiv/three-vrm";
 import * as THREE from "three";
 
-import {
-  buildBodyRigConfigFromArmReach,
-  buildDefaultBodyRigDimensions,
-  computeBodyRigCanonicalPatternSpace,
-  type BodyRigDimensions
-} from "@/body-rig";
+import { buildBodyRigConfigFromArmReach, computeBodyRigCanonicalPatternSpace } from "@/body-rig";
 import type { Vec3 } from "@/engine/types";
 
 export type TargetRigSide = "left" | "right";
@@ -40,7 +35,6 @@ export interface VrmRigProfile {
   readonly legs: Readonly<Record<VrmAnatomicalSide, VrmLegProfile>>;
   /** Anatomical side mapping. View mirroring never changes this contract. */
   readonly targetToVrmSide: Readonly<Record<TargetRigSide, VrmAnatomicalSide>>;
-  readonly dimensions: BodyRigDimensions;
 }
 
 const MIN_MEASUREMENT = 1e-8;
@@ -114,73 +108,32 @@ function average(a: number, b: number): number {
   return (a + b) * 0.5;
 }
 
-function safeMeasurement(value: number, fallback: number): number {
-  return Number.isFinite(value) && value > MIN_MEASUREMENT ? value : fallback;
-}
-
-function buildProfileDimensions(
+function computeModelPatternRadius(
   vrm: VRM,
-  scale: number,
   arms: Readonly<Record<VrmAnatomicalSide, VrmArmProfile>>,
-  legs: Readonly<Record<VrmAnatomicalSide, VrmLegProfile>>,
   modelArmReach: number
-): BodyRigDimensions {
-  const scaledArmReach = modelArmReach * scale;
-  const fallback = buildDefaultBodyRigDimensions(scaledArmReach);
-  const upperArmLength = average(arms.left.upperArmLength, arms.right.upperArmLength) * scale;
-  const forearmLength = average(arms.left.forearmLength, arms.right.forearmLength) * scale;
+): number {
+  const upperArmLength = average(arms.left.upperArmLength, arms.right.upperArmLength);
+  const forearmLength = average(arms.left.forearmLength, arms.right.forearmLength);
   const leftSocket = position(vrm, "leftUpperArm");
   const rightSocket = position(vrm, "rightUpperArm");
-  const shoulderMidpoint = midpoint(leftSocket, rightSocket);
-  const hips = position(vrm, "hips");
-  const leftUpperLeg = position(vrm, "leftUpperLeg");
-  const rightUpperLeg = position(vrm, "rightUpperLeg");
-  const head = position(vrm, "head");
-  const shoulderSpan = leftSocket.distanceTo(rightSocket) * scale;
-  const torsoHeight = safeMeasurement(
-    shoulderMidpoint.distanceTo(hips) * scale,
-    fallback.torsoHeight
-  );
-  const hipSpan = safeMeasurement(leftUpperLeg.distanceTo(rightUpperLeg) * scale, fallback.hipSpan);
-  const thighLength = average(legs.left.upperLegLength, legs.right.upperLegLength) * scale;
-  const shinLength = average(legs.left.lowerLegLength, legs.right.lowerLegLength) * scale;
-  const headHeight = Math.max(0, head.y - shoulderMidpoint.y) * scale;
-  const headRadius = Math.min(fallback.headRadius, headHeight * 0.45 || fallback.headRadius);
+  const shoulderSpan = leftSocket.distanceTo(rightSocket);
   const config = {
-    ...buildBodyRigConfigFromArmReach(scaledArmReach),
+    ...buildBodyRigConfigFromArmReach(modelArmReach),
     upperArmLength,
     forearmLength,
     baseShoulderSpan: shoulderSpan
   };
-  const rootShoulderGirdleCenter = { ...fallback.rootShoulderGirdleCenter };
-  const canonicalPatternSpace = computeBodyRigCanonicalPatternSpace({
+  return computeBodyRigCanonicalPatternSpace({
     root: {
-      shoulderGirdleCenter: rootShoulderGirdleCenter,
+      shoulderGirdleCenter: { x: 0, y: 0, z: 0 },
       worldUp: { x: 0, y: 1, z: 0 },
       neutralForward: { x: 0, y: 0, z: 1 },
       scale: 1
     },
     config,
     useMaxYawCompression: true
-  });
-
-  return {
-    armReach: upperArmLength + forearmLength,
-    config,
-    shoulderSpan,
-    torsoHeight,
-    hipSpan,
-    headRadius,
-    headGap: Math.max(0, headHeight - headRadius),
-    neckOffset: Math.min(fallback.neckOffset, headHeight * 0.2),
-    thighLength: safeMeasurement(thighLength, fallback.thighLength),
-    shinLength: safeMeasurement(shinLength, fallback.shinLength),
-    footOffset: 0,
-    stanceWidth: 0,
-    cameraCenterWorld: { ...fallback.cameraCenterWorld },
-    rootShoulderGirdleCenter,
-    canonicalPatternSpace
-  };
+  }).unitRadius;
 }
 
 export function resolveVrmPatternScale(
@@ -242,13 +195,8 @@ export function buildVrmRigProfile(vrm: VRM, targetPatternRadius = 1): VrmRigPro
       lowerLegLength: distance(vrm, "rightLowerLeg", "rightFoot")
     }
   } as const;
-  const unscaledDimensions = buildProfileDimensions(vrm, 1, arms, legs, modelArmReach);
-  const modelPatternRadius = unscaledDimensions.canonicalPatternSpace.unitRadius;
+  const modelPatternRadius = computeModelPatternRadius(vrm, arms, modelArmReach);
   const scale = resolveVrmPatternScale(modelPatternRadius, targetPatternRadius);
-  const dimensions = buildProfileDimensions(vrm, scale, arms, legs, modelArmReach);
-  if (Math.abs(dimensions.canonicalPatternSpace.unitRadius - targetPatternRadius) > 1e-6) {
-    throw new Error("VRM canonical pattern radius did not normalize to the requested target.");
-  }
   const targetToVrmSide: Readonly<Record<TargetRigSide, VrmAnatomicalSide>> = {
     left: "left",
     right: "right"
@@ -266,7 +214,6 @@ export function buildVrmRigProfile(vrm: VRM, targetPatternRadius = 1): VrmRigPro
     modelToTargetScaleSigns: modelToTarget.scaleSigns,
     arms,
     legs,
-    targetToVrmSide,
-    dimensions
+    targetToVrmSide
   };
 }

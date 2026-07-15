@@ -1,7 +1,4 @@
-import {
-  buildBodyRigDimensionsForCanonicalUnitRadius,
-  type BodyRigDimensions
-} from "@/body-rig";
+import { buildBodyRigDimensionsForCanonicalUnitRadius, type BodyRigDimensions } from "@/body-rig";
 import type { Vec3, WorldMultiRigPose, WorldRigPose } from "@/engine/types";
 
 export type VrmRigPoseCaseId =
@@ -80,10 +77,10 @@ export function buildVrmRigPoseCases(
     poseCase(
       "t-pose",
       "T-pose",
-      "Symmetric side reach near extension without using torso yaw.",
+      "Symmetric straight-arm side reach without using torso yaw.",
       true,
-      { x: -halfShoulder - reach * 0.72, y: 0, z: 0 },
-      { x: halfShoulder + reach * 0.72, y: 0, z: 0 },
+      { x: -halfShoulder - reach * 0.95, y: 0, z: 0 },
+      { x: halfShoulder + reach * 0.95, y: 0, z: 0 },
       tetherLength
     ),
     poseCase(
@@ -97,11 +94,11 @@ export function buildVrmRigPoseCases(
     ),
     poseCase(
       "overhead",
-      "Overhead",
-      "Symmetric high reach; checks shoulder lift and outward elbow contribution.",
+      "Full overhead",
+      "Near-full vertical reach with visible clearance above the canonical head.",
       true,
-      { x: -reach * 0.22, y: reach * 0.72, z: reach * 0.12 },
-      { x: reach * 0.22, y: reach * 0.72, z: reach * 0.12 },
+      { x: -reach * 0.14, y: reach * 1.04, z: reach * 0.08 },
+      { x: reach * 0.14, y: reach * 1.04, z: reach * 0.08 },
       tetherLength
     ),
     poseCase(

@@ -211,10 +211,6 @@ export class VrmStandingPoseAdapter {
     const targetArmReach = frame.supportPose.armReach;
     const scale = this.profile.scale;
 
-    if (Math.abs(targetArmReach - this.profile.dimensions.armReach) > 1e-6) {
-      throw new Error("Body rig arm reach does not match the loaded VRM rig profile.");
-    }
-
     this.applySceneTransform(scale);
     scene.updateMatrixWorld(true);
 

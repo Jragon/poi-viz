@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  buildBodyRigDimensionsForCanonicalUnitRadius,
   buildBodyRigFrameFromDimensions,
   solveBodyRigFrame,
   type BodyRigDimensions,
@@ -139,8 +140,7 @@ describe("VrmStandingPoseAdapter", () => {
 
     expect(profile.targetToVrmSide).toEqual({ left: "left", right: "right" });
     expect(profile.targetPatternRadius).toBe(1);
-    expect(profile.dimensions.canonicalPatternSpace.unitRadius).toBeCloseTo(1);
-    expect(profile.dimensions.armReach).toBeCloseTo(profile.modelArmReach * profile.scale);
+    expect(profile.modelPatternRadius * profile.scale).toBeCloseTo(1);
 
     vrm.scene.quaternion.fromArray(profile.modelToTargetRotation);
     vrm.scene.scale.set(
@@ -157,19 +157,23 @@ describe("VrmStandingPoseAdapter", () => {
     ).toBeLessThan(1e-6);
   });
 
-  it("re-solves the measured VRM arm chains onto the solver wrists", () => {
+  it("keeps measured model lengths while targeting the canonical rig", () => {
     const { vrm, bones, humanoidUpdate, constraintUpdate } = makeFakeVrm();
     const profile = buildVrmRigProfile(vrm);
-    const frame = makeFrame(profile.dimensions);
+    const frame = makeFrame(buildBodyRigDimensionsForCanonicalUnitRadius(1));
     const adapter = new VrmStandingPoseAdapter(vrm, profile);
 
     adapter.apply(frame);
 
     const diagnostics = adapter.measure(frame);
-    expect(diagnostics.left.shoulderError).toBeLessThan(1e-3);
-    expect(diagnostics.right.shoulderError).toBeLessThan(1e-3);
-    expect(diagnostics.left.wristError).toBeLessThan(1e-6);
-    expect(diagnostics.right.wristError).toBeLessThan(1e-6);
+    expect(adapter.currentCalibration?.targetArmReach).toBeCloseTo(frame.supportPose.armReach);
+    expect(adapter.currentCalibration?.targetArmReach).not.toBeCloseTo(
+      profile.modelArmReach * profile.scale
+    );
+    expect(Number.isFinite(diagnostics.left.shoulderError)).toBe(true);
+    expect(Number.isFinite(diagnostics.right.shoulderError)).toBe(true);
+    expect(Number.isFinite(diagnostics.left.wristError)).toBe(true);
+    expect(Number.isFinite(diagnostics.right.wristError)).toBe(true);
     expect(
       bones
         .get("leftShoulder")!
@@ -195,7 +199,7 @@ describe("VrmStandingPoseAdapter", () => {
   it("produces the same normalized bone rotations when the same frame is reapplied", () => {
     const { vrm, bones } = makeFakeVrm();
     const profile = buildVrmRigProfile(vrm);
-    const frame = makeFrame(profile.dimensions);
+    const frame = makeFrame(buildBodyRigDimensionsForCanonicalUnitRadius(1));
     const adapter = new VrmStandingPoseAdapter(vrm, profile);
 
     adapter.apply(frame);
@@ -210,7 +214,7 @@ describe("VrmStandingPoseAdapter", () => {
   it("preserves planted-body registration when the solved body translates", () => {
     const { vrm } = makeFakeVrm();
     const profile = buildVrmRigProfile(vrm);
-    const frame = makeFrame(profile.dimensions);
+    const frame = makeFrame(buildBodyRigDimensionsForCanonicalUnitRadius(1));
     const adapter = new VrmStandingPoseAdapter(vrm, profile);
 
     adapter.apply(frame);
@@ -218,8 +222,6 @@ describe("VrmStandingPoseAdapter", () => {
     expect(initialDiagnostics.pelvisError).toBeLessThan(1e-6);
     expect(initialDiagnostics.leftFootError).toBeLessThan(1e-4);
     expect(initialDiagnostics.rightFootError).toBeLessThan(1e-4);
-    expect(initialDiagnostics.left.wristError).toBeLessThan(1e-6);
-    expect(initialDiagnostics.right.wristError).toBeLessThan(1e-6);
 
     const translation = { x: 0.35, y: -0.2, z: 0.18 };
     const translatedFrame = {
@@ -241,8 +243,8 @@ describe("VrmStandingPoseAdapter", () => {
     expect(translatedDiagnostics.pelvisError).toBeLessThan(1e-6);
     expect(translatedDiagnostics.leftFootError).toBeLessThan(1e-4);
     expect(translatedDiagnostics.rightFootError).toBeLessThan(1e-4);
-    expect(translatedDiagnostics.left.wristError).toBeLessThan(1e-6);
-    expect(translatedDiagnostics.right.wristError).toBeLessThan(1e-6);
+    expect(translatedDiagnostics.left.wristError).toBeCloseTo(initialDiagnostics.left.wristError);
+    expect(translatedDiagnostics.right.wristError).toBeCloseTo(initialDiagnostics.right.wristError);
     expect(translatedDiagnostics.maxJointError).toBeCloseTo(initialDiagnostics.maxJointError);
   });
 });

@@ -5,7 +5,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
-import type { BodySkeletonFrame } from "@/body-rig";
+import { buildBodyRigDimensionsForCanonicalUnitRadius, type BodySkeletonFrame } from "@/body-rig";
 import type { RigId, Vec3, WorldMultiRigPose } from "@/engine/types";
 import { BodyHumanoidRenderer } from "@/lab/experiments/three-d-debug/bodyHumanoidRenderer";
 import {
@@ -291,7 +291,7 @@ function syncHelpers() {
   renderScene();
 }
 
-function replaceUnitCircle(profile: VrmRigProfile) {
+function replaceUnitCircle() {
   if (!scene) {
     return;
   }
@@ -302,7 +302,8 @@ function replaceUnitCircle(profile: VrmRigProfile) {
     disposeMaterial(unitCircle.material);
   }
 
-  const { origin, unitRadius } = profile.dimensions.canonicalPatternSpace;
+  const { origin, unitRadius } =
+    buildBodyRigDimensionsForCanonicalUnitRadius(1).canonicalPatternSpace;
   const points = Array.from({ length: 128 }, (_, index) => {
     const angle = (index / 128) * Math.PI * 2;
     return new THREE.Vector3(
@@ -368,7 +369,7 @@ function loadVrmFixture() {
       });
 
       const rigProfile = buildVrmRigProfile(vrm);
-      replaceUnitCircle(rigProfile);
+      replaceUnitCircle();
       currentVrm = vrm;
       standingPoseAdapter = new VrmStandingPoseAdapter(vrm, rigProfile);
       emit("rigProfile", rigProfile);
