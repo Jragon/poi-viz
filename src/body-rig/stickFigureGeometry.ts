@@ -116,6 +116,16 @@ export interface BodyRigWorldGoals {
   readonly rightHandTarget: Vec3;
 }
 
+/**
+ * An explicit display-layer preference for continuing the currently selected
+ * torso-facing branch. It is intentionally absent from the static rig config:
+ * a fixed pose must not depend on playback history.
+ */
+export interface BodyRigYawContinuity {
+  readonly previousYawRad: number;
+  readonly weight: number;
+}
+
 export interface WorldStickArmInput {
   readonly shoulder: Vec3;
   readonly handTarget: Vec3;
@@ -194,6 +204,7 @@ export interface BodyRigWorldSolveRequest {
   readonly config: BodyRigConfig;
   readonly goals: BodyRigWorldGoals;
   readonly yawSearchSteps?: number;
+  readonly yawContinuity?: BodyRigYawContinuity;
 }
 
 export interface BodyRigWorldSolveDiagnostics {
@@ -210,6 +221,7 @@ export interface BodyRigWorldSolveDiagnostics {
   readonly extensionPenalty: number;
   readonly yawPenalty: number;
   readonly sideBiasPenalty: number;
+  readonly yawContinuityPenalty: number;
   readonly handMidpointOffset: Vec3;
   readonly leftElbowPole: Vec3;
   readonly rightElbowPole: Vec3;
@@ -1206,7 +1218,13 @@ function scoreWorldYawCandidate(
     preferredYawSign === 0 || yawSign === preferredYawSign
       ? 0
       : config.solverWeights.sideBiasPenalty;
-  const cost = reachPenalty + extensionPenalty + yawPenalty + sideBiasPenalty;
+  const continuity = input.yawContinuity;
+  const yawContinuityPenalty =
+    continuity && Number.isFinite(continuity.previousYawRad) && Number.isFinite(continuity.weight)
+      ? (yawRad - continuity.previousYawRad) ** 2 * Math.max(0, continuity.weight)
+      : 0;
+  const cost =
+    reachPenalty + extensionPenalty + yawPenalty + sideBiasPenalty + yawContinuityPenalty;
   const bestEffortReasons = getWorldBestEffortReasons(
     leftArm.reachError,
     rightArm.reachError,
@@ -1238,6 +1256,7 @@ function scoreWorldYawCandidate(
         extensionPenalty,
         yawPenalty,
         sideBiasPenalty,
+        yawContinuityPenalty,
         handMidpointOffset,
         leftElbowPole: leftArm.elbowPole,
         rightElbowPole: rightArm.elbowPole,

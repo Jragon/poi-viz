@@ -1,4 +1,5 @@
 import {
+  BodyRigMotionSolver,
   buildBodyRigDimensionsForCanonicalUnitRadius,
   buildBodyRigFrameFromDimensions,
   solveBodyRigFrame,
@@ -23,6 +24,8 @@ export interface VisualizerBodyRigSolveInput {
   readonly projectionSettings?: PlaneProjectionSettings;
   readonly dimensions?: BodyRigDimensions;
   readonly rigIds?: Partial<VisualizerBodyRigIds>;
+  readonly motionSolver?: BodyRigMotionSolver;
+  readonly time?: number;
 }
 
 export interface VisualizerBodyRigSolveResult {
@@ -40,9 +43,7 @@ export const DEFAULT_VISUALIZER_BODY_RIG_IDS: VisualizerBodyRigIds = {
   right: "right"
 };
 
-function resolveVisualizerBodyRigIds(
-  rigIds?: Partial<VisualizerBodyRigIds>
-): VisualizerBodyRigIds {
+function resolveVisualizerBodyRigIds(rigIds?: Partial<VisualizerBodyRigIds>): VisualizerBodyRigIds {
   return {
     left: rigIds?.left ?? DEFAULT_VISUALIZER_BODY_RIG_IDS.left,
     right: rigIds?.right ?? DEFAULT_VISUALIZER_BODY_RIG_IDS.right
@@ -76,20 +77,27 @@ export function solveVisualizerBodyRig(
 
   const dimensions = resolveBodyRigDimensions(input.dimensions);
   const body = buildBodyRigFrameFromDimensions(dimensions);
+  const goals = {
+    leftHandTarget: leftPose
+      ? anchoredHandTarget(input.layout, rigIds.left, leftPose)
+      : body.defaultLeftHandTarget,
+    rightHandTarget: rightPose
+      ? anchoredHandTarget(input.layout, rigIds.right, rightPose)
+      : body.defaultRightHandTarget
+  };
+  const pose = input.motionSolver
+    ? input.motionSolver.solve(
+        body,
+        goals,
+        input.projectionSettings ?? DEFAULT_PLANE_PROJECTION_SETTINGS,
+        {
+          ...(input.time === undefined ? {} : { time: input.time })
+        }
+      )
+    : solveBodyRigFrame(body, goals, input.projectionSettings ?? DEFAULT_PLANE_PROJECTION_SETTINGS);
 
   return {
-    pose: solveBodyRigFrame(
-      body,
-      {
-        leftHandTarget: leftPose
-          ? anchoredHandTarget(input.layout, rigIds.left, leftPose)
-          : body.defaultLeftHandTarget,
-        rightHandTarget: rightPose
-          ? anchoredHandTarget(input.layout, rigIds.right, rightPose)
-          : body.defaultRightHandTarget
-      },
-      input.projectionSettings ?? DEFAULT_PLANE_PROJECTION_SETTINGS
-    ),
+    pose,
     dimensions,
     rigIds,
     worldPoses: {

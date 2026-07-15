@@ -27,7 +27,7 @@ export interface VrmArmPoseDiagnostics {
   readonly vrmSide: VrmAnatomicalSide;
   readonly shoulderError: number;
   readonly elbowError: number;
-  readonly wristError: number;
+  readonly palmError: number;
 }
 
 export interface VrmPoseDiagnostics {
@@ -289,10 +289,10 @@ export class VrmStandingPoseAdapter {
       maxJointError: Math.max(
         left.shoulderError,
         left.elbowError,
-        left.wristError,
+        left.palmError,
         right.shoulderError,
         right.elbowError,
-        right.wristError,
+        right.palmError,
         pelvisError,
         leftFootError,
         rightFootError
@@ -388,11 +388,31 @@ export class VrmStandingPoseAdapter {
       )
     );
 
+    const palmTarget = frame.joints[handJoint];
+    this.aimArmAtWristTarget(arm, palmTarget, frame);
+
+    const palmResidual = new THREE.Vector3(palmTarget.x, palmTarget.y, palmTarget.z).sub(
+      this.worldPalmCenter(arm)
+    );
+    if (palmResidual.lengthSq() > MIN_DIRECTION_LENGTH) {
+      this.aimArmAtWristTarget(arm, worldPosition(this.vrm, arm.hand).add(palmResidual), frame);
+    }
+  }
+
+  private aimArmAtWristTarget(
+    arm: VrmArmDefinition,
+    wristTarget: THREE.Vector3 | Vec3,
+    frame: BodySkeletonFrame
+  ): void {
     const modelShoulder = worldPosition(this.vrm, arm.upperArm);
     const modelArm = this.profile.arms[arm.vrmSide];
     const solve = solveWorldStickArm({
       shoulder: toPlainVector(modelShoulder),
-      handTarget: frame.joints[handJoint],
+      handTarget: toPlainVector(
+        wristTarget instanceof THREE.Vector3
+          ? wristTarget
+          : new THREE.Vector3(wristTarget.x, wristTarget.y, wristTarget.z)
+      ),
       upperArmLength: modelArm.upperArmLength * this.profile.scale,
       forearmLength: modelArm.forearmLength * this.profile.scale,
       armSide: arm.targetSide,
@@ -417,6 +437,13 @@ export class VrmStandingPoseAdapter {
         solve.hand.y - solve.elbow.y,
         solve.hand.z - solve.elbow.z
       )
+    );
+  }
+
+  private worldPalmCenter(arm: VrmArmDefinition): THREE.Vector3 {
+    const offset = this.profile.arms[arm.vrmSide].palmCenterOffset;
+    return getRequiredBone(this.vrm, arm.hand).localToWorld(
+      new THREE.Vector3(offset.x, offset.y, offset.z)
     );
   }
 
@@ -478,7 +505,11 @@ export class VrmStandingPoseAdapter {
   private measureArm(targetSide: TargetRigSide, frame: BodySkeletonFrame): VrmArmPoseDiagnostics {
     const vrmSide = this.profile.targetToVrmSide[targetSide];
     const [, shoulder, elbow, hand] = ARM_JOINTS[targetSide];
-    const error = (boneSuffix: "UpperArm" | "LowerArm" | "Hand", joint: SkeletonJointName) =>
+    const arm = this.arms.find((definition) => definition.targetSide === targetSide);
+    if (!arm) {
+      throw new Error(`Missing VRM arm definition for target side: ${targetSide}`);
+    }
+    const error = (boneSuffix: "UpperArm" | "LowerArm", joint: SkeletonJointName) =>
       worldPosition(this.vrm, armBoneName(vrmSide, boneSuffix)).distanceTo(
         new THREE.Vector3(frame.joints[joint].x, frame.joints[joint].y, frame.joints[joint].z)
       );
@@ -486,7 +517,9 @@ export class VrmStandingPoseAdapter {
       vrmSide,
       shoulderError: error("UpperArm", shoulder),
       elbowError: error("LowerArm", elbow),
-      wristError: error("Hand", hand)
+      palmError: this.worldPalmCenter(arm).distanceTo(
+        new THREE.Vector3(frame.joints[hand].x, frame.joints[hand].y, frame.joints[hand].z)
+      )
     };
   }
 

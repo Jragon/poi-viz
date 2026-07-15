@@ -183,3 +183,18 @@ Aurora replaces the stylized VRM 1.0 constraint sample as the lab's visual defau
   the declared model identity disappear.
 - VRM 1.0 remains the preferred format for future Blender exports, but format conversion is not a
   prerequisite for using a structurally valid VRM 0.x asset through the normalized API.
+
+## 2026-07-15: Playback Yaw Continuity and Palm-Centred POI Attachment
+
+The static body solve remains a pure function of the current hand targets. That is useful for tests and
+fixed pose inspection, but an opposed continuous hand circle has equally valid left- and right-facing
+torso solutions. Independent per-frame minimization can therefore bounce between branches.
+
+- `BodyRigMotionSolver` is a display-layer chronological adapter, not an engine feature. It adds an
+  explicit cost for departing from the previously accepted torso yaw and resets when playback moves
+  backwards or the sequence changes.
+- The main visualizer, 3D debug renderer, and VRM lab all use that adapter during playback; fixed pose
+  cases keep the stateless solve.
+- POI hand coordinates now mean palm centres for a loaded VRM. The adapter measures the index/middle/
+  ring knuckle line and uses its midpoint from the wrist as the palm centre; sparse humanoid mappings
+  deliberately fall back to the wrist rather than inventing an offset.

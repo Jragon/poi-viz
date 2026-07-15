@@ -67,11 +67,13 @@ function makeFakeVrm() {
   const leftShoulder = addBone("leftShoulder", chest, [0.15, 0.1, 0]);
   const leftUpperArm = addBone("leftUpperArm", leftShoulder, [0.1, 0, 0]);
   const leftLowerArm = addBone("leftLowerArm", leftUpperArm, [0.3, 0, 0]);
-  addBone("leftHand", leftLowerArm, [0.3, 0, 0]);
+  const leftHand = addBone("leftHand", leftLowerArm, [0.3, 0, 0]);
+  addBone("leftMiddleProximal", leftHand, [0.15, 0, 0]);
   const rightShoulder = addBone("rightShoulder", chest, [-0.15, 0.1, 0]);
   const rightUpperArm = addBone("rightUpperArm", rightShoulder, [-0.1, 0, 0]);
   const rightLowerArm = addBone("rightLowerArm", rightUpperArm, [-0.3, 0, 0]);
-  addBone("rightHand", rightLowerArm, [-0.3, 0, 0]);
+  const rightHand = addBone("rightHand", rightLowerArm, [-0.3, 0, 0]);
+  addBone("rightMiddleProximal", rightHand, [-0.15, 0, 0]);
   const leftUpperLeg = addBone("leftUpperLeg", hips, [0.1, 0, 0]);
   const leftLowerLeg = addBone("leftLowerLeg", leftUpperLeg, [0, -0.48, 0]);
   addBone("leftFoot", leftLowerLeg, [0, -0.48, 0.08]);
@@ -141,6 +143,8 @@ describe("VrmStandingPoseAdapter", () => {
     expect(profile.targetToVrmSide).toEqual({ left: "left", right: "right" });
     expect(profile.targetPatternRadius).toBe(1);
     expect(profile.modelPatternRadius * profile.scale).toBeCloseTo(1);
+    expect(profile.arms.left.palmCenterOffset.x).toBeCloseTo(0.075);
+    expect(profile.arms.right.palmCenterOffset.x).toBeCloseTo(-0.075);
 
     vrm.scene.quaternion.fromArray(profile.modelToTargetRotation);
     vrm.scene.scale.set(
@@ -172,8 +176,8 @@ describe("VrmStandingPoseAdapter", () => {
     );
     expect(Number.isFinite(diagnostics.left.shoulderError)).toBe(true);
     expect(Number.isFinite(diagnostics.right.shoulderError)).toBe(true);
-    expect(Number.isFinite(diagnostics.left.wristError)).toBe(true);
-    expect(Number.isFinite(diagnostics.right.wristError)).toBe(true);
+    expect(Number.isFinite(diagnostics.left.palmError)).toBe(true);
+    expect(Number.isFinite(diagnostics.right.palmError)).toBe(true);
     expect(
       bones
         .get("leftShoulder")!
@@ -243,8 +247,8 @@ describe("VrmStandingPoseAdapter", () => {
     expect(translatedDiagnostics.pelvisError).toBeLessThan(1e-6);
     expect(translatedDiagnostics.leftFootError).toBeLessThan(1e-4);
     expect(translatedDiagnostics.rightFootError).toBeLessThan(1e-4);
-    expect(translatedDiagnostics.left.wristError).toBeCloseTo(initialDiagnostics.left.wristError);
-    expect(translatedDiagnostics.right.wristError).toBeCloseTo(initialDiagnostics.right.wristError);
+    expect(translatedDiagnostics.left.palmError).toBeCloseTo(initialDiagnostics.left.palmError);
+    expect(translatedDiagnostics.right.palmError).toBeCloseTo(initialDiagnostics.right.palmError);
     expect(translatedDiagnostics.maxJointError).toBeCloseTo(initialDiagnostics.maxJointError);
   });
 });

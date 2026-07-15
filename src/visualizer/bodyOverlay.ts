@@ -1,4 +1,5 @@
 import {
+  type BodyRigMotionSolver,
   type BodyRigDimensions,
   type BodyRigPose,
   type SkeletonSolverDiagnostics
@@ -33,6 +34,8 @@ export interface BodyOverlayInput {
   readonly projectionSettings?: PlaneProjectionSettings;
   readonly dimensions?: BodyRigDimensions;
   readonly rigIds?: Partial<BodyOverlayRigIds>;
+  readonly motionSolver?: BodyRigMotionSolver;
+  readonly time?: number;
 }
 
 export interface BodyOverlaySceneExtentInput {

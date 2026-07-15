@@ -76,7 +76,7 @@ The adapter currently controls:
 - per-frame pelvis placement and measured two-bone leg solves back to the planted feet;
 - pelvis/chest yaw;
 - measured fixed-length clavicles aimed toward the target shoulder sockets;
-- a measured two-bone solve for each VRM arm from its actual socket to the solver wrist.
+- a measured two-bone solve for each VRM arm from its actual socket to the solver palm centre.
 
 `left` and `right` always mean anatomical sides throughout the body-frame and VRM contracts. Audience
 view is the default camera projection. The optional mirror view flips only the camera projection; it
@@ -92,9 +92,12 @@ not stretch the model or translate the whole avatar to conceal the mismatch.
 
 After socket registration, each avatar arm is solved again with that model's measured upper-arm and
 forearm lengths. This is a retargeting step, not a second body-policy solve: it uses the already-solved
-wrist, the target torso basis, and the same deterministic elbow policy. It prevents a small, honest
-socket residual from being copied unchanged to the visible hand. If the wrist is unreachable from the
-real socket, the avatar chain clamps explicitly and the residual remains visible in diagnostics.
+palm target, the target torso basis, and the same deterministic elbow policy. Finger-root mappings
+define the palm centre as halfway from the wrist to the index/middle/ring knuckle line; models without
+those mappings retain the wrist anchor. The adapter resolves the wrist behind that palm point and makes
+a corrective second arm pass, so the tether visibly leaves the palm rather than the wrist. If the wrist
+is unreachable from the real socket, the avatar chain clamps explicitly and the residual remains visible
+in diagnostics.
 
 It deliberately leaves the head, fingers, feet orientation, expression system, gaze, spring bones,
 and locomotion in their reference state. `vrm.update(0)` prevents spring-bone motion from becoming
@@ -103,7 +106,10 @@ dependent on playback history.
 The standing body solver allocates a requested turn deterministically across the planted lower and
 upper body. The default total turn ceiling is 80 degrees. Pelvis yaw is limited to 40 degrees and
 prefers 45 percent of the requested turn; the remaining chest twist is limited to 45 degrees. This
-is a pose solve, not animation: there is no clip, timeline, or frame-to-frame state involved.
+is a pose solve, not animation: there is no clip or animation asset involved. Fixed-pose inspection
+remains stateless. Chronological playback uses a small display adapter that makes the selected torso-yaw
+branch explicit, preventing symmetric hand circles from bouncing between equivalent left/right-facing
+solutions; seeking backwards resets that adapter deterministically.
 
 Canonical thigh and shin lengths are `0.82` and `0.765` times arm reach. Their combined `1.585`
 arm-reach ratio replaces the earlier short-legged `1.21875` ratio. Aurora's scaled arm reach differs
@@ -161,10 +167,10 @@ changed.
   the planted feet.
 - Avatar clavicle lengths are measured once and preserved while aiming real shoulder sockets toward
   the target sockets.
-- The measured avatar arm lengths are preserved, and reachable solver wrists are hit even when the
+- The measured avatar arm lengths are preserved, and reachable solver palm centres are hit even when the
   target and avatar shoulder sockets differ slightly.
-- Pelvis, per-foot, and per-side shoulder/elbow/wrist errors are visible in the lab. Neutral reachable
-  cases report `0.0000`; physically incompatible shoulder excursions and unreachable wrists retain
+- Pelvis, per-foot, and per-side shoulder/elbow/palm errors are visible in the lab. Neutral reachable
+  cases report `0.0000`; physically incompatible shoulder excursions and unreachable palms retain
   explicit best-effort residuals.
 - Missing required humanoid bones fail visibly rather than being silently ignored.
 - Target-rig, POI-target, axes, grid, and upstream VRM-helper overlays can be toggled independently.
@@ -190,7 +196,9 @@ The current solver pass adds the following behavior:
 - a coupled 80-degree planted turn solve with explicit 40-degree pelvis and 45-degree
   thoracic-twist limits;
 - a deterministic local refinement pass around the best coarse yaw candidate, reducing visible
-  one-degree quantization without making the solver history-dependent;
+  one-degree quantization without making fixed-pose solving history-dependent;
+- a chronological display-only yaw-continuity adapter so opposed hand circles keep one torso-facing
+  branch instead of bouncing through an equivalent solution.
 - fixed arms-down, T-pose, forward, overhead, crossed, behind, asymmetric, and unreachable cases in
   the lab, backed by deterministic numeric tests.
 
@@ -213,8 +221,8 @@ pose is now rooted through planted feet and a driven pelvis, but the following w
    makes the two-joint twist visibly abrupt.
 4. Add ankle orientation and explicit ground-plane contact if foot mesh rotation becomes visible with
    a less stylized model.
-5. Add temporal continuity policy only when live playback demonstrates a real discontinuity; do not
-   make the deterministic pose solve history-dependent by default.
+5. Tune the display-only yaw-continuity weight against longer asymmetric sequences; keep that policy
+   outside the deterministic fixed-pose solver.
 6. Add root turns and stepping as a lower-body/locomotion controller. Short authored turn clips
    or a dedicated controller are preferable to inferring steps from arm coordinates.
 

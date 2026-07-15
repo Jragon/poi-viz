@@ -13,6 +13,8 @@ export interface VrmArmProfile {
   readonly forearmLength: number;
   readonly shoulderBase: Vec3;
   readonly shoulderSocket: Vec3;
+  /** Hand-local offset from the wrist joint to the middle of the palm. */
+  readonly palmCenterOffset: Vec3;
 }
 
 export interface VrmLegProfile {
@@ -51,6 +53,11 @@ function position(vrm: VRM, name: VRMHumanBoneName): THREE.Vector3 {
   return requiredBone(vrm, name).getWorldPosition(new THREE.Vector3());
 }
 
+function optionalPosition(vrm: VRM, name: VRMHumanBoneName): THREE.Vector3 | null {
+  const bone = vrm.humanoid.getNormalizedBoneNode(name);
+  return bone ? bone.getWorldPosition(new THREE.Vector3()) : null;
+}
+
 function plain(vector: THREE.Vector3): Vec3 {
   return { x: vector.x, y: vector.y, z: vector.z };
 }
@@ -61,6 +68,24 @@ function distance(vrm: VRM, from: VRMHumanBoneName, to: VRMHumanBoneName): numbe
 
 function midpoint(a: THREE.Vector3, b: THREE.Vector3): THREE.Vector3 {
   return a.clone().add(b).multiplyScalar(0.5);
+}
+
+function palmCenterOffset(vrm: VRM, side: VrmAnatomicalSide): Vec3 {
+  const hand = requiredBone(vrm, `${side}Hand` as VRMHumanBoneName);
+  const knucklePositions = (["Index", "Middle", "Ring"] as const)
+    .map((finger) => optionalPosition(vrm, `${side}${finger}Proximal` as VRMHumanBoneName))
+    .filter((position): position is THREE.Vector3 => position !== null);
+
+  // A palm centre sits halfway from the wrist to the knuckle line. Models that
+  // do not expose finger mappings retain the established wrist anchor.
+  if (knucklePositions.length === 0) {
+    return { x: 0, y: 0, z: 0 };
+  }
+
+  const knuckleCenter = knucklePositions
+    .reduce((sum, position) => sum.add(position), new THREE.Vector3())
+    .multiplyScalar(1 / knucklePositions.length);
+  return plain(hand.worldToLocal(knuckleCenter).multiplyScalar(0.5));
 }
 
 function buildModelToTargetTransform(vrm: VRM): {
@@ -168,14 +193,16 @@ export function buildVrmRigProfile(vrm: VRM, targetPatternRadius = 1): VrmRigPro
       upperArmLength: distance(vrm, "leftUpperArm", "leftLowerArm"),
       forearmLength: distance(vrm, "leftLowerArm", "leftHand"),
       shoulderBase: plain(position(vrm, "leftShoulder")),
-      shoulderSocket: plain(position(vrm, "leftUpperArm"))
+      shoulderSocket: plain(position(vrm, "leftUpperArm")),
+      palmCenterOffset: palmCenterOffset(vrm, "left")
     },
     right: {
       clavicleLength: distance(vrm, "rightShoulder", "rightUpperArm"),
       upperArmLength: distance(vrm, "rightUpperArm", "rightLowerArm"),
       forearmLength: distance(vrm, "rightLowerArm", "rightHand"),
       shoulderBase: plain(position(vrm, "rightShoulder")),
-      shoulderSocket: plain(position(vrm, "rightUpperArm"))
+      shoulderSocket: plain(position(vrm, "rightUpperArm")),
+      palmCenterOffset: palmCenterOffset(vrm, "right")
     }
   } as const;
   const modelArmReach = average(

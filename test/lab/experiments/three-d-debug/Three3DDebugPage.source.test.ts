@@ -82,8 +82,10 @@ describe("Three3DDebugPage body scene wiring", () => {
     expect(source).toContain('rigOrder.includes("left")');
     expect(source).toContain('rigOrder.includes("right")');
     expect(source).toContain("const bodyRigIds = computed(() => resolveBodyRigIds(core.rigOrder.value));");
+    expect(source).toContain("const bodyRigMotionSolver = new BodyRigMotionSolver();");
+    expect(source).toContain("const bodyScene = computed(() =>");
     expect(source).toContain(
-      "const bodyScene = computed(() => buildBodyHumanoidScene(core.worldPoses.value, undefined, bodyRigIds.value));"
+      "buildBodyHumanoidScene(core.worldPoses.value, undefined, bodyRigIds.value, undefined, {"
     );
     expect(source).not.toContain("left: core.rigOrder.value[0],");
     expect(source).not.toContain("right: core.rigOrder.value[1]");

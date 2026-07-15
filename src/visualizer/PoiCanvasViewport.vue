@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 import type { ProjectionMode } from "@/engine/planeProjection";
+import { BodyRigMotionSolver } from "@/body-rig";
 import { computeBodyOverlay, getBodyOverlaySceneExtent } from "@/visualizer/bodyOverlay";
 import { computeDisplayPixelsPerWorldUnit } from "@/visualizer/displayScale";
 import { computeDragProjection, createProjectionDragState } from "@/visualizer/projectionDrag";
@@ -48,8 +49,14 @@ const layoutRef = ref<SceneLayout | null>(null);
 const canvasContextRef = ref<CanvasRenderingContext2D | null>(null);
 const activePointerId = ref<number | null>(null);
 const dragState = createProjectionDragState();
+const bodyRigMotionSolver = new BodyRigMotionSolver();
 const isProjectionDragAvailable = computed(() => projectionDrag.value?.mode === "tilted");
 const isProjectionDragging = computed(() => activePointerId.value !== null && dragState.isActive());
+
+watch(
+  () => core.sequence.value,
+  () => bodyRigMotionSolver.reset()
+);
 
 let resizeObserver: ResizeObserver | null = null;
 
@@ -80,7 +87,9 @@ const draw = () => {
     ? computeBodyOverlay({
         worldPoses: core.worldPoses.value,
         layout,
-        projectionSettings: core.session.projectionSettings.value
+        projectionSettings: core.session.projectionSettings.value,
+        motionSolver: bodyRigMotionSolver,
+        time: core.transport.currentTime.value
       })
     : null;
 

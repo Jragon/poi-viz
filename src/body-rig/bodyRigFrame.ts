@@ -13,7 +13,8 @@ import {
   solveWorldBodyRig,
   type ArmSide,
   type BodyRigWorldGoals,
-  type BodyRigWorldSolveResult
+  type BodyRigWorldSolveResult,
+  type BodyRigYawContinuity
 } from "./stickFigureGeometry";
 
 export interface BodyRigFrame {
@@ -76,6 +77,11 @@ export interface BuildBodyRigFrameInput {
   readonly stanceWidth: number;
   readonly defaultHandTargetXRatio?: number;
   readonly defaultHandTargetYRatio?: number;
+}
+
+export interface BodyRigFrameSolveOptions {
+  readonly yawSearchSteps?: number;
+  readonly yawContinuity?: BodyRigYawContinuity;
 }
 
 export interface BodyRigPose {
@@ -255,7 +261,7 @@ export function solveBodyRigFrame(
   body: BodyRigFrame,
   goals: BodyRigWorldGoals,
   projectionSettings: PlaneProjectionSettings,
-  yawSearchSteps?: number
+  options: BodyRigFrameSolveOptions = {}
 ): BodyRigPose {
   const solve = solveWorldBodyRig({
     root: {
@@ -268,7 +274,8 @@ export function solveBodyRigFrame(
     },
     config: body.rigConfig,
     goals,
-    ...(yawSearchSteps === undefined ? {} : { yawSearchSteps })
+    ...(options.yawSearchSteps === undefined ? {} : { yawSearchSteps: options.yawSearchSteps }),
+    ...(options.yawContinuity === undefined ? {} : { yawContinuity: options.yawContinuity })
   });
   const projected = projectWorldBodyRig(solve, projectionSettings);
   const skeleton = buildBodySkeletonFrame(body, solve);

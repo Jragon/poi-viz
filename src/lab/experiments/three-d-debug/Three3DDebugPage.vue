@@ -18,6 +18,7 @@ import {
 } from "@/visualizer/visualizerWorkspace";
 import { sampleMultiRigWorldTrails } from "@/visualizer/worldTrailSampling";
 import type { RigId } from "@/engine/types";
+import { BodyRigMotionSolver } from "@/body-rig";
 
 import FirePoiControlPanel from "./FirePoiControlPanel.vue";
 import {
@@ -97,17 +98,27 @@ function resolveBodyRigIds(rigOrder: readonly RigId[]) {
   const firstCustomRig = rigOrder.find((rigId) => rigId !== "left" && rigId !== "right");
 
   return {
-    left: hasLeft ? "left" : hasRight ? "left" : firstCustomRig ?? "left",
+    left: hasLeft ? "left" : hasRight ? "left" : (firstCustomRig ?? "left"),
     right: hasRight
       ? "right"
       : hasLeft
         ? "right"
-        : rigOrder.find((rigId) => rigId !== firstCustomRig) ?? "right"
+        : (rigOrder.find((rigId) => rigId !== firstCustomRig) ?? "right")
   };
 }
 
 const bodyRigIds = computed(() => resolveBodyRigIds(core.rigOrder.value));
-const bodyScene = computed(() => buildBodyHumanoidScene(core.worldPoses.value, undefined, bodyRigIds.value));
+const bodyRigMotionSolver = new BodyRigMotionSolver();
+const bodyScene = computed(() =>
+  buildBodyHumanoidScene(core.worldPoses.value, undefined, bodyRigIds.value, undefined, {
+    solver: bodyRigMotionSolver,
+    time: core.transport.currentTime.value
+  })
+);
+watch(
+  () => core.sequence.value,
+  () => bodyRigMotionSolver.reset()
+);
 const worldTrails = computed(() => {
   const trailSamplingState = {
     prepared: core.session.playback.prepared.value,

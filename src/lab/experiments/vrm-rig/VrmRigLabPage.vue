@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, shallowRef } from "vue";
+import { computed, ref, shallowRef, watch } from "vue";
 
 import { useAuthoringLibrary } from "@/authoring/useAuthoringLibrary";
-import { buildBodyRigDimensionsForCanonicalUnitRadius } from "@/body-rig";
+import { BodyRigMotionSolver, buildBodyRigDimensionsForCanonicalUnitRadius } from "@/body-rig";
 import type { RigId } from "@/engine/types";
 import { buildBodyHumanoidScene } from "@/lab/experiments/three-d-debug/bodyHumanoidScene";
 import { buildThreeDDebugSceneState } from "@/lab/experiments/three-d-debug/worldPoseScene";
@@ -57,6 +57,7 @@ const vrmRigProfile = shallowRef<VrmRigProfile | null>(null);
 const vrmPoseDiagnostics = shallowRef<VrmPoseDiagnostics | null>(null);
 const canonicalBodyDimensions = buildBodyRigDimensionsForCanonicalUnitRadius(1);
 const poseCases = buildVrmRigPoseCases(canonicalBodyDimensions);
+const bodyRigMotionSolver = new BodyRigMotionSolver();
 
 function resolveBodyRigIds(rigOrder: readonly RigId[]) {
   const customIds = rigOrder.filter((rigId) => rigId !== "left" && rigId !== "right");
@@ -85,9 +86,16 @@ const bodyFrame = computed(() =>
     activeWorldPoses.value,
     undefined,
     bodyRigIds.value,
-    canonicalBodyDimensions
+    canonicalBodyDimensions,
+    activePoseCase.value
+      ? undefined
+      : {
+          solver: bodyRigMotionSolver,
+          time: core.transport.currentTime.value
+        }
   )
 );
+watch([() => core.sequence.value, poseSource], () => bodyRigMotionSolver.reset());
 const solverSummary = computed(() => {
   const diagnostics = bodyFrame.value?.solverDiagnostics;
   if (!diagnostics) {
@@ -177,7 +185,7 @@ const legReachComparison = computed(() => {
 function formatArmJointErrors(side: "left" | "right") {
   const diagnostics = vrmPoseDiagnostics.value?.[side];
   return diagnostics
-    ? `${diagnostics.shoulderError.toFixed(4)} · ${diagnostics.elbowError.toFixed(4)} · ${diagnostics.wristError.toFixed(4)}`
+    ? `${diagnostics.shoulderError.toFixed(4)} · ${diagnostics.elbowError.toFixed(4)} · ${diagnostics.palmError.toFixed(4)}`
     : "—";
 }
 
@@ -384,11 +392,11 @@ function resetView() {
             <span class="font-mono text-slate-200">{{ footErrors }}</span>
           </p>
           <p class="flex justify-between gap-3 text-slate-400">
-            <span>VRM left S/E/W</span>
+            <span>VRM left S/E/P</span>
             <span class="font-mono text-xs text-slate-200">{{ leftJointErrors }}</span>
           </p>
           <p class="flex justify-between gap-3 text-slate-400">
-            <span>VRM right S/E/W</span>
+            <span>VRM right S/E/P</span>
             <span class="font-mono text-xs text-slate-200">{{ rightJointErrors }}</span>
           </p>
         </div>
