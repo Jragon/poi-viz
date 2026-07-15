@@ -3,6 +3,71 @@ import type { Vec3 } from "@/engine/types";
 import type { BodyRigFrame } from "./bodyRigFrame";
 import type { ArmReachRange, BodyRigWorldSolveResult } from "./stickFigureGeometry";
 
+const MIN_CHAIN_LENGTH = 1e-8;
+
+function add3(a: Vec3, b: Vec3): Vec3 {
+  return { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z };
+}
+
+function subtract3(a: Vec3, b: Vec3): Vec3 {
+  return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+}
+
+function scale3(vector: Vec3, scalar: number): Vec3 {
+  return { x: vector.x * scalar, y: vector.y * scalar, z: vector.z * scalar };
+}
+
+function dot3(a: Vec3, b: Vec3): number {
+  return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+function length3(vector: Vec3): number {
+  return Math.hypot(vector.x, vector.y, vector.z);
+}
+
+function normalize3(vector: Vec3, fallback: Vec3): Vec3 {
+  const length = length3(vector);
+  return length > MIN_CHAIN_LENGTH ? scale3(vector, 1 / length) : fallback;
+}
+
+function transformPelvisPoint(
+  body: BodyRigFrame,
+  solve: BodyRigWorldSolveResult,
+  point: Vec3
+): Vec3 {
+  const local = subtract3(point, body.pelvisCenter);
+  return add3(
+    solve.pelvis.center,
+    add3(
+      scale3(solve.pelvis.right, local.x),
+      add3(scale3(solve.pelvis.up, local.y), scale3(solve.pelvis.forward, local.z))
+    )
+  );
+}
+
+function solvePlantedKnee(
+  hip: Vec3,
+  foot: Vec3,
+  upperLegLength: number,
+  lowerLegLength: number,
+  forward: Vec3
+): Vec3 {
+  const hipToFoot = subtract3(foot, hip);
+  const targetDistance = length3(hipToFoot);
+  const direction = normalize3(hipToFoot, { x: 0, y: -1, z: 0 });
+  const minReach = Math.abs(upperLegLength - lowerLegLength);
+  const maxReach = upperLegLength + lowerLegLength;
+  const distance = Math.min(maxReach, Math.max(minReach, targetDistance));
+  const baseDistance =
+    (upperLegLength ** 2 - lowerLegLength ** 2 + distance ** 2) /
+    Math.max(distance * 2, MIN_CHAIN_LENGTH);
+  const kneeHeight = Math.sqrt(Math.max(0, upperLegLength ** 2 - baseDistance ** 2));
+  const rejectedForward = subtract3(forward, scale3(direction, dot3(forward, direction)));
+  const kneePole = normalize3(rejectedForward, { x: 0, y: 0, z: 1 });
+
+  return add3(add3(hip, scale3(direction, baseDistance)), scale3(kneePole, kneeHeight));
+}
+
 // ── Joint names ──────────────────────────────────────────────────────────────
 
 export type SkeletonJointName =
@@ -143,6 +208,12 @@ export function buildBodySkeletonFrame(
   body: BodyRigFrame,
   solve: BodyRigWorldSolveResult
 ): BodySkeletonFrame {
+  const hipLeft = transformPelvisPoint(body, solve, body.hipLeft);
+  const hipRight = transformPelvisPoint(body, solve, body.hipRight);
+  const leftUpperLegLength = length3(subtract3(body.kneeLeft, body.hipLeft));
+  const leftLowerLegLength = length3(subtract3(body.footLeft, body.kneeLeft));
+  const rightUpperLegLength = length3(subtract3(body.kneeRight, body.hipRight));
+  const rightLowerLegLength = length3(subtract3(body.footRight, body.kneeRight));
   const joints: Record<SkeletonJointName, Vec3> = {
     headCenter: body.headCenter,
     neck: body.neck,
@@ -156,10 +227,22 @@ export function buildBodySkeletonFrame(
     handLeft: solve.leftArm.hand,
     handRight: solve.rightArm.hand,
     pelvisCenter: solve.pelvis.center,
-    hipLeft: body.hipLeft,
-    hipRight: body.hipRight,
-    kneeLeft: body.kneeLeft,
-    kneeRight: body.kneeRight,
+    hipLeft,
+    hipRight,
+    kneeLeft: solvePlantedKnee(
+      hipLeft,
+      body.footLeft,
+      leftUpperLegLength,
+      leftLowerLegLength,
+      solve.pelvis.forward
+    ),
+    kneeRight: solvePlantedKnee(
+      hipRight,
+      body.footRight,
+      rightUpperLegLength,
+      rightLowerLegLength,
+      solve.pelvis.forward
+    ),
     footLeft: body.footLeft,
     footRight: body.footRight
   };

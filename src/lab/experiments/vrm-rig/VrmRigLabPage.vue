@@ -128,6 +128,13 @@ const viewModeSummary = computed(() =>
     : "Audience view · projection unflipped · anatomy unchanged"
 );
 const modelJointError = computed(() => vrmPoseDiagnostics.value?.maxJointError.toFixed(4) ?? "—");
+const pelvisError = computed(() => vrmPoseDiagnostics.value?.pelvisError.toFixed(4) ?? "—");
+const footErrors = computed(() => {
+  const diagnostics = vrmPoseDiagnostics.value;
+  return diagnostics
+    ? `${diagnostics.leftFootError.toFixed(4)} · ${diagnostics.rightFootError.toFixed(4)}`
+    : "—";
+});
 const patternRadius = computed(
   () => vrmRigProfile.value?.dimensions.canonicalPatternSpace.unitRadius.toFixed(4) ?? "—"
 );
@@ -316,6 +323,14 @@ function resetView() {
           <p class="flex justify-between gap-3 text-slate-400">
             <span>VRM max joint error</span>
             <span class="font-mono text-slate-200">{{ modelJointError }}</span>
+          </p>
+          <p class="flex justify-between gap-3 text-slate-400">
+            <span>VRM pelvis error</span>
+            <span class="font-mono text-slate-200">{{ pelvisError }}</span>
+          </p>
+          <p class="flex justify-between gap-3 text-slate-400">
+            <span>VRM feet L/R</span>
+            <span class="font-mono text-slate-200">{{ footErrors }}</span>
           </p>
           <p class="flex justify-between gap-3 text-slate-400">
             <span>VRM left S/E/W</span>

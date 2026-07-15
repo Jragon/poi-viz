@@ -18,8 +18,8 @@ export interface VrmRigCalibration {
   readonly modelArmReach: number;
   readonly targetArmReach: number;
   readonly scale: number;
-  readonly modelAnchorBeforeTranslation: Vec3;
-  readonly targetAnchor: Vec3;
+  readonly modelFootAnchorBeforeTranslation: Vec3;
+  readonly targetFootAnchor: Vec3;
   readonly translation: Vec3;
 }
 
@@ -33,6 +33,9 @@ export interface VrmArmPoseDiagnostics {
 export interface VrmPoseDiagnostics {
   readonly left: VrmArmPoseDiagnostics;
   readonly right: VrmArmPoseDiagnostics;
+  readonly pelvisError: number;
+  readonly leftFootError: number;
+  readonly rightFootError: number;
   readonly maxJointError: number;
 }
 
@@ -42,6 +45,14 @@ interface VrmArmDefinition {
   readonly upperArm: VRMHumanBoneName;
   readonly lowerArm: VRMHumanBoneName;
   readonly hand: VRMHumanBoneName;
+}
+
+interface VrmLegDefinition {
+  readonly targetSide: TargetRigSide;
+  readonly vrmSide: VrmAnatomicalSide;
+  readonly upperLeg: VRMHumanBoneName;
+  readonly lowerLeg: VRMHumanBoneName;
+  readonly foot: VRMHumanBoneName;
 }
 
 const ARM_JOINTS: Readonly<
@@ -54,10 +65,21 @@ const ARM_JOINTS: Readonly<
   right: ["clavicleRight", "shoulderRight", "elbowRight", "handRight"]
 };
 
+const LEG_JOINTS: Readonly<
+  Record<TargetRigSide, readonly [SkeletonJointName, SkeletonJointName, SkeletonJointName]>
+> = {
+  left: ["hipLeft", "kneeLeft", "footLeft"],
+  right: ["hipRight", "kneeRight", "footRight"]
+};
+
 function armBoneName(
   side: VrmAnatomicalSide,
   suffix: "Shoulder" | "UpperArm" | "LowerArm" | "Hand"
 ) {
+  return `${side}${suffix}` as VRMHumanBoneName;
+}
+
+function legBoneName(side: VrmAnatomicalSide, suffix: "UpperLeg" | "LowerLeg" | "Foot") {
   return `${side}${suffix}` as VRMHumanBoneName;
 }
 
@@ -70,6 +92,19 @@ function buildArmDefinitions(profile: VrmRigProfile): readonly VrmArmDefinition[
       upperArm: armBoneName(vrmSide, "UpperArm"),
       lowerArm: armBoneName(vrmSide, "LowerArm"),
       hand: armBoneName(vrmSide, "Hand")
+    };
+  });
+}
+
+function buildLegDefinitions(profile: VrmRigProfile): readonly VrmLegDefinition[] {
+  return (["left", "right"] as const).map((targetSide) => {
+    const vrmSide = profile.targetToVrmSide[targetSide];
+    return {
+      targetSide,
+      vrmSide,
+      upperLeg: legBoneName(vrmSide, "UpperLeg"),
+      lowerLeg: legBoneName(vrmSide, "LowerLeg"),
+      foot: legBoneName(vrmSide, "Foot")
     };
   });
 }
@@ -96,15 +131,51 @@ function worldPosition(vrm: VRM, name: VRMHumanBoneName): THREE.Vector3 {
   return getRequiredBone(vrm, name).getWorldPosition(new THREE.Vector3());
 }
 
+function solveTwoBoneTarget(
+  root: THREE.Vector3,
+  target: Vec3,
+  polePoint: Vec3,
+  upperLength: number,
+  lowerLength: number
+): { readonly joint: THREE.Vector3; readonly end: THREE.Vector3 } {
+  const targetVector = new THREE.Vector3(target.x, target.y, target.z).sub(root);
+  const targetDistance = targetVector.length();
+  const direction =
+    targetDistance > MIN_DIRECTION_LENGTH
+      ? targetVector.clone().multiplyScalar(1 / targetDistance)
+      : new THREE.Vector3(0, -1, 0);
+  const minReach = Math.abs(upperLength - lowerLength);
+  const maxReach = upperLength + lowerLength;
+  const distance = THREE.MathUtils.clamp(targetDistance, minReach, maxReach);
+  const baseDistance =
+    (upperLength ** 2 - lowerLength ** 2 + distance ** 2) /
+    Math.max(distance * 2, MIN_DIRECTION_LENGTH);
+  const jointHeight = Math.sqrt(Math.max(0, upperLength ** 2 - baseDistance ** 2));
+  const pole = new THREE.Vector3(polePoint.x, polePoint.y, polePoint.z).sub(root);
+  pole.addScaledVector(direction, -pole.dot(direction));
+  if (pole.lengthSq() <= MIN_DIRECTION_LENGTH) {
+    pole.set(0, 0, 1).addScaledVector(direction, -direction.z);
+  }
+  pole.normalize();
+  const joint = root
+    .clone()
+    .addScaledVector(direction, baseDistance)
+    .addScaledVector(pole, jointHeight);
+  const end = root.clone().addScaledVector(direction, distance);
+  return { joint, end };
+}
+
 /**
  * Applies the current deterministic body-solver output to VRM normalized bones.
- * The adapter deliberately controls only torso yaw and both arm chains. Legs,
- * hands, head, and facial state remain in the VRM reference pose.
+ * The adapter roots the avatar through its pelvis, solves both legs back to
+ * planted feet, and drives torso yaw plus both arm chains. Hands, head, facial
+ * state, and locomotion remain in their VRM reference state.
  */
 export class VrmStandingPoseAdapter {
   private calibration: VrmRigCalibration | null = null;
   private readonly profile: VrmRigProfile;
   private readonly arms: readonly VrmArmDefinition[];
+  private readonly legs: readonly VrmLegDefinition[];
   private readonly restLocalRotations = new Map<VRMHumanBoneName, THREE.Quaternion>();
 
   public constructor(
@@ -113,6 +184,7 @@ export class VrmStandingPoseAdapter {
   ) {
     this.profile = profile ?? buildVrmRigProfile(vrm);
     this.arms = buildArmDefinitions(this.profile);
+    this.legs = buildLegDefinitions(this.profile);
     this.captureRestRotations();
   }
 
@@ -144,14 +216,14 @@ export class VrmStandingPoseAdapter {
     scene.scale.setScalar(scale);
     scene.updateMatrixWorld(true);
 
-    const { modelAnchor, targetAnchor, translation } = this.alignShoulderSockets(frame);
+    const { modelAnchor, targetAnchor, translation } = this.alignFootAnchors(frame);
 
     this.calibration = {
       modelArmReach,
       targetArmReach,
       scale,
-      modelAnchorBeforeTranslation: toPlainVector(modelAnchor),
-      targetAnchor: toPlainVector(targetAnchor),
+      modelFootAnchorBeforeTranslation: toPlainVector(modelAnchor),
+      targetFootAnchor: toPlainVector(targetAnchor),
       translation: toPlainVector(translation)
     };
 
@@ -164,22 +236,34 @@ export class VrmStandingPoseAdapter {
     }
 
     const humanoid = this.vrm.humanoid;
+    const calibration = this.calibration;
+    if (!calibration) {
+      throw new Error("VRM rig calibration is unavailable.");
+    }
 
     humanoid.resetNormalizedPose();
-    this.vrm.scene.position.set(0, 0, 0);
+    this.vrm.scene.position.set(
+      calibration.translation.x,
+      calibration.translation.y,
+      calibration.translation.z
+    );
     this.vrm.scene.scale.setScalar(this.profile.scale);
     this.vrm.scene.quaternion.fromArray(this.profile.modelToTargetRotation);
     this.vrm.scene.updateMatrixWorld(true);
 
-    const spine = getRequiredBone(this.vrm, "spine");
+    const hips = getRequiredBone(this.vrm, "hips");
     const chest = getRequiredBone(this.vrm, "chest");
     const pelvisYaw = frame.solverDiagnostics.pelvisYawRad;
     const chestYaw = frame.solverDiagnostics.chestYawRad;
 
-    this.applyWorldYaw("spine", spine, pelvisYaw);
+    this.placeHips(hips, frame.joints.pelvisCenter);
+    this.applyWorldYaw("hips", hips, pelvisYaw);
     this.applyWorldYaw("chest", chest, chestYaw - pelvisYaw);
     humanoid.normalizedHumanBonesRoot.updateMatrixWorld(true);
-    this.alignShoulderSockets(frame);
+
+    for (const leg of this.legs) {
+      this.solveAndAimLeg(leg, frame);
+    }
 
     for (const arm of this.arms) {
       this.solveAndAimArm(arm, frame);
@@ -190,16 +274,31 @@ export class VrmStandingPoseAdapter {
   public measure(frame: BodySkeletonFrame): VrmPoseDiagnostics {
     const left = this.measureArm("left", frame);
     const right = this.measureArm("right", frame);
+    const pelvisError = worldPosition(this.vrm, "hips").distanceTo(
+      new THREE.Vector3(
+        frame.joints.pelvisCenter.x,
+        frame.joints.pelvisCenter.y,
+        frame.joints.pelvisCenter.z
+      )
+    );
+    const leftFootError = this.measureBoneError("leftFoot", frame.joints.footLeft);
+    const rightFootError = this.measureBoneError("rightFoot", frame.joints.footRight);
     return {
       left,
       right,
+      pelvisError,
+      leftFootError,
+      rightFootError,
       maxJointError: Math.max(
         left.shoulderError,
         left.elbowError,
         left.wristError,
         right.shoulderError,
         right.elbowError,
-        right.wristError
+        right.wristError,
+        pelvisError,
+        leftFootError,
+        rightFootError
       )
     };
   }
@@ -209,7 +308,9 @@ export class VrmStandingPoseAdapter {
     for (const name of [
       "spine",
       "chest",
-      ...this.arms.flatMap((arm) => [arm.upperArm, arm.lowerArm])
+      "hips",
+      ...this.arms.flatMap((arm) => [arm.upperArm, arm.lowerArm]),
+      ...this.legs.flatMap((leg) => [leg.upperLeg, leg.lowerLeg])
     ] as VRMHumanBoneName[]) {
       if (!this.restLocalRotations.has(name)) {
         this.restLocalRotations.set(name, getRequiredBone(this.vrm, name).quaternion.clone());
@@ -217,20 +318,33 @@ export class VrmStandingPoseAdapter {
     }
   }
 
-  private alignShoulderSockets(frame: BodySkeletonFrame): {
+  private alignFootAnchors(frame: BodySkeletonFrame): {
     readonly modelAnchor: THREE.Vector3;
     readonly targetAnchor: THREE.Vector3;
     readonly translation: THREE.Vector3;
   } {
     const modelAnchor = midpoint(
-      toPlainVector(worldPosition(this.vrm, "leftUpperArm")),
-      toPlainVector(worldPosition(this.vrm, "rightUpperArm"))
+      toPlainVector(worldPosition(this.vrm, "leftFoot")),
+      toPlainVector(worldPosition(this.vrm, "rightFoot"))
     );
-    const targetAnchor = midpoint(frame.joints.shoulderLeft, frame.joints.shoulderRight);
+    const targetAnchor = midpoint(frame.joints.footLeft, frame.joints.footRight);
     const translation = targetAnchor.clone().sub(modelAnchor);
     this.vrm.scene.position.add(translation);
     this.vrm.scene.updateMatrixWorld(true);
     return { modelAnchor, targetAnchor, translation };
+  }
+
+  private placeHips(hips: THREE.Object3D, target: Vec3): void {
+    const parent = hips.parent;
+    if (!parent) {
+      throw new Error("VRM normalized hips bone has no parent transform.");
+    }
+    parent.updateWorldMatrix(true, false);
+    const localTarget = new THREE.Vector3(target.x, target.y, target.z).applyMatrix4(
+      parent.matrixWorld.clone().invert()
+    );
+    hips.position.copy(localTarget);
+    hips.updateWorldMatrix(false, true);
   }
 
   private restRotation(name: VRMHumanBoneName): THREE.Quaternion {
@@ -289,6 +403,22 @@ export class VrmStandingPoseAdapter {
     );
   }
 
+  private solveAndAimLeg(leg: VrmLegDefinition, frame: BodySkeletonFrame): void {
+    const [, kneeJoint, footJoint] = LEG_JOINTS[leg.targetSide];
+    const modelHip = worldPosition(this.vrm, leg.upperLeg);
+    const modelLeg = this.profile.legs[leg.vrmSide];
+    const solve = solveTwoBoneTarget(
+      modelHip,
+      frame.joints[footJoint],
+      frame.joints[kneeJoint],
+      modelLeg.upperLegLength * this.profile.scale,
+      modelLeg.lowerLegLength * this.profile.scale
+    );
+
+    this.aimBone(leg.upperLeg, leg.lowerLeg, solve.joint.clone().sub(modelHip));
+    this.aimBone(leg.lowerLeg, leg.foot, solve.end.clone().sub(solve.joint));
+  }
+
   private aimBone(
     boneName: VRMHumanBoneName,
     childName: VRMHumanBoneName,
@@ -335,5 +465,11 @@ export class VrmStandingPoseAdapter {
       elbowError: error("LowerArm", elbow),
       wristError: error("Hand", hand)
     };
+  }
+
+  private measureBoneError(bone: VRMHumanBoneName, target: Vec3): number {
+    return worldPosition(this.vrm, bone).distanceTo(
+      new THREE.Vector3(target.x, target.y, target.z)
+    );
   }
 }

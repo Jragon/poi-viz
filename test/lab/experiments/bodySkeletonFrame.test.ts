@@ -7,10 +7,7 @@ import {
   type SkeletonJointName,
   type SkeletonSegmentCategory
 } from "@/body-rig";
-import {
-  buildBodyRigFrameFromDimensions,
-  solveBodyRigFrame
-} from "@/body-rig";
+import { buildBodyRigFrameFromDimensions, solveBodyRigFrame } from "@/body-rig";
 import { buildDefaultBodyRigDimensions } from "@/body-rig";
 import { DEFAULT_PLANE_PROJECTION_SETTINGS } from "@/engine/planeProjection";
 import type { Vec3 } from "@/engine/types";
@@ -147,12 +144,47 @@ describe("buildBodySkeletonFrame", () => {
     expect(frame.joints.neck).toEqual(pose.body.neck);
     expect(frame.joints.chest).toEqual(pose.solve.chest.center);
     expect(frame.joints.pelvisCenter).toEqual(pose.solve.pelvis.center);
-    expect(frame.joints.hipLeft).toEqual(pose.body.hipLeft);
-    expect(frame.joints.hipRight).toEqual(pose.body.hipRight);
-    expect(frame.joints.kneeLeft).toEqual(pose.body.kneeLeft);
-    expect(frame.joints.kneeRight).toEqual(pose.body.kneeRight);
     expect(frame.joints.footLeft).toEqual(pose.body.footLeft);
     expect(frame.joints.footRight).toEqual(pose.body.footRight);
+  });
+
+  it("moves the hips with the solved pelvis while keeping both feet planted", () => {
+    const dimensions = buildDefaultBodyRigDimensions();
+    const body = buildBodyRigFrameFromDimensions(dimensions);
+    const pose = solveBodyRigFrame(
+      body,
+      {
+        leftHandTarget: { x: 0.2, y: 0.15, z: 0.4 },
+        rightHandTarget: { x: 1.1, y: 0.25, z: 0.35 }
+      },
+      DEFAULT_PLANE_PROJECTION_SETTINGS
+    );
+    const frame = pose.skeleton;
+    const hipMidpoint = {
+      x: (frame.joints.hipLeft.x + frame.joints.hipRight.x) * 0.5,
+      y: (frame.joints.hipLeft.y + frame.joints.hipRight.y) * 0.5,
+      z: (frame.joints.hipLeft.z + frame.joints.hipRight.z) * 0.5
+    };
+
+    expect(hipMidpoint.x).toBeCloseTo(frame.joints.pelvisCenter.x);
+    expect(hipMidpoint.y).toBeCloseTo(frame.joints.pelvisCenter.y);
+    expect(hipMidpoint.z).toBeCloseTo(frame.joints.pelvisCenter.z);
+    expect(frame.joints.footLeft).toEqual(body.footLeft);
+    expect(frame.joints.footRight).toEqual(body.footRight);
+    expect(
+      length3({
+        x: frame.joints.kneeLeft.x - frame.joints.hipLeft.x,
+        y: frame.joints.kneeLeft.y - frame.joints.hipLeft.y,
+        z: frame.joints.kneeLeft.z - frame.joints.hipLeft.z
+      })
+    ).toBeCloseTo(
+      length3({
+        x: body.kneeLeft.x - body.hipLeft.x,
+        y: body.kneeLeft.y - body.hipLeft.y,
+        z: body.kneeLeft.z - body.hipLeft.z
+      })
+    );
+    expect(frame.joints.kneeLeft.z).toBeGreaterThan(frame.joints.hipLeft.z);
   });
 
   it("shoulder and arm joint positions match the solve result", () => {
@@ -200,8 +232,7 @@ describe("buildBodySkeletonFrame", () => {
     const { pose } = makePose();
     const frame = buildBodySkeletonFrame(pose.body, pose.solve);
 
-    const expectedReach =
-      pose.body.rigConfig.upperArmLength + pose.body.rigConfig.forearmLength;
+    const expectedReach = pose.body.rigConfig.upperArmLength + pose.body.rigConfig.forearmLength;
     expect(frame.supportPose.armReach).toBeCloseTo(expectedReach);
     expect(frame.supportPose.upperArmLength).toBeCloseTo(pose.body.rigConfig.upperArmLength);
     expect(frame.supportPose.forearmLength).toBeCloseTo(pose.body.rigConfig.forearmLength);
@@ -228,12 +259,8 @@ describe("buildBodySkeletonFrame", () => {
     expect(frame.solverDiagnostics.rightArm.targetDistance).toBeCloseTo(
       pose.solve.rightArm.targetDistance
     );
-    expect(frame.solverDiagnostics.leftArm.reachError).toBeCloseTo(
-      pose.solve.leftArm.reachError
-    );
-    expect(frame.solverDiagnostics.rightArm.reachError).toBeCloseTo(
-      pose.solve.rightArm.reachError
-    );
+    expect(frame.solverDiagnostics.leftArm.reachError).toBeCloseTo(pose.solve.leftArm.reachError);
+    expect(frame.solverDiagnostics.rightArm.reachError).toBeCloseTo(pose.solve.rightArm.reachError);
     expect(frame.solverDiagnostics.leftArm.elbowPole).toEqual(pose.solve.leftArm.elbowPole);
     expect(frame.solverDiagnostics.rightArm.elbowPole).toEqual(pose.solve.rightArm.elbowPole);
     expect(frame.solverDiagnostics.leftArm.elbowBendRad).toBeCloseTo(
@@ -266,5 +293,4 @@ describe("buildBodySkeletonFrame", () => {
       pose.solve.diagnostics.bestEffortReasons
     );
   });
-
 });

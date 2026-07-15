@@ -19,6 +19,11 @@ export interface VrmArmProfile {
   readonly shoulderSocket: Vec3;
 }
 
+export interface VrmLegProfile {
+  readonly upperLegLength: number;
+  readonly lowerLegLength: number;
+}
+
 export interface VrmRigProfile {
   readonly modelArmReach: number;
   readonly modelPatternRadius: number;
@@ -29,6 +34,7 @@ export interface VrmRigProfile {
   /** Rigidly aligns the model's measured humanoid rest basis to +X/+Y/+Z. */
   readonly modelToTargetRotation: readonly [number, number, number, number];
   readonly arms: Readonly<Record<VrmAnatomicalSide, VrmArmProfile>>;
+  readonly legs: Readonly<Record<VrmAnatomicalSide, VrmLegProfile>>;
   /** Anatomical side mapping. View mirroring never changes this contract. */
   readonly targetToVrmSide: Readonly<Record<TargetRigSide, VrmAnatomicalSide>>;
   readonly dimensions: BodyRigDimensions;
@@ -97,6 +103,7 @@ function buildProfileDimensions(
   vrm: VRM,
   scale: number,
   arms: Readonly<Record<VrmAnatomicalSide, VrmArmProfile>>,
+  legs: Readonly<Record<VrmAnatomicalSide, VrmLegProfile>>,
   modelArmReach: number
 ): BodyRigDimensions {
   const scaledArmReach = modelArmReach * scale;
@@ -116,16 +123,8 @@ function buildProfileDimensions(
     fallback.torsoHeight
   );
   const hipSpan = safeMeasurement(leftUpperLeg.distanceTo(rightUpperLeg) * scale, fallback.hipSpan);
-  const thighLength =
-    average(
-      distance(vrm, "leftUpperLeg", "leftLowerLeg"),
-      distance(vrm, "rightUpperLeg", "rightLowerLeg")
-    ) * scale;
-  const shinLength =
-    average(
-      distance(vrm, "leftLowerLeg", "leftFoot"),
-      distance(vrm, "rightLowerLeg", "rightFoot")
-    ) * scale;
+  const thighLength = average(legs.left.upperLegLength, legs.right.upperLegLength) * scale;
+  const shinLength = average(legs.left.lowerLegLength, legs.right.lowerLegLength) * scale;
   const headHeight = Math.max(0, head.y - shoulderMidpoint.y) * scale;
   const headRadius = Math.min(fallback.headRadius, headHeight * 0.45 || fallback.headRadius);
   const config = {
@@ -157,7 +156,7 @@ function buildProfileDimensions(
     neckOffset: Math.min(fallback.neckOffset, headHeight * 0.2),
     thighLength: safeMeasurement(thighLength, fallback.thighLength),
     shinLength: safeMeasurement(shinLength, fallback.shinLength),
-    footOffset: fallback.footOffset,
+    footOffset: 0,
     stanceWidth: 0,
     cameraCenterWorld: { ...fallback.cameraCenterWorld },
     rootShoulderGirdleCenter,
@@ -180,10 +179,7 @@ export function resolveVrmPatternScale(
   return targetPatternRadius / modelPatternRadius;
 }
 
-export function buildVrmRigProfile(
-  vrm: VRM,
-  targetPatternRadius = 1
-): VrmRigProfile {
+export function buildVrmRigProfile(vrm: VRM, targetPatternRadius = 1): VrmRigProfile {
   if (!Number.isFinite(targetPatternRadius) || targetPatternRadius <= MIN_MEASUREMENT) {
     throw new Error("Target canonical pattern radius is invalid.");
   }
@@ -215,13 +211,21 @@ export function buildVrmRigProfile(
   if (!Number.isFinite(modelArmReach) || modelArmReach <= MIN_MEASUREMENT) {
     throw new Error("VRM fixture has an invalid humanoid arm reach.");
   }
-  const unscaledDimensions = buildProfileDimensions(vrm, 1, arms, modelArmReach);
+  const legs = {
+    left: {
+      upperLegLength: distance(vrm, "leftUpperLeg", "leftLowerLeg"),
+      lowerLegLength: distance(vrm, "leftLowerLeg", "leftFoot")
+    },
+    right: {
+      upperLegLength: distance(vrm, "rightUpperLeg", "rightLowerLeg"),
+      lowerLegLength: distance(vrm, "rightLowerLeg", "rightFoot")
+    }
+  } as const;
+  const unscaledDimensions = buildProfileDimensions(vrm, 1, arms, legs, modelArmReach);
   const modelPatternRadius = unscaledDimensions.canonicalPatternSpace.unitRadius;
   const scale = resolveVrmPatternScale(modelPatternRadius, targetPatternRadius);
-  const dimensions = buildProfileDimensions(vrm, scale, arms, modelArmReach);
-  if (
-    Math.abs(dimensions.canonicalPatternSpace.unitRadius - targetPatternRadius) > 1e-6
-  ) {
+  const dimensions = buildProfileDimensions(vrm, scale, arms, legs, modelArmReach);
+  if (Math.abs(dimensions.canonicalPatternSpace.unitRadius - targetPatternRadius) > 1e-6) {
     throw new Error("VRM canonical pattern radius did not normalize to the requested target.");
   }
   const targetToVrmSide: Readonly<Record<TargetRigSide, VrmAnatomicalSide>> = {
@@ -239,6 +243,7 @@ export function buildVrmRigProfile(
     modelShoulderSocketSpan: distance(vrm, "leftUpperArm", "rightUpperArm"),
     modelToTargetRotation: modelToTargetRotation.toArray(),
     arms,
+    legs,
     targetToVrmSide,
     dimensions
   };
