@@ -86,12 +86,12 @@ Driver selection owns the motion law and that driver's options.
 
 - Circle drivers own `omega` and optional time-keyed `radiusProfile`.
 - Generic node-level `radiusProfile` is removed from engine and authored document shapes.
-- Point-to-point is a hand-only engine driver in this slice; head drivers remain circle-only.
+- Point-to-point is a hand-only engine driver in this slice; head drivers were circle-only at the time. Runtime head drivers superseded that restriction on 2026-07-15, while point-to-point remains hand-only.
 - Point-to-point stores a polar `endPose` to match the existing pose model, but evaluates by local Cartesian interpolation between start and end points.
 - Endpoint evaluation is exact: `progress <= 0` returns `startPose`, and `progress >= 1` returns `endPose`.
 - Point-to-point output phase is geometric `atan2`, not a monotonic clock. Metronome hand and relative sources opt out while hand point-to-point is active; absolute head sources remain available.
 - Authored point-to-point controls are deferred. Engine-to-authored round-trip fails explicitly for point-to-point rather than losing endpoint data.
-- A temporary localStorage migration maps old authored `node.radiusProfile` fields to `node.driver.radiusProfile`; remove after 2026-05-27.
+- A temporary localStorage migration mapped old authored `node.radiusProfile` fields to `node.driver.radiusProfile`, with a removal target of 2026-05-27. It was removed on 2026-07-15 without a compatibility fallback; invalid legacy snapshots now fall back to seed data and are overwritten on persistence.
 
 ## 2026-05-19: Humanoid Body Rig Solver Migration
 
@@ -109,3 +109,29 @@ Consequences:
 - No old aliases, legacy compatibility layers, or deprecated body-rig field names are part of the migrated contract.
 
 Validation: body-rig, visualizer, and lab tests cover the migrated skeleton contract, canonical pattern space, shoulder diagnostics, and renderer adapter behavior. Completion requires `pnpm test`, `pnpm typecheck`, `pnpm lint`, and a stale-term documentation search.
+
+## 2026-07-15: Defensive Preparation with an Explicit Unsafe Runtime Escape Hatch
+
+Engine preparation is the runtime trust boundary for declarative sequence input. Runtime drivers remain deliberately unsafe so lab evaluators can express motion that does not fit built-in drivers.
+
+- `prepareSequence` and `prepareMultiRigSequence` accept `unknown` and defensively decode execution-critical structure.
+- Decoding remains semi-flexible: unrelated properties are ignored, while missing, malformed, non-finite, negative, overflowing, or non-advancing execution data is rejected with structured errors.
+- Built-in circle and point-to-point drivers receive numeric and semantic validation. Circle phase range and time-keyed radius profiles are checked across the segment contract.
+- Runtime drivers are allowed on hand and head nodes. Preparation validates only a non-empty label and callback shape; callback output, purity, captured state, exceptions, and determinism are caller-owned.
+- Successful preparation returns a cloned, deeply frozen snapshot. Runtime callback functions are retained by reference and remain callable.
+- Point-to-point interpolation uses the convex Cartesian form `start * (1 - progress) + end * progress` to avoid avoidable subtraction overflow while preserving exact endpoints.
+- Multi-rig IDs must be strings and unique by exact equality. Otherwise arbitrary string IDs are supported, including object-prototype names, and evaluated records are constructed without prototype-key assignment hazards.
+
+The deterministic engine guarantee now applies explicitly to built-in drivers. Code using runtime drivers must treat that path as unsafe rather than relying on validation to make it declarative or pure.
+
+## 2026-07-15: Reproducible V2 Verification and Expired Migration Removal
+
+The supported V2 toolchain and verification gates are explicit:
+
+- Node.js 22 is pinned by `.node-version` and `package.json`.
+- pnpm 10.34.5 is pinned by `packageManager` and both V2 GitHub Actions workflows.
+- Clean CI and deployment installs use `pnpm install --frozen-lockfile`.
+- `pnpm typecheck` uses `vue-tsc --noEmit`, so TypeScript and Vue single-file components are checked.
+- Pull requests and pushes to `main` run lint, Vue-aware typecheck, tests, and build.
+
+The expired authored radius-profile localStorage migration is removed. Backward compatibility and preservation of invalid legacy snapshots are not requirements: if no valid stored documents remain, the authoring library restores seed documents and persists the current snapshot shape.
