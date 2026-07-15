@@ -48,6 +48,11 @@ Authoring Vue components may embed visualizer components for previews. Core auth
 
 `src/lab/` owns experimental generators, evaluators, journals, and Three.js debug surfaces. Lab code may combine the other layers and may use `RuntimeDriver` when a declarative built-in driver is not flexible enough.
 
+The VRM standing-rig experiment is a replaceable consumer of `BodySkeletonFrame`: it maps the existing
+deterministic solver result into VRM normalized humanoid bones and keeps model loading, skinning, and
+authored constraints outside the engine. Its decision record and current limitations are documented in
+[`VRM_RIG_LAB.md`](./VRM_RIG_LAB.md).
+
 Runtime drivers are deliberately unsafe. Preparation validates only that a runtime driver has a non-empty label and an `evalPose` function. The callback owns its output validity, purity, exception behavior, and determinism. This exception must remain explicit at call sites and must not weaken validation of built-in drivers.
 
 ### Application Shell

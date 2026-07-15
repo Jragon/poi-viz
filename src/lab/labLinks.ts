@@ -1,4 +1,5 @@
 import { THREE_D_DEBUG_LAB_LINK } from "@/lab/experiments/three-d-debug/routeMeta";
+import { VRM_RIG_LAB_LINK } from "@/lab/experiments/vrm-rig/routeMeta";
 
 export const labLinks = [
   {
@@ -29,5 +30,6 @@ export const labLinks = [
     label: "Beat Graph Editor",
     to: "/lab/beat-graph"
   },
-  THREE_D_DEBUG_LAB_LINK
+  THREE_D_DEBUG_LAB_LINK,
+  VRM_RIG_LAB_LINK
 ] as const;

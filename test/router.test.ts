@@ -9,6 +9,14 @@ const threeDDebugRouteMetaModule = {
   },
   loadThreeDDebugPage: () => Promise.resolve(lazyThreeDDebugPageModule)
 };
+const lazyVrmRigPageModule = { default: { name: "VrmRigLabPage" } };
+const vrmRigRouteMetaModule = {
+  VRM_RIG_ROUTE: {
+    path: "/lab/vrm-rig",
+    name: "vrm-rig"
+  },
+  loadVrmRigLabPage: () => Promise.resolve(lazyVrmRigPageModule)
+};
 
 describe("router", () => {
   let createRouterSpy: ReturnType<typeof vi.fn>;
@@ -22,7 +30,8 @@ describe("router", () => {
   it("registers the three-d-debug route as a lazy-loaded page", async () => {
     const routerExports = evaluateRouterModule(createRouterSpy, createWebHistorySpy, [
       ["@/lab/experiments/three-d-debug/routeMeta", threeDDebugRouteMetaModule],
-      ["@/lab/experiments/three-d-debug/Three3DDebugPage.vue", lazyThreeDDebugPageModule]
+      ["@/lab/experiments/three-d-debug/Three3DDebugPage.vue", lazyThreeDDebugPageModule],
+      ["@/lab/experiments/vrm-rig/routeMeta", vrmRigRouteMetaModule]
     ]);
 
     expect(routerExports).toHaveProperty("router");

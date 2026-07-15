@@ -11,6 +11,7 @@ import {
   THREE_D_DEBUG_ROUTE,
   loadThreeDDebugPage
 } from "@/lab/experiments/three-d-debug/routeMeta";
+import { VRM_RIG_ROUTE, loadVrmRigLabPage } from "@/lab/experiments/vrm-rig/routeMeta";
 import AuthoringPage from "@/pages/AuthoringPage.vue";
 import VisualizerPage from "@/pages/VisualizerPage.vue";
 
@@ -65,6 +66,10 @@ export const router = createRouter({
     {
       ...THREE_D_DEBUG_ROUTE,
       component: loadThreeDDebugPage
+    },
+    {
+      ...VRM_RIG_ROUTE,
+      component: loadVrmRigLabPage
     }
   ]
 });
