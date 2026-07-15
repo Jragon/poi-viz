@@ -13,6 +13,7 @@ export type TargetRigSide = "left" | "right";
 export type VrmAnatomicalSide = "left" | "right";
 
 export interface VrmArmProfile {
+  readonly clavicleLength: number;
   readonly upperArmLength: number;
   readonly forearmLength: number;
   readonly shoulderBase: Vec3;
@@ -192,12 +193,14 @@ export function buildVrmRigProfile(vrm: VRM, targetPatternRadius = 1): VrmRigPro
 
   const arms = {
     left: {
+      clavicleLength: distance(vrm, "leftShoulder", "leftUpperArm"),
       upperArmLength: distance(vrm, "leftUpperArm", "leftLowerArm"),
       forearmLength: distance(vrm, "leftLowerArm", "leftHand"),
       shoulderBase: plain(position(vrm, "leftShoulder")),
       shoulderSocket: plain(position(vrm, "leftUpperArm"))
     },
     right: {
+      clavicleLength: distance(vrm, "rightShoulder", "rightUpperArm"),
       upperArmLength: distance(vrm, "rightUpperArm", "rightLowerArm"),
       forearmLength: distance(vrm, "rightLowerArm", "rightHand"),
       shoulderBase: plain(position(vrm, "rightShoulder")),

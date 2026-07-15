@@ -160,8 +160,16 @@ describe("VrmStandingPoseAdapter", () => {
     adapter.apply(frame);
 
     const diagnostics = adapter.measure(frame);
+    expect(diagnostics.left.shoulderError).toBeLessThan(1e-3);
+    expect(diagnostics.right.shoulderError).toBeLessThan(1e-3);
     expect(diagnostics.left.wristError).toBeLessThan(1e-6);
     expect(diagnostics.right.wristError).toBeLessThan(1e-6);
+    expect(
+      bones
+        .get("leftShoulder")!
+        .getWorldPosition(new THREE.Vector3())
+        .distanceTo(bones.get("leftUpperArm")!.getWorldPosition(new THREE.Vector3()))
+    ).toBeCloseTo(profile.arms.left.clavicleLength * profile.scale);
     expect(
       bones
         .get("leftUpperArm")!

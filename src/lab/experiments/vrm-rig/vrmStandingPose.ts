@@ -42,6 +42,7 @@ export interface VrmPoseDiagnostics {
 interface VrmArmDefinition {
   readonly targetSide: TargetRigSide;
   readonly vrmSide: VrmAnatomicalSide;
+  readonly shoulder: VRMHumanBoneName;
   readonly upperArm: VRMHumanBoneName;
   readonly lowerArm: VRMHumanBoneName;
   readonly hand: VRMHumanBoneName;
@@ -89,6 +90,7 @@ function buildArmDefinitions(profile: VrmRigProfile): readonly VrmArmDefinition[
     return {
       targetSide,
       vrmSide,
+      shoulder: armBoneName(vrmSide, "Shoulder"),
       upperArm: armBoneName(vrmSide, "UpperArm"),
       lowerArm: armBoneName(vrmSide, "LowerArm"),
       hand: armBoneName(vrmSide, "Hand")
@@ -168,8 +170,9 @@ function solveTwoBoneTarget(
 /**
  * Applies the current deterministic body-solver output to VRM normalized bones.
  * The adapter roots the avatar through its pelvis, solves both legs back to
- * planted feet, and drives torso yaw plus both arm chains. Hands, head, facial
- * state, and locomotion remain in their VRM reference state.
+ * planted feet, drives torso yaw, aims each measured clavicle toward its target
+ * socket, and solves both arm chains. Hands, head, facial state, and locomotion
+ * remain in their VRM reference state.
  */
 export class VrmStandingPoseAdapter {
   private calibration: VrmRigCalibration | null = null;
@@ -309,7 +312,7 @@ export class VrmStandingPoseAdapter {
       "spine",
       "chest",
       "hips",
-      ...this.arms.flatMap((arm) => [arm.upperArm, arm.lowerArm]),
+      ...this.arms.flatMap((arm) => [arm.shoulder, arm.upperArm, arm.lowerArm]),
       ...this.legs.flatMap((leg) => [leg.upperLeg, leg.lowerLeg])
     ] as VRMHumanBoneName[]) {
       if (!this.restLocalRotations.has(name)) {
@@ -370,7 +373,19 @@ export class VrmStandingPoseAdapter {
   }
 
   private solveAndAimArm(arm: VrmArmDefinition, frame: BodySkeletonFrame): void {
-    const [, , , handJoint] = ARM_JOINTS[arm.targetSide];
+    const [, shoulderJoint, , handJoint] = ARM_JOINTS[arm.targetSide];
+    const modelShoulderBase = worldPosition(this.vrm, arm.shoulder);
+    const targetShoulder = frame.joints[shoulderJoint];
+    this.aimBone(
+      arm.shoulder,
+      arm.upperArm,
+      new THREE.Vector3(
+        targetShoulder.x - modelShoulderBase.x,
+        targetShoulder.y - modelShoulderBase.y,
+        targetShoulder.z - modelShoulderBase.z
+      )
+    );
+
     const modelShoulder = worldPosition(this.vrm, arm.upperArm);
     const modelArm = this.profile.arms[arm.vrmSide];
     const solve = solveWorldStickArm({
