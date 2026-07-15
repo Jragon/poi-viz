@@ -82,8 +82,8 @@ export function evalDriver(
       const startPoint = polarToCartesian(startPose);
       const endPoint = polarToCartesian(driver.endPose);
       const point = {
-        x: startPoint.x + (endPoint.x - startPoint.x) * progress,
-        y: startPoint.y + (endPoint.y - startPoint.y) * progress
+        x: startPoint.x * (1 - progress) + endPoint.x * progress,
+        y: startPoint.y * (1 - progress) + endPoint.y * progress
       };
 
       return cartesianToPolar(point, startPose.phaseAbs);

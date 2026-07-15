@@ -35,6 +35,260 @@ describe("validateSequenceStructure", () => {
       throw new Error(`expected valid sequence, got errors: ${JSON.stringify(result.errors)}`);
     }
   });
+
+  it("returns structural errors instead of throwing for malformed input", () => {
+    expect(validateSequenceStructure(null)).toEqual({
+      ok: false,
+      errors: [{ code: "EXPECTED_SEQUENCE", path: [] }]
+    });
+    expect(validateSequenceStructure({})).toEqual({
+      ok: false,
+      errors: [{ code: "EXPECTED_SEGMENTS_ARRAY", path: ["segments"] }]
+    });
+
+    const malformed = {
+      segments: [
+        {
+          durationUnits: 1,
+          head: base.head
+        },
+        {
+          ...base,
+          hand: {
+            driver: { kind: "circle", omega: 0 }
+          }
+        },
+        {
+          ...base,
+          hand: {
+            ...base.hand,
+            driver: {
+              kind: "circle",
+              omega: 0,
+              radiusProfile: { kind: "time-keyed", keys: {} }
+            }
+          }
+        }
+      ]
+    };
+
+    const result = validateSequenceStructure(malformed);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContainEqual({
+        code: "EXPECTED_NODE_MOTION",
+        index: 0,
+        node: "hand",
+        path: ["segments", 0, "hand"]
+      });
+      expect(result.errors).toContainEqual({
+        code: "EXPECTED_POSE",
+        index: 1,
+        node: "hand",
+        path: ["segments", 1, "hand", "startPose"]
+      });
+      expect(result.errors).toContainEqual({
+        code: "INVALID_RADIUS_PROFILE",
+        index: 2,
+        node: "hand",
+        path: ["segments", 2, "hand", "driver", "radiusProfile"]
+      });
+    }
+  });
+
+  it("rejects invalid built-in pose and driver values", () => {
+    const sequence = {
+      segments: [
+        {
+          ...base,
+          hand: {
+            startPose: { phaseAbs: Number.NaN, radius: -1 },
+            driver: { kind: "circle", omega: Number.POSITIVE_INFINITY }
+          },
+          head: {
+            startPose: { phaseAbs: 0, radius: Number.NEGATIVE_INFINITY },
+            driver: {
+              kind: "point-to-point",
+              endPose: { phaseAbs: Number.POSITIVE_INFINITY, radius: -2 }
+            }
+          }
+        }
+      ]
+    };
+
+    const result = validateSequenceStructure(sequence);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContainEqual({ code: "NON_FINITE_PHASE", index: 0, node: "hand" });
+      expect(result.errors).toContainEqual({ code: "NEGATIVE_RADIUS", index: 0, node: "hand" });
+      expect(result.errors).toContainEqual({ code: "NON_FINITE_OMEGA", index: 0, node: "hand" });
+      expect(result.errors).toContainEqual({ code: "NON_FINITE_RADIUS", index: 0, node: "head" });
+      expect(result.errors).toContainEqual({
+        code: "DRIVER_UNSUPPORTED_FOR_NODE",
+        index: 0,
+        node: "head"
+      });
+      expect(result.errors).toContainEqual({ code: "NON_FINITE_PHASE", index: 0, node: "head" });
+      expect(result.errors).toContainEqual({ code: "NEGATIVE_RADIUS", index: 0, node: "head" });
+    }
+  });
+
+  it("validates radius-profile key domains without fixing them", () => {
+    const sequence = {
+      segments: [
+        {
+          ...base,
+          durationUnits: 2,
+          hand: {
+            ...base.hand,
+            driver: {
+              kind: "circle",
+              omega: 0,
+              radiusProfile: {
+                kind: "time-keyed",
+                keys: [
+                  { t: 0, radius: 1 },
+                  { t: 1, radius: -1 },
+                  { t: 1, radius: 2 },
+                  { t: 3, radius: Number.NaN }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    };
+
+    const result = validateSequenceStructure(sequence);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContainEqual({
+        code: "PROFILE_TIME_OUT_OF_RANGE",
+        index: 0,
+        node: "hand",
+        keyIndex: 0
+      });
+      expect(result.errors).toContainEqual({
+        code: "NEGATIVE_PROFILE_RADIUS",
+        index: 0,
+        node: "hand",
+        keyIndex: 1
+      });
+      expect(result.errors).toContainEqual({
+        code: "NON_INCREASING_PROFILE_TIME",
+        index: 0,
+        node: "hand",
+        keyIndex: 2
+      });
+      expect(result.errors).toContainEqual({
+        code: "PROFILE_TIME_OUT_OF_RANGE",
+        index: 0,
+        node: "hand",
+        keyIndex: 3
+      });
+      expect(result.errors).toContainEqual({
+        code: "NON_FINITE_PROFILE_RADIUS",
+        index: 0,
+        node: "hand",
+        keyIndex: 3
+      });
+    }
+  });
+
+  it("accepts empty profiles and a final key exactly at duration", () => {
+    const sequence: SequenceSpec = {
+      segments: [
+        {
+          ...base,
+          durationUnits: 2,
+          hand: {
+            ...base.hand,
+            driver: {
+              kind: "circle",
+              omega: 0,
+              radiusProfile: { kind: "time-keyed", keys: [] }
+            }
+          },
+          head: {
+            ...base.head,
+            driver: {
+              kind: "circle",
+              omega: 0,
+              radiusProfile: { kind: "time-keyed", keys: [{ t: 2, radius: 0 }] }
+            }
+          }
+        }
+      ]
+    };
+
+    expect(validateSequenceStructure(sequence)).toEqual({ ok: true });
+  });
+
+  it("rejects non-boolean behind-body metadata", () => {
+    const result = validateSequenceStructure({
+      segments: [{ ...base, behindBody: "yes" }]
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContainEqual({ code: "INVALID_BEHIND_BODY", index: 0 });
+    }
+  });
+
+  it("ignores unknown properties on otherwise valid engine input", () => {
+    expect(
+      validateSequenceStructure({
+        extraRootMetadata: true,
+        segments: [{ ...base, extraSegmentMetadata: "lab" }]
+      })
+    ).toEqual({ ok: true });
+  });
+
+  it("rejects circle phase ranges that overflow", () => {
+    const result = validateSequenceStructure({
+      segments: [
+        {
+          ...base,
+          durationUnits: 2,
+          hand: {
+            ...base.hand,
+            driver: { kind: "circle", omega: Number.MAX_VALUE }
+          }
+        }
+      ]
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContainEqual({
+        code: "CIRCLE_PHASE_RANGE_OVERFLOW",
+        index: 0,
+        node: "hand"
+      });
+    }
+  });
+
+  it("rejects non-finite and non-advancing derived intervals", () => {
+    const overflow = validateSequenceStructure({
+      segments: [
+        { ...base, durationUnits: Number.MAX_VALUE },
+        { ...base, durationUnits: Number.MAX_VALUE }
+      ]
+    });
+    expect(overflow.ok).toBe(false);
+    if (!overflow.ok) {
+      expect(overflow.errors).toContainEqual({ code: "NON_FINITE_TOTAL_DURATION", index: 1 });
+    }
+
+    const absorbed = validateSequenceStructure({
+      segments: [
+        { ...base, durationUnits: Number.MAX_VALUE },
+        { ...base, durationUnits: 1 }
+      ]
+    });
+    expect(absorbed.ok).toBe(false);
+    if (!absorbed.ok) {
+      expect(absorbed.errors).toContainEqual({ code: "NON_ADVANCING_INTERVAL", index: 1 });
+    }
+  });
   it("rejects empty sequence", () => {
     const seq: SequenceSpec = { segments: [] };
     const result = validateSequenceStructure(seq);

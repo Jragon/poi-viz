@@ -28,6 +28,32 @@ function makeSequence(durations: number[], handOmega: number, headOmega: number)
 }
 
 describe("prepareMultiRigSequence", () => {
+  it("returns structural errors for malformed multi-rig input", () => {
+    expect(prepareMultiRigSequence(null)).toEqual({
+      ok: false,
+      errors: [{ code: "EXPECTED_MULTI_RIG_SEQUENCE", path: [] }]
+    });
+    expect(prepareMultiRigSequence({})).toEqual({
+      ok: false,
+      errors: [{ code: "EXPECTED_RIGS_ARRAY", path: ["rigs"] }]
+    });
+    expect(prepareMultiRigSequence({ rigs: [null] })).toEqual({
+      ok: false,
+      errors: [{ code: "EXPECTED_RIG_ENTRY", index: 0, path: ["rigs", 0] }]
+    });
+  });
+
+  it("rejects non-string rig ids before object-key coercion", () => {
+    const result = prepareMultiRigSequence({
+      rigs: [{ rigId: 1, sequence: makeSequence([1], 1, 2) }]
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      errors: [{ code: "INVALID_RIG_ID_TYPE", index: 0, path: ["rigs", 0, "rigId"] }]
+    });
+  });
+
   it("rejects empty rig list", () => {
     const result = prepareMultiRigSequence({ rigs: [] });
     expect(result.ok).toBe(false);

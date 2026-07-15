@@ -105,6 +105,21 @@ describe("evalDriver", () => {
     expect(Math.abs(pose.phaseAbs)).toBeCloseTo(PI);
   });
 
+  it("keeps finite point-to-point inputs finite at extreme radii", () => {
+    const start: RelativeNodePose = { phaseAbs: 0, radius: Number.MAX_VALUE };
+    const driver: Driver = {
+      kind: "point-to-point",
+      endPose: { phaseAbs: PI, radius: Number.MAX_VALUE }
+    };
+
+    for (const tLocal of [0.5, 1, 1.5]) {
+      const pose = evalDriver(driver, start, { tLocal, durationUnits: 2 });
+      expect(Number.isFinite(pose.phaseAbs)).toBe(true);
+      expect(Number.isFinite(pose.radius)).toBe(true);
+      expect(pose.radius).toBeGreaterThanOrEqual(0);
+    }
+  });
+
   it("evaluates runtime drivers with the start pose and local timing context", () => {
     const start: RelativeNodePose = { phaseAbs: 0.25, radius: 2 };
     const driver: Driver = {

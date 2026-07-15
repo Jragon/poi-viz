@@ -5,16 +5,13 @@ import {
   type PreparedSequence,
   type SequenceValidationError
 } from "@/engine/sequence";
-import type {
-  MultiRigPose,
-  MultiRigSequence,
-  PlaneId,
-  PlaneSide,
-  RigId,
-  TimeUnit
-} from "@/engine/types";
+import type { MultiRigPose, PlaneId, PlaneSide, RigId, TimeUnit } from "@/engine/types";
 
 export type MultiRigSequenceValidationErrorCode =
+  | "EXPECTED_MULTI_RIG_SEQUENCE"
+  | "EXPECTED_RIGS_ARRAY"
+  | "EXPECTED_RIG_ENTRY"
+  | "INVALID_RIG_ID_TYPE"
   | "EMPTY_MULTI_RIG_SEQUENCE"
   | "DUPLICATE_RIG_ID"
   | "INVALID_RIG_SEQUENCE";
@@ -24,6 +21,7 @@ export type MultiRigSequenceValidationError = {
   index?: number;
   rigId?: RigId;
   errors?: SequenceValidationError[];
+  path?: readonly (string | number)[];
 };
 
 export type PrepareMultiRigSequenceResult =
@@ -59,8 +57,26 @@ export interface PreparedMultiRigSequence {
   maxSequenceDuration: TimeUnit;
 }
 
-export function prepareMultiRigSequence(input: MultiRigSequence): PrepareMultiRigSequenceResult {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object";
+}
+
+export function prepareMultiRigSequence(input: unknown): PrepareMultiRigSequenceResult {
   const errors: MultiRigSequenceValidationError[] = [];
+
+  if (!isRecord(input)) {
+    return {
+      ok: false,
+      errors: [{ code: "EXPECTED_MULTI_RIG_SEQUENCE", path: [] }]
+    };
+  }
+
+  if (!Array.isArray(input.rigs)) {
+    return {
+      ok: false,
+      errors: [{ code: "EXPECTED_RIGS_ARRAY", path: ["rigs"] }]
+    };
+  }
 
   if (input.rigs.length === 0) {
     errors.push({ code: "EMPTY_MULTI_RIG_SEQUENCE" });
@@ -69,26 +85,37 @@ export function prepareMultiRigSequence(input: MultiRigSequence): PrepareMultiRi
   const seenRigIds = new Set<RigId>();
   const preparedRigs: PreparedRigSequenceEntry[] = [];
 
-  input.rigs.forEach((rig, index) => {
-    if (seenRigIds.has(rig.rigId)) {
-      errors.push({ code: "DUPLICATE_RIG_ID", index, rigId: rig.rigId });
+  input.rigs.forEach((value, index) => {
+    if (!isRecord(value)) {
+      errors.push({ code: "EXPECTED_RIG_ENTRY", index, path: ["rigs", index] });
       return;
     }
 
-    seenRigIds.add(rig.rigId);
+    if (typeof value.rigId !== "string") {
+      errors.push({ code: "INVALID_RIG_ID_TYPE", index, path: ["rigs", index, "rigId"] });
+      return;
+    }
 
-    const preparedResult = prepareSequence(rig.sequence);
+    const rigId = value.rigId;
+    if (seenRigIds.has(rigId)) {
+      errors.push({ code: "DUPLICATE_RIG_ID", index, rigId });
+      return;
+    }
+
+    seenRigIds.add(rigId);
+
+    const preparedResult = prepareSequence(value.sequence);
     if (!preparedResult.ok) {
       errors.push({
         code: "INVALID_RIG_SEQUENCE",
         index,
-        rigId: rig.rigId,
+        rigId,
         errors: preparedResult.errors
       });
       return;
     }
 
-    preparedRigs.push({ rigId: rig.rigId, prepared: preparedResult.prepared });
+    preparedRigs.push({ rigId, prepared: preparedResult.prepared });
   });
 
   if (errors.length > 0) {
