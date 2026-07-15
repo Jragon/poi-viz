@@ -1,15 +1,15 @@
-# Phase Semantics (Part 1)
+# Phase Semantics
 
 ## Purpose
 
-Define exactly what `phase` means for each node so pattern formulas, drivers, and visualization stay consistent.
+Define exactly what `phaseAbs` means for each node so pattern formulas, drivers, and visualization stay consistent.
 
-## Current Part 1 Source
+## Current Source
 
 The current source stores phase as plane-local state. With the default `wall` plane, this is equivalent to the original absolute 2D wall-plane convention.
 
-- `hand.phase`: hand direction in the active plane frame
-- `head.phase`: poi direction in the active plane frame
+- `hand.phaseAbs`: hand direction in the active plane frame
+- `head.phaseAbs`: poi direction in the active plane frame
 
 Angles are in radians.
 
@@ -20,8 +20,8 @@ Angles are in radians.
 
 Use plane-local phase for all nodes. In the default `wall` plane this is equivalent to the original absolute world phase model.
 
-- `hand.phase`: hand direction in the active plane frame
-- `head.phase`: poi direction in the active plane frame
+- `hand.phaseAbs`: hand direction in the active plane frame
+- `head.phaseAbs`: poi direction in the active plane frame
 
 Angles are in radians.
 
@@ -33,19 +33,19 @@ Angles are in radians.
 Each node has:
 
 - `radius`
-- `phase` (plane-local; equivalent to the original wall-plane absolute phase when `planeId = "wall"`)
+- `phaseAbs` (plane-local; equivalent to the original wall-plane absolute phase when `planeId = "wall"`)
 
 For body origin `(0, 0)`, the active local plane determines how the local polar pose is embedded for projection:
 
-- `handPos = polar(hand.radius, hand.phase)`
-- `headPos = handPos + polar(head.radius, head.phase)`
+- `handPos = polar(hand.radius, hand.phaseAbs)`
+- `headPos = handPos + polar(head.radius, head.phaseAbs)`
 
 ## Angular Velocity Semantics
 
 Circle-driver `omega` values are local plane angular velocities:
 
-- `handOmega = d(hand.phase)/dt`
-- `headOmega = d(head.phase)/dt`
+- `handOmega = d(hand.phaseAbs)/dt`
+- `headOmega = d(head.phaseAbs)/dt`
 
 This matches spinner intuition for common patterns:
 
@@ -57,7 +57,7 @@ This matches spinner intuition for common patterns:
 
 Relative poi phase to hand:
 
-- `headRelPhase = wrap(head.phase - hand.phase)`
+- `headRelPhase = wrap(head.phaseAbs - hand.phaseAbs)`
 
 Relative poi angular velocity:
 
@@ -73,23 +73,29 @@ The engine supports driver-specific motion laws.
 
 The circle driver evaluates phase directly:
 
-- `phase = startPhase + omega * tLocal`
+- `phaseAbs = startPhaseAbs + omega * tLocal`
 - `radius = radiusProfile(tLocal)` when a circle driver has a time-keyed radius profile
 - otherwise `radius = startRadius`
 
 Radius profiles belong to the circle driver. They are segment-local time profiles with an implicit `t = 0` anchor from `startPose.radius`.
+
+Preparation requires finite start phase, `omega`, and duration values, and rejects a circle when `startPose.phaseAbs + omega * durationUnits` would overflow to a non-finite result. This keeps all phase values produced by an accepted built-in circle interval finite.
 
 ### Point-To-Point Driver
 
 The point-to-point driver is hand-only in the current source. It stores a polar `endPose`, but evaluation uses local Cartesian interpolation:
 
 1. convert `startPose` and `endPose` to local Cartesian points
-2. interpolate `x/y` linearly by `clamp(tLocal / durationUnits, 0, 1)`
+2. interpolate each coordinate with the convex form `start * (1 - progress) + end * progress`, where `progress = clamp(tLocal / durationUnits, 0, 1)`
 3. convert the interior point back to polar
 
-At `progress <= 0`, evaluation returns `startPose` exactly. At `progress >= 1`, evaluation returns `endPose` exactly. This keeps segment boundaries deterministic and avoids floating-point endpoint drift.
+The convex form avoids the avoidable intermediate overflow of `start + (end - start) * progress` when both finite endpoint coordinates are large. At `progress <= 0`, evaluation returns `startPose` exactly. At `progress >= 1`, evaluation returns `endPose` exactly. This keeps segment boundaries deterministic and avoids floating-point endpoint drift.
 
-Point-to-point `phase` is the geometric `atan2` of the current local Cartesian point. It is not an unbounded monotonic phase clock, and consumers that require monotonic phase crossing semantics must opt out unless they implement a separate sampled-velocity design.
+Point-to-point `phaseAbs` is the geometric `atan2` of the current local Cartesian point. It is not an unbounded monotonic phase clock, and consumers that require monotonic phase crossing semantics must opt out unless they implement a separate sampled-velocity design.
+
+### Runtime Driver
+
+A runtime driver defines its own phase behavior through `evalPose`. Preparation validates the callback's shape but does not run it or inspect its output. Finite phase, continuity, monotonicity, purity, exceptions, and determinism are caller-owned. A consumer must not infer circle semantics from a runtime driver's output, even when its label describes circular motion.
 
 ## Atomic Plane Notes
 
@@ -105,32 +111,32 @@ The numeric phase can carry across plane breaks, but its world-space embedding d
 
 Visualizer-side trigger features such as the metronome should compare against unwrapped phase values for circle-driven sources.
 
-- local trigger: compare a node's active-plane `phase`
-- relative trigger: compare `head.phase - hand.phase`
+- local trigger: compare a node's active-plane `phaseAbs`
+- relative trigger: compare `head.phaseAbs - hand.phaseAbs`
 
 Use periodic target matching against the unwrapped value rather than wrapping every sample first.
 That preserves direction, supports multiple crossings in one frame interval, and keeps boundary handling explicit.
 
-Point-to-point hand sources are currently unavailable to the phase metronome because their `atan2` phase can wrap or reverse along a chord. Absolute head metronome sources remain available while the hand is point-to-point; relative head-minus-hand sources are unavailable when the hand is point-to-point.
+Non-circle sources are unavailable to the phase metronome because they do not provide the constant `omega` contract used for crossing detection. Therefore point-to-point and runtime nodes cannot be absolute sources. An absolute circle-driven head remains available while the hand is point-to-point or runtime; relative head-minus-hand sources require both nodes to use circle drivers.
 
 ## Examples
 
 ### Example A
 
-- `hand.phase = 0`
-- `head.phase = 0`
+- `hand.phaseAbs = 0`
+- `head.phaseAbs = 0`
 - result: hand points right, poi points right
 
 ### Example B
 
-- `hand.phase = PI`
-- `head.phase = 0`
+- `hand.phaseAbs = PI`
+- `head.phaseAbs = 0`
 - result: hand points left, poi points right
 
 ### Example C
 
-- `hand.phase = PI`
-- `head.phase = PI`
+- `hand.phaseAbs = PI`
+- `head.phaseAbs = PI`
 - result: hand points left, poi points left
 
 ## Why This Decision Now

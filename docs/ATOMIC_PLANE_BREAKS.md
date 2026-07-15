@@ -84,12 +84,25 @@ type PointToPointDriver = {
   endPose: RelativeNodePose;
 };
 
+type RuntimeDriver = {
+  kind: "runtime";
+  label: string;
+  evalPose: (startPose: RelativeNodePose, context: DriverEvalContext) => RelativeNodePose;
+};
+
 type Segment = {
   durationUnits: TimeUnit;
   planeId?: PlaneId;
   planeSide?: PlaneSide;
-  hand: { startPose: RelativeNodePose; driver: CircleDriver | PointToPointDriver };
-  head: { startPose: RelativeNodePose; driver: CircleDriver };
+  behindBody?: boolean;
+  hand: {
+    startPose: RelativeNodePose;
+    driver: CircleDriver | PointToPointDriver | RuntimeDriver;
+  };
+  head: {
+    startPose: RelativeNodePose;
+    driver: CircleDriver | RuntimeDriver;
+  };
 };
 ```
 
@@ -97,15 +110,15 @@ type Segment = {
 
 `planeSide` is optional generic metadata. It is valid on every atomic plane and is preserved through preparation and evaluation, but the engine does not default it or apply any visual offset to local pose evaluation. Rendering layers may choose to display side `a` and side `b` as offsets along the active plane normal.
 
+`behindBody` is optional boolean display metadata. It is also preserved through preparation and evaluation without changing local motion.
+
 `evalSegment` still returns local `RelativeRigPose`. Projection to the existing canvas happens in a separate plane adapter.
 
 ## Implemented Validation Rules
 
-- Sequence cannot be empty.
-- Durations must be finite and positive.
-- `planeId`, when present, must be `wall`, `wheel`, or `floor`.
-- `planeSide`, when present, must be `a` or `b`.
-- Head drivers must be circle drivers; point-to-point is currently hand-only.
+- Engine preparation applies the structural, numeric, driver, radius-profile, metadata, interval, and multi-rig checks defined in [Boundary-Explicit Sequence Model](BOUNDARY_EXPLICIT_SEQUENCE_MODEL.md#current-validation-rules).
+- Circle and runtime drivers are accepted on head nodes; point-to-point remains hand-only.
+- Runtime drivers are explicitly unsafe and receive shape validation only.
 - Omitted authored and engine segment planes resolve to `wall`.
 - Authored plane changes are valid only when the previous end pose is on the shared axis.
 - The hand must be on the source plane's shared-axis cardinal.
@@ -114,7 +127,7 @@ type Segment = {
 
 ## Accepted Limitations
 
-This phase one does not support:
+The current model does not support:
 
 - arbitrary 3D paths,
 - continuous plane bends,
@@ -140,7 +153,7 @@ The source-aligned visual path includes the existing 2D canvas:
 - automatic projection preference that keeps wall-only sequences front orthographic,
 - configurable tilted orthographic projection with yaw and pitch controls for non-wall planes or manual override.
 
-The lab also includes a narrow Three.js debug visualizer for world-pose inspection. It renders the actual poi hand/head markers, tether, trails, origin plane sheets, and a procedural stick-figure body overlay. This remains a visual adapter over evaluated world poses; it does not add arbitrary 3D paths or body-aware topology to the engine runtime.
+The lab also includes a narrow Three.js debug visualizer for world-pose inspection. It renders the actual poi hand/head markers, tether, trails, origin plane sheets, and a procedural humanoid body. This remains a visual adapter over evaluated world poses; it does not add arbitrary 3D paths or body-aware topology to the engine runtime.
 
 Phase atlases, stronger plane guides, and active plane highlighting are still visual follow-ups.
 

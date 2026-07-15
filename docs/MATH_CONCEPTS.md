@@ -48,15 +48,16 @@ The 3D body rig treats elbow bend direction as anatomical state, not a canvas ar
 
 ## Relative vs Absolute Phase
 
-- Hand phase is absolute in body frame.
-- Head phase is also absolute in body frame.
-- Relative poi phase is derived when needed: `head.phase - hand.phase`.
+- Hand `phaseAbs` is an absolute angle within the active local plane frame.
+- Head `phaseAbs` is also absolute within that plane frame, rather than relative to the hand angle.
+- Relative poi phase is derived when needed: `head.phaseAbs - hand.phaseAbs`.
 
 ## Deterministic Evaluation
 
-- Pose is evaluated directly from `startState + t`.
+- Built-in driver poses are evaluated directly from prepared start state and local time.
 - No step-by-step integration in core evaluation.
-- Same inputs and time must always produce the same pose.
+- Circle and point-to-point drivers produce the same pose for identical prepared inputs and time.
+- Runtime drivers are an explicitly unsafe exception: callback output, captured state, exceptions, and determinism are caller-owned.
 
 ## Segment and Sequence Math
 
@@ -64,8 +65,9 @@ The 3D body rig treats elbow bend direction as anatomical state, not a canvas ar
 - Sequence places segments on a global timeline in time units.
 - Local time is derived from global time and the segment's prepared timeline interval.
 
-## Boundary Behavior (Part 1)
+## Boundary Behavior
 
-- Current mode is `jump`.
-- Segment transitions are not forced to match position yet.
-- Continuity constraints are planned as explicit boundary modes.
+- Raw engine segments carry explicit start poses, so adjacent segments may jump unless their supplied boundary poses match.
+- The authoring compiler derives continuation-segment start poses from the previous endpoint and validates supported atomic plane changes.
+- That authored continuity is compile-layer policy, not a silent fixup performed by engine preparation.
+- Explicit general-purpose boundary mode metadata remains a future extension.
