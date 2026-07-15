@@ -12,4 +12,11 @@ describe("labLinks", () => {
   it("includes the shared VRM rig lab link", () => {
     expect(labLinks).toContain(VRM_RIG_LAB_LINK);
   });
+
+  it("links the stall graph layout playground", () => {
+    expect(labLinks).toContainEqual({
+      label: "Stall Graph Layouts",
+      to: "/lab/qt-stall-graph/layout"
+    });
+  });
 });

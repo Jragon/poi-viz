@@ -1,11 +1,10 @@
 import type { MultiRigSequence, Segment } from "@/engine/types";
 import { resolveEdge, type Cardinal } from "@/lab/experiments/qt-stall-graph/cardinals";
 import {
-  getBeatCount,
-  getConsecutiveMarks,
-  type StallGraphEditState,
-  type StallGraphNodeMap
-} from "@/lab/experiments/qt-stall-graph/stateModel";
+  type StallPatternDraft,
+  type StallPatternHand,
+  type StallPatternTrackDraft
+} from "@/lab/experiments/qt-stall-graph/stallPattern";
 
 // ─── Constants (re-derived locally; do not import from elementaryQuarterTime) ─
 
@@ -35,11 +34,6 @@ export interface StallGraphDiagnostic {
 export interface CompileStallGraphResult {
   readonly sequence: MultiRigSequence | null;
   readonly diagnostics: readonly StallGraphDiagnostic[];
-}
-
-export interface CompileStallGraphOptions {
-  /** Number of beat rows that played hands must completely mark. */
-  readonly beatCount?: number;
 }
 
 // ─── Segment builder (confirmed in Phase 0) ───────────────────────────────────
@@ -80,36 +74,29 @@ function buildEdgeSegment(
 }
 
 function compileHand(
-  hand: "left" | "right",
-  nodes: StallGraphNodeMap,
-  beatCount: number,
+  hand: StallPatternHand,
+  track: StallPatternTrackDraft,
   diagnostics: StallGraphDiagnostic[]
 ): Segment[] | null {
-  if (nodes.size === 0) {
+  const marks = track.filter((mark): mark is Cardinal => mark !== null);
+  if (marks.length === 0) {
     diagnostics.push({ code: "EMPTY_TRACK", hand });
     return null;
   }
 
-  if (nodes.size === 1) {
+  if (marks.length === 1) {
     diagnostics.push({ code: "SINGLE_MARK_TRACK", hand });
     return null;
   }
 
   let hasMissingRows = false;
-  for (let beatIndex = 0; beatIndex < beatCount; beatIndex++) {
-    if (nodes.has(beatIndex)) continue;
+  track.forEach((mark, beatIndex) => {
+    if (mark !== null) return;
     diagnostics.push({ code: "MISSING_ROW_MARK", hand, beatIndex });
     hasMissingRows = true;
-  }
+  });
 
   if (hasMissingRows) return null;
-
-  const consecutive = getConsecutiveMarks(nodes);
-  if (consecutive === null) {
-    return null;
-  }
-
-  const { marks } = consecutive;
   const segments: Segment[] = [];
   let hasError = false;
 
@@ -132,28 +119,18 @@ function compileHand(
 
 // ─── Public compiler ──────────────────────────────────────────────────────────
 
-export function compileStallGraphState(
-  state: StallGraphEditState,
-  options: CompileStallGraphOptions = {}
-): CompileStallGraphResult {
+export function compileStallPattern(draft: StallPatternDraft): CompileStallGraphResult {
   const diagnostics: StallGraphDiagnostic[] = [];
-  const beatCount = Math.max(options.beatCount ?? getBeatCount(state), getBeatCount(state));
-
-  const shouldCompileLeft = state.playLeft;
-  const shouldCompileRight = state.playRight;
-
-  if (!shouldCompileLeft && !shouldCompileRight) {
-    if (state.playLeft) diagnostics.push({ code: "EMPTY_TRACK", hand: "left" });
-    if (state.playRight) diagnostics.push({ code: "EMPTY_TRACK", hand: "right" });
+  if (draft.tracks.left === null && draft.tracks.right === null) {
     diagnostics.push({ code: "NO_VALID_HANDS" });
     return { sequence: null, diagnostics };
   }
 
-  const leftSegments = shouldCompileLeft
-    ? compileHand("left", state.left, beatCount, diagnostics)
+  const leftSegments = draft.tracks.left
+    ? compileHand("left", draft.tracks.left, diagnostics)
     : null;
-  const rightSegments = shouldCompileRight
-    ? compileHand("right", state.right, beatCount, diagnostics)
+  const rightSegments = draft.tracks.right
+    ? compileHand("right", draft.tracks.right, diagnostics)
     : null;
 
   if (leftSegments === null && rightSegments === null) {

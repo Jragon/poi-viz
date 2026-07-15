@@ -2,497 +2,324 @@
 import { computed, ref } from "vue";
 
 import EmbeddedVisualizer from "@/lab/components/EmbeddedVisualizer.vue";
+import type { Cardinal } from "@/lab/experiments/qt-stall-graph/cardinals";
 import {
-  CARDINAL_LABELS,
-  CARDINAL_ORDER,
-  type Cardinal
-} from "@/lab/experiments/qt-stall-graph/cardinals";
-import {
-  compileStallGraphState,
+  compileStallPattern,
   type StallGraphDiagnostic
 } from "@/lab/experiments/qt-stall-graph/compileStallGraph";
+import type { StallPatternHand } from "@/lab/experiments/qt-stall-graph/stallPattern";
 import {
-  clearNode,
-  getBeatCount,
-  STALL_GRAPH_LAYOUT as layout,
-  setNode,
-  svgDimensions,
-  xForLaneIndex,
-  yForBeatIndex,
-  type StallGraphEditState,
-  type StallGraphHand,
-  type StallGraphNodeMap
-} from "@/lab/experiments/qt-stall-graph/stateModel";
+  appendStallPatternBeat,
+  deleteLastStallPatternBeat,
+  rotateStallPatternCycleStart,
+  setStallPatternNode,
+  setStallPatternTrackPresent,
+  shiftStallPatternTrack
+} from "@/lab/experiments/qt-stall-graph/stallPatternTransforms";
+import StallPatternGraph from "@/lab/experiments/qt-stall-graph/StallPatternGraph.vue";
+import StallPatternGraphScroller from "@/lab/experiments/qt-stall-graph/StallPatternGraphScroller.vue";
+import { useStallPatternUrlState } from "@/lab/experiments/qt-stall-graph/useStallPatternUrlState";
 
-interface DisplayRow {
-  readonly key: string;
-  readonly label: string;
-  readonly beatIndex: number;
-  readonly isLoopClosure: boolean;
+const { draft, orientation, codec, codecError, reset } = useStallPatternUrlState();
+const editingHand = ref<StallPatternHand>("left");
+const copyStatus = ref("");
+
+const compiled = computed(() => (draft.value ? compileStallPattern(draft.value) : null));
+const sequence = computed(() => compiled.value?.sequence ?? null);
+const diagnostics = computed(() => compiled.value?.diagnostics ?? []);
+const canDeleteBeat = computed(() => (draft.value?.beatCount ?? 2) > 2);
+
+function updateDraft(next: NonNullable<typeof draft.value>): void {
+  draft.value = next;
+  copyStatus.value = "";
 }
 
-interface TrackPoint {
-  readonly key: string;
-  readonly hand: StallGraphHand;
-  readonly beatIndex: number;
-  readonly cardinal: Cardinal;
-  readonly x: number;
-  readonly y: number;
-  readonly isLoopClosure: boolean;
+function placeNode(payload: { readonly beatIndex: number; readonly cardinal: Cardinal }): void {
+  if (!draft.value) return;
+  const track = draft.value.tracks[editingHand.value];
+  if (track === null) return;
+  const nextCardinal = track[payload.beatIndex] === payload.cardinal ? null : payload.cardinal;
+  updateDraft(setStallPatternNode(draft.value, editingHand.value, payload.beatIndex, nextCardinal));
 }
 
-interface ConnectorView {
-  readonly key: string;
-  readonly hand: StallGraphHand;
-  readonly x1: number;
-  readonly y1: number;
-  readonly x2: number;
-  readonly y2: number;
+function setEditingHand(hand: StallPatternHand): void {
+  if (!draft.value) return;
+  if (draft.value.tracks[hand] === null) {
+    updateDraft(setStallPatternTrackPresent(draft.value, hand, true));
+  }
+  editingHand.value = hand;
 }
 
-interface ClickTargetView {
-  readonly key: string;
-  readonly row: DisplayRow;
-  readonly cardinal: Cardinal;
-  readonly x: number;
-  readonly y: number;
-}
-
-const rowCount = ref(4);
-const editState = ref<StallGraphEditState>({
-  left: new Map(),
-  right: new Map(),
-  editMode: "left",
-  selectedNodeKey: null,
-  showLeft: true,
-  showRight: true,
-  playLeft: true,
-  playRight: true
-});
-
-const effectiveRowCount = computed(() =>
-  Math.max(rowCount.value, getBeatCount(editState.value), 2)
-);
-const displayRows = computed<readonly DisplayRow[]>(() => {
-  const rows: DisplayRow[] = [];
-  for (let beatIndex = 0; beatIndex < effectiveRowCount.value; beatIndex++) {
-    rows.push({
-      key: `beat-${beatIndex}`,
-      label: String(beatIndex + 1),
-      beatIndex,
-      isLoopClosure: false
-    });
+function toggleTrack(hand: StallPatternHand): void {
+  if (!draft.value) return;
+  const present = draft.value.tracks[hand] !== null;
+  if (present) {
+    const otherHand = hand === "left" ? "right" : "left";
+    if (draft.value.tracks[otherHand] === null) return;
+    updateDraft(setStallPatternTrackPresent(draft.value, hand, false));
+    if (editingHand.value === hand) editingHand.value = otherHand;
+    return;
   }
 
-  rows.push({
-    key: "loop",
-    label: "loop",
-    beatIndex: effectiveRowCount.value,
-    isLoopClosure: true
-  });
-
-  return rows;
-});
-
-const svgSize = computed(() => svgDimensions(displayRows.value.length - 1));
-const svgWidth = computed(() => svgSize.value.width);
-const svgHeight = computed(() => svgSize.value.height);
-const canDeleteRow = computed(() => effectiveRowCount.value > 2);
-const hasAnyNode = computed(() => editState.value.left.size > 0 || editState.value.right.size > 0);
-
-const visibleHands = computed<readonly StallGraphHand[]>(() => {
-  const hands: StallGraphHand[] = [];
-  if (editState.value.showLeft) hands.push("left");
-  if (editState.value.showRight) hands.push("right");
-  return hands;
-});
-
-const trackPoints = computed(() => visibleHands.value.flatMap((hand) => makeTrackPoints(hand)));
-const connectors = computed(() => visibleHands.value.flatMap((hand) => makeConnectors(hand)));
-const clickTargets = computed<readonly ClickTargetView[]>(() =>
-  displayRows.value.flatMap((row) => {
-    if (row.isLoopClosure) return [];
-
-    return CARDINAL_ORDER.map((cardinal, laneIndex) => ({
-      key: `${row.key}-${cardinal}`,
-      row,
-      cardinal,
-      x: xForLaneIndex(laneIndex),
-      y: yForBeatIndex(row.beatIndex)
-    }));
-  })
-);
-
-const compiled = computed(() =>
-  compileStallGraphState(editState.value, { beatCount: effectiveRowCount.value })
-);
-const sequence = computed(() => compiled.value.sequence ?? null);
-const diagnostics = computed(() => (hasAnyNode.value ? compiled.value.diagnostics : []));
-
-function nodesForHand(hand: StallGraphHand): StallGraphNodeMap {
-  return hand === "left" ? editState.value.left : editState.value.right;
+  updateDraft(setStallPatternTrackPresent(draft.value, hand, true));
+  editingHand.value = hand;
 }
 
-function makeTrackPoints(hand: StallGraphHand): readonly TrackPoint[] {
-  const points = Array.from(nodesForHand(hand).entries())
-    .sort((a, b) => a[0] - b[0])
-    .map(([beatIndex, node]) => pointForNode(hand, beatIndex, node.cardinal, false));
-
-  const first = points[0];
-  if (!first || points.length < 2) return points;
-
-  return [
-    ...points,
-    {
-      ...first,
-      key: `${hand}-loop`,
-      beatIndex: effectiveRowCount.value,
-      y: yForBeatIndex(effectiveRowCount.value),
-      isLoopClosure: true
-    }
-  ];
+function shiftTrack(hand: StallPatternHand, delta: number): void {
+  if (!draft.value) return;
+  updateDraft(shiftStallPatternTrack(draft.value, hand, delta));
 }
 
-function makeConnectors(hand: StallGraphHand): readonly ConnectorView[] {
-  const points = makeTrackPoints(hand);
-  const result: ConnectorView[] = [];
+function rotateCycle(delta: number): void {
+  if (!draft.value) return;
+  updateDraft(rotateStallPatternCycleStart(draft.value, delta));
+}
 
-  for (let index = 0; index < points.length - 1; index++) {
-    const from = points[index];
-    const to = points[index + 1];
-    result.push({
-      key: `${hand}-${from.beatIndex}-${to.beatIndex}-${index}`,
-      hand,
-      x1: from.x,
-      y1: from.y,
-      x2: to.x,
-      y2: to.y
-    });
+function appendBeat(): void {
+  if (draft.value) updateDraft(appendStallPatternBeat(draft.value));
+}
+
+function deleteBeat(): void {
+  if (draft.value) updateDraft(deleteLastStallPatternBeat(draft.value));
+}
+
+async function copyCodec(): Promise<void> {
+  if (!codec.value) return;
+  try {
+    await navigator.clipboard.writeText(codec.value);
+    copyStatus.value = "Copied";
+  } catch {
+    copyStatus.value = "Copy failed";
   }
-
-  return result;
-}
-
-function pointForNode(
-  hand: StallGraphHand,
-  beatIndex: number,
-  cardinal: Cardinal,
-  isLoopClosure: boolean
-): TrackPoint {
-  return {
-    key: `${hand}-${beatIndex}`,
-    hand,
-    beatIndex,
-    cardinal,
-    x: xForLaneIndex(CARDINAL_ORDER.indexOf(cardinal)),
-    y: yForBeatIndex(beatIndex),
-    isLoopClosure
-  };
-}
-
-function placeNode(cardinal: Cardinal, beatIndex: number): void {
-  const hand = editState.value.editMode;
-  const nodes = nodesForHand(hand);
-  const existing = nodes.get(beatIndex);
-  const nextNodes =
-    existing?.cardinal === cardinal
-      ? clearNode(nodes, beatIndex)
-      : setNode(nodes, beatIndex, cardinal);
-
-  editState.value = {
-    ...editState.value,
-    [hand]: nextNodes,
-    selectedNodeKey: existing?.cardinal === cardinal ? null : `${hand}-${beatIndex}`
-  };
-}
-
-function appendRow(): void {
-  rowCount.value += 1;
-}
-
-function deleteRow(): void {
-  if (!canDeleteRow.value) return;
-
-  const nextRowCount = effectiveRowCount.value - 1;
-  rowCount.value = nextRowCount;
-  editState.value = {
-    ...editState.value,
-    left: trimNodes(editState.value.left, nextRowCount),
-    right: trimNodes(editState.value.right, nextRowCount),
-    selectedNodeKey: null
-  };
-}
-
-function trimNodes(nodes: StallGraphNodeMap, nextRowCount: number): StallGraphNodeMap {
-  return new Map(Array.from(nodes.entries()).filter(([beatIndex]) => beatIndex < nextRowCount));
-}
-
-function setEditMode(hand: StallGraphHand): void {
-  editState.value = { ...editState.value, editMode: hand, selectedNodeKey: null };
-}
-
-function toggleFlag(flag: "showLeft" | "showRight" | "playLeft" | "playRight"): void {
-  editState.value = { ...editState.value, [flag]: !editState.value[flag] };
-}
-
-function connectorClass(connector: ConnectorView): string {
-  return connector.hand === "left" ? "stroke-cyan-300" : "stroke-pink-300";
-}
-
-function pointClass(point: TrackPoint): string {
-  return point.hand === "left"
-    ? "fill-slate-950 stroke-cyan-300"
-    : "fill-slate-950 stroke-pink-300";
-}
-
-function pointRadius(point: TrackPoint): number {
-  return isSelectedPoint(point) ? layout.nodeRadiusActive : layout.nodeRadius;
-}
-
-function pointStrokeWidth(point: TrackPoint): number {
-  return isSelectedPoint(point) ? 3 : 2;
-}
-
-function pointStrokeDasharray(point: TrackPoint): string | undefined {
-  return point.isLoopClosure ? "2 2" : undefined;
-}
-
-function isSelectedPoint(point: TrackPoint): boolean {
-  return (
-    !point.isLoopClosure && editState.value.selectedNodeKey === `${point.hand}-${point.beatIndex}`
-  );
 }
 
 function diagnosticText(diagnostic: StallGraphDiagnostic): string {
   const hand = diagnostic.hand ? ` ${diagnostic.hand}` : "";
   const beat = diagnostic.beatIndex !== undefined ? ` beat ${diagnostic.beatIndex + 1}` : "";
-  const edge = diagnostic.from && diagnostic.to ? ` ${diagnostic.from}->${diagnostic.to}` : "";
+  const edge = diagnostic.from && diagnostic.to ? ` ${diagnostic.from}→${diagnostic.to}` : "";
   return `${diagnostic.code}${hand}${beat}${edge}`;
 }
 </script>
 
 <template>
-  <div class="grid gap-4">
-    <section class="overflow-hidden rounded-lg border border-slate-800 bg-slate-900/60">
+  <div class="grid min-w-0 gap-4">
+    <section class="min-w-0 overflow-hidden rounded-lg border border-slate-800 bg-slate-900/60">
       <div
-        class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 px-4 py-2.5"
+        class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 px-4 py-3"
       >
         <div>
-          <p class="text-xs uppercase tracking-[0.16em] text-slate-500">Graph</p>
+          <p class="text-xs uppercase tracking-[0.16em] text-slate-500">Pattern editor</p>
           <h2 class="mt-1 text-sm font-semibold text-slate-200">
-            {{ editState.editMode === "left" ? "Left edit graph" : "Right edit graph" }}
+            {{ editingHand === "left" ? "Editing left hand" : "Editing right hand" }}
           </h2>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2 text-xs">
-          <button
-            type="button"
-            class="rounded-md border px-2 py-1 font-semibold transition hover:border-cyan-300"
-            :class="
-              editState.editMode === 'left'
-                ? 'border-cyan-400 text-cyan-300'
-                : 'border-slate-700 text-slate-400'
-            "
-            @click="setEditMode('left')"
-          >
-            Edit L
-          </button>
-          <button
-            type="button"
-            class="rounded-md border px-2 py-1 font-semibold transition hover:border-pink-300"
-            :class="
-              editState.editMode === 'right'
-                ? 'border-pink-400 text-pink-300'
-                : 'border-slate-700 text-slate-400'
-            "
-            @click="setEditMode('right')"
-          >
-            Edit R
-          </button>
-        </div>
-      </div>
-
-      <div class="px-3 py-3">
-        <svg
-          role="img"
-          aria-label="Quarter-time stall graph with cardinal lanes and beat rows"
-          :viewBox="`0 0 ${svgWidth} ${svgHeight}`"
-          class="block w-full text-slate-400"
-        >
-          <g aria-hidden="true">
-            <line
-              v-for="(cardinal, index) in CARDINAL_ORDER"
-              :key="`axis-${cardinal}`"
-              :x1="xForLaneIndex(index)"
-              :x2="xForLaneIndex(index)"
-              :y1="layout.topPad - 16"
-              :y2="svgHeight - layout.bottomPad + 10"
-              class="stroke-slate-800"
-              stroke-width="1"
-            />
-            <line
-              v-for="(row, index) in displayRows"
-              :key="`row-axis-${row.key}`"
-              :x1="layout.leftPad - 28"
-              :x2="svgWidth - layout.rightPad + 16"
-              :y1="yForBeatIndex(index)"
-              :y2="yForBeatIndex(index)"
-              class="stroke-slate-800/70"
-              stroke-width="1"
-            />
-          </g>
-
-          <g>
-            <text
-              v-for="(cardinal, index) in CARDINAL_ORDER"
-              :key="`label-${cardinal}`"
-              :x="xForLaneIndex(index)"
-              y="20"
-              text-anchor="middle"
-              class="fill-slate-400 text-[9px] font-medium"
-            >
-              {{ cardinal }}
-            </text>
-          </g>
-
-          <g>
-            <text
-              v-for="(row, index) in displayRows"
-              :key="`row-label-${row.key}`"
-              x="24"
-              :y="yForBeatIndex(index) + 4"
-              class="fill-slate-500 font-mono text-[10px]"
-            >
-              {{ row.label }}
-            </text>
-          </g>
-
-          <g>
-            <line
-              v-for="connector in connectors"
-              :key="connector.key"
-              :x1="connector.x1"
-              :y1="connector.y1"
-              :x2="connector.x2"
-              :y2="connector.y2"
-              :class="connectorClass(connector)"
-              stroke-width="2.5"
-              stroke-linecap="round"
-            />
-          </g>
-
-          <g>
-            <circle
-              v-for="point in trackPoints"
-              :key="point.key"
-              :cx="point.x"
-              :cy="point.y"
-              :r="pointRadius(point)"
-              :class="pointClass(point)"
-              :stroke-width="pointStrokeWidth(point)"
-              :stroke-dasharray="pointStrokeDasharray(point)"
-              :data-active-node="isSelectedPoint(point) ? 'true' : undefined"
-            />
-          </g>
-
-          <g>
-            <foreignObject
-              v-for="target in clickTargets"
-              :key="target.key"
-              :x="target.x - 11"
-              :y="target.y - 11"
-              width="22"
-              height="22"
-            >
-              <button
-                type="button"
-                class="grid h-5.5 w-5.5 place-items-center rounded-full bg-transparent"
-                :aria-label="`${editState.editMode} hand beat ${target.row.label} ${CARDINAL_LABELS[target.cardinal]}`"
-                @click="placeNode(target.cardinal, target.row.beatIndex)"
-              >
-                <span class="sr-only">{{ target.cardinal }}</span>
-              </button>
-            </foreignObject>
-          </g>
-        </svg>
-      </div>
-
-      <div
-        class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 px-3 py-2"
-      >
-        <div class="flex gap-2">
-          <button
-            type="button"
-            class="inline-grid h-7 w-7 place-items-center rounded-md border border-slate-700 text-base leading-none text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:border-slate-800 disabled:text-slate-600 disabled:hover:bg-transparent"
-            aria-label="Delete row"
-            title="Delete row"
-            :disabled="!canDeleteRow"
-            @click="deleteRow"
-          >
-            -
-          </button>
-          <button
-            type="button"
-            class="inline-grid h-7 w-7 place-items-center rounded-md border border-slate-700 text-base leading-none text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white"
-            aria-label="Append row"
-            title="Append row"
-            @click="appendRow"
-          >
-            +
-          </button>
         </div>
 
         <div class="flex flex-wrap gap-2 text-xs">
           <button
+            v-for="hand in ['left', 'right'] as const"
+            :key="hand"
             type="button"
-            class="rounded-md border px-2 py-1 transition hover:border-cyan-300"
+            class="rounded-md border px-2.5 py-1.5 font-semibold transition"
             :class="
-              editState.showLeft
-                ? 'border-cyan-400 text-cyan-300'
-                : 'border-slate-700 text-slate-500'
+              editingHand === hand
+                ? hand === 'left'
+                  ? 'border-cyan-400 bg-cyan-400/10 text-cyan-200'
+                  : 'border-pink-400 bg-pink-400/10 text-pink-200'
+                : 'border-slate-700 text-slate-400 hover:border-slate-500'
             "
-            @click="toggleFlag('showLeft')"
+            @click="setEditingHand(hand)"
           >
-            Show L
+            Edit {{ hand === "left" ? "L" : "R" }}
+          </button>
+          <span class="mx-1 w-px bg-slate-800" aria-hidden="true" />
+          <button
+            type="button"
+            class="rounded-md border px-2.5 py-1.5 transition"
+            :class="
+              orientation === 'horizontal'
+                ? 'border-amber-400/70 text-amber-200'
+                : 'border-slate-700 text-slate-400 hover:border-slate-500'
+            "
+            @click="orientation = 'horizontal'"
+          >
+            Horizontal
           </button>
           <button
             type="button"
-            class="rounded-md border px-2 py-1 transition hover:border-pink-300"
+            class="rounded-md border px-2.5 py-1.5 transition"
             :class="
-              editState.showRight
-                ? 'border-pink-400 text-pink-300'
-                : 'border-slate-700 text-slate-500'
+              orientation === 'vertical'
+                ? 'border-amber-400/70 text-amber-200'
+                : 'border-slate-700 text-slate-400 hover:border-slate-500'
             "
-            @click="toggleFlag('showRight')"
+            @click="orientation = 'vertical'"
           >
-            Show R
-          </button>
-          <button
-            type="button"
-            class="rounded-md border px-2 py-1 transition hover:border-cyan-300"
-            :class="
-              editState.playLeft
-                ? 'border-cyan-400 text-cyan-300'
-                : 'border-slate-700 text-slate-500'
-            "
-            @click="toggleFlag('playLeft')"
-          >
-            Play L
-          </button>
-          <button
-            type="button"
-            class="rounded-md border px-2 py-1 transition hover:border-pink-300"
-            :class="
-              editState.playRight
-                ? 'border-pink-400 text-pink-300'
-                : 'border-slate-700 text-slate-500'
-            "
-            @click="toggleFlag('playRight')"
-          >
-            Play R
+            Vertical
           </button>
         </div>
       </div>
+
+      <div v-if="codecError" class="m-4 rounded-md border border-red-900/60 bg-red-950/25 p-4">
+        <p class="font-mono text-xs text-red-300">
+          {{ codecError.code }} — {{ codecError.message }}
+        </p>
+        <button
+          type="button"
+          class="mt-3 rounded-md border border-red-800 px-3 py-1.5 text-xs text-red-200 transition hover:border-red-500"
+          @click="reset"
+        >
+          Start a blank pattern
+        </button>
+      </div>
+
+      <template v-else-if="draft">
+        <div class="min-w-0 p-3">
+          <StallPatternGraphScroller
+            v-if="orientation === 'horizontal'"
+            :draft="draft"
+            density="editor"
+            :editing-hand="editingHand"
+            aria-label="Editable horizontal quarter-time stall pattern"
+            @place-node="placeNode"
+          />
+          <div v-else class="max-h-[38rem] overflow-auto rounded-md bg-slate-950">
+            <StallPatternGraph
+              :draft="draft"
+              orientation="vertical"
+              density="editor"
+              :editing-hand="editingHand"
+              :fit-to-container="false"
+              aria-label="Editable vertical quarter-time stall pattern"
+              @place-node="placeNode"
+            />
+          </div>
+        </div>
+
+        <div
+          class="grid gap-3 border-t border-slate-800 px-3 py-3 text-xs md:grid-cols-2 xl:grid-cols-4"
+        >
+          <div class="rounded-md border border-slate-800 bg-slate-950/40 p-2.5">
+            <p class="mb-2 uppercase tracking-[0.12em] text-slate-500">Beats</p>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="control-button"
+                aria-label="Delete last beat"
+                :disabled="!canDeleteBeat"
+                @click="deleteBeat"
+              >
+                −
+              </button>
+              <span class="min-w-8 text-center font-mono text-slate-300">{{
+                draft.beatCount
+              }}</span>
+              <button
+                type="button"
+                class="control-button"
+                aria-label="Append beat"
+                @click="appendBeat"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          <div class="rounded-md border border-slate-800 bg-slate-950/40 p-2.5">
+            <p class="mb-2 uppercase tracking-[0.12em] text-slate-500">Track presence</p>
+            <div class="flex gap-2">
+              <button
+                v-for="hand in ['left', 'right'] as const"
+                :key="hand"
+                type="button"
+                class="rounded-md border px-2 py-1.5 transition"
+                :class="
+                  draft.tracks[hand] !== null
+                    ? hand === 'left'
+                      ? 'border-cyan-700 text-cyan-300'
+                      : 'border-pink-700 text-pink-300'
+                    : 'border-slate-700 text-slate-500'
+                "
+                @click="toggleTrack(hand)"
+              >
+                {{ draft.tracks[hand] !== null ? "Remove" : "Add" }}
+                {{ hand === "left" ? "L" : "R" }}
+              </button>
+            </div>
+          </div>
+
+          <div class="rounded-md border border-slate-800 bg-slate-950/40 p-2.5">
+            <p class="mb-2 uppercase tracking-[0.12em] text-slate-500">Hand offset</p>
+            <div class="flex flex-wrap gap-2">
+              <span
+                v-for="hand in ['left', 'right'] as const"
+                :key="hand"
+                class="inline-flex items-center gap-1"
+              >
+                <span :class="hand === 'left' ? 'text-cyan-300' : 'text-pink-300'">{{
+                  hand === "left" ? "L" : "R"
+                }}</span>
+                <button
+                  type="button"
+                  class="control-button"
+                  :disabled="draft.tracks[hand] === null"
+                  :aria-label="`Move ${hand} hand one beat earlier`"
+                  @click="shiftTrack(hand, -1)"
+                >
+                  ←
+                </button>
+                <button
+                  type="button"
+                  class="control-button"
+                  :disabled="draft.tracks[hand] === null"
+                  :aria-label="`Move ${hand} hand one beat later`"
+                  @click="shiftTrack(hand, 1)"
+                >
+                  →
+                </button>
+              </span>
+            </div>
+          </div>
+
+          <div class="rounded-md border border-slate-800 bg-slate-950/40 p-2.5">
+            <p class="mb-2 uppercase tracking-[0.12em] text-slate-500">Cycle start</p>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="control-button"
+                aria-label="Move cycle start one beat earlier"
+                @click="rotateCycle(-1)"
+              >
+                ←
+              </button>
+              <button
+                type="button"
+                class="control-button"
+                aria-label="Move cycle start one beat later"
+                @click="rotateCycle(1)"
+              >
+                →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="flex min-w-0 flex-wrap items-center gap-2 border-t border-slate-800 px-3 py-2.5"
+        >
+          <code
+            class="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded bg-slate-950 px-2.5 py-1.5 text-[11px] text-slate-400"
+            >{{ codec }}</code
+          >
+          <button
+            type="button"
+            class="rounded-md border border-slate-700 px-2.5 py-1.5 text-xs text-slate-300 transition hover:border-slate-500"
+            @click="copyCodec"
+          >
+            Copy codec
+          </button>
+          <span class="min-w-14 text-xs text-slate-500" role="status">{{ copyStatus }}</span>
+        </div>
+      </template>
     </section>
 
     <ul
@@ -505,18 +332,42 @@ function diagnosticText(diagnostic: StallGraphDiagnostic): string {
     </ul>
 
     <EmbeddedVisualizer
-      v-if="sequence !== null"
+      v-if="sequence"
       :sequence="sequence"
-      title="Stall graph preview"
+      title="Stall pattern preview"
       size="compact"
       :show-body-rig="true"
       projection-mode="auto"
     />
     <div
-      v-else
+      v-else-if="draft"
       class="rounded border border-slate-800 bg-slate-950/30 px-4 py-8 text-center text-xs text-slate-600"
     >
-      Add at least two compatible nodes on a played hand to preview.
+      Fill one present hand with compatible quarter-turn stalls to preview it.
     </div>
   </div>
 </template>
+
+<style scoped>
+.control-button {
+  display: inline-grid;
+  height: 1.75rem;
+  width: 1.75rem;
+  place-items: center;
+  border-radius: 0.375rem;
+  border: 1px solid rgb(51 65 85);
+  color: rgb(226 232 240);
+  transition-property: color, background-color, border-color;
+}
+
+.control-button:hover:not(:disabled) {
+  border-color: rgb(100 116 139);
+  background: rgb(30 41 59);
+}
+
+.control-button:disabled {
+  cursor: not-allowed;
+  border-color: rgb(30 41 59);
+  color: rgb(71 85 105);
+}
+</style>

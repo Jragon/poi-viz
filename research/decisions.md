@@ -125,6 +125,23 @@ Engine preparation is the runtime trust boundary for declarative sequence input.
 
 The deterministic engine guarantee now applies explicitly to built-in drivers. Code using runtime drivers must treat that path as unsafe rather than relying on validation to make it declarative or pure.
 
+## 2026-07-15: Quarter-Time Stall Patterns Use a Canonical Codec and Continuous Graph Layouts
+
+Quarter-time stall patterns are authored as serializable lab data and identified by a compact,
+versioned codec such as `q1.4.URDL.RDLU`.
+
+- Pattern data contains beat count and optional left/right cardinal tracks. `_` is an unfinished
+  beat and `-` is an absent hand. Editor selection, visibility, and layout are not pattern data.
+- The editor defaults to one continuous horizontal, left-to-right timeline with internal scrolling
+  and fixed cardinal labels. Vertical rendering remains available as a view preference.
+- The fit-to-card full-pattern rendering is the canonical thumbnail for selection and saved-pattern
+  surfaces. It remains recognizable for patterns longer than 22 beats.
+- Wrapped multi-staff rendering is rejected. It fragments the continuous cycle without adding
+  enough value for either editing or article comparison.
+- Article examples are backed directly by codecs rather than requiring semantic pattern names.
+- This remains lab notation and compilation behavior; it does not add quarter-time concepts to the
+  engine runtime.
+
 ## 2026-07-15: Reproducible V2 Verification and Expired Migration Removal
 
 The supported V2 toolchain and verification gates are explicit:

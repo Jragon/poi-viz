@@ -45,6 +45,10 @@ const eagerPageModules = new Map<string, { default: { name: string } }>([
   [
     "@/lab/experiments/qt-stall-graph/StallGraphJournalPage.vue",
     { default: { name: "StallGraphJournalPage" } }
+  ],
+  [
+    "@/lab/experiments/qt-stall-graph/StallGraphLayoutPage.vue",
+    { default: { name: "StallGraphLayoutPage" } }
   ]
 ]);
 

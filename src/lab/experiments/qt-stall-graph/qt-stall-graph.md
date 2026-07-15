@@ -2,28 +2,44 @@
   <span>Experiment</span>
   <span>Quarter Time</span>
   <span>Stall Graph</span>
-  <span>18 Jun 2026</span>
+  <span>15 Jul 2026</span>
 </div>
 
 <p class="lab-entry-kicker">Lab note 002</p>
 
 # Antispin Quarter-Time Stall Graph
 
-A row-complete looping directed-graph notation for 3D antispin quarter-time flower and stall patterns.
+A compact looping notation for 3D antispin quarter-time flowers and stall patterns.
 
-Each **row** is a beat. Each **column** is a cardinal direction (F U R D L B — the six axes of the sphere). Mark where each hand stalls.
+In the default horizontal view, time runs left to right like a short line of music. Each column is a beat and each row is one cardinal direction (F U R D L B — the six axes of the sphere). Cyan marks are the left hand; pink marks are the right. The vertical view carries the same information with the axes swapped.
 
-Adjacent marks define one quarter arc. The plane the poi travels in is uniquely determined by the pair of cardinals — no extra information needed.
+Adjacent marks define one quarter arc. The plane the poi travels in is uniquely determined by the pair of cardinals, so the notation does not need a separate plane field.
 
 <StallGraphEditor />
 
-## How to read it
+## Editing and sharing
 
-- **○** left hand · **×** right hand
-- Each click sets (or clears) where that hand stalls on that beat
-- Every played hand needs one mark on every beat row
-- The arc between two consecutive marks is always a quarter-circle on the unique plane those two cardinals share
-- At a stall, the hand, arm, and poi head are all colinear — pointing the same direction
+- Click a cardinal at a beat to set it; click the same point again to clear it.
+- Offset either hand earlier or later to inspect phase relationships.
+- Move the cycle start without changing the relationship between the hands.
+- Add or remove beats and switch between the horizontal and vertical views.
+- Every edit is encoded in the page URL as a compact codec such as `q1.4.URDL.RDLU`.
+
+The codec is the pattern definition. It does not require a name or a separate database record: `q1` is the codec version, `4` is the number of beats, then the left- and right-hand tracks follow. `_` is an unfinished beat and `-` means that hand is absent.
+
+## Codec-backed article patterns
+
+An article can keep a small local registry of codec strings. The full-pattern graph remains recognizable at thumbnail size, so the same renderer works as a selector. Selecting a thumbnail below drives one shared live preview; **Edit** opens that exact codec in the editor.
+
+<StallPatternGallery :codecs="articlePatterns" />
+
+### Relationships worth comparing
+
+- **Phase orbit:** `q1.4.URDL.URDL`, `q1.4.URDL.RDLU`, `q1.4.URDL.DLUR`, and `q1.4.URDL.LURD` keep the left-hand wall loop fixed while advancing the right hand by zero, one, two, and three beats. These are the four discrete quarter-time phase relationships of the same pair of paths.
+- **Direction reversal:** `q1.4.URDL.ULDR` starts both hands at U, then sends them around the same wall loop in opposite directions. They coincide again at D halfway through the cycle.
+- **Plane substitution:** `URDL` is the wall great-circle loop, `UFDB` is its wheel-plane counterpart, and `RFLB` is the floor-plane counterpart. Compare `q1.4.URDL.UFDB` with `q1.4.UFDB.RFLB`: the four-beat rhythm is unchanged while the spatial plane pair changes.
+- **Turn around and retrace:** `q1.8.URDLULDR.RDLULDRU` traverses a wall loop in one direction for four beats and reverses it for four, with the right hand one beat ahead. It has an eight-beat authored period even though both halves use the same four stalls.
+- **Authored period versus visible repetition:** `q1.4.URDL.RDLU`, `q1.8.URDLURDL.RDLURDLU`, and the 24-beat codec repeat the same phase-offset wall pair once, twice, and six times. The geometry repeats, but the explicit cycle duration and beat numbering do not.
 
 ## Cardinal → plane lookup
 
@@ -33,30 +49,22 @@ Adjacent marks define one quarter arc. The plane the poi travels in is uniquely 
 | U ↔ F, U ↔ B, D ↔ F, D ↔ B | Wheel |
 | L ↔ F, L ↔ B, R ↔ F, R ↔ B | Floor |
 
-Opposite pairs (U–D, L–R, F–B) are illegal — they would be a half-circle, not a quarter.
-
-## Example: wall plane 4-petal flower (clockwise)
-
-```
-  F  U  R  D  L  B
-     ○
-        ○
-           ○
-              ○
-```
-
-Right hand traces U → R → D → L → (back to U).
-
-## Example: mirrored wall flowers (same time)
-
-```
-  F  U  R  D  L  B
-     ○×
-        ×     ○
-           ○×
-        ○     ×
-```
+Opposite pairs (U–D, L–R, F–B) are illegal because they describe a half-circle rather than a quarter-circle. The editor reports these transitions and does not silently correct them.
 
 <script setup>
 import StallGraphEditor from "./StallGraphEditor.vue";
+import StallPatternGallery from "./StallPatternGallery.vue";
+
+const articlePatterns = [
+  "q1.4.URDL.URDL",
+  "q1.4.URDL.RDLU",
+  "q1.4.URDL.DLUR",
+  "q1.4.URDL.LURD",
+  "q1.4.URDL.ULDR",
+  "q1.4.URDL.UFDB",
+  "q1.4.UFDB.RFLB",
+  "q1.8.URDLULDR.RDLULDRU",
+  "q1.8.URDLURDL.RDLURDLU",
+  `q1.24.${"URDL".repeat(6)}.${"RDLU".repeat(6)}`
+];
 </script>
