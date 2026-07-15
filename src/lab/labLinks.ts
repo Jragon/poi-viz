@@ -11,6 +11,10 @@ export const labLinks = [
     to: "/lab/qt-stall-graph"
   },
   {
+    label: "Stall Graph Layouts",
+    to: "/lab/qt-stall-graph/layout"
+  },
+  {
     label: "Archer Weaves",
     to: "/lab/archer-weaves"
   },

@@ -5,6 +5,7 @@ import BodyTracingJournalPage from "@/lab/experiments/body-tracing/BodyTracingJo
 import BodyTracingPlaneExperimentsPage from "@/lab/experiments/body-tracing/BodyTracingPlaneExperimentsPage.vue";
 import BeatGraphEditorPage from "@/lab/experiments/mel-body-tracing/pages/BeatGraphEditorPage.vue";
 import BodyTracingExplorerPage from "@/lab/experiments/mel-body-tracing/pages/BodyTracingExplorerPage.vue";
+import StallGraphLayoutPage from "@/lab/experiments/qt-stall-graph/StallGraphLayoutPage.vue";
 import StallGraphJournalPage from "@/lab/experiments/qt-stall-graph/StallGraphJournalPage.vue";
 import QuarterTimeJournalPage from "@/lab/experiments/quarter-time/QuarterTimeJournalPage.vue";
 import {
@@ -37,6 +38,11 @@ export const router = createRouter({
       path: "/lab/qt-stall-graph",
       name: "qt-stall-graph",
       component: StallGraphJournalPage
+    },
+    {
+      path: "/lab/qt-stall-graph/layout",
+      name: "qt-stall-graph-layout",
+      component: StallGraphLayoutPage
     },
     {
       path: "/lab/archer-weaves",

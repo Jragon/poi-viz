@@ -49,4 +49,19 @@ describe("router", () => {
     const loadedModule = await (route?.component as () => Promise<unknown>)();
     expect(loadedModule).toBe(lazyThreeDDebugPageModule);
   });
+
+  it("registers the stall graph layout playground", () => {
+    evaluateRouterModule(createRouterSpy, createWebHistorySpy, [
+      ["@/lab/experiments/three-d-debug/routeMeta", threeDDebugRouteMetaModule],
+      ["@/lab/experiments/vrm-rig/routeMeta", vrmRigRouteMetaModule]
+    ]);
+
+    const [routerOptions] = createRouterSpy.mock.calls[0] as [RouterOptions];
+    expect(routerOptions.routes).toContainEqual(
+      expect.objectContaining({
+        path: "/lab/qt-stall-graph/layout",
+        name: "qt-stall-graph-layout"
+      })
+    );
+  });
 });
