@@ -9,10 +9,11 @@ import type {
   DerivedAuthoredSegmentBoundary
 } from "@/authoring/types";
 import { PI } from "@/engine/constants";
-import type { PlaneId, RelativeRigPose } from "@/engine/types";
+import type { PlaneId, PlaneSide, RelativeRigPose } from "@/engine/types";
 
 type EditableNode = "hand" | "head";
 const PLANE_OPTIONS: readonly PlaneId[] = ["wall", "wheel", "floor"];
+const PLANE_SIDE_OPTIONS: readonly PlaneSide[] = ["a", "b"];
 
 const props = defineProps<{
   segment: AuthoredSegment;
@@ -32,6 +33,7 @@ const emit = defineEmits<{
   (event: "jump-to-boundary"): void;
   (event: "update:duration", value: number): void;
   (event: "update:plane", value: PlaneId): void;
+  (event: "update:plane-side", value: PlaneSide): void;
   (
     event: "update:start-pose",
     payload: { node: EditableNode; field: "phaseDeg" | "radius"; value: number }
@@ -135,6 +137,10 @@ function onUpdateOmega(node: EditableNode, displayValue: number) {
 function onPlaneChange(event: Event) {
   emit("update:plane", (event.target as HTMLSelectElement).value as PlaneId);
 }
+
+function onPlaneSideChange(event: Event) {
+  emit("update:plane-side", (event.target as HTMLSelectElement).value as PlaneSide);
+}
 </script>
 
 <template>
@@ -196,7 +202,7 @@ function onPlaneChange(event: Event) {
         </div>
       </div>
 
-      <div class="grid gap-3 sm:grid-cols-2">
+      <div class="grid gap-3 sm:grid-cols-3">
         <label class="grid min-w-0 gap-1 text-sm text-slate-300">
           <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Plane</span>
           <select
@@ -207,6 +213,20 @@ function onPlaneChange(event: Event) {
           >
             <option v-for="plane in PLANE_OPTIONS" :key="plane" :value="plane">
               {{ plane }}
+            </option>
+          </select>
+        </label>
+
+        <label class="grid min-w-0 gap-1 text-sm text-slate-300">
+          <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Plane side</span>
+          <select
+            class="w-full min-w-0 rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none transition focus:border-sky-400"
+            :value="segment.planeSide ?? 'a'"
+            @click.stop
+            @change="onPlaneSideChange"
+          >
+            <option v-for="side in PLANE_SIDE_OPTIONS" :key="side" :value="side">
+              {{ side.toUpperCase() }}
             </option>
           </select>
         </label>

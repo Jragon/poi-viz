@@ -129,6 +129,22 @@ describe("validateAuthoredDocument", () => {
       });
     }
   });
+
+  it("rejects invalid authored plane sides", () => {
+    const document = makePlaneBreakDocument("wall", "wall", 0, 0);
+    document.tracks.left!.segments[0].planeSide = "front" as "a";
+
+    const result = validateAuthoredDocument(document);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContainEqual({
+        code: "INVALID_PLANE_SIDE",
+        trackId: "left",
+        segmentIndex: 0
+      });
+    }
+  });
 });
 
 describe("compileAuthoredDocument", () => {
@@ -515,6 +531,43 @@ describe("compileAuthoredDocument", () => {
 });
 
 describe("authoredDocumentFromMultiRigSequence", () => {
+  it("round-trips explicit plane sides and preserves legacy omission", () => {
+    const segment = makeStaticSegment();
+    const sequence: MultiRigSequence = {
+      rigs: [
+        {
+          rigId: "left",
+          sequence: {
+            segments: [
+              { ...segment, durationUnits: 1, planeSide: "a" },
+              { ...segment, durationUnits: 1, planeSide: "b" },
+              { ...segment, durationUnits: 1 }
+            ]
+          }
+        }
+      ]
+    };
+
+    const document = authoredDocumentFromMultiRigSequence(sequence, {
+      name: "Side round trip",
+      description: null
+    });
+    const sides = document.tracks.left?.segments.map((authoredSegment) =>
+      authoredSegment.planeSide === undefined ? null : authoredSegment.planeSide
+    );
+
+    expect(sides).toEqual(["a", "b", null]);
+    const compiled = compileAuthoredDocument(document);
+    expect(compiled.ok).toBe(true);
+    if (compiled.ok) {
+      expect(
+        compiled.sequence.rigs[0].sequence.segments.map((compiledSegment) =>
+          compiledSegment.planeSide === undefined ? null : compiledSegment.planeSide
+        )
+      ).toEqual(["a", "b", null]);
+    }
+  });
+
   it("round-trips segment plane ids into authored segments", () => {
     const segment = makeStaticSegment();
     const sequence: MultiRigSequence = {

@@ -108,6 +108,7 @@ export function useMultiRigPlayback(
     projectionYawDeg: number;
     projectionPitchDeg: number;
     planeSideSeparationWorld: number;
+    planeSideDefaultSide: PlaneSideDisplaySettings["defaultSide"];
     trails: MultiRigTrailSamples;
   } | null = null;
 
@@ -211,7 +212,8 @@ export function useMultiRigPlayback(
       trailCache.projectionMode === currentProjectionSettings.mode &&
       trailCache.projectionYawDeg === currentProjectionSettings.yawDeg &&
       trailCache.projectionPitchDeg === currentProjectionSettings.pitchDeg &&
-      trailCache.planeSideSeparationWorld === currentPlaneSideDisplaySettings.separationWorld
+      trailCache.planeSideSeparationWorld === currentPlaneSideDisplaySettings.separationWorld &&
+      trailCache.planeSideDefaultSide === currentPlaneSideDisplaySettings.defaultSide
         ? trailCache.trails
         : null;
 
@@ -237,6 +239,7 @@ export function useMultiRigPlayback(
         projectionYawDeg: currentProjectionSettings.yawDeg,
         projectionPitchDeg: currentProjectionSettings.pitchDeg,
         planeSideSeparationWorld: currentPlaneSideDisplaySettings.separationWorld,
+        planeSideDefaultSide: currentPlaneSideDisplaySettings.defaultSide,
         trails: baseTrails
       };
     }

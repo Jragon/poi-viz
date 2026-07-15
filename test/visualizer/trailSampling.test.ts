@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { toCartesianMultiRigPose } from "@/engine/cartesian";
 import { evalPreparedMultiRigSequenceAt, prepareMultiRigSequence } from "@/engine/multirig";
+import { projectWorldPoint } from "@/engine/planeProjection";
 import type { MultiRigSequence, Segment, Vec2 } from "@/engine/types";
 import { isContinuousAtLoopBoundary, sampleMultiRigTrailGrid } from "@/visualizer/trailSampling";
 
@@ -219,8 +220,8 @@ describe("trailSampling", () => {
     });
 
     const trails = sampleMultiRigTrailGrid(prepared, 0, 0.25, 2, null);
-    expect(trails.left?.hand[0]).toEqual({ x: 0, y: 0 });
-    expect(trails.left?.head[0]).toEqual({ x: 0, y: 0 });
+    expect(trails.left?.hand[0]).toEqual({ x: 0.12, y: 0 });
+    expect(trails.left?.head[0]).toEqual({ x: 0.12, y: 0 });
   });
 
   it("samples trail points with tilted projection settings", () => {
@@ -240,8 +241,9 @@ describe("trailSampling", () => {
       yawDeg: -25,
       pitchDeg: 18
     });
-    expect(trails.left?.hand[0].x).toBeCloseTo(-0.422618, 6);
-    expect(trails.left?.hand[0].y).toBeCloseTo(-0.280065, 6);
+    expect(trails.left?.hand[0]).toEqual(
+      projectWorldPoint({ x: 0.12, y: 0, z: 1 }, { mode: "tilted", yawDeg: -25, pitchDeg: 18 })
+    );
   });
 
   it("samples trail points with plane side display separation", () => {
@@ -259,7 +261,8 @@ describe("trailSampling", () => {
 
     const plain = sampleMultiRigTrailGrid(prepared, 0, 0.25, 2, null, projectionSettings);
     const separated = sampleMultiRigTrailGrid(prepared, 0, 0.25, 2, null, projectionSettings, {
-      separationWorld: 0.2
+      separationWorld: 0.2,
+      defaultSide: null
     });
 
     expect(separated.left?.hand[0].x).not.toBeCloseTo(plain.left!.hand[0].x, 6);

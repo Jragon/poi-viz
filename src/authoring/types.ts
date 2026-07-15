@@ -1,4 +1,11 @@
-import type { MultiRigSequence, PlaneId, RelativeRigPose, Segment, TimeUnit } from "@/engine/types";
+import type {
+  MultiRigSequence,
+  PlaneId,
+  PlaneSide,
+  RelativeRigPose,
+  Segment,
+  TimeUnit
+} from "@/engine/types";
 
 export type AuthoredTrackId = "left" | "right";
 
@@ -30,6 +37,7 @@ export interface AuthoredFirstSegment {
   kind: "first";
   durationUnits: TimeUnit;
   planeId?: PlaneId;
+  planeSide?: PlaneSide;
   hand: {
     startPose: AuthoredNodeStartPose;
     driver: AuthoredCircleDriverInput;
@@ -44,6 +52,7 @@ export interface AuthoredContinuationSegment {
   kind: "continuation";
   durationUnits: TimeUnit;
   planeId?: PlaneId;
+  planeSide?: PlaneSide;
   hand: {
     driver: AuthoredCircleDriverInput;
   };
@@ -84,6 +93,7 @@ export type AuthoredDocumentValidationErrorCode =
   | "INVALID_RADIUS"
   | "INVALID_RADIUS_PROFILE"
   | "INVALID_PLANE_ID"
+  | "INVALID_PLANE_SIDE"
   | "UNSUPPORTED_PLANE_BREAK"
   | "PLANE_BREAK_INVALID_HAND_ALIGNMENT"
   | "PLANE_BREAK_INVALID_HEAD_ALIGNMENT"

@@ -18,7 +18,7 @@ import {
   type ProjectionMode,
   type ProjectionModePreference
 } from "@/engine/planeProjection";
-import type { MultiRigSequence } from "@/engine/types";
+import type { MultiRigSequence, PlaneSide } from "@/engine/types";
 import type { PlaneSideDisplaySettings } from "@/visualizer/planeSideDisplay";
 import {
   useMultiRigPlayback,
@@ -41,7 +41,8 @@ export const PROJECTION_PITCH_STEP = 1;
 export const PLANE_SIDE_SEPARATION_MIN = 0;
 export const PLANE_SIDE_SEPARATION_MAX = 0.5;
 export const PLANE_SIDE_SEPARATION_STEP = 0.01;
-export const PLANE_SIDE_SEPARATION_DEFAULT = 0;
+export const PLANE_SIDE_SEPARATION_DEFAULT = 0.12;
+export const PLANE_SIDE_DISPLAY_DEFAULT_SIDE: PlaneSide = "a";
 
 export interface VisualizerSessionOptions {
   readonly autoplay?: boolean;
@@ -126,7 +127,8 @@ export function useVisualizerSession(
     pitchDeg: projectionPitchDeg.value
   }));
   const planeSideDisplaySettings = computed<PlaneSideDisplaySettings>(() => ({
-    separationWorld: planeSideSeparationWorld.value
+    separationWorld: planeSideSeparationWorld.value,
+    defaultSide: PLANE_SIDE_DISPLAY_DEFAULT_SIDE
   }));
   const playback = useMultiRigPlayback(
     () => toValue(sequence),

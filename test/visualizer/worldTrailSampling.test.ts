@@ -54,10 +54,10 @@ describe("worldTrailSampling", () => {
     const trails = sampleMultiRigWorldTrailGrid(prepared, 0, 0.25, 3, 1);
 
     expect(trails.left?.hand).toHaveLength(3);
-    expectVecClose(trails.left?.hand[0], { x: -1, y: 0, z: 0 });
-    expectVecClose(trails.left?.hand[1], { x: 0, y: -1, z: 0 });
-    expectVecClose(trails.left?.hand[2], { x: 1, y: 0, z: 0 });
-    expectVecClose(trails.left?.head[0], { x: -2, y: 0, z: 0 });
+    expectVecClose(trails.left?.hand[0], { x: -1, y: 0, z: 0.12 });
+    expectVecClose(trails.left?.hand[1], { x: 0, y: -1, z: 0.12 });
+    expectVecClose(trails.left?.hand[2], { x: 1, y: 0, z: 0.12 });
+    expectVecClose(trails.left?.head[0], { x: -2, y: 0, z: 0.12 });
   });
 
   it("applies plane-side separation to sampled world points", () => {
@@ -74,10 +74,11 @@ describe("worldTrailSampling", () => {
 
     const plain = sampleMultiRigWorldTrailGrid(prepared, 0, 0.25, 2, null);
     const separated = sampleMultiRigWorldTrailGrid(prepared, 0, 0.25, 2, null, {
-      separationWorld: 0.2
+      separationWorld: 0.2,
+      defaultSide: null
     });
 
-    expectVecClose(plain.left?.hand[0], { x: 1, y: 0, z: 0 });
+    expectVecClose(plain.left?.hand[0], { x: 1, y: 0, z: -0.12 });
     expectVecClose(separated.left?.hand[0], { x: 1, y: 0, z: -0.2 });
     expectVecClose(separated.left?.head[0], { x: 2, y: 0, z: -0.2 });
   });
@@ -91,12 +92,12 @@ describe("worldTrailSampling", () => {
     expectVecClose(trails.left?.hand[3], {
       x: -Math.SQRT1_2,
       y: -Math.SQRT1_2,
-      z: 0
+      z: 0.12
     });
     expectVecClose(trails.left?.head[3], {
       x: -Math.SQRT2,
       y: -Math.SQRT2,
-      z: 0
+      z: 0.12
     });
   });
 
@@ -106,8 +107,8 @@ describe("worldTrailSampling", () => {
     const trails = sampleMultiRigWorldTrailGrid(prepared, 4_000_000_001, 0.25, 2, 1);
 
     expect(trails.left?.hand).toHaveLength(2);
-    expectVecClose(trails.left?.hand[0], { x: 1, y: 0, z: 0 });
-    expectVecClose(trails.left?.hand[1], { x: 0, y: 1, z: 0 });
+    expectVecClose(trails.left?.hand[0], { x: 1, y: 0, z: 0.12 });
+    expectVecClose(trails.left?.hand[1], { x: 0, y: 1, z: 0.12 });
   });
 
   it("keeps unbounded sampling when holdSteps is omitted", () => {
@@ -131,7 +132,7 @@ describe("worldTrailSampling", () => {
     const trails = sampleMultiRigWorldTrails(prepared, 0.5, 0.25);
 
     expect(trails.left?.hand).toHaveLength(3);
-    expectVecClose(trails.left?.hand[2], { x: -1, y: 0, z: 0 });
+    expectVecClose(trails.left?.hand[2], { x: -1, y: 0, z: 0.12 });
   });
 
   it("wraps in auto mode only when the loop boundary is continuous", () => {
@@ -148,9 +149,9 @@ describe("worldTrailSampling", () => {
     });
 
     expect(wrapped.left?.hand).toHaveLength(3);
-    expectVecClose(wrapped.left?.hand[0], { x: -1, y: 0, z: 0 });
-    expectVecClose(wrapped.left?.hand[1], { x: 0, y: -1, z: 0 });
-    expectVecClose(wrapped.left?.hand[2], { x: 1, y: 0, z: 0 });
+    expectVecClose(wrapped.left?.hand[0], { x: -1, y: 0, z: 0.12 });
+    expectVecClose(wrapped.left?.hand[1], { x: 0, y: -1, z: 0.12 });
+    expectVecClose(wrapped.left?.hand[2], { x: 1, y: 0, z: 0.12 });
     expect(notWrapped).toEqual({});
   });
 

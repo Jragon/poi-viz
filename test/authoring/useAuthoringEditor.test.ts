@@ -158,6 +158,7 @@ describe("useAuthoringEditor", () => {
       harness.editor.addSegment("right");
 
       expect(harness.currentDocument().tracks.right!.segments[0].planeId).toBe("wall");
+      expect(harness.currentDocument().tracks.right!.segments[0].planeSide).toBe("a");
     });
 
     it("copies the source plane when appending a continuation", () => {
@@ -194,6 +195,7 @@ describe("useAuthoringEditor", () => {
       harness.editor.addSegment("left");
 
       expect(harness.currentDocument().tracks.left!.segments[2].planeId).toBe("floor");
+      expect(harness.currentDocument().tracks.left!.segments[2].planeSide).toBe("a");
     });
 
     it("appends to the tail even when a middle segment is selected", () => {
@@ -347,6 +349,19 @@ describe("useAuthoringEditor", () => {
   });
 
   describe("plane updates", () => {
+    it("updates a segment plane side explicitly", () => {
+      const harness = createHarness({
+        name: "One segment",
+        description: null,
+        tracks: { left: { segments: [makeFirstSegment()] } }
+      });
+
+      harness.editor.updateSegmentPlaneSide("left", 0, "b");
+
+      expect(harness.currentDocument().tracks.left!.segments[0].planeSide).toBe("b");
+      expect(harness.persisted).toHaveLength(1);
+    });
+
     it("updates a segment plane when the resulting document compiles", () => {
       const document: AuthoredSequenceDocument = {
         name: "One segment",

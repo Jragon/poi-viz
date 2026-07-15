@@ -13,12 +13,13 @@ import type {
   CompileAuthoredDocumentResult
 } from "@/authoring/types";
 import { PI } from "@/engine/constants";
-import type { PlaneId } from "@/engine/types";
+import type { PlaneId, PlaneSide } from "@/engine/types";
 
 const TAU = 2 * PI;
 const TRACK_IDS: readonly AuthoredTrackId[] = ["left", "right"];
 const NODE_IDS: readonly EditableNode[] = ["hand", "head"];
 const DEFAULT_PLANE_ID: PlaneId = "wall";
+const DEFAULT_PLANE_SIDE: PlaneSide = "a";
 
 export type EditableNode = "hand" | "head";
 export type SelectedSegment = { trackId: AuthoredTrackId; segmentIndex: number } | null;
@@ -76,6 +77,11 @@ export interface AuthoringEditor {
     keyIndex: number
   ): void;
   updateSegmentPlane(trackId: AuthoredTrackId, segmentIndex: number, planeId: PlaneId): void;
+  updateSegmentPlaneSide(
+    trackId: AuthoredTrackId,
+    segmentIndex: number,
+    planeSide: PlaneSide
+  ): void;
   updateDocumentName(nextValue: string): void;
   updateDocumentDescription(nextValue: string | null): void;
 }
@@ -192,6 +198,7 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
               kind: "first",
               durationUnits: 1,
               planeId: DEFAULT_PLANE_ID,
+              planeSide: DEFAULT_PLANE_SIDE,
               hand: {
                 startPose: { phaseDeg: 0, radius: 1 },
                 driver: { kind: "circle", omega: 0, omegaUnit: "radians-per-unit" }
@@ -211,6 +218,7 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
         kind: "continuation",
         durationUnits: source.durationUnits,
         planeId: source.planeId ?? DEFAULT_PLANE_ID,
+        planeSide: source.planeSide ?? DEFAULT_PLANE_SIDE,
         hand: {
           driver: toCanonicalCircleDriver(source.hand.driver)
         },
@@ -238,6 +246,7 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
         kind: "continuation",
         durationUnits: source.durationUnits,
         planeId: source.planeId ?? DEFAULT_PLANE_ID,
+        planeSide: source.planeSide ?? DEFAULT_PLANE_SIDE,
         hand: {
           driver: toCanonicalCircleDriver(source.hand.driver)
         },
@@ -287,6 +296,7 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
             kind: "first",
             durationUnits: nextSegment.durationUnits,
             planeId: nextSegment.planeId ?? DEFAULT_PLANE_ID,
+            planeSide: nextSegment.planeSide ?? DEFAULT_PLANE_SIDE,
             hand: {
               startPose: {
                 phaseDeg: toPhaseDeg(promotedStartPose.handPose.phaseAbs),
@@ -422,6 +432,20 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
     });
   }
 
+  function updateSegmentPlaneSide(
+    trackId: AuthoredTrackId,
+    segmentIndex: number,
+    planeSide: PlaneSide
+  ) {
+    commitDocumentChange((nextDocument) => {
+      const segment = nextDocument.tracks[trackId]?.segments[segmentIndex];
+      if (segment) {
+        segment.planeSide = planeSide;
+      }
+      return { trackId, segmentIndex };
+    });
+  }
+
   function updateDocumentName(nextValue: string) {
     const entry = deps.selectedEntry.value;
     if (!entry) return;
@@ -455,6 +479,7 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
     updateSegmentRadiusProfileKey,
     deleteSegmentRadiusProfileKey,
     updateSegmentPlane,
+    updateSegmentPlaneSide,
     updateDocumentName,
     updateDocumentDescription
   };

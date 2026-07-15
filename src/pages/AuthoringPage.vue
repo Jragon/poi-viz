@@ -105,7 +105,8 @@ const {
   addSegmentRadiusProfileKey,
   updateSegmentRadiusProfileKey,
   deleteSegmentRadiusProfileKey,
-  updateSegmentPlane
+  updateSegmentPlane,
+  updateSegmentPlaneSide
 } = editor;
 
 function formatNumber(value: number, digits = 2): string {
@@ -321,6 +322,9 @@ onBeforeUnmount(() => {
                   (value) => updateSegmentDuration(view.trackId, segmentIndex, value)
                 "
                 @update:plane="(value) => updateSegmentPlane(view.trackId, segmentIndex, value)"
+                @update:plane-side="
+                  (value) => updateSegmentPlaneSide(view.trackId, segmentIndex, value)
+                "
                 @update:start-pose="
                   (payload) =>
                     updateSegmentStartPose(

@@ -1,5 +1,6 @@
 import { PI } from "@/engine/constants";
 import { evalSegment } from "@/engine/engine";
+import { isPlaneSide } from "@/engine/planeSide";
 import type {
   CircleDriver,
   Driver,
@@ -321,6 +322,17 @@ function validatePlaneIdValue(
   }
 }
 
+function validatePlaneSideValue(
+  trackId: AuthoredTrackId,
+  segmentIndex: number,
+  segment: AuthoredSegment,
+  errors: AuthoredDocumentValidationError[]
+) {
+  if (segment.planeSide !== undefined && !isPlaneSide(segment.planeSide)) {
+    errors.push({ code: "INVALID_PLANE_SIDE", trackId, segmentIndex });
+  }
+}
+
 function validateAndRemapPlaneBreakStartPose(
   trackId: AuthoredTrackId,
   targetSegmentIndex: number,
@@ -391,6 +403,7 @@ export function validateAuthoredDocument(
       validateRadiusProfileValues(trackId, segmentIndex, "hand", segment, errors);
       validateRadiusProfileValues(trackId, segmentIndex, "head", segment, errors);
       validatePlaneIdValue(trackId, segmentIndex, segment, errors);
+      validatePlaneSideValue(trackId, segmentIndex, segment, errors);
 
       if (segment.kind === "first") {
         validateFiniteNodeValues(trackId, segmentIndex, "hand", segment, errors);
@@ -440,7 +453,8 @@ function deriveTrackBoundariesWithValidation(
     const segment: Segment = {
       ...segmentMotion,
       durationUnits: authoredSegment.durationUnits,
-      planeId
+      planeId,
+      ...(authoredSegment.planeSide === undefined ? {} : { planeSide: authoredSegment.planeSide })
     };
 
     const resolvedStartPose: RelativeRigPose = {
@@ -543,6 +557,7 @@ export function authoredDocumentFromMultiRigSequence(
             kind: "first",
             durationUnits: segment.durationUnits,
             planeId,
+            ...(segment.planeSide === undefined ? {} : { planeSide: segment.planeSide }),
             hand: {
               startPose: {
                 phaseDeg: toDegrees(segment.hand.startPose.phaseAbs),
@@ -596,6 +611,7 @@ export function authoredDocumentFromMultiRigSequence(
           kind: "continuation",
           durationUnits: segment.durationUnits,
           planeId,
+          ...(segment.planeSide === undefined ? {} : { planeSide: segment.planeSide }),
           hand: {
             driver: {
               kind: "circle",

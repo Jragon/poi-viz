@@ -66,14 +66,24 @@ function makePreparedMultiRig(segments: PreparedSegment[]): PreparedMultiRigSequ
 }
 
 describe("planeSideDisplay", () => {
-  it("leaves poses unchanged without authored side or separation", () => {
-    expect(applyPlaneSideDisplayOffset(worldPose("a"))).toEqual(worldPose("a"));
-    expect(applyPlaneSideDisplayOffset(worldPose(), { separationWorld: 0.2 })).toEqual(worldPose());
+  it("uses side a as the display-only default for legacy poses", () => {
+    const displayed = applyPlaneSideDisplayOffset(worldPose());
+
+    expect(displayed.handPosition.z).toBeCloseTo(0.12);
+    expect(displayed.headPosition.z).toBeCloseTo(0.12);
+    expect(displayed.planeSide).toBeUndefined();
+    expect(
+      applyPlaneSideDisplayOffset(worldPose(), {
+        separationWorld: 0.2,
+        defaultSide: null
+      })
+    ).toEqual(worldPose());
   });
 
   it("offsets wall side a and side b in opposite depth directions", () => {
-    const front = applyPlaneSideDisplayOffset(worldPose("a"), { separationWorld: 0.2 });
-    const back = applyPlaneSideDisplayOffset(worldPose("b"), { separationWorld: 0.2 });
+    const settings = { separationWorld: 0.2, defaultSide: null };
+    const front = applyPlaneSideDisplayOffset(worldPose("a"), settings);
+    const back = applyPlaneSideDisplayOffset(worldPose("b"), settings);
 
     expect(front.handPosition).toEqual({ x: 1, y: 0, z: 0.2 });
     expect(front.headPosition).toEqual({ x: 1.5, y: 0, z: 0.2 });
@@ -95,7 +105,7 @@ describe("planeSideDisplay", () => {
           { rigId: "back", prepared: prepared.rigs[0].prepared }
         ]
       },
-      { separationWorld: 0.2 }
+      { separationWorld: 0.2, defaultSide: null }
     );
     const projected = projectWorldMultiRigPose(poses, {
       mode: "tilted",
@@ -111,21 +121,22 @@ describe("planeSideDisplay", () => {
 describe("lookupAdjacentPlaneSide", () => {
   it("returns previous segment planeSide", () => {
     const segments = [makePreparedSegment("a"), makePreparedSegment("b")];
-    expect(lookupAdjacentPlaneSide(segments, 1)).toBe("a");
+    expect(lookupAdjacentPlaneSide(segments, 1, null)).toBe("a");
   });
 
   it("wraps around to last segment for index 0", () => {
     const segments = [makePreparedSegment("a"), makePreparedSegment("b")];
-    expect(lookupAdjacentPlaneSide(segments, 0)).toBe("b");
+    expect(lookupAdjacentPlaneSide(segments, 0, null)).toBe("b");
   });
 
   it("returns undefined when previous segment has no planeSide", () => {
     const segments = [makePreparedSegment(), makePreparedSegment("a")];
-    expect(lookupAdjacentPlaneSide(segments, 1)).toBeUndefined();
+    expect(lookupAdjacentPlaneSide(segments, 1, null)).toBeUndefined();
+    expect(lookupAdjacentPlaneSide(segments, 1, "a")).toBe("a");
   });
 
   it("returns undefined for empty segments", () => {
-    expect(lookupAdjacentPlaneSide([], 0)).toBeUndefined();
+    expect(lookupAdjacentPlaneSide([], 0, "a")).toBeUndefined();
   });
 });
 
@@ -189,7 +200,10 @@ describe("applyPlaneSideTransitionOffsets", () => {
   it("returns poses unchanged when separation is zero", () => {
     const prepared = makePreparedMultiRig([makePreparedSegment("a"), makePreparedSegment("b")]);
     const poses = { left: worldPoseWithMeta("b", 1, 0.5) };
-    const result = applyPlaneSideTransitionOffsets(poses, prepared, { separationWorld: 0 });
+    const result = applyPlaneSideTransitionOffsets(poses, prepared, {
+      separationWorld: 0,
+      defaultSide: null
+    });
     expect(result.left).toBe(poses.left);
   });
 
@@ -197,14 +211,15 @@ describe("applyPlaneSideTransitionOffsets", () => {
     const prepared = makePreparedMultiRig([makePreparedSegment("b"), makePreparedSegment("b")]);
     const pose = worldPoseWithMeta("b", 1, 0.5);
     const result = applyPlaneSideTransitionOffsets({ left: pose }, prepared, {
-      separationWorld: 0.2
+      separationWorld: 0.2,
+      defaultSide: null
     });
     expect(result.left.handPosition.z).toBeCloseTo(-0.2, 10);
   });
 
   it("interpolates through zero at midpoint for a→b transition", () => {
     const prepared = makePreparedMultiRig([makePreparedSegment("a"), makePreparedSegment("b")]);
-    const settings = { separationWorld: 0.2 };
+    const settings = { separationWorld: 0.2, defaultSide: null };
 
     const atStart = applyPlaneSideTransitionOffsets(
       { left: worldPoseWithMeta("b", 1, 0) },
@@ -234,17 +249,20 @@ describe("applyPlaneSideTransitionOffsets", () => {
     const prepared = makePreparedMultiRig([makePreparedSegment("a"), makePreparedSegment("b")]);
     const pose = worldPose("b");
     const result = applyPlaneSideTransitionOffsets({ left: pose }, prepared, {
-      separationWorld: 0.2
+      separationWorld: 0.2,
+      defaultSide: null
     });
     expect(result.left.handPosition.z).toBeCloseTo(-0.2, 10);
   });
 
-  it("returns pose unchanged when no planeSide", () => {
+  it("uses the configured display fallback when no planeSide is authored", () => {
     const prepared = makePreparedMultiRig([makePreparedSegment(), makePreparedSegment()]);
     const noPose = { ...worldPose(), segmentIndex: 0, tLocal: 0 };
     const result = applyPlaneSideTransitionOffsets({ left: noPose }, prepared, {
-      separationWorld: 0.2
+      separationWorld: 0.2,
+      defaultSide: "a"
     });
-    expect(result.left).toBe(noPose);
+    expect(result.left.handPosition.z).toBeCloseTo(0.2);
+    expect(result.left.planeSide).toBeUndefined();
   });
 });

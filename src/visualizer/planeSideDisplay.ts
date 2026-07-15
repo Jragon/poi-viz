@@ -16,11 +16,13 @@ import type {
 
 export interface PlaneSideDisplaySettings {
   readonly separationWorld: number;
+  readonly defaultSide: PlaneSide | null;
   readonly transitionWindowFraction?: number;
 }
 
 export const DEFAULT_PLANE_SIDE_DISPLAY_SETTINGS: PlaneSideDisplaySettings = {
-  separationWorld: 0
+  separationWorld: 0.12,
+  defaultSide: "a"
 };
 
 const DEFAULT_TRANSITION_WINDOW_FRACTION = 0.75;
@@ -40,11 +42,12 @@ function smootherstep(t: number): number {
 
 export function lookupAdjacentPlaneSide(
   segments: readonly PreparedSegment[],
-  segmentIndex: number
+  segmentIndex: number,
+  defaultSide: PlaneSide | null
 ): PlaneSide | undefined {
   if (segments.length === 0) return undefined;
   const prevIndex = segmentIndex === 0 ? segments.length - 1 : segmentIndex - 1;
-  return segments[prevIndex]?.planeSide;
+  return segments[prevIndex]?.planeSide ?? defaultSide ?? undefined;
 }
 
 export function computePlaneSideDepthFactor(
@@ -73,13 +76,14 @@ export function applyPlaneSideDisplayOffset(
   pose: WorldRigPose,
   settings: PlaneSideDisplaySettings = DEFAULT_PLANE_SIDE_DISPLAY_SETTINGS
 ): WorldRigPose {
-  if (!pose.planeSide || settings.separationWorld <= 0) {
+  const side = pose.planeSide ?? settings.defaultSide;
+  if (!side || settings.separationWorld <= 0) {
     return pose;
   }
 
   const offset = scaleWorld(
     getPlaneNormal(pose.planeId),
-    getPlaneSideOffset(pose.planeSide) * settings.separationWorld
+    getPlaneSideOffset(side) * settings.separationWorld
   );
 
   return {
@@ -100,20 +104,25 @@ export function applyPlaneSideTransitionOffsets(
 
   return Object.fromEntries(
     Object.entries(poses).map(([rigId, pose]) => {
-      if (!pose.planeSide) return [rigId, pose];
+      const currentSide = pose.planeSide ?? settings.defaultSide;
+      if (!currentSide) return [rigId, pose];
 
       const rigEntry = preparedMultiRig.rigs.find((r) => r.rigId === rigId);
       const segments = rigEntry?.prepared.segments;
 
       if (segments && pose.segmentIndex !== undefined && pose.tLocal !== undefined) {
         const currentSegment = segments[pose.segmentIndex];
-        const previousSide = lookupAdjacentPlaneSide(segments, pose.segmentIndex);
+        const previousSide = lookupAdjacentPlaneSide(
+          segments,
+          pose.segmentIndex,
+          settings.defaultSide
+        );
         const progress =
           currentSegment && currentSegment.durationUnits > 0
             ? pose.tLocal / currentSegment.durationUnits
             : 0;
         const depthFactor = computePlaneSideDepthFactor(
-          pose.planeSide,
+          currentSide,
           previousSide,
           progress,
           windowFraction

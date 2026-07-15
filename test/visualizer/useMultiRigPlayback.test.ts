@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { nextTick, ref } from "vue";
 
+import { projectWorldPoint } from "@/engine/planeProjection";
 import type { MultiRigSequence, Segment } from "@/engine/types";
 import { useMultiRigPlayback } from "@/visualizer/useMultiRigPlayback";
 
@@ -70,7 +71,7 @@ describe("useMultiRigPlayback", () => {
     expect(result.worldPoses.left.handPosition).toEqual({
       x: Math.cos(1),
       y: Math.sin(1),
-      z: 0
+      z: 0.12
     });
     expect(result.worldPoses.left.planeId).toBe("wall");
     expect(result.worldPoses.left.segmentIndex).toBe(0);
@@ -93,10 +94,10 @@ describe("useMultiRigPlayback", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.cartesianPoses.left.handPosition).toEqual({ x: 0, y: 0 });
-    expect(result.cartesianPoses.left.headPosition).toEqual({ x: 0, y: 0 });
-    expect(result.worldPoses.left.handPosition).toEqual({ x: 0, y: 0, z: 1 });
-    expect(result.worldPoses.left.headPosition).toEqual({ x: 0, y: 0, z: 2 });
+    expect(result.cartesianPoses.left.handPosition).toEqual({ x: 0.12, y: 0 });
+    expect(result.cartesianPoses.left.headPosition).toEqual({ x: 0.12, y: 0 });
+    expect(result.worldPoses.left.handPosition).toEqual({ x: 0.12, y: 0, z: 1 });
+    expect(result.worldPoses.left.headPosition).toEqual({ x: 0.12, y: 0, z: 2 });
   });
 
   it("projects current poses through tilted settings", () => {
@@ -118,8 +119,9 @@ describe("useMultiRigPlayback", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.cartesianPoses.left.handPosition.x).toBeCloseTo(-0.422618, 6);
-    expect(result.cartesianPoses.left.handPosition.y).toBeCloseTo(-0.280065, 6);
+    expect(result.cartesianPoses.left.handPosition).toEqual(
+      projectWorldPoint({ x: 0.12, y: 0, z: 1 }, { mode: "tilted", yawDeg: -25, pitchDeg: 18 })
+    );
   });
 
   it("exposes evaluated plane side metadata without changing projection", () => {
@@ -213,7 +215,7 @@ describe("useMultiRigPlayback", () => {
         ]
       },
       { mode: "tilted", yawDeg: -25, pitchDeg: 18 },
-      { separationWorld: 0.2 }
+      { separationWorld: 0.2, defaultSide: null }
     );
 
     const result = playback.evaluate(0);
@@ -243,7 +245,7 @@ describe("useMultiRigPlayback", () => {
         ]
       },
       { mode: "tilted", yawDeg: -25, pitchDeg: 18 },
-      { separationWorld: 0.2 }
+      { separationWorld: 0.2, defaultSide: null }
     );
 
     const result = playback.evaluate(0);
@@ -322,8 +324,8 @@ describe("useMultiRigPlayback.sampleTrails", () => {
     });
 
     const trails = playback.sampleTrails(0.05, 0.1);
-    expect(trails.left?.hand?.[0]).toEqual({ x: 0, y: 0 });
-    expect(trails.left?.head?.[0]).toEqual({ x: 0, y: 0 });
+    expect(trails.left?.hand?.[0]).toEqual({ x: 0.12, y: 0 });
+    expect(trails.left?.head?.[0]).toEqual({ x: 0.12, y: 0 });
   });
 
   it("projects trail tips through tilted settings", () => {
@@ -342,8 +344,9 @@ describe("useMultiRigPlayback.sampleTrails", () => {
     );
 
     const trails = playback.sampleTrails(0.05, 0.1);
-    expect(trails.left?.hand?.[0].x).toBeCloseTo(-0.422618, 6);
-    expect(trails.left?.hand?.[0].y).toBeCloseTo(-0.280065, 6);
+    expect(trails.left?.hand?.[0]).toEqual(
+      projectWorldPoint({ x: 0.12, y: 0, z: 1 }, { mode: "tilted", yawDeg: -25, pitchDeg: 18 })
+    );
   });
 
   it("returns empty for invalid dt", () => {
@@ -471,7 +474,7 @@ describe("useMultiRigPlayback.sampleTrails", () => {
   });
 
   it("separates cached trail windows by plane side display separation", () => {
-    const planeSideDisplay = ref({ separationWorld: 0 });
+    const planeSideDisplay = ref({ separationWorld: 0, defaultSide: null as "a" | "b" | null });
     const playback = useMultiRigPlayback(
       {
         rigs: [
@@ -490,7 +493,7 @@ describe("useMultiRigPlayback.sampleTrails", () => {
     );
 
     const plain = playback.sampleTrails(0.1, 0.1);
-    planeSideDisplay.value = { separationWorld: 0.2 };
+    planeSideDisplay.value = { separationWorld: 0.2, defaultSide: null };
     const separated = playback.sampleTrails(0.1, 0.1);
 
     expect(separated.left?.hand?.[0].x).not.toBeCloseTo(plain.left!.hand[0].x, 6);

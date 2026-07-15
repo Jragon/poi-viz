@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { nextTick, ref, type MaybeRefOrGetter } from "vue";
 
 import { createTransport } from "@/composables/useTransport";
+import { projectWorldPoint } from "@/engine/planeProjection";
 import type { MultiRigSequence, Segment } from "@/engine/types";
 import {
   PLANE_SIDE_SEPARATION_DEFAULT,
@@ -209,11 +210,17 @@ describe("useVisualizerSession", () => {
     const { session } = createSession(makeSequence(2));
 
     expect(session.planeSideSeparationWorld.value).toBe(PLANE_SIDE_SEPARATION_DEFAULT);
-    expect(session.planeSideDisplaySettings.value).toEqual({ separationWorld: 0 });
+    expect(session.planeSideDisplaySettings.value).toEqual({
+      separationWorld: PLANE_SIDE_SEPARATION_DEFAULT,
+      defaultSide: "a"
+    });
 
     session.setPlaneSideSeparationWorld(0.2);
     expect(session.planeSideSeparationWorld.value).toBe(0.2);
-    expect(session.planeSideDisplaySettings.value).toEqual({ separationWorld: 0.2 });
+    expect(session.planeSideDisplaySettings.value).toEqual({
+      separationWorld: 0.2,
+      defaultSide: "a"
+    });
 
     session.setPlaneSideSeparationWorld(10);
     expect(session.planeSideSeparationWorld.value).toBe(PLANE_SIDE_SEPARATION_MAX);
@@ -317,8 +324,9 @@ describe("useVisualizerSession", () => {
     if (!autoFrame?.ok) throw new Error("expected evaluated frame");
     expect(session.projectionMode.value).toBe("auto");
     expect(session.projectionSettings.value.mode).toBe("tilted");
-    expect(autoFrame.cartesianPoses.left.handPosition.x).toBeCloseTo(-0.422618, 6);
-    expect(autoFrame.cartesianPoses.left.handPosition.y).toBeCloseTo(-0.280065, 6);
+    expect(autoFrame.cartesianPoses.left.handPosition).toEqual(
+      projectWorldPoint({ x: 0.12, y: 0, z: 1 }, session.projectionSettings.value)
+    );
   });
 
   it("manual projection mode overrides auto behavior", async () => {
@@ -330,15 +338,16 @@ describe("useVisualizerSession", () => {
     const orthographicFrame = session.currentFrame.value;
     if (!orthographicFrame?.ok) throw new Error("expected evaluated frame");
     expect(session.projectionSettings.value.mode).toBe("orthographic");
-    expect(orthographicFrame.cartesianPoses.left.handPosition).toEqual({ x: 0, y: 0 });
+    expect(orthographicFrame.cartesianPoses.left.handPosition).toEqual({ x: 0.12, y: 0 });
 
     session.setProjectionMode("tilted");
     await nextTick();
 
     const tiltedFrame = session.currentFrame.value;
     if (!tiltedFrame?.ok) throw new Error("expected evaluated frame");
-    expect(tiltedFrame.cartesianPoses.left.handPosition.x).toBeCloseTo(-0.422618, 6);
-    expect(tiltedFrame.cartesianPoses.left.handPosition.y).toBeCloseTo(-0.280065, 6);
+    expect(tiltedFrame.cartesianPoses.left.handPosition).toEqual(
+      projectWorldPoint({ x: 0.12, y: 0, z: 1 }, session.projectionSettings.value)
+    );
     expect(session.currentTrails.value.left?.hand?.at(-1)).toEqual(
       tiltedFrame.cartesianPoses.left.handPosition
     );
