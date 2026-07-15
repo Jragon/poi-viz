@@ -12,3 +12,8 @@ commercial use, redistribution, modification, and redistribution of modified
 versions. Credit notation is marked unnecessary. The file is retained
 unmodified as a deterministic lab fixture for humanoid loading, skinning, and
 twist-constraint validation.
+
+A replacement visual model must be exported as VRM 1.0 and provide normalized
+humanoid mappings for hips, spine, chest, both shoulder/arm/hand chains, and
+both upper-leg/lower-leg/foot chains. Keep this sample as the constraint and
+loader regression fixture when changing the lab's visual default.

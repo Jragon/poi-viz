@@ -43,7 +43,8 @@ Body-tracing side concepts start as generic engine metadata, not Mel/body vocabu
 - `planeSide` is valid for every atomic plane.
 - Local segment evaluation remains unchanged. Side offsets are visualization-layer choices, not engine pose behavior.
 - Trail continuity compares `planeSide` so visual loop wrapping does not hide side-state boundaries.
-- Authoring controls and authored document compile support are deferred.
+- Authoring controls and authored document compile support were added on 2026-07-15; new segments
+  write side `a` explicitly while imported legacy omission is preserved.
 - Crosspoint and side-transition legality is future engine boundary-validation work. Keep it separate from structural sequence validation and do not implement it in Vue components.
 
 ## 2026-05-06: Self-Contained Engine Segments
@@ -135,3 +136,33 @@ The supported V2 toolchain and verification gates are explicit:
 - Pull requests and pushes to `main` run lint, Vue-aware typecheck, tests, and build.
 
 The expired authored radius-profile localStorage migration is removed. Backward compatibility and preservation of invalid legacy snapshots are not requirements: if no valid stored documents remain, the authoring library restores seed documents and persists the current snapshot shape.
+
+## 2026-07-15: Canonical Standing Body and Coupled Planted Turn
+
+The body policy is independent of avatar measurements. `BodyRigDimensions` defines one canonical
+human target scaled so the maximum hand-overlap circle has radius one; a loaded VRM measures only its
+own scale and retargeting constraints.
+
+- World torso search has an 80-degree ceiling.
+- Pelvis yaw is capped at 40 degrees and prefers 45 percent of the requested turn.
+- Chest twist relative to the pelvis is capped at 45 degrees.
+- The deterministic allocation uses the feasible intersection of those limits; it does not introduce
+  a history-dependent animation state or iterative full-body solver.
+- Hips and knees are rebuilt from the solved skeleton while feet remain at their neutral support
+  points. Both the main canvas and 3D/VRM adapters consume that same solved skeleton.
+
+Validation uses fixed far-side targets to require non-zero pelvis yaw, greater chest yaw, exact planted
+feet, preserved limb lengths, and successful bilateral hand reach where physically feasible.
+
+## 2026-07-15: Explicit Authoring Side and Legacy Display Default
+
+Engine semantics remain unchanged: omitted `Segment.planeSide` is unspecified and stays omitted through
+preparation and evaluation. Defaults belong to consumers, not the runtime engine.
+
+- New authoring documents, tracks, appended segments, and duplicates write side `a` explicitly.
+- The editor exposes A/B on every segment and compile/import round-trips explicit values without
+  inventing metadata for imported legacy omissions.
+- The visualizer treats omission as side `a` only while calculating display offsets. Its default
+  plane-normal separation is `0.12` world units.
+- Display fallback does not add `planeSide` to world/evaluated pose metadata, so loop continuity and
+  engine behavior remain inspectable and unchanged.

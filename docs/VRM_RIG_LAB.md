@@ -69,7 +69,9 @@ The adapter currently controls:
 
 - a measured rig profile: arm segment lengths, shoulder-socket span, body proportions, anatomical
   side mapping, and a model-rest-basis correction;
-- model scale from the avatar's maximum hand-overlap circle, normalized to a canonical radius of one;
+- a canonical target body with stable human proportions, independent of whichever avatar is loaded;
+- model scale from the avatar's own maximum hand-overlap circle, normalized onto the target's
+  canonical radius of one;
 - initial registration from the measured foot midpoint to the target planted-foot midpoint;
 - per-frame pelvis placement and measured two-bone leg solves back to the planted feet;
 - pelvis/chest yaw;
@@ -98,6 +100,11 @@ It deliberately leaves the head, fingers, feet orientation, expression system, g
 and locomotion in their reference state. `vrm.update(0)` prevents spring-bone motion from becoming
 dependent on playback history.
 
+The standing body solver allocates a requested turn deterministically across the planted lower and
+upper body. The default total turn ceiling is 80 degrees. Pelvis yaw is limited to 40 degrees and
+prefers 45 percent of the requested turn; the remaining chest twist is limited to 45 degrees. This
+is a pose solve, not animation: there is no clip, timeline, or frame-to-frame state involved.
+
 ## Fixture
 
 The checked-in fixture is
@@ -108,6 +115,27 @@ poor neutral anatomical mannequin.
 
 Source and licence details are recorded beside the asset in `public/models/vrm/README.md`. The model is
 isolated behind `vrmModel.ts`, so replacing it should not alter the solver or pose adapter.
+
+### Replacement model contract
+
+The intended Blender model must be exported as VRM 1.0 before it can replace the fixture. The current
+adapter requires valid normalized mappings for `hips`, `spine`, `chest`, bilateral `shoulder`,
+`upperArm`, `lowerArm`, `hand`, `upperLeg`, `lowerLeg`, and `foot` bones. Bone chains must have
+non-zero lengths, left/right labels must be anatomical, and the bind/rest pose must not be degenerate.
+
+Preferred asset characteristics are deliberately stricter than loader validity:
+
+- neutral human proportions, small or no hair volume, and a plain close-fitting surface;
+- a symmetric neutral rest pose with clean shoulder, elbow, hip, knee, and ankle deformation;
+- feet sharing a believable ground level and forward direction;
+- authored arm-twist constraints or twist bones where the exporter supports them;
+- no baked scale asymmetry, hidden root rotation, or model-specific control rig required at runtime;
+- licence and source recorded beside the checked-in asset.
+
+The Blender control rig itself is not shipped to the browser. Apply or bake any control-rig result to
+the deform skeleton, export VRM 1.0, retain the `.blend` as source, and add the `.vrm` as the runtime
+asset. The official constraint sample remains a regression fixture even after the visual default is
+changed.
 
 ## Validation and invariants
 
@@ -148,7 +176,8 @@ The current solver pass adds the following behavior:
 - shoulder sockets solved in the same reduced-yaw chest frame that is applied to the VRM;
 - an anchored chest center by default, with overhead movement assigned to the shoulder girdle instead
   of silently stretching the torso;
-- a lower default torso-yaw ceiling to avoid implausible upper-body twists;
+- a coupled 80-degree planted turn solve with explicit 40-degree pelvis and 45-degree
+  thoracic-twist limits;
 - a deterministic local refinement pass around the best coarse yaw candidate, reducing visible
   one-degree quantization without making the solver history-dependent;
 - fixed arms-down, T-pose, forward, overhead, crossed, behind, asymmetric, and unreachable cases in
@@ -168,8 +197,8 @@ pose is now rooted through planted feet and a driven pelvis, but the following w
 2. Add clavicle length to the target body contract so the body solver itself produces shoulder
    sockets on a physically reachable clavicle arc. The adapter already preserves the avatar's
    measured clavicle and reports any target mismatch.
-3. Distribute torso orientation through spine/chest joints rather than applying the current pelvis
-   and chest yaw split only.
+3. Distribute the current pelvis/chest split across additional spine joints if the replacement model
+   makes the two-joint twist visibly abrupt.
 4. Add ankle orientation and explicit ground-plane contact if foot mesh rotation becomes visible with
    a less stylized model.
 5. Add temporal continuity policy only when live playback demonstrates a real discontinuity; do not

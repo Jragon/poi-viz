@@ -4,6 +4,7 @@ import { nextTick, ref } from "vue";
 import { createTransport } from "@/composables/useTransport";
 import type { MultiRigSequence, Segment } from "@/engine/types";
 import { useVisualizerCore } from "@/visualizer/useVisualizerCore";
+import { PLANE_SIDE_SEPARATION_DEFAULT } from "@/visualizer/useVisualizerSession";
 
 function createScheduler() {
   let nextHandle = 1;
@@ -92,14 +93,14 @@ describe("useVisualizerCore", () => {
     const sequence = ref(makeSequence(2, 1, 1));
     const core = useVisualizerCore(sequence, { transport: createScheduledTransport() });
 
-    expect(core.sceneWorldRadius.value).toBe(2);
+    expect(core.sceneWorldRadius.value).toBe(2 + PLANE_SIDE_SEPARATION_DEFAULT);
     expect(core.sequenceSummary.value).toBe("left:1");
 
     sequence.value = makeSequence(4, 3, 2);
     await nextTick();
 
     expect(core.transport.duration.value).toBe(4);
-    expect(core.sceneWorldRadius.value).toBe(5);
+    expect(core.sceneWorldRadius.value).toBe(5 + PLANE_SIDE_SEPARATION_DEFAULT);
     expect(core.cartesianPoses.value.left).toBeTruthy();
 
     core.dispose();

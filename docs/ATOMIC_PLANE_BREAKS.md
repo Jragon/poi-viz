@@ -110,6 +110,12 @@ type Segment = {
 
 `planeSide` is optional generic metadata. It is valid on every atomic plane and is preserved through preparation and evaluation, but the engine does not default it or apply any visual offset to local pose evaluation. Rendering layers may choose to display side `a` and side `b` as offsets along the active plane normal.
 
+The current authoring UI writes side `a` explicitly for new segments and exposes an A/B selector on
+every segment. For older sequences where `planeSide` is omitted, the visualizer applies a display-only
+side-A fallback with `0.12` world units of plane-normal separation. That fallback changes neither the
+prepared segment nor evaluated metadata; setting display separation to zero disables the visible
+offset.
+
 `behindBody` is optional boolean display metadata. It is also preserved through preparation and evaluation without changing local motion.
 
 `evalSegment` still returns local `RelativeRigPose`. Projection to the existing canvas happens in a separate plane adapter.
