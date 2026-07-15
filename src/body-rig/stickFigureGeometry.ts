@@ -310,6 +310,7 @@ interface WorldShoulderPassResult {
 }
 
 const SCORE_EPSILON = 1e-9;
+const YAW_REFINEMENT_STEPS = 48;
 const ELBOW_POLE_FORWARD_BLEND_START = 0.2;
 const ELBOW_POLE_FORWARD_BLEND_END = 0.85;
 const ELBOW_POLE_OVERHEAD_BLEND_START = 0.55;
@@ -646,14 +647,8 @@ function solveWorldShoulders(
   return {
     yawRad: clampedYawRad,
     normalizedYaw: clampedYawRad / maxYawRad,
-    leftShoulder: add3(
-      shoulderCenter,
-      scale3(chest.right, -shoulderHalfSpan)
-    ),
-    rightShoulder: add3(
-      shoulderCenter,
-      scale3(chest.right, shoulderHalfSpan)
-    ),
+    leftShoulder: add3(shoulderCenter, scale3(chest.right, -shoulderHalfSpan)),
+    rightShoulder: add3(shoulderCenter, scale3(chest.right, shoulderHalfSpan)),
     nearSide: clampedYawRad === 0 ? null : clampedYawRad > 0 ? "right" : "left",
     farSide: clampedYawRad === 0 ? null : clampedYawRad > 0 ? "left" : "right",
     torsoRight: chest.right,
@@ -678,7 +673,9 @@ function computeWorldShoulderOffset(
   const targetDrop = Math.max(0, -targetVertical);
   const targetDistance = length3(targetOffset);
   const shoulderMidpoint = scale3(add3(shoulders.leftShoulder, shoulders.rightShoulder), 0.5);
-  const targetCenterDistance = Math.abs(dot3(subtract3(handTarget, shoulderMidpoint), shoulders.torsoRight));
+  const targetCenterDistance = Math.abs(
+    dot3(subtract3(handTarget, shoulderMidpoint), shoulders.torsoRight)
+  );
   const extensionRatio = targetDistance / Math.max(maxReach, Number.EPSILON);
   const activation = clamp(
     (extensionRatio - shoulderPolicy.activationExtensionRatio) /
@@ -697,7 +694,8 @@ function computeWorldShoulderOffset(
   const lateralRatio = clamp(sideDistance / Math.max(maxReach, Number.EPSILON), 0, 1);
   const overheadActive = overheadFactor >= 0.55;
   const lowActive = lowFactor >= 0.55;
-  const overheadAmbiguous = overheadActive && targetCenterDistance <= shoulderPolicy.overheadAmbiguityRadius;
+  const overheadAmbiguous =
+    overheadActive && targetCenterDistance <= shoulderPolicy.overheadAmbiguityRadius;
   const rawLateralFade = smoothstep(
     shoulderPolicy.overheadAmbiguityRadius,
     shoulderPolicy.overheadLateralFadeRadius,
@@ -707,12 +705,21 @@ function computeWorldShoulderOffset(
   const outwardSign = armSide === "right" ? 1 : -1;
   const isOutward = targetOffsetX === 0 ? true : Math.sign(targetOffsetX) === outwardSign;
   const maxLateral = isOutward ? shoulderPolicy.maxOutwardReach : shoulderPolicy.maxCrossBodyReach;
-  const forwardFactor = clamp(Math.max(0, targetForward) / Math.max(maxReach, Number.EPSILON), 0, 1);
-  const backwardFactor = clamp(Math.max(0, -targetForward) / Math.max(maxReach, Number.EPSILON), 0, 1);
+  const forwardFactor = clamp(
+    Math.max(0, targetForward) / Math.max(maxReach, Number.EPSILON),
+    0,
+    1
+  );
+  const backwardFactor = clamp(
+    Math.max(0, -targetForward) / Math.max(maxReach, Number.EPSILON),
+    0,
+    1
+  );
 
   return {
     lift: shoulderPolicy.maxLift * liftActivation,
-    protraction: shoulderPolicy.maxProtraction * Math.max(forwardFactor * activation, overheadFactor * 0.35),
+    protraction:
+      shoulderPolicy.maxProtraction * Math.max(forwardFactor * activation, overheadFactor * 0.35),
     retraction: shoulderPolicy.maxRetraction * backwardFactor * activation,
     lateral: Math.sign(targetOffsetX) * maxLateral * activation * lateralRatio * lateralFade,
     overheadAmbiguous,
@@ -799,12 +806,7 @@ function getWorldElbowPole(input: WorldStickArmInput, direction: Vec3): Vec3 {
   const stableOutwardPole = normalize3OrFallback(outwardPole, stableForwardPole);
   const forwardUsability = clamp(length3(forwardPole), 0, 1);
   const forwardDegeneracyWeight =
-    1 -
-    smoothstep(
-      ELBOW_POLE_FORWARD_BLEND_START,
-      ELBOW_POLE_FORWARD_BLEND_END,
-      forwardUsability
-    );
+    1 - smoothstep(ELBOW_POLE_FORWARD_BLEND_START, ELBOW_POLE_FORWARD_BLEND_END, forwardUsability);
   const worldUp = normalize3OrFallback(input.worldUp, { x: 0, y: 1, z: 0 });
   const overheadWeight =
     smoothstep(
@@ -812,11 +814,7 @@ function getWorldElbowPole(input: WorldStickArmInput, direction: Vec3): Vec3 {
       ELBOW_POLE_OVERHEAD_BLEND_END,
       Math.abs(dot3(direction, worldUp))
     ) * ELBOW_POLE_OVERHEAD_OUTWARD_WEIGHT;
-  const outwardWeight = clamp(
-    Math.max(forwardDegeneracyWeight, overheadWeight),
-    0,
-    1
-  );
+  const outwardWeight = clamp(Math.max(forwardDegeneracyWeight, overheadWeight), 0, 1);
   const blendedPole = add3(
     scale3(stableForwardPole, 1 - outwardWeight),
     scale3(stableOutwardPole, outwardWeight)
@@ -1400,8 +1398,9 @@ export function computeBodyRigCanonicalPatternSpace(
 export function solveBodyRig(input: BodyRigSolveRequest): BodyRigSolveResult {
   const config = resolveBodyRigConfig(input.config);
   const searchSteps = Math.max(8, Math.floor(input.yawSearchSteps ?? 96));
-  const candidateCount = searchSteps + 1;
+  const candidateCount = searchSteps + 1 + YAW_REFINEMENT_STEPS + 1;
   let bestCandidate: CandidateScore | null = null;
+  let bestYawRad = 0;
 
   for (let step = 0; step <= searchSteps; step++) {
     const t = step / searchSteps;
@@ -1409,11 +1408,24 @@ export function solveBodyRig(input: BodyRigSolveRequest): BodyRigSolveResult {
     const candidate = scoreYawCandidate({ ...input, config }, yawRad, candidateCount);
     if (isBetterCandidate(candidate, bestCandidate)) {
       bestCandidate = candidate;
+      bestYawRad = yawRad;
     }
   }
 
   if (!bestCandidate) {
     throw new Error("Expected at least one body rig candidate");
+  }
+
+  const coarseStepRad = (config.maxYawRad * 2) / searchSteps;
+  const refinementMin = Math.max(-config.maxYawRad, bestYawRad - coarseStepRad);
+  const refinementMax = Math.min(config.maxYawRad, bestYawRad + coarseStepRad);
+  for (let step = 0; step <= YAW_REFINEMENT_STEPS; step++) {
+    const t = step / YAW_REFINEMENT_STEPS;
+    const yawRad = refinementMin + (refinementMax - refinementMin) * t;
+    const candidate = scoreYawCandidate({ ...input, config }, yawRad, candidateCount);
+    if (isBetterCandidate(candidate, bestCandidate)) {
+      bestCandidate = candidate;
+    }
   }
 
   return bestCandidate.result;
@@ -1422,8 +1434,9 @@ export function solveBodyRig(input: BodyRigSolveRequest): BodyRigSolveResult {
 export function solveWorldBodyRig(input: BodyRigWorldSolveRequest): BodyRigWorldSolveResult {
   const config = resolveBodyRigConfig(input.config);
   const searchSteps = Math.max(8, Math.floor(input.yawSearchSteps ?? 96));
-  const candidateCount = searchSteps + 1;
+  const candidateCount = searchSteps + 1 + YAW_REFINEMENT_STEPS + 1;
   let bestCandidate: WorldCandidateScore | null = null;
+  let bestYawRad = 0;
 
   for (let step = 0; step <= searchSteps; step++) {
     const t = step / searchSteps;
@@ -1431,11 +1444,24 @@ export function solveWorldBodyRig(input: BodyRigWorldSolveRequest): BodyRigWorld
     const candidate = scoreWorldYawCandidate({ ...input, config }, yawRad, candidateCount);
     if (isBetterWorldCandidate(candidate, bestCandidate)) {
       bestCandidate = candidate;
+      bestYawRad = yawRad;
     }
   }
 
   if (!bestCandidate) {
     throw new Error("Expected at least one world body rig candidate");
+  }
+
+  const coarseStepRad = (config.maxYawRad * 2) / searchSteps;
+  const refinementMin = Math.max(-config.maxYawRad, bestYawRad - coarseStepRad);
+  const refinementMax = Math.min(config.maxYawRad, bestYawRad + coarseStepRad);
+  for (let step = 0; step <= YAW_REFINEMENT_STEPS; step++) {
+    const t = step / YAW_REFINEMENT_STEPS;
+    const yawRad = refinementMin + (refinementMax - refinementMin) * t;
+    const candidate = scoreWorldYawCandidate({ ...input, config }, yawRad, candidateCount);
+    if (isBetterWorldCandidate(candidate, bestCandidate)) {
+      bestCandidate = candidate;
+    }
   }
 
   return bestCandidate.result;

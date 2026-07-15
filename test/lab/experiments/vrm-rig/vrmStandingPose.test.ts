@@ -8,6 +8,7 @@ import {
   resolveVrmRigScale,
   VrmStandingPoseAdapter
 } from "@/lab/experiments/vrm-rig/vrmStandingPose";
+import { buildVrmRigProfile } from "@/lab/experiments/vrm-rig/vrmRigProfile";
 
 function makeFrame(): BodySkeletonFrame {
   const joints: Record<SkeletonJointName, { x: number; y: number; z: number }> = {
@@ -92,6 +93,7 @@ function makeFrame(): BodySkeletonFrame {
 function makeFakeVrm() {
   const scene = new THREE.Group();
   const normalizedRoot = new THREE.Group();
+  normalizedRoot.rotation.y = 0.2;
   scene.add(normalizedRoot);
 
   const bones = new Map<VRMHumanBoneName, THREE.Object3D>();
@@ -108,16 +110,25 @@ function makeFakeVrm() {
     return bone;
   };
 
-  const spine = addBone("spine", normalizedRoot, [0, 0.9, 0]);
+  const hips = addBone("hips", normalizedRoot, [0, 0, 0]);
+  const spine = addBone("spine", hips, [0, 0.9, 0]);
   const chest = addBone("chest", spine, [0, 0.3, 0]);
-  const leftShoulder = addBone("leftShoulder", chest, [-0.15, 0.1, 0]);
-  const leftUpperArm = addBone("leftUpperArm", leftShoulder, [-0.1, 0, 0]);
-  const leftLowerArm = addBone("leftLowerArm", leftUpperArm, [-0.3, 0, 0]);
-  addBone("leftHand", leftLowerArm, [-0.3, 0, 0]);
-  const rightShoulder = addBone("rightShoulder", chest, [0.15, 0.1, 0]);
-  const rightUpperArm = addBone("rightUpperArm", rightShoulder, [0.1, 0, 0]);
-  const rightLowerArm = addBone("rightLowerArm", rightUpperArm, [0.3, 0, 0]);
-  addBone("rightHand", rightLowerArm, [0.3, 0, 0]);
+  addBone("neck", chest, [0, 0.18, 0]);
+  addBone("head", bones.get("neck")!, [0, 0.16, 0]);
+  const leftShoulder = addBone("leftShoulder", chest, [0.15, 0.1, 0]);
+  const leftUpperArm = addBone("leftUpperArm", leftShoulder, [0.1, 0, 0]);
+  const leftLowerArm = addBone("leftLowerArm", leftUpperArm, [0.3, 0, 0]);
+  addBone("leftHand", leftLowerArm, [0.3, 0, 0]);
+  const rightShoulder = addBone("rightShoulder", chest, [-0.15, 0.1, 0]);
+  const rightUpperArm = addBone("rightUpperArm", rightShoulder, [-0.1, 0, 0]);
+  const rightLowerArm = addBone("rightLowerArm", rightUpperArm, [-0.3, 0, 0]);
+  addBone("rightHand", rightLowerArm, [-0.3, 0, 0]);
+  const leftUpperLeg = addBone("leftUpperLeg", hips, [0.1, 0, 0]);
+  const leftLowerLeg = addBone("leftLowerLeg", leftUpperLeg, [0, -0.4, 0]);
+  addBone("leftFoot", leftLowerLeg, [0, -0.4, 0.08]);
+  const rightUpperLeg = addBone("rightUpperLeg", hips, [-0.1, 0, 0]);
+  const rightLowerLeg = addBone("rightLowerLeg", rightUpperLeg, [0, -0.4, 0]);
+  addBone("rightFoot", rightLowerLeg, [0, -0.4, 0.08]);
 
   const humanoidUpdate = vi.fn();
   const constraintUpdate = vi.fn();
@@ -149,16 +160,6 @@ function worldDirection(from: THREE.Object3D, to: THREE.Object3D) {
     .normalize();
 }
 
-function frameDirection(
-  frame: BodySkeletonFrame,
-  from: SkeletonJointName,
-  to: SkeletonJointName
-) {
-  const start = frame.joints[from];
-  const end = frame.joints[to];
-  return new THREE.Vector3(end.x - start.x, end.y - start.y, end.z - start.z).normalize();
-}
-
 describe("resolveVrmRigScale", () => {
   it("scales the model arm reach to the deterministic target rig", () => {
     expect(resolveVrmRigScale(0.5, 1.25)).toBeCloseTo(2.5);
@@ -184,41 +185,60 @@ describe("resolveVrmRigScale", () => {
 });
 
 describe("VrmStandingPoseAdapter", () => {
-  it("aims normalized upper and lower arm bones at the solver segments", () => {
+  it("maps negative target X to the spatially negative VRM arm", () => {
+    const frame = makeFrame();
+    const { vrm, bones } = makeFakeVrm();
+    const profile = buildVrmRigProfile(vrm, frame.supportPose.armReach);
+
+    expect(profile.targetToVrmSide).toEqual({ left: "right", right: "left" });
+    expect(profile.dimensions.config.upperArmLength).toBeCloseTo(0.325);
+    expect(profile.dimensions.config.forearmLength).toBeCloseTo(0.325);
+
+    vrm.scene.quaternion.fromArray(profile.modelToTargetRotation);
+    vrm.scene.updateMatrixWorld(true);
+    expect(
+      worldDirection(bones.get("rightUpperArm")!, bones.get("leftUpperArm")!).angleTo(
+        new THREE.Vector3(1, 0, 0)
+      )
+    ).toBeLessThan(1e-6);
+  });
+
+  it("re-solves the measured VRM arm chains onto the solver wrists", () => {
     const frame = makeFrame();
     const { vrm, bones, humanoidUpdate, constraintUpdate } = makeFakeVrm();
-    const adapter = new VrmStandingPoseAdapter(vrm);
+    const adapter = new VrmStandingPoseAdapter(
+      vrm,
+      buildVrmRigProfile(vrm, frame.supportPose.armReach)
+    );
 
     adapter.apply(frame);
 
+    const diagnostics = adapter.measure(frame);
+    expect(diagnostics.left.wristError).toBeLessThan(1e-6);
+    expect(diagnostics.right.wristError).toBeLessThan(1e-6);
     expect(
-      worldDirection(bones.get("leftUpperArm")!, bones.get("leftLowerArm")!).angleTo(
-        frameDirection(frame, "shoulderLeft", "elbowLeft")
-      )
-    ).toBeLessThan(1e-6);
+      bones
+        .get("rightUpperArm")!
+        .getWorldPosition(new THREE.Vector3())
+        .distanceTo(bones.get("rightLowerArm")!.getWorldPosition(new THREE.Vector3()))
+    ).toBeCloseTo(0.325);
     expect(
-      worldDirection(bones.get("leftLowerArm")!, bones.get("leftHand")!).angleTo(
-        frameDirection(frame, "elbowLeft", "handLeft")
-      )
-    ).toBeLessThan(1e-6);
-    expect(
-      worldDirection(bones.get("rightUpperArm")!, bones.get("rightLowerArm")!).angleTo(
-        frameDirection(frame, "shoulderRight", "elbowRight")
-      )
-    ).toBeLessThan(1e-6);
-    expect(
-      worldDirection(bones.get("rightLowerArm")!, bones.get("rightHand")!).angleTo(
-        frameDirection(frame, "elbowRight", "handRight")
-      )
-    ).toBeLessThan(1e-6);
-    expect(humanoidUpdate).toHaveBeenCalledOnce();
-    expect(constraintUpdate).toHaveBeenCalledOnce();
+      bones
+        .get("leftUpperArm")!
+        .getWorldPosition(new THREE.Vector3())
+        .distanceTo(bones.get("leftLowerArm")!.getWorldPosition(new THREE.Vector3()))
+    ).toBeCloseTo(0.325);
+    expect(humanoidUpdate).not.toHaveBeenCalled();
+    expect(constraintUpdate).not.toHaveBeenCalled();
   });
 
   it("produces the same normalized bone rotations when the same frame is reapplied", () => {
     const frame = makeFrame();
     const { vrm, bones } = makeFakeVrm();
-    const adapter = new VrmStandingPoseAdapter(vrm);
+    const adapter = new VrmStandingPoseAdapter(
+      vrm,
+      buildVrmRigProfile(vrm, frame.supportPose.armReach)
+    );
 
     adapter.apply(frame);
     const firstRotations = Array.from(bones.values(), (bone) => bone.quaternion.toArray());
@@ -227,5 +247,61 @@ describe("VrmStandingPoseAdapter", () => {
     const secondRotations = Array.from(bones.values(), (bone) => bone.quaternion.toArray());
 
     expect(secondRotations).toEqual(firstRotations);
+  });
+
+  it("re-registers the shoulder sockets when the solved body translates", () => {
+    const frame = makeFrame();
+    const { vrm } = makeFakeVrm();
+    const profile = buildVrmRigProfile(vrm, frame.supportPose.armReach);
+    const halfSocketSpan = profile.dimensions.shoulderSpan * 0.5;
+    const upperArmLength = profile.dimensions.config.upperArmLength;
+    const forearmLength = profile.dimensions.config.forearmLength;
+    const alignedFrame = {
+      ...frame,
+      joints: {
+        ...frame.joints,
+        shoulderLeft: { x: -halfSocketSpan, y: 1.4, z: 0 },
+        elbowLeft: { x: -halfSocketSpan - upperArmLength, y: 1.4, z: 0 },
+        handLeft: {
+          x: -halfSocketSpan - upperArmLength - forearmLength,
+          y: 1.4,
+          z: 0
+        },
+        shoulderRight: { x: halfSocketSpan, y: 1.4, z: 0 },
+        elbowRight: { x: halfSocketSpan + upperArmLength, y: 1.4, z: 0 },
+        handRight: {
+          x: halfSocketSpan + upperArmLength + forearmLength,
+          y: 1.4,
+          z: 0
+        }
+      },
+      solverDiagnostics: {
+        ...frame.solverDiagnostics,
+        pelvisYawRad: 0,
+        chestYawRad: 0
+      }
+    } satisfies BodySkeletonFrame;
+    const adapter = new VrmStandingPoseAdapter(vrm, profile);
+
+    adapter.apply(alignedFrame);
+    expect(adapter.measure(alignedFrame).maxJointError).toBeLessThan(1e-6);
+
+    const translation = { x: 0.35, y: -0.2, z: 0.18 };
+    const translatedFrame = {
+      ...alignedFrame,
+      joints: Object.fromEntries(
+        Object.entries(alignedFrame.joints).map(([name, joint]) => [
+          name,
+          {
+            x: joint.x + translation.x,
+            y: joint.y + translation.y,
+            z: joint.z + translation.z
+          }
+        ])
+      ) as Record<SkeletonJointName, { x: number; y: number; z: number }>
+    } satisfies BodySkeletonFrame;
+
+    adapter.apply(translatedFrame);
+    expect(adapter.measure(translatedFrame).maxJointError).toBeLessThan(1e-6);
   });
 });

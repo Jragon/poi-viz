@@ -48,7 +48,8 @@ The implementation follows the lifecycle used by the upstream `three-vrm` exampl
 - `removeUnnecessaryVertices`, `combineSkeletons`, and `combineMorphs` after load;
 - an optional upstream helper root for bone and constraint inspection;
 - `deepDispose` on teardown;
-- normalized-bone update before node-constraint evaluation.
+- one `vrm.update(0)` call after normalized-bone posing, which performs the normalized-to-raw copy
+  and authored node-constraint evaluation once per rendered frame.
 
 ## Runtime boundary
 
@@ -64,9 +65,29 @@ prepared POI sequence
 
 The adapter currently controls:
 
-- model scale and shoulder-girdle placement, calibrated from arm reach;
+- a measured rig profile: arm segment lengths, shoulder-socket span, body proportions, anatomical
+  side mapping, and a model-rest-basis correction;
+- model scale from arm reach and per-frame shoulder-socket midpoint registration;
 - pelvis/chest yaw;
-- left and right shoulder, upper-arm, and lower-arm directions.
+- a measured two-bone solve for each VRM arm from its actual socket to the solver wrist.
+
+The body solver's `left` and `right` names are world/display sides, while VRM names are anatomical
+sides. Those are opposite when a character faces the camera. The profile therefore maps sides from
+measured socket X positions instead of assuming matching labels. It also constructs an orthonormal
+rest basis from the two shoulder sockets and hips, then rotates that basis onto the engine's
+`+X/+Y/+Z` convention. This removes fixture-specific facing and rest-frame assumptions.
+
+VRM shoulder/clavicle bones deliberately remain in their normalized rest rotations. The current body
+solver expresses shoulder response as a virtual socket offset and has no neutral clavicle length;
+aiming a fixed-length VRM clavicle at that virtual segment introduces a constant whole-arm offset.
+The adapter instead registers the real upper-arm sockets after applying torso yaw. A future clavicle
+solve must first add an explicit clavicle-length contract to the target skeleton.
+
+After socket registration, each avatar arm is solved again with that model's measured upper-arm and
+forearm lengths. This is a retargeting step, not a second body-policy solve: it uses the already-solved
+wrist, the target torso basis, and the same deterministic elbow policy. It prevents a small, honest
+socket residual from being copied unchanged to the visible hand. If the wrist is unreachable from the
+real socket, the avatar chain clamps explicitly and the residual remains visible in diagnostics.
 
 It deliberately leaves the head, fingers, hips, legs, expression system, gaze, spring bones, and
 locomotion in their reference state. `vrm.update(0)` prevents spring-bone motion from becoming dependent
@@ -87,7 +108,15 @@ isolated behind `vrmModel.ts`, so replacing it should not alter the solver or po
 
 - Identical `BodySkeletonFrame` inputs produce identical normalized bone rotations.
 - Model scale is derived explicitly from model and target arm reach; invalid reaches throw.
-- The normalized upper-arm and lower-arm world directions match the corresponding solver segments.
+- The measured model rest basis is aligned to the engine basis before posing.
+- World/display sides are mapped to the spatially matching VRM anatomical bones.
+- Shoulder sockets are re-registered for every frame, so target-body translation cannot leave the
+  avatar behind.
+- The measured avatar arm lengths are preserved, and reachable solver wrists are hit even when the
+  target and avatar shoulder sockets differ slightly.
+- Per-side shoulder, elbow, and wrist errors are visible in the lab. All reachable canonical cases
+  currently report `0.0000` joint error with the checked-in fixture; the deliberately unreachable
+  case retains explicit best-effort residuals.
 - Missing required humanoid bones fail visibly rather than being silently ignored.
 - Target-rig, POI-target, axes, grid, and upstream VRM-helper overlays can be toggled independently.
 - Typecheck, lint, unit tests, production build, and browser loading are required for the lab slice.
@@ -110,6 +139,8 @@ The current solver pass adds the following behavior:
 - an anchored chest center by default, with overhead movement assigned to the shoulder girdle instead
   of silently stretching the torso;
 - a lower default torso-yaw ceiling to avoid implausible upper-body twists;
+- a deterministic local refinement pass around the best coarse yaw candidate, reducing visible
+  one-degree quantization without making the solver history-dependent;
 - fixed arms-down, T-pose, forward, overhead, crossed, behind, asymmetric, and unreachable cases in
   the lab, backed by deterministic numeric tests.
 
@@ -124,11 +155,14 @@ The VRM layer remains a renderer/rig adapter, not an IK solver. The arm and shou
 measurable, but the following work is deliberately still separate:
 
 1. Add a neutral, uncluttered VRM asset while retaining the official constraint sample as a fixture.
-2. Map pelvis translation and lower-body joints coherently. The target skeleton can currently express
-   a counterbalance shift, while the VRM adapter leaves hips, legs, and feet in their reference state.
-3. Add temporal continuity policy only when live playback demonstrates a real discontinuity; do not
+2. Add an explicit clavicle-length model before driving VRM shoulder bones. Until then, large
+   unreachable shoulder excursions correctly expose a socket residual instead of distorting the
+   avatar's clavicles to conceal it.
+3. Map pelvis rotation and lower-body joints coherently. The adapter follows the solved shoulder
+   midpoint as a whole-model translation, while hips, legs, and feet remain in their reference pose.
+4. Add temporal continuity policy only when live playback demonstrates a real discontinuity; do not
    make the deterministic pose solve history-dependent by default.
-4. Add root turns and foot placement as a lower-body/locomotion controller. Short authored turn clips
+5. Add root turns and foot placement as a lower-body/locomotion controller. Short authored turn clips
    or a dedicated controller are preferable to inferring steps from arm coordinates.
 
 A general constrained solver remains an option for the future coupled root, spine, and foot problem.

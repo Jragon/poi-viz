@@ -2,6 +2,7 @@ import {
   buildBodyRigDimensionsForCanonicalUnitRadius,
   buildBodyRigFrameFromDimensions,
   solveBodyRigFrame,
+  type BodyRigDimensions,
   type BodySkeletonFrame
 } from "@/body-rig";
 import {
@@ -17,7 +18,8 @@ import {
 export function buildBodyHumanoidScene(
   worldPoses: WorldMultiRigPose,
   projectionSettings?: PlaneProjectionSettings,
-  rigIds?: Partial<VisualizerBodyRigIds>
+  rigIds?: Partial<VisualizerBodyRigIds>,
+  dimensions: BodyRigDimensions = buildBodyRigDimensionsForCanonicalUnitRadius(1)
 ): BodySkeletonFrame | null {
   const leftPose = worldPoses[rigIds?.left ?? DEFAULT_VISUALIZER_BODY_RIG_IDS.left] ?? null;
   const rightPose = worldPoses[rigIds?.right ?? DEFAULT_VISUALIZER_BODY_RIG_IDS.right] ?? null;
@@ -26,7 +28,6 @@ export function buildBodyHumanoidScene(
     return null;
   }
 
-  const dimensions = buildBodyRigDimensionsForCanonicalUnitRadius(1);
   const body = buildBodyRigFrameFromDimensions(dimensions);
 
   const pose = solveBodyRigFrame(

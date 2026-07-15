@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, shallowRef } from "vue";
 
 import { useAuthoringLibrary } from "@/authoring/useAuthoringLibrary";
 import type { RigId } from "@/engine/types";
@@ -15,16 +15,15 @@ import {
 } from "@/visualizer/visualizerWorkspace";
 
 import VrmRigCanvas from "./VrmRigCanvas.vue";
-import {
-  buildVrmRigPoseCases,
-  type VrmRigPoseCaseId
-} from "./rigPoseCases";
+import { buildVrmRigPoseCases, type VrmRigPoseCaseId } from "./rigPoseCases";
 import {
   VRM_RIG_MODEL_AUTHOR,
   VRM_RIG_MODEL_LICENSE,
   VRM_RIG_MODEL_NAME,
   VRM_RIG_MODEL_SOURCE
 } from "./vrmModel";
+import type { VrmPoseDiagnostics } from "./vrmStandingPose";
+import type { VrmRigProfile } from "./vrmRigProfile";
 
 const library = useAuthoringLibrary();
 const {
@@ -50,7 +49,9 @@ const showAxes = ref(true);
 const showGrid = ref(true);
 const cameraResetVersion = ref(0);
 const poseSource = ref<"live" | VrmRigPoseCaseId>("live");
-const poseCases = buildVrmRigPoseCases();
+const vrmRigProfile = shallowRef<VrmRigProfile | null>(null);
+const vrmPoseDiagnostics = shallowRef<VrmPoseDiagnostics | null>(null);
+const poseCases = computed(() => buildVrmRigPoseCases(vrmRigProfile.value?.dimensions));
 
 function resolveBodyRigIds(rigOrder: readonly RigId[]) {
   const customIds = rigOrder.filter((rigId) => rigId !== "left" && rigId !== "right");
@@ -64,11 +65,9 @@ function resolveBodyRigIds(rigOrder: readonly RigId[]) {
 const activePoseCase = computed(() =>
   poseSource.value === "live"
     ? null
-    : (poseCases.find((entry) => entry.id === poseSource.value) ?? null)
+    : (poseCases.value.find((entry) => entry.id === poseSource.value) ?? null)
 );
-const activeWorldPoses = computed(
-  () => activePoseCase.value?.worldPoses ?? core.worldPoses.value
-);
+const activeWorldPoses = computed(() => activePoseCase.value?.worldPoses ?? core.worldPoses.value);
 const activeRigOrder = computed<readonly RigId[]>(() =>
   activePoseCase.value ? ["left", "right"] : core.rigOrder.value
 );
@@ -77,7 +76,12 @@ const sceneState = computed(() =>
 );
 const bodyRigIds = computed(() => resolveBodyRigIds(activeRigOrder.value));
 const bodyFrame = computed(() =>
-  buildBodyHumanoidScene(activeWorldPoses.value, undefined, bodyRigIds.value)
+  buildBodyHumanoidScene(
+    activeWorldPoses.value,
+    undefined,
+    bodyRigIds.value,
+    vrmRigProfile.value?.dimensions
+  )
 );
 const solverSummary = computed(() => {
   const diagnostics = bodyFrame.value?.solverDiagnostics;
@@ -110,6 +114,22 @@ const leftReachError = computed(
 const rightReachError = computed(
   () => bodyFrame.value?.solverDiagnostics.rightArm.reachError.toFixed(3) ?? "0.000"
 );
+const targetSideMapping = computed(() => {
+  const mapping = vrmRigProfile.value?.targetToVrmSide;
+  return mapping
+    ? `world left → VRM ${mapping.left} · world right → VRM ${mapping.right}`
+    : "measuring";
+});
+const modelJointError = computed(() => vrmPoseDiagnostics.value?.maxJointError.toFixed(4) ?? "—");
+function formatArmJointErrors(side: "left" | "right") {
+  const diagnostics = vrmPoseDiagnostics.value?.[side];
+  return diagnostics
+    ? `${diagnostics.shoulderError.toFixed(4)} · ${diagnostics.elbowError.toFixed(4)} · ${diagnostics.wristError.toFixed(4)}`
+    : "—";
+}
+
+const leftJointErrors = computed(() => formatArmJointErrors("left"));
+const rightJointErrors = computed(() => formatArmJointErrors("right"));
 
 function resetView() {
   cameraResetVersion.value += 1;
@@ -159,6 +179,8 @@ function resetView() {
           :show-axes="showAxes"
           :show-grid="showGrid"
           :camera-reset-version="cameraResetVersion"
+          @rig-profile="vrmRigProfile = $event"
+          @pose-diagnostics="vrmPoseDiagnostics = $event"
         />
       </div>
 
@@ -256,6 +278,22 @@ function resetView() {
           <p class="flex justify-between gap-3 text-slate-400">
             <span>Right target error</span>
             <span class="font-mono text-slate-200">{{ rightReachError }}</span>
+          </p>
+          <p class="grid gap-1 border-t border-slate-800 pt-3 text-slate-400">
+            <span>Side mapping</span>
+            <span class="font-mono text-xs text-slate-200">{{ targetSideMapping }}</span>
+          </p>
+          <p class="flex justify-between gap-3 text-slate-400">
+            <span>VRM max joint error</span>
+            <span class="font-mono text-slate-200">{{ modelJointError }}</span>
+          </p>
+          <p class="flex justify-between gap-3 text-slate-400">
+            <span>VRM left S/E/W</span>
+            <span class="font-mono text-xs text-slate-200">{{ leftJointErrors }}</span>
+          </p>
+          <p class="flex justify-between gap-3 text-slate-400">
+            <span>VRM right S/E/W</span>
+            <span class="font-mono text-xs text-slate-200">{{ rightJointErrors }}</span>
           </p>
         </div>
 

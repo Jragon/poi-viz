@@ -656,6 +656,10 @@ describe("solveBodyRig", () => {
 
     expect(result.yawRad).toBeGreaterThan(0);
     expect(result.shoulders.nearSide).toBe("right");
+    expect(result.diagnostics.candidateCount).toBe(122);
+    const coarseStepRad = ((Math.PI / 3) * 2) / 72;
+    const coarseGridIndex = (result.yawRad + Math.PI / 3) / coarseStepRad;
+    expect(Math.abs(coarseGridIndex - Math.round(coarseGridIndex))).toBeGreaterThan(1e-4);
   });
 
   it("infers negative yaw when both hand targets are left-biased", () => {
@@ -900,15 +904,9 @@ describe("solveWorldBodyRig", () => {
       yawSearchSteps: 96
     });
     const shoulderAxis = {
-      x:
-        result.shoulderGirdle.right.shoulderBase.x -
-        result.shoulderGirdle.left.shoulderBase.x,
-      y:
-        result.shoulderGirdle.right.shoulderBase.y -
-        result.shoulderGirdle.left.shoulderBase.y,
-      z:
-        result.shoulderGirdle.right.shoulderBase.z -
-        result.shoulderGirdle.left.shoulderBase.z
+      x: result.shoulderGirdle.right.shoulderBase.x - result.shoulderGirdle.left.shoulderBase.x,
+      y: result.shoulderGirdle.right.shoulderBase.y - result.shoulderGirdle.left.shoulderBase.y,
+      z: result.shoulderGirdle.right.shoulderBase.z - result.shoulderGirdle.left.shoulderBase.z
     };
     const shoulderAxisLength = Math.hypot(shoulderAxis.x, shoulderAxis.y, shoulderAxis.z);
     const normalizedShoulderAxis = {
@@ -985,8 +983,12 @@ describe("solveWorldBodyRig", () => {
     expect(center.diagnostics.rightShoulder.overheadAmbiguous).toBe(true);
     expect(Math.abs(center.shoulderGirdle.left.lateralTravel)).toBeLessThan(0.01);
     expect(Math.abs(center.shoulderGirdle.right.lateralTravel)).toBeLessThan(0.01);
-    expect(Math.abs(left.shoulderGirdle.left.lateralTravel - center.shoulderGirdle.left.lateralTravel)).toBeLessThan(0.04);
-    expect(Math.abs(right.shoulderGirdle.right.lateralTravel - center.shoulderGirdle.right.lateralTravel)).toBeLessThan(0.04);
+    expect(
+      Math.abs(left.shoulderGirdle.left.lateralTravel - center.shoulderGirdle.left.lateralTravel)
+    ).toBeLessThan(0.04);
+    expect(
+      Math.abs(right.shoulderGirdle.right.lateralTravel - center.shoulderGirdle.right.lateralTravel)
+    ).toBeLessThan(0.04);
     expect(center.shoulderGirdle.left.lift).toBeGreaterThan(0);
     expect(center.shoulderGirdle.right.lift).toBeGreaterThan(0);
     expect(center.shoulderGirdle.left.protraction).toBeGreaterThan(0);
@@ -1022,7 +1024,9 @@ describe("solveWorldBodyRig", () => {
     expect(justInside.diagnostics.leftShoulder.overheadAmbiguous).toBe(true);
     expect(justOutside.diagnostics.leftShoulder.overheadAmbiguous).toBe(false);
     expect(
-      Math.abs(justOutside.shoulderGirdle.left.lateralTravel - justInside.shoulderGirdle.left.lateralTravel)
+      Math.abs(
+        justOutside.shoulderGirdle.left.lateralTravel - justInside.shoulderGirdle.left.lateralTravel
+      )
     ).toBeLessThan(0.01);
     expect(Math.abs(midFade.shoulderGirdle.left.lateralTravel)).toBeGreaterThan(
       Math.abs(justOutside.shoulderGirdle.left.lateralTravel)
@@ -1061,7 +1065,9 @@ describe("solveWorldBodyRig", () => {
     expect(justInside.diagnostics.leftShoulder.overheadAmbiguous).toBe(false);
     expect(justOutside.diagnostics.leftShoulder.overheadAmbiguous).toBe(false);
     expect(
-      Math.abs(justOutside.shoulderGirdle.left.lateralTravel - justInside.shoulderGirdle.left.lateralTravel)
+      Math.abs(
+        justOutside.shoulderGirdle.left.lateralTravel - justInside.shoulderGirdle.left.lateralTravel
+      )
     ).toBeLessThan(0.01);
     expect(Math.abs(midFade.shoulderGirdle.left.lateralTravel)).toBeGreaterThan(
       Math.abs(justOutside.shoulderGirdle.left.lateralTravel)
@@ -1119,8 +1125,12 @@ describe("solveWorldBodyRig", () => {
     );
 
     for (let index = 1; index < solves.length; index += 1) {
-      expect(Math.abs(solves[index].leftArm.shoulder.x - solves[index - 1].leftArm.shoulder.x)).toBeLessThan(0.08);
-      expect(Math.abs(solves[index].rightArm.shoulder.x - solves[index - 1].rightArm.shoulder.x)).toBeLessThan(0.08);
+      expect(
+        Math.abs(solves[index].leftArm.shoulder.x - solves[index - 1].leftArm.shoulder.x)
+      ).toBeLessThan(0.08);
+      expect(
+        Math.abs(solves[index].rightArm.shoulder.x - solves[index - 1].rightArm.shoulder.x)
+      ).toBeLessThan(0.08);
       expect(solves[index].leftArm.elbowPole.z).toBeGreaterThan(0);
       expect(solves[index].rightArm.elbowPole.z).toBeGreaterThan(0);
     }

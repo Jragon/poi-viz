@@ -15,7 +15,8 @@ import {
 } from "@/lab/experiments/three-d-debug/worldPoseScene";
 
 import { buildVrmRigModelUrl } from "./vrmModel";
-import { VrmStandingPoseAdapter } from "./vrmStandingPose";
+import { type VrmPoseDiagnostics, VrmStandingPoseAdapter } from "./vrmStandingPose";
+import { buildVrmRigProfile, type VrmRigProfile } from "./vrmRigProfile";
 
 const props = withDefaults(
   defineProps<{
@@ -42,6 +43,11 @@ const props = withDefaults(
     cameraResetVersion: 0
   }
 );
+
+const emit = defineEmits<{
+  rigProfile: [profile: VrmRigProfile];
+  poseDiagnostics: [diagnostics: VrmPoseDiagnostics | null];
+}>();
 
 type LoadState = "loading" | "ready" | "error";
 
@@ -228,9 +234,10 @@ function syncVrmPose() {
       currentVrm.humanoid.resetNormalizedPose();
     }
 
-    // Delta zero updates materials and the loaded helper state without making
-    // spring bones dependent on playback history.
+    // This is the single normalized-to-raw bone copy and constraint update for
+    // the frame. Delta zero keeps spring bones independent of playback history.
     currentVrm.update(0);
+    emit("poseDiagnostics", props.bodyFrame ? standingPoseAdapter.measure(props.bodyFrame) : null);
     currentVrm.scene.visible = props.showModel;
     renderScene();
   } catch (error) {
@@ -307,8 +314,10 @@ function loadVrmFixture() {
         object.frustumCulled = false;
       });
 
+      const rigProfile = buildVrmRigProfile(vrm);
       currentVrm = vrm;
-      standingPoseAdapter = new VrmStandingPoseAdapter(vrm);
+      standingPoseAdapter = new VrmStandingPoseAdapter(vrm, rigProfile);
+      emit("rigProfile", rigProfile);
       scene.add(vrm.scene);
       loadState.value = "ready";
       loadMessage.value = "VRM ready · normalized humanoid rig · twist constraints active";
@@ -363,6 +372,7 @@ function disposeScene() {
   }
   currentVrm = null;
   standingPoseAdapter = null;
+  emit("poseDiagnostics", null);
 
   if (helperRoot) {
     scene?.remove(helperRoot);
