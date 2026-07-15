@@ -92,19 +92,48 @@ isolated behind `vrmModel.ts`, so replacing it should not alter the solver or po
 - Target-rig, POI-target, axes, grid, and upstream VRM-helper overlays can be toggled independently.
 - Typecheck, lint, unit tests, production build, and browser loading are required for the lab slice.
 
+## Standing arm IK decision
+
+The standing solver keeps an analytic two-bone solve for each arm rather than adding a generic CCD or
+FABRIK package. A generic chain solver can place a wrist, but it does not define the human policy that
+matters here: which way the elbow bends, when the clavicle moves, how much the chest turns, or what
+happens at a singularity. The existing analytic solve is deterministic, exact for reachable targets,
+and exposes explicit error for unreachable targets. Replacing it would add iteration and tuning without
+removing those policy decisions.
+
+The current solver pass adds the following behavior:
+
+- a continuous elbow-pole blend between forward and outward references, including forward-reach and
+  overhead singularities;
+- elbow bend and reach-error diagnostics on the public skeleton-frame debug contract;
+- shoulder sockets solved in the same reduced-yaw chest frame that is applied to the VRM;
+- an anchored chest center by default, with overhead movement assigned to the shoulder girdle instead
+  of silently stretching the torso;
+- a lower default torso-yaw ceiling to avoid implausible upper-body twists;
+- fixed arms-down, T-pose, forward, overhead, crossed, behind, asymmetric, and unreachable cases in
+  the lab, backed by deterministic numeric tests.
+
+The canonical corpus asserts exact upper-arm and forearm lengths, exact hand placement for reachable
+cases, explicit symmetric clamping for the unreachable case, bilateral symmetry, and elbow-pole
+continuity through the two important singular regions. The lab selector makes the same cases available
+for model-versus-target visual inspection.
+
 ## Known limitations and next milestone
 
-The VRM layer is now a renderer/rig adapter, not an IK solver. Awkward poses visible in both the
-translucent target rig and solid model originate upstream in the body solve, especially when reach or
-pelvis-shift limits are hit. The next useful investment is therefore a solver/debug pass, not more model
-code:
+The VRM layer remains a renderer/rig adapter, not an IK solver. The arm and shoulder milestone is now
+measurable, but the following work is deliberately still separate:
 
 1. Add a neutral, uncluttered VRM asset while retaining the official constraint sample as a fixture.
-2. Add canonical pose cases (down, side, forward, overhead, crossed, behind) with numeric joint-limit
-   and continuity assertions.
-3. Improve shoulder/scapula, elbow-pole, torso-yaw, and unreachable-target behavior against those cases.
-4. Only then add root turns and foot placement; use short authored locomotion clips or a dedicated
-   lower-body controller rather than deriving walking from arm coordinates.
+2. Map pelvis translation and lower-body joints coherently. The target skeleton can currently express
+   a counterbalance shift, while the VRM adapter leaves hips, legs, and feet in their reference state.
+3. Add temporal continuity policy only when live playback demonstrates a real discontinuity; do not
+   make the deterministic pose solve history-dependent by default.
+4. Add root turns and foot placement as a lower-body/locomotion controller. Short authored turn clips
+   or a dedicated controller are preferable to inferring steps from arm coordinates.
+
+A general constrained solver remains an option for the future coupled root, spine, and foot problem.
+It should only be introduced if canonical lower-body cases demonstrate that the analytic standing model
+cannot satisfy the required constraints.
 
 ## Migration impact
 

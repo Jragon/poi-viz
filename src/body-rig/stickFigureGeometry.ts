@@ -138,6 +138,8 @@ export interface WorldStickArmResult {
   readonly reachError: number;
   readonly isClamped: boolean;
   readonly elbowPole: Vec3;
+  /** Zero when straight and approaches PI as the arm folds back on itself. */
+  readonly elbowBendRad: number;
 }
 
 export interface BodyRigWorldShoulders {
@@ -308,7 +310,11 @@ interface WorldShoulderPassResult {
 }
 
 const SCORE_EPSILON = 1e-9;
-const MIN_FORWARD_ELBOW_POLE_DOT = 0.85;
+const ELBOW_POLE_FORWARD_BLEND_START = 0.2;
+const ELBOW_POLE_FORWARD_BLEND_END = 0.85;
+const ELBOW_POLE_OVERHEAD_BLEND_START = 0.55;
+const ELBOW_POLE_OVERHEAD_BLEND_END = 0.9;
+const ELBOW_POLE_OVERHEAD_OUTWARD_WEIGHT = 0.35;
 
 function add(a: Vec2, b: Vec2): Vec2 {
   return { x: a.x + b.x, y: a.y + b.y };
@@ -545,15 +551,15 @@ function solveWorldChestState(
   input: BodyRigWorldSolveRequest,
   config: ResolvedBodyRigConfig,
   yawRad: number,
-  pelvis: BodyRigWorldFrameState,
+  handMidpointOffset: Vec3,
   neutralBasis: ReturnType<typeof getWorldBasis>
 ): BodyRigWorldFrameState {
   const chestYawRad = yawRad * config.chestPolicy.yawFollowRatio;
   const chestBasis = getWorldBasis(input.root, chestYawRad);
   const neutralCenter = getRootChestCenter(input.root);
-  const pelvisToChest = subtract3(neutralCenter, pelvis.center);
   const lift =
-    Math.max(0, dot3(pelvisToChest, neutralBasis.worldUp)) * config.chestPolicy.centerLiftRatio;
+    Math.max(0, dot3(handMidpointOffset, neutralBasis.worldUp)) *
+    config.chestPolicy.centerLiftRatio;
   const center = add3(neutralCenter, scale3(neutralBasis.worldUp, lift));
 
   return {
@@ -626,27 +632,33 @@ function getWorldBestEffortReasons(
 function solveWorldShoulders(
   input: BodyRigWorldSolveRequest,
   config: ResolvedBodyRigConfig,
-  yawRad: number
+  chest: BodyRigWorldFrameState
 ): BodyRigWorldShoulders {
   const maxYawRad = Math.max(Math.abs(config.maxYawRad), Number.EPSILON);
-  const clampedYawRad = clamp(yawRad, -maxYawRad, maxYawRad);
-  const basis = getWorldBasis(input.root, clampedYawRad);
+  const clampedYawRad = clamp(chest.yawRad, -maxYawRad, maxYawRad);
   const shoulderHalfSpan = config.baseShoulderSpan * 0.5;
+  const neutralChestCenter = getRootChestCenter(input.root);
+  const shoulderCenter = add3(
+    input.root.shoulderGirdleCenter,
+    subtract3(chest.center, neutralChestCenter)
+  );
 
   return {
     yawRad: clampedYawRad,
     normalizedYaw: clampedYawRad / maxYawRad,
     leftShoulder: add3(
-      input.root.shoulderGirdleCenter,
-      scale3(basis.torsoRight, -shoulderHalfSpan)
+      shoulderCenter,
+      scale3(chest.right, -shoulderHalfSpan)
     ),
     rightShoulder: add3(
-      input.root.shoulderGirdleCenter,
-      scale3(basis.torsoRight, shoulderHalfSpan)
+      shoulderCenter,
+      scale3(chest.right, shoulderHalfSpan)
     ),
     nearSide: clampedYawRad === 0 ? null : clampedYawRad > 0 ? "right" : "left",
     farSide: clampedYawRad === 0 ? null : clampedYawRad > 0 ? "left" : "right",
-    ...basis
+    torsoRight: chest.right,
+    torsoForward: chest.forward,
+    worldUp: chest.up
   };
 }
 
@@ -785,14 +797,38 @@ function getWorldElbowPole(input: WorldStickArmInput, direction: Vec3): Vec3 {
     normalize3OrFallback(upPole, outwardPole)
   );
   const stableOutwardPole = normalize3OrFallback(outwardPole, stableForwardPole);
+  const forwardUsability = clamp(length3(forwardPole), 0, 1);
+  const forwardDegeneracyWeight =
+    1 -
+    smoothstep(
+      ELBOW_POLE_FORWARD_BLEND_START,
+      ELBOW_POLE_FORWARD_BLEND_END,
+      forwardUsability
+    );
+  const worldUp = normalize3OrFallback(input.worldUp, { x: 0, y: 1, z: 0 });
+  const overheadWeight =
+    smoothstep(
+      ELBOW_POLE_OVERHEAD_BLEND_START,
+      ELBOW_POLE_OVERHEAD_BLEND_END,
+      Math.abs(dot3(direction, worldUp))
+    ) * ELBOW_POLE_OVERHEAD_OUTWARD_WEIGHT;
+  const outwardWeight = clamp(
+    Math.max(forwardDegeneracyWeight, overheadWeight),
+    0,
+    1
+  );
+  const blendedPole = add3(
+    scale3(stableForwardPole, 1 - outwardWeight),
+    scale3(stableOutwardPole, outwardWeight)
+  );
+  const blendedForwardDot = dot3(blendedPole, input.torsoForward);
+  const forwardPoleDot = dot3(stableForwardPole, input.torsoForward);
+  const forwardSafePole =
+    blendedForwardDot < 0 && forwardPoleDot > ELBOW_POLE_FORWARD_BLEND_START
+      ? add3(blendedPole, scale3(stableForwardPole, -blendedForwardDot / forwardPoleDot))
+      : blendedPole;
 
-  if (dot3(stableForwardPole, input.torsoForward) >= MIN_FORWARD_ELBOW_POLE_DOT) {
-    return stableForwardPole;
-  }
-
-  return dot3(stableOutwardPole, input.torsoForward) < -SCORE_EPSILON
-    ? stableForwardPole
-    : stableOutwardPole;
+  return normalize3OrFallback(forwardSafePole, stableForwardPole);
 }
 
 export function solveWorldStickArm(input: WorldStickArmInput): WorldStickArmResult {
@@ -813,6 +849,15 @@ export function solveWorldStickArm(input: WorldStickArmInput): WorldStickArmResu
   const elbowBase = add3(input.shoulder, scale3(direction, baseDistance));
   const elbow = add3(elbowBase, scale3(elbowPole, elbowHeight));
   const reachError = targetReachError(targetDistance, reach);
+  const internalElbowAngle = Math.acos(
+    clamp(
+      (input.upperArmLength ** 2 + input.forearmLength ** 2 - clampedDistance ** 2) /
+        Math.max(2 * input.upperArmLength * input.forearmLength, Number.EPSILON),
+      -1,
+      1
+    )
+  );
+  const elbowBendRad = Math.PI - internalElbowAngle;
 
   return {
     shoulder: input.shoulder,
@@ -824,7 +869,8 @@ export function solveWorldStickArm(input: WorldStickArmInput): WorldStickArmResu
     targetDistance,
     reachError,
     isClamped: Math.abs(clampedDistance - targetDistance) > 1e-6,
-    elbowPole
+    elbowPole,
+    elbowBendRad
   };
 }
 
@@ -1033,7 +1079,7 @@ function scoreYawCandidate(
         isBestEffort: leftReachError > SCORE_EPSILON || rightReachError > SCORE_EPSILON
       }
     },
-    absYaw: Math.abs(shoulders.yawRad),
+    absYaw: Math.abs(yawRad),
     preferredSideDistance:
       preferredYawSign === 0
         ? Math.abs(shoulders.yawRad)
@@ -1071,10 +1117,15 @@ function scoreWorldYawCandidate(
   candidateCount: number
 ): WorldCandidateScore {
   const config = resolveBodyRigConfig(input.config);
+  const handMidpoint = scale3(add3(input.goals.leftHandTarget, input.goals.rightHandTarget), 0.5);
+  const handMidpointOffset = subtract3(handMidpoint, input.root.shoulderGirdleCenter);
+  const neutralBasis = getWorldBasis(input.root, 0);
+  const pelvis = solveWorldPelvisState(input, config, yawRad, handMidpointOffset, neutralBasis);
+  const chest = solveWorldChestState(input, config, yawRad, handMidpointOffset, neutralBasis);
   const shoulderPass = applyWorldShoulderPolicy(
     input,
     config,
-    solveWorldShoulders(input, config, yawRad)
+    solveWorldShoulders(input, config, chest)
   );
   const shoulders = shoulderPass.shoulders;
   const leftArm = solveWorldStickArm({
@@ -1105,17 +1156,6 @@ function scoreWorldYawCandidate(
     config.solverWeights.extensionPenalty;
   const normalizedYaw = yawRad / Math.max(Math.abs(config.maxYawRad), Number.EPSILON);
   const yawPenalty = normalizedYaw ** 2 * config.solverWeights.yawPenalty;
-  const handMidpoint = scale3(add3(input.goals.leftHandTarget, input.goals.rightHandTarget), 0.5);
-  const handMidpointOffset = subtract3(handMidpoint, input.root.shoulderGirdleCenter);
-  const neutralBasis = getWorldBasis(input.root, 0);
-  const pelvis = solveWorldPelvisState(
-    input,
-    config,
-    shoulders.yawRad,
-    handMidpointOffset,
-    neutralBasis
-  );
-  const chest = solveWorldChestState(input, config, shoulders.yawRad, pelvis, neutralBasis);
   const shoulderGirdle: BodyRigWorldShoulderGirdlePair = {
     left: buildWorldShoulderGirdleState(
       shoulderPass.projectedLeftShoulder,
@@ -1154,7 +1194,7 @@ function scoreWorldYawCandidate(
 
   return {
     result: {
-      yawRad: shoulders.yawRad,
+      yawRad: chest.yawRad,
       pelvis,
       chest,
       shoulders,
@@ -1188,11 +1228,11 @@ function scoreWorldYawCandidate(
         isBestEffort: bestEffortReasons.length > 0
       }
     },
-    absYaw: Math.abs(shoulders.yawRad),
+    absYaw: Math.abs(yawRad),
     preferredSideDistance:
       preferredYawSign === 0
-        ? Math.abs(shoulders.yawRad)
-        : Math.abs(shoulders.yawRad - preferredYawSign * config.maxYawRad)
+        ? Math.abs(yawRad)
+        : Math.abs(yawRad - preferredYawSign * config.maxYawRad)
   };
 }
 

@@ -53,12 +53,20 @@ function makeFrame(): BodySkeletonFrame {
       leftArm: {
         isClamped: false,
         reach: { min: 0, max: 0.65 },
-        distanceToHand: 0.6
+        distanceToHand: 0.6,
+        targetDistance: 0.6,
+        reachError: 0,
+        elbowPole: { x: -0.2, y: 0, z: 0.98 },
+        elbowBendRad: Math.PI / 3
       },
       rightArm: {
         isClamped: false,
         reach: { min: 0, max: 0.65 },
-        distanceToHand: 0.6
+        distanceToHand: 0.6,
+        targetDistance: 0.6,
+        reachError: 0,
+        elbowPole: { x: 0.2, y: 0, z: 0.98 },
+        elbowBendRad: Math.PI / 3
       },
       leftShoulder: {
         lift: 0,

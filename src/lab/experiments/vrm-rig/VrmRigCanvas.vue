@@ -21,7 +21,7 @@ const props = withDefaults(
   defineProps<{
     bodyFrame: BodySkeletonFrame | null;
     poses: WorldMultiRigPose;
-    rigOrder: RigId[];
+    rigOrder: readonly RigId[];
     sceneCenterWorld: Vec3;
     sceneRadiusWorld: number;
     showModel?: boolean;

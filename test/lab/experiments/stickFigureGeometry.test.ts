@@ -414,6 +414,52 @@ describe("solveWorldStickArm", () => {
     expect(result.isClamped).toBe(true);
     expect(result.hand).toEqual({ x: 90, y: 0, z: 0 });
     expect(result.reachError).toBeCloseTo(210);
+    expect(result.elbowBendRad).toBeCloseTo(0);
+  });
+
+  it("blends the elbow pole continuously through a forward-reach singularity", () => {
+    const samples = Array.from({ length: 25 }, (_, index) => {
+      const angle = -0.12 + index * 0.01;
+      return solveWorldStickArm({
+        shoulder: { x: 0, y: 0, z: 0 },
+        handTarget: {
+          x: Math.sin(angle) * 90,
+          y: 4,
+          z: Math.cos(angle) * 90
+        },
+        upperArmLength: 70,
+        forearmLength: 70,
+        armSide: "right",
+        torsoRight: { x: 1, y: 0, z: 0 },
+        torsoForward: { x: 0, y: 0, z: 1 },
+        worldUp: { x: 0, y: 1, z: 0 }
+      });
+    });
+
+    for (let index = 1; index < samples.length; index += 1) {
+      const continuity = dot3(samples[index - 1].elbowPole, samples[index].elbowPole);
+      expect(continuity).toBeGreaterThan(0.98);
+    }
+  });
+
+  it("keeps overhead elbow poles continuous while a hand crosses the center line", () => {
+    const samples = Array.from({ length: 17 }, (_, index) =>
+      solveWorldStickArm({
+        shoulder: { x: 45, y: 0, z: 0 },
+        handTarget: { x: -8 + index, y: 95, z: 12 },
+        upperArmLength: 70,
+        forearmLength: 70,
+        armSide: "right",
+        torsoRight: { x: 1, y: 0, z: 0 },
+        torsoForward: { x: 0, y: 0, z: 1 },
+        worldUp: { x: 0, y: 1, z: 0 }
+      })
+    );
+
+    for (let index = 1; index < samples.length; index += 1) {
+      expect(dot3(samples[index - 1].elbowPole, samples[index].elbowPole)).toBeGreaterThan(0.995);
+      expect(samples[index].elbowPole.z).toBeGreaterThan(0);
+    }
   });
 });
 
@@ -834,6 +880,46 @@ describe("solveWorldBodyRig", () => {
     expect(result.shoulderGirdle.right.shoulderSocket).toEqual(result.rightArm.shoulder);
     expect(result.diagnostics.pelvisYawLimitHit).toBe(false);
     expect(result.diagnostics.leftShoulder.overheadAmbiguous).toBe(false);
+  });
+
+  it("solves the shoulder line in the same frame as the chest that carries it", () => {
+    const result = solveWorldBodyRig({
+      root: {
+        shoulderGirdleCenter: { x: 0, y: 1.4, z: 0 },
+        neutralPelvisCenter: { x: 0, y: 0.8, z: 0 },
+        neutralChestCenter: { x: 0, y: 1.35, z: 0 },
+        worldUp: { x: 0, y: 1, z: 0 },
+        neutralForward: { x: 0, y: 0, z: 1 },
+        scale: 1
+      },
+      config: buildBodyRigConfigFromArmReach(1.25),
+      goals: {
+        leftHandTarget: { x: 0.1, y: 1.25, z: 0.35 },
+        rightHandTarget: { x: 1.0, y: 1.2, z: 0.25 }
+      },
+      yawSearchSteps: 96
+    });
+    const shoulderAxis = {
+      x:
+        result.shoulderGirdle.right.shoulderBase.x -
+        result.shoulderGirdle.left.shoulderBase.x,
+      y:
+        result.shoulderGirdle.right.shoulderBase.y -
+        result.shoulderGirdle.left.shoulderBase.y,
+      z:
+        result.shoulderGirdle.right.shoulderBase.z -
+        result.shoulderGirdle.left.shoulderBase.z
+    };
+    const shoulderAxisLength = Math.hypot(shoulderAxis.x, shoulderAxis.y, shoulderAxis.z);
+    const normalizedShoulderAxis = {
+      x: shoulderAxis.x / shoulderAxisLength,
+      y: shoulderAxis.y / shoulderAxisLength,
+      z: shoulderAxis.z / shoulderAxisLength
+    };
+
+    expect(result.shoulders.yawRad).toBeCloseTo(result.chest.yawRad);
+    expect(dot3(normalizedShoulderAxis, result.chest.right)).toBeCloseTo(1, 8);
+    expect(result.yawRad).toBeCloseTo(result.chest.yawRad);
   });
 
   it("mirrors pelvis and shoulder-girdle state for mirrored world inputs", () => {

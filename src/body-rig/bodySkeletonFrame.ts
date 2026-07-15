@@ -100,6 +100,10 @@ export interface SkeletonArmSolverDiagnostics {
   readonly isClamped: boolean;
   readonly reach: ArmReachRange;
   readonly distanceToHand: number;
+  readonly targetDistance: number;
+  readonly reachError: number;
+  readonly elbowPole: Vec3;
+  readonly elbowBendRad: number;
 }
 
 export interface SkeletonShoulderSolverDiagnostics {
@@ -181,12 +185,20 @@ export function buildBodySkeletonFrame(
     leftArm: {
       isClamped: solve.leftArm.isClamped,
       reach: solve.leftArm.reach,
-      distanceToHand: solve.leftArm.distanceToHand
+      distanceToHand: solve.leftArm.distanceToHand,
+      targetDistance: solve.leftArm.targetDistance,
+      reachError: solve.leftArm.reachError,
+      elbowPole: solve.leftArm.elbowPole,
+      elbowBendRad: solve.leftArm.elbowBendRad
     },
     rightArm: {
       isClamped: solve.rightArm.isClamped,
       reach: solve.rightArm.reach,
-      distanceToHand: solve.rightArm.distanceToHand
+      distanceToHand: solve.rightArm.distanceToHand,
+      targetDistance: solve.rightArm.targetDistance,
+      reachError: solve.rightArm.reachError,
+      elbowPole: solve.rightArm.elbowPole,
+      elbowBendRad: solve.rightArm.elbowBendRad
     },
     leftShoulder: solve.diagnostics.leftShoulder,
     rightShoulder: solve.diagnostics.rightShoulder,

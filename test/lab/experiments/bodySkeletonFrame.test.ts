@@ -222,6 +222,26 @@ describe("buildBodySkeletonFrame", () => {
     expect(frame.solverDiagnostics.rightArm.distanceToHand).toBeCloseTo(
       pose.solve.rightArm.distanceToHand
     );
+    expect(frame.solverDiagnostics.leftArm.targetDistance).toBeCloseTo(
+      pose.solve.leftArm.targetDistance
+    );
+    expect(frame.solverDiagnostics.rightArm.targetDistance).toBeCloseTo(
+      pose.solve.rightArm.targetDistance
+    );
+    expect(frame.solverDiagnostics.leftArm.reachError).toBeCloseTo(
+      pose.solve.leftArm.reachError
+    );
+    expect(frame.solverDiagnostics.rightArm.reachError).toBeCloseTo(
+      pose.solve.rightArm.reachError
+    );
+    expect(frame.solverDiagnostics.leftArm.elbowPole).toEqual(pose.solve.leftArm.elbowPole);
+    expect(frame.solverDiagnostics.rightArm.elbowPole).toEqual(pose.solve.rightArm.elbowPole);
+    expect(frame.solverDiagnostics.leftArm.elbowBendRad).toBeCloseTo(
+      pose.solve.leftArm.elbowBendRad
+    );
+    expect(frame.solverDiagnostics.rightArm.elbowBendRad).toBeCloseTo(
+      pose.solve.rightArm.elbowBendRad
+    );
     expect(frame.solverDiagnostics.yawRad).toBeCloseTo(pose.solve.yawRad);
     expect(frame.solverDiagnostics.pelvisYawRad).toBeCloseTo(pose.solve.pelvis.yawRad);
     expect(frame.solverDiagnostics.chestYawRad).toBeCloseTo(pose.solve.chest.yawRad);

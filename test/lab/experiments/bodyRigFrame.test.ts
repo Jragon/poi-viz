@@ -77,11 +77,13 @@ describe("bodyRigFrame", () => {
     expect(pose.solve.shoulders.rightShoulder.x).toBeGreaterThan(body.shoulderGirdleCenter.x);
     expect(getBodyRigArmPoints(pose, "left")).toHaveLength(3);
     expect(dot3(pose.solve.leftArm.elbowPole, pose.solve.shoulders.torsoForward)).toBeGreaterThan(
-      0.95
+      0.8
     );
     expect(dot3(pose.solve.rightArm.elbowPole, pose.solve.shoulders.torsoForward)).toBeGreaterThan(
-      0.95
+      0.8
     );
+    expect(pose.solve.leftArm.elbowPole.x).toBeLessThan(0);
+    expect(pose.solve.rightArm.elbowPole.x).toBeGreaterThan(0);
     expect(pose.solve.leftArm.elbowPole.z).toBeGreaterThan(0);
     expect(pose.solve.rightArm.elbowPole.z).toBeGreaterThan(0);
     expect(distance3(pose.solve.leftArm.shoulder, pose.solve.leftArm.elbow)).toBeCloseTo(
@@ -94,7 +96,7 @@ describe("bodyRigFrame", () => {
     expect(pose.solve.rightArm.elbow.z).toBeGreaterThan(0);
   });
 
-  it("projectedBody.chest and projectedBody.pelvisCenter reflect solved body state, not neutral", () => {
+  it("projects the solved pelvis while keeping the default chest center anatomically anchored", () => {
     const dimensions = buildDefaultBodyRigDimensions();
     const body = buildBodyRigFrameFromDimensions(dimensions);
     // Both hands biased right forces a lateral pelvis shift from the shoulder-girdle root.
@@ -109,12 +111,13 @@ describe("bodyRigFrame", () => {
 
     // Verify the solve produced a nonzero lateral pelvis shift
     expect(pose.solve.pelvis.center.x).not.toBeCloseTo(body.pelvisCenter.x);
-    // Verify solve produced a nonzero chest y-lift (chest is above neutral due to pelvis relationship)
-    expect(pose.solve.chest.center.y).not.toBeCloseTo(body.chest.y);
+    // Shoulder elevation belongs to the clavicle/shoulder solve. The default
+    // chest does not float upward independently from the spine.
+    expect(pose.solve.chest.center).toEqual(body.chest);
 
     // projectedBody must reflect solved positions (not stale neutral body positions)
     // With orthographic projection: projected.x == world.x, projected.y == world.y
     expect(pose.projectedBody.pelvisCenter.x).toBeCloseTo(pose.solve.pelvis.center.x);
-    expect(pose.projectedBody.chest.y).toBeCloseTo(pose.solve.chest.center.y);
+    expect(pose.projectedBody.chest).toEqual({ x: body.chest.x, y: body.chest.y });
   });
 });

@@ -16,6 +16,10 @@ import {
 
 import VrmRigCanvas from "./VrmRigCanvas.vue";
 import {
+  buildVrmRigPoseCases,
+  type VrmRigPoseCaseId
+} from "./rigPoseCases";
+import {
   VRM_RIG_MODEL_AUTHOR,
   VRM_RIG_MODEL_LICENSE,
   VRM_RIG_MODEL_NAME,
@@ -45,6 +49,8 @@ const showPoiTargets = ref(true);
 const showAxes = ref(true);
 const showGrid = ref(true);
 const cameraResetVersion = ref(0);
+const poseSource = ref<"live" | VrmRigPoseCaseId>("live");
+const poseCases = buildVrmRigPoseCases();
 
 function resolveBodyRigIds(rigOrder: readonly RigId[]) {
   const customIds = rigOrder.filter((rigId) => rigId !== "left" && rigId !== "right");
@@ -55,12 +61,23 @@ function resolveBodyRigIds(rigOrder: readonly RigId[]) {
   };
 }
 
-const sceneState = computed(() =>
-  buildThreeDDebugSceneState(core.worldPoses.value, core.sceneWorldRadius.value)
+const activePoseCase = computed(() =>
+  poseSource.value === "live"
+    ? null
+    : (poseCases.find((entry) => entry.id === poseSource.value) ?? null)
 );
-const bodyRigIds = computed(() => resolveBodyRigIds(core.rigOrder.value));
+const activeWorldPoses = computed(
+  () => activePoseCase.value?.worldPoses ?? core.worldPoses.value
+);
+const activeRigOrder = computed<readonly RigId[]>(() =>
+  activePoseCase.value ? ["left", "right"] : core.rigOrder.value
+);
+const sceneState = computed(() =>
+  buildThreeDDebugSceneState(activeWorldPoses.value, core.sceneWorldRadius.value)
+);
+const bodyRigIds = computed(() => resolveBodyRigIds(activeRigOrder.value));
 const bodyFrame = computed(() =>
-  buildBodyHumanoidScene(core.worldPoses.value, undefined, bodyRigIds.value)
+  buildBodyHumanoidScene(activeWorldPoses.value, undefined, bodyRigIds.value)
 );
 const solverSummary = computed(() => {
   const diagnostics = bodyFrame.value?.solverDiagnostics;
@@ -79,6 +96,20 @@ const torsoYaw = computed(() => {
   const radians = bodyFrame.value?.solverDiagnostics.chestYawRad ?? 0;
   return `${((radians * 180) / Math.PI).toFixed(1)}°`;
 });
+const leftElbowBend = computed(() => {
+  const radians = bodyFrame.value?.solverDiagnostics.leftArm.elbowBendRad ?? 0;
+  return `${((radians * 180) / Math.PI).toFixed(1)}°`;
+});
+const rightElbowBend = computed(() => {
+  const radians = bodyFrame.value?.solverDiagnostics.rightArm.elbowBendRad ?? 0;
+  return `${((radians * 180) / Math.PI).toFixed(1)}°`;
+});
+const leftReachError = computed(
+  () => bodyFrame.value?.solverDiagnostics.leftArm.reachError.toFixed(3) ?? "0.000"
+);
+const rightReachError = computed(
+  () => bodyFrame.value?.solverDiagnostics.rightArm.reachError.toFixed(3) ?? "0.000"
+);
 
 function resetView() {
   cameraResetVersion.value += 1;
@@ -118,7 +149,7 @@ function resetView() {
           v-else
           :body-frame="bodyFrame"
           :poses="sceneState.worldPoses"
-          :rig-order="core.rigOrder.value"
+          :rig-order="activeRigOrder"
           :scene-center-world="sceneState.sceneCenterWorld"
           :scene-radius-world="sceneState.sceneRadiusWorld"
           :show-model="showModel"
@@ -133,11 +164,29 @@ function resetView() {
 
       <aside class="grid content-start gap-4 text-sm text-slate-300">
         <div class="rounded-xl border border-slate-800 bg-slate-900/65 p-4">
-          <TransportControls />
+          <TransportControls v-if="poseSource === 'live'" />
+          <div v-else class="grid gap-2 text-sm text-slate-300">
+            <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Fixed pose case</p>
+            <p class="font-medium text-slate-100">{{ activePoseCase?.label }}</p>
+            <p class="leading-5 text-slate-400">{{ activePoseCase?.description }}</p>
+          </div>
         </div>
 
         <div class="grid gap-3 rounded-xl border border-slate-800 bg-slate-900/65 p-4">
           <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Rig Inspection</p>
+
+          <label class="grid gap-1 text-slate-400">
+            <span>Pose source</span>
+            <select
+              v-model="poseSource"
+              class="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+            >
+              <option value="live">Live POI playback</option>
+              <option v-for="poseCase in poseCases" :key="poseCase.id" :value="poseCase.id">
+                {{ poseCase.label }}
+              </option>
+            </select>
+          </label>
 
           <label class="flex items-center justify-between gap-3">
             <span>VRM model</span>
@@ -191,6 +240,22 @@ function resetView() {
             <span class="font-mono text-slate-200">
               {{ bodyFrame?.solverDiagnostics.rightArm.isClamped ? "clamped" : "ok" }}
             </span>
+          </p>
+          <p class="flex justify-between gap-3 text-slate-400">
+            <span>Left elbow bend</span>
+            <span class="font-mono text-slate-200">{{ leftElbowBend }}</span>
+          </p>
+          <p class="flex justify-between gap-3 text-slate-400">
+            <span>Right elbow bend</span>
+            <span class="font-mono text-slate-200">{{ rightElbowBend }}</span>
+          </p>
+          <p class="flex justify-between gap-3 text-slate-400">
+            <span>Left target error</span>
+            <span class="font-mono text-slate-200">{{ leftReachError }}</span>
+          </p>
+          <p class="flex justify-between gap-3 text-slate-400">
+            <span>Right target error</span>
+            <span class="font-mono text-slate-200">{{ rightReachError }}</span>
           </p>
         </div>
 

@@ -17,7 +17,7 @@ describe("resolveBodyRigConfig humanoid policies", () => {
     expect(resolved.pelvisPolicy.maxLateralShift).toBeCloseTo(config.baseShoulderSpan * 0.12);
     expect(resolved.pelvisPolicy.maxForwardShift).toBeCloseTo(config.baseShoulderSpan * 0.08);
     expect(resolved.chestPolicy.yawFollowRatio).toBeCloseTo(0.82);
-    expect(resolved.chestPolicy.centerLiftRatio).toBeCloseTo(0.08);
+    expect(resolved.chestPolicy.centerLiftRatio).toBe(0);
     expect(resolved.shoulderPolicy.maxProtraction).toBeCloseTo(2 * 0.12);
     expect(resolved.shoulderPolicy.maxRetraction).toBeCloseTo(2 * 0.06);
     expect(resolved.shoulderPolicy.overheadAmbiguityRadius).toBeCloseTo(2 * 0.18);
