@@ -1,4 +1,5 @@
 import { evalSegment } from "@/engine/engine";
+import { deepFreeze } from "@/engine/immutable";
 import { isPlaneSide } from "@/engine/planeSide";
 import type {
   CircleDriver,
@@ -62,7 +63,7 @@ export type SequenceValidationResult =
   | { ok: true }
   | { ok: false; errors: SequenceValidationError[] };
 
-export type PreparedSegment = Omit<Segment, "planeId"> & {
+export type PreparedSegment = Readonly<Omit<Segment, "planeId">> & {
   readonly planeId: PlaneId;
   readonly startUnit: TimeUnit;
   readonly endUnit: TimeUnit;
@@ -404,7 +405,7 @@ function decodeSequence(input: unknown): DecodeSequenceResult {
 }
 
 function wrapSequenceTime(totalDuration: TimeUnit, tGlobal: TimeUnit): TimeUnit {
-  return tGlobal % totalDuration;
+  return tGlobal === 0 ? 0 : tGlobal % totalDuration;
 }
 
 export function validateSequenceStructure(sequence: unknown): SequenceValidationResult {
@@ -436,10 +437,10 @@ export function prepareSequence(input: unknown): PrepareSequenceResult {
 
   return {
     ok: true,
-    prepared: {
+    prepared: deepFreeze({
       segments,
       totalDuration: cursor
-    }
+    })
   };
 }
 

@@ -582,6 +582,67 @@ describe("prepareSequence", () => {
       expect("behindBody" in prepared.prepared.segments[2]).toBe(false);
     }
   });
+
+  it("snapshots and freezes prepared state without freezing runtime closures", () => {
+    const runtimeEval = (startPose: Segment["hand"]["startPose"]) => startPose;
+    const sequence: SequenceSpec = {
+      segments: [
+        {
+          ...segA,
+          hand: {
+            startPose: { phaseAbs: 0, radius: 1 },
+            driver: { kind: "runtime", label: "trusted lab path", evalPose: runtimeEval }
+          },
+          head: {
+            ...segA.head,
+            driver: {
+              kind: "circle",
+              omega: 0,
+              radiusProfile: { kind: "time-keyed", keys: [{ t: 1, radius: 2 }] }
+            }
+          }
+        }
+      ]
+    };
+    const result = prepareSequence(sequence);
+    if (!result.ok) throw new Error("fixture must prepare");
+
+    const preparedSegment = result.prepared.segments[0];
+    sequence.segments[0].hand.startPose.radius = 99;
+    sequence.segments[0].head.driver = { kind: "circle", omega: 99 };
+
+    expect(preparedSegment.hand.startPose.radius).toBe(1);
+    expect(preparedSegment.head.driver).toEqual({
+      kind: "circle",
+      omega: 0,
+      radiusProfile: { kind: "time-keyed", keys: [{ t: 1, radius: 2 }] }
+    });
+    expect(preparedSegment.hand.driver.kind).toBe("runtime");
+    if (preparedSegment.hand.driver.kind === "runtime") {
+      expect(preparedSegment.hand.driver.evalPose).toBe(runtimeEval);
+      expect(Object.isFrozen(preparedSegment.hand.driver.evalPose)).toBe(false);
+    }
+
+    expect(Object.isFrozen(result.prepared)).toBe(true);
+    expect(Object.isFrozen(result.prepared.segments)).toBe(true);
+    expect(Object.isFrozen(preparedSegment)).toBe(true);
+    expect(Object.isFrozen(preparedSegment.hand)).toBe(true);
+    expect(Object.isFrozen(preparedSegment.hand.startPose)).toBe(true);
+    expect(Object.isFrozen(preparedSegment.hand.driver)).toBe(true);
+    expect(Object.isFrozen(preparedSegment.head.driver)).toBe(true);
+    if (preparedSegment.head.driver.kind === "circle") {
+      expect(Object.isFrozen(preparedSegment.head.driver.radiusProfile)).toBe(true);
+      expect(Object.isFrozen(preparedSegment.head.driver.radiusProfile?.keys)).toBe(true);
+      expect(Object.isFrozen(preparedSegment.head.driver.radiusProfile?.keys[0])).toBe(true);
+    }
+
+    expect(() => {
+      (result.prepared.segments as unknown as Segment[]).pop();
+    }).toThrow(TypeError);
+    expect(() => {
+      preparedSegment.hand.startPose.radius = 5;
+    }).toThrow(TypeError);
+  });
 });
 describe("evalPreparedSequenceAt", () => {
   const segA = makeSegment(1, 2);
@@ -616,6 +677,9 @@ describe("evalPreparedSequenceAt", () => {
       ok: false,
       reason: "NEGATIVE_TIME"
     });
+  });
+  it("treats negative zero as sequence start", () => {
+    expect(evalPreparedSequenceAt(prepared, -0)).toEqual(evalPreparedSequenceAt(prepared, 0));
   });
   it("wraps at total duration and beyond", () => {
     expect(evalPreparedSequenceAt(prepared, 5)).toEqual(evalPreparedSequenceAt(prepared, 0));

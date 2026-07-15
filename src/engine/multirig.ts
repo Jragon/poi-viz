@@ -1,3 +1,4 @@
+import { deepFreeze } from "@/engine/immutable";
 import {
   evalPreparedSequenceAt,
   prepareSequence,
@@ -48,13 +49,13 @@ export type EvaluatedMultiRigPose = Record<
 >;
 
 export interface PreparedRigSequenceEntry {
-  rigId: RigId;
-  prepared: PreparedSequence;
+  readonly rigId: RigId;
+  readonly prepared: PreparedSequence;
 }
 
 export interface PreparedMultiRigSequence {
-  rigs: PreparedRigSequenceEntry[];
-  maxSequenceDuration: TimeUnit;
+  readonly rigs: readonly PreparedRigSequenceEntry[];
+  readonly maxSequenceDuration: TimeUnit;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -129,10 +130,10 @@ export function prepareMultiRigSequence(input: unknown): PrepareMultiRigSequence
 
   return {
     ok: true,
-    prepared: {
+    prepared: deepFreeze({
       rigs: preparedRigs,
       maxSequenceDuration
-    }
+    })
   };
 }
 
@@ -143,7 +144,7 @@ export function evalPreparedMultiRigSequenceAt(
   if (!Number.isFinite(t)) return { ok: false, reason: "INVALID_TIME" };
   if (t < 0) return { ok: false, reason: "NEGATIVE_TIME" };
 
-  const poses: EvaluatedMultiRigPose = {};
+  const entries: Array<[RigId, EvaluatedMultiRigPose[RigId]]> = [];
 
   for (const rig of prepared.rigs) {
     const result: EvalPreparedAtResult = evalPreparedSequenceAt(rig.prepared, t);
@@ -151,17 +152,20 @@ export function evalPreparedMultiRigSequenceAt(
       return result;
     }
 
-    poses[rig.rigId] = {
-      pose: result.pose,
-      planeId: result.planeId,
-      ...(result.planeSide !== undefined ? { planeSide: result.planeSide } : {}),
-      ...(result.behindBody !== undefined ? { behindBody: result.behindBody } : {}),
-      segmentIndex: result.segmentIndex,
-      tLocal: result.tLocal
-    };
+    entries.push([
+      rig.rigId,
+      {
+        pose: result.pose,
+        planeId: result.planeId,
+        ...(result.planeSide !== undefined ? { planeSide: result.planeSide } : {}),
+        ...(result.behindBody !== undefined ? { behindBody: result.behindBody } : {}),
+        segmentIndex: result.segmentIndex,
+        tLocal: result.tLocal
+      }
+    ]);
   }
 
-  return { ok: true, poses };
+  return { ok: true, poses: Object.fromEntries(entries) };
 }
 
 export function samplePreparedMultiRigSequence(

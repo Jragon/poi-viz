@@ -107,6 +107,9 @@ describe("prepareMultiRigSequence", () => {
     if (result.ok) {
       expect(result.prepared.maxSequenceDuration).toBe(5);
       expect(result.prepared.rigs.map((rig) => rig.rigId)).toEqual(["left", "right"]);
+      expect(Object.isFrozen(result.prepared)).toBe(true);
+      expect(Object.isFrozen(result.prepared.rigs)).toBe(true);
+      expect(Object.isFrozen(result.prepared.rigs[0])).toBe(true);
     }
   });
 });
@@ -221,6 +224,24 @@ describe("evalPreparedMultiRigSequenceAt", () => {
       expect(result.poses.left.behindBody).toBe(true);
       expect(result.poses.right.behindBody).toBeUndefined();
       expect("behindBody" in result.poses.right).toBe(false);
+    }
+  });
+
+  it("returns every string rig id as an own enumerable key", () => {
+    const rigIds = ["__proto__", "constructor", "hasOwnProperty"];
+    const preparedResult = prepareMultiRigSequence({
+      rigs: rigIds.map((rigId) => ({ rigId, sequence: makeSequence([1], 1, 2) }))
+    });
+    if (!preparedResult.ok) throw new Error("fixture must prepare");
+
+    const result = evalPreparedMultiRigSequenceAt(preparedResult.prepared, 0);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(Object.getPrototypeOf(result.poses)).toBe(Object.prototype);
+      expect(Object.keys(result.poses)).toEqual(rigIds);
+      for (const rigId of rigIds) {
+        expect(Object.hasOwn(result.poses, rigId)).toBe(true);
+      }
     }
   });
 
