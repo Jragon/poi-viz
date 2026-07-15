@@ -309,6 +309,12 @@ interface WorldShoulderPassResult {
   readonly shoulderLimitHit: boolean;
 }
 
+interface WorldPelvisSolveResult {
+  readonly state: BodyRigWorldFrameState;
+  readonly yawLimitHit: boolean;
+  readonly shiftLimitHit: boolean;
+}
+
 const SCORE_EPSILON = 1e-9;
 const YAW_REFINEMENT_STEPS = 48;
 const ELBOW_POLE_FORWARD_BLEND_START = 0.2;
@@ -515,8 +521,13 @@ function solveWorldPelvisState(
   yawRad: number,
   handMidpointOffset: Vec3,
   neutralBasis: ReturnType<typeof getWorldBasis>
-): BodyRigWorldFrameState {
-  const pelvisYawRad = yawRad * config.pelvisPolicy.yawFollowRatio;
+): WorldPelvisSolveResult {
+  const preferredPelvisYawRad = yawRad * config.pelvisPolicy.preferredYawRatio;
+  const maxPelvisYawRad = Math.max(0, Math.abs(config.pelvisPolicy.maxYawRad));
+  const maxTwistRad = Math.max(0, Math.abs(config.chestPolicy.maxTwistFromPelvisRad));
+  const minimumAllowedYaw = Math.max(-maxPelvisYawRad, yawRad - maxTwistRad);
+  const maximumAllowedYaw = Math.min(maxPelvisYawRad, yawRad + maxTwistRad);
+  const pelvisYawRad = clamp(preferredPelvisYawRad, minimumAllowedYaw, maximumAllowedYaw);
   const pelvisBasis = getWorldBasis(input.root, pelvisYawRad);
   const lateralRaw = -dot3(handMidpointOffset, neutralBasis.torsoRight) * 0.08;
   const forwardRaw = dot3(handMidpointOffset, neutralBasis.torsoForward) * 0.05;
@@ -536,15 +547,22 @@ function solveWorldPelvisState(
     scale3(neutralBasis.torsoForward, forwardShift)
   );
 
+  const shiftLimitHit =
+    Math.abs(lateralRaw - lateralShift) > SCORE_EPSILON ||
+    Math.abs(forwardRaw - forwardShift) > SCORE_EPSILON;
+  const yawLimitHit = Math.abs(preferredPelvisYawRad - pelvisYawRad) > SCORE_EPSILON;
+
   return {
-    center,
-    forward: pelvisBasis.torsoForward,
-    right: pelvisBasis.torsoRight,
-    up: pelvisBasis.worldUp,
-    yawRad: pelvisYawRad,
-    limitHit:
-      Math.abs(lateralRaw - lateralShift) > SCORE_EPSILON ||
-      Math.abs(forwardRaw - forwardShift) > SCORE_EPSILON
+    state: {
+      center,
+      forward: pelvisBasis.torsoForward,
+      right: pelvisBasis.torsoRight,
+      up: pelvisBasis.worldUp,
+      yawRad: pelvisYawRad,
+      limitHit: yawLimitHit || shiftLimitHit
+    },
+    yawLimitHit,
+    shiftLimitHit
   };
 }
 
@@ -555,7 +573,7 @@ function solveWorldChestState(
   handMidpointOffset: Vec3,
   neutralBasis: ReturnType<typeof getWorldBasis>
 ): BodyRigWorldFrameState {
-  const chestYawRad = yawRad * config.chestPolicy.yawFollowRatio;
+  const chestYawRad = yawRad;
   const chestBasis = getWorldBasis(input.root, chestYawRad);
   const neutralCenter = getRootChestCenter(input.root);
   const lift =
@@ -1118,7 +1136,14 @@ function scoreWorldYawCandidate(
   const handMidpoint = scale3(add3(input.goals.leftHandTarget, input.goals.rightHandTarget), 0.5);
   const handMidpointOffset = subtract3(handMidpoint, input.root.shoulderGirdleCenter);
   const neutralBasis = getWorldBasis(input.root, 0);
-  const pelvis = solveWorldPelvisState(input, config, yawRad, handMidpointOffset, neutralBasis);
+  const pelvisSolve = solveWorldPelvisState(
+    input,
+    config,
+    yawRad,
+    handMidpointOffset,
+    neutralBasis
+  );
+  const pelvis = pelvisSolve.state;
   const chest = solveWorldChestState(input, config, yawRad, handMidpointOffset, neutralBasis);
   const shoulderPass = applyWorldShoulderPolicy(
     input,
@@ -1182,11 +1207,10 @@ function scoreWorldYawCandidate(
       ? 0
       : config.solverWeights.sideBiasPenalty;
   const cost = reachPenalty + extensionPenalty + yawPenalty + sideBiasPenalty;
-  const pelvisYawLimitHit = false;
   const bestEffortReasons = getWorldBestEffortReasons(
     leftArm.reachError,
     rightArm.reachError,
-    pelvis.limitHit,
+    pelvisSolve.shiftLimitHit,
     shoulderPass.shoulderLimitHit
   );
 
@@ -1217,8 +1241,8 @@ function scoreWorldYawCandidate(
         handMidpointOffset,
         leftElbowPole: leftArm.elbowPole,
         rightElbowPole: rightArm.elbowPole,
-        pelvisYawLimitHit,
-        pelvisShiftLimitHit: pelvis.limitHit,
+        pelvisYawLimitHit: pelvisSolve.yawLimitHit,
+        pelvisShiftLimitHit: pelvisSolve.shiftLimitHit,
         shoulderLimitHit: shoulderPass.shoulderLimitHit,
         leftShoulder: buildWorldShoulderDiagnostics(shoulderGirdle.left),
         rightShoulder: buildWorldShoulderDiagnostics(shoulderGirdle.right),
@@ -1434,13 +1458,18 @@ export function solveBodyRig(input: BodyRigSolveRequest): BodyRigSolveResult {
 export function solveWorldBodyRig(input: BodyRigWorldSolveRequest): BodyRigWorldSolveResult {
   const config = resolveBodyRigConfig(input.config);
   const searchSteps = Math.max(8, Math.floor(input.yawSearchSteps ?? 96));
+  const maxWorldYawRad = Math.min(
+    Math.max(0, Math.abs(config.maxYawRad)),
+    Math.max(0, Math.abs(config.pelvisPolicy.maxYawRad)) +
+      Math.max(0, Math.abs(config.chestPolicy.maxTwistFromPelvisRad))
+  );
   const candidateCount = searchSteps + 1 + YAW_REFINEMENT_STEPS + 1;
   let bestCandidate: WorldCandidateScore | null = null;
   let bestYawRad = 0;
 
   for (let step = 0; step <= searchSteps; step++) {
     const t = step / searchSteps;
-    const yawRad = -config.maxYawRad + t * config.maxYawRad * 2;
+    const yawRad = -maxWorldYawRad + t * maxWorldYawRad * 2;
     const candidate = scoreWorldYawCandidate({ ...input, config }, yawRad, candidateCount);
     if (isBetterWorldCandidate(candidate, bestCandidate)) {
       bestCandidate = candidate;
@@ -1452,9 +1481,9 @@ export function solveWorldBodyRig(input: BodyRigWorldSolveRequest): BodyRigWorld
     throw new Error("Expected at least one world body rig candidate");
   }
 
-  const coarseStepRad = (config.maxYawRad * 2) / searchSteps;
-  const refinementMin = Math.max(-config.maxYawRad, bestYawRad - coarseStepRad);
-  const refinementMax = Math.min(config.maxYawRad, bestYawRad + coarseStepRad);
+  const coarseStepRad = (maxWorldYawRad * 2) / searchSteps;
+  const refinementMin = Math.max(-maxWorldYawRad, bestYawRad - coarseStepRad);
+  const refinementMax = Math.min(maxWorldYawRad, bestYawRad + coarseStepRad);
   for (let step = 0; step <= YAW_REFINEMENT_STEPS; step++) {
     const t = step / YAW_REFINEMENT_STEPS;
     const yawRad = refinementMin + (refinementMax - refinementMin) * t;

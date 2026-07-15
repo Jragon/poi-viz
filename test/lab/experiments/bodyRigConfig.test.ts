@@ -13,10 +13,11 @@ describe("resolveBodyRigConfig humanoid policies", () => {
     const config = buildBodyRigConfigFromArmReach(2);
     const resolved = resolveBodyRigConfig(config);
 
-    expect(resolved.pelvisPolicy.yawFollowRatio).toBeCloseTo(0.35);
+    expect(resolved.pelvisPolicy.preferredYawRatio).toBeCloseTo(0.45);
+    expect(resolved.pelvisPolicy.maxYawRad).toBeCloseTo((40 * Math.PI) / 180);
     expect(resolved.pelvisPolicy.maxLateralShift).toBeCloseTo(config.baseShoulderSpan * 0.12);
     expect(resolved.pelvisPolicy.maxForwardShift).toBeCloseTo(config.baseShoulderSpan * 0.08);
-    expect(resolved.chestPolicy.yawFollowRatio).toBeCloseTo(0.82);
+    expect(resolved.chestPolicy.maxTwistFromPelvisRad).toBeCloseTo((45 * Math.PI) / 180);
     expect(resolved.chestPolicy.centerLiftRatio).toBe(0);
     expect(resolved.shoulderPolicy.maxProtraction).toBeCloseTo(2 * 0.12);
     expect(resolved.shoulderPolicy.maxRetraction).toBeCloseTo(2 * 0.06);
@@ -31,12 +32,13 @@ describe("resolveBodyRigConfig humanoid policies", () => {
       baseShoulderSpan: 1.2,
       maxYawRad: Math.PI / 3,
       pelvisPolicy: {
-        yawFollowRatio: 0.25,
+        preferredYawRatio: 0.25,
+        maxYawRad: 0.5,
         maxLateralShift: 0.04,
         maxForwardShift: 0.03
       },
       chestPolicy: {
-        yawFollowRatio: 0.7,
+        maxTwistFromPelvisRad: 0.7,
         centerLiftRatio: 0.05
       },
       shoulderPolicy: {
@@ -48,12 +50,13 @@ describe("resolveBodyRigConfig humanoid policies", () => {
     });
 
     expect(resolved.pelvisPolicy).toEqual({
-      yawFollowRatio: 0.25,
+      preferredYawRatio: 0.25,
+      maxYawRad: 0.5,
       maxLateralShift: 0.04,
       maxForwardShift: 0.03
     });
     expect(resolved.chestPolicy).toEqual({
-      yawFollowRatio: 0.7,
+      maxTwistFromPelvisRad: 0.7,
       centerLiftRatio: 0.05
     });
     expect(resolved.shoulderPolicy.maxProtraction).toBe(0.2);

@@ -33,13 +33,14 @@ export interface BodyRigSolverWeights {
 }
 
 export interface BodyRigPelvisPolicy {
-  readonly yawFollowRatio?: number;
+  readonly preferredYawRatio?: number;
+  readonly maxYawRad?: number;
   readonly maxLateralShift?: number;
   readonly maxForwardShift?: number;
 }
 
 export interface BodyRigChestPolicy {
-  readonly yawFollowRatio?: number;
+  readonly maxTwistFromPelvisRad?: number;
   readonly centerLiftRatio?: number;
 }
 
@@ -74,13 +75,14 @@ export interface ResolvedBodyRigSolverWeights {
 }
 
 export interface ResolvedBodyRigPelvisPolicy {
-  readonly yawFollowRatio: number;
+  readonly preferredYawRatio: number;
+  readonly maxYawRad: number;
   readonly maxLateralShift: number;
   readonly maxForwardShift: number;
 }
 
 export interface ResolvedBodyRigChestPolicy {
-  readonly yawFollowRatio: number;
+  readonly maxTwistFromPelvisRad: number;
   readonly centerLiftRatio: number;
 }
 
@@ -112,8 +114,12 @@ export interface BuildBodyRigConfigOptions {
   readonly neutralDeadzonePx?: number;
 }
 
-export const DEFAULT_MAX_TORSO_YAW_DEG = 55;
+export const DEFAULT_MAX_TORSO_YAW_DEG = 80;
 export const DEFAULT_MAX_TORSO_YAW_RAD = (DEFAULT_MAX_TORSO_YAW_DEG * Math.PI) / 180;
+export const DEFAULT_PELVIS_MAX_YAW_DEG = 40;
+export const DEFAULT_PELVIS_MAX_YAW_RAD = (DEFAULT_PELVIS_MAX_YAW_DEG * Math.PI) / 180;
+export const DEFAULT_CHEST_MAX_TWIST_DEG = 45;
+export const DEFAULT_CHEST_MAX_TWIST_RAD = (DEFAULT_CHEST_MAX_TWIST_DEG * Math.PI) / 180;
 export const DEFAULT_MIN_PROJECTED_SHOULDER_SPAN_RATIO = 0.36;
 export const DEFAULT_ARM_REACH_UPPER_ARM_RATIO = 0.55;
 export const DEFAULT_ARM_REACH_FOREARM_RATIO = 0.45;
@@ -128,10 +134,9 @@ export const DEFAULT_SHOULDER_MAX_OUTWARD_REACH_RATIO = 0.1;
 export const DEFAULT_SHOULDER_MAX_CROSS_BODY_REACH_RATIO = 0.05;
 export const DEFAULT_SHOULDER_ACTIVATION_EXTENSION_RATIO = 0.78;
 export const DEFAULT_SHOULDER_OVERHEAD_LIFT_BIAS = 0.8;
-export const DEFAULT_PELVIS_YAW_FOLLOW_RATIO = 0.35;
+export const DEFAULT_PELVIS_PREFERRED_YAW_RATIO = 0.45;
 export const DEFAULT_PELVIS_MAX_LATERAL_SHIFT_RATIO = 0.12;
 export const DEFAULT_PELVIS_MAX_FORWARD_SHIFT_RATIO = 0.08;
-export const DEFAULT_CHEST_YAW_FOLLOW_RATIO = 0.82;
 export const DEFAULT_CHEST_CENTER_LIFT_RATIO = 0;
 export const DEFAULT_SHOULDER_MAX_PROTRACTION_RATIO = 0.12;
 export const DEFAULT_SHOULDER_MAX_RETRACTION_RATIO = 0.06;
@@ -168,12 +173,13 @@ export function buildBodyRigConfigFromArmReach(
       sideBiasPenalty: DEFAULT_SIDE_BIAS_PENALTY_WEIGHT
     },
     pelvisPolicy: {
-      yawFollowRatio: DEFAULT_PELVIS_YAW_FOLLOW_RATIO,
+      preferredYawRatio: DEFAULT_PELVIS_PREFERRED_YAW_RATIO,
+      maxYawRad: DEFAULT_PELVIS_MAX_YAW_RAD,
       maxLateralShift: baseShoulderSpan * DEFAULT_PELVIS_MAX_LATERAL_SHIFT_RATIO,
       maxForwardShift: baseShoulderSpan * DEFAULT_PELVIS_MAX_FORWARD_SHIFT_RATIO
     },
     chestPolicy: {
-      yawFollowRatio: DEFAULT_CHEST_YAW_FOLLOW_RATIO,
+      maxTwistFromPelvisRad: DEFAULT_CHEST_MAX_TWIST_RAD,
       centerLiftRatio: DEFAULT_CHEST_CENTER_LIFT_RATIO
     },
     shoulderPolicy: {
@@ -217,7 +223,9 @@ export function resolveBodyRigConfig(config: BodyRigConfig): ResolvedBodyRigConf
       sideBiasPenalty: config.solverWeights?.sideBiasPenalty ?? DEFAULT_SIDE_BIAS_PENALTY_WEIGHT
     },
     pelvisPolicy: {
-      yawFollowRatio: config.pelvisPolicy?.yawFollowRatio ?? DEFAULT_PELVIS_YAW_FOLLOW_RATIO,
+      preferredYawRatio:
+        config.pelvisPolicy?.preferredYawRatio ?? DEFAULT_PELVIS_PREFERRED_YAW_RATIO,
+      maxYawRad: config.pelvisPolicy?.maxYawRad ?? DEFAULT_PELVIS_MAX_YAW_RAD,
       maxLateralShift:
         config.pelvisPolicy?.maxLateralShift ??
         config.baseShoulderSpan * DEFAULT_PELVIS_MAX_LATERAL_SHIFT_RATIO,
@@ -226,7 +234,8 @@ export function resolveBodyRigConfig(config: BodyRigConfig): ResolvedBodyRigConf
         config.baseShoulderSpan * DEFAULT_PELVIS_MAX_FORWARD_SHIFT_RATIO
     },
     chestPolicy: {
-      yawFollowRatio: config.chestPolicy?.yawFollowRatio ?? DEFAULT_CHEST_YAW_FOLLOW_RATIO,
+      maxTwistFromPelvisRad:
+        config.chestPolicy?.maxTwistFromPelvisRad ?? DEFAULT_CHEST_MAX_TWIST_RAD,
       centerLiftRatio: config.chestPolicy?.centerLiftRatio ?? DEFAULT_CHEST_CENTER_LIFT_RATIO
     },
     shoulderPolicy: {

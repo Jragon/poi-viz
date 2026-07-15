@@ -100,9 +100,20 @@ const solverSummary = computed(() => {
 
   return "Both arm targets solved";
 });
-const torsoYaw = computed(() => {
-  const radians = bodyFrame.value?.solverDiagnostics.chestYawRad ?? 0;
+function formatRadiansAsDegrees(radians: number): string {
   return `${((radians * 180) / Math.PI).toFixed(1)}°`;
+}
+const pelvisYaw = computed(() =>
+  formatRadiansAsDegrees(bodyFrame.value?.solverDiagnostics.pelvisYawRad ?? 0)
+);
+const chestYaw = computed(() =>
+  formatRadiansAsDegrees(bodyFrame.value?.solverDiagnostics.chestYawRad ?? 0)
+);
+const spineTwist = computed(() => {
+  const diagnostics = bodyFrame.value?.solverDiagnostics;
+  return formatRadiansAsDegrees(
+    diagnostics ? diagnostics.chestYawRad - diagnostics.pelvisYawRad : 0
+  );
 });
 const leftElbowBend = computed(() => {
   const radians = bodyFrame.value?.solverDiagnostics.leftArm.elbowBendRad ?? 0;
@@ -279,8 +290,16 @@ function resetView() {
           <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Live Diagnostics</p>
           <p>{{ solverSummary }}</p>
           <p class="flex justify-between gap-3 text-slate-400">
+            <span>Pelvis yaw</span>
+            <span class="font-mono text-slate-200">{{ pelvisYaw }}</span>
+          </p>
+          <p class="flex justify-between gap-3 text-slate-400">
             <span>Chest yaw</span>
-            <span class="font-mono text-slate-200">{{ torsoYaw }}</span>
+            <span class="font-mono text-slate-200">{{ chestYaw }}</span>
+          </p>
+          <p class="flex justify-between gap-3 text-slate-400">
+            <span>Spine twist</span>
+            <span class="font-mono text-slate-200">{{ spineTwist }}</span>
           </p>
           <p class="flex justify-between gap-3 text-slate-400">
             <span>Left reach</span>

@@ -135,4 +135,17 @@ describe("VRM rig canonical pose cases", () => {
       "Unknown VRM rig pose case"
     );
   });
+
+  it("rotates the planted pelvis and chest together for far-side reach", () => {
+    const dimensions = buildBodyRigDimensionsForCanonicalUnitRadius(1);
+    const body = buildBodyRigFrameFromDimensions(dimensions);
+    const frame = solveCase("both-right");
+
+    expect(Math.abs(frame.solverDiagnostics.pelvisYawRad)).toBeGreaterThan(0);
+    expect(Math.abs(frame.solverDiagnostics.chestYawRad)).toBeGreaterThan(
+      Math.abs(frame.solverDiagnostics.pelvisYawRad)
+    );
+    expect(frame.joints.footLeft).toEqual(body.footLeft);
+    expect(frame.joints.footRight).toEqual(body.footRight);
+  });
 });

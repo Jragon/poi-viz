@@ -886,6 +886,31 @@ describe("solveWorldBodyRig", () => {
     expect(result.diagnostics.leftShoulder.overheadAmbiguous).toBe(false);
   });
 
+  it("allocates far-side rotation between a limited pelvis and thoracic twist", () => {
+    const result = solveWorldBodyRig({
+      root: {
+        shoulderGirdleCenter: { x: 0, y: 1.4, z: 0 },
+        neutralPelvisCenter: { x: 0, y: 0.8, z: 0 },
+        neutralChestCenter: { x: 0, y: 1.35, z: 0 },
+        worldUp: { x: 0, y: 1, z: 0 },
+        neutralForward: { x: 0, y: 0, z: 1 },
+        scale: 1
+      },
+      config: buildBodyRigConfigFromArmReach(1.25),
+      goals: {
+        leftHandTarget: { x: 1.5, y: 1.25, z: 0.15 },
+        rightHandTarget: { x: 1.85, y: 1.25, z: 0.15 }
+      },
+      yawSearchSteps: 96
+    });
+
+    expect(Math.abs(result.chest.yawRad)).toBeGreaterThan((50 * Math.PI) / 180);
+    expect(Math.abs(result.pelvis.yawRad)).toBeLessThanOrEqual((40 * Math.PI) / 180 + 1e-9);
+    expect(Math.abs(result.chest.yawRad - result.pelvis.yawRad)).toBeLessThanOrEqual(
+      (45 * Math.PI) / 180 + 1e-9
+    );
+  });
+
   it("solves the shoulder line in the same frame as the chest that carries it", () => {
     const result = solveWorldBodyRig({
       root: {

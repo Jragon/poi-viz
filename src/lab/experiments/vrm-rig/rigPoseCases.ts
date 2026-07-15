@@ -122,10 +122,10 @@ export function buildVrmRigPoseCases(
     poseCase(
       "both-right",
       "Both hands right",
-      "Asymmetric pose used to inspect coupled torso yaw and shoulder travel.",
+      "Far side reach that requires coupled pelvis and thoracic rotation.",
       true,
-      { x: reach * 0.25, y: reach * 0.12, z: reach * 0.2 },
-      { x: reach * 0.78, y: reach * 0.12, z: reach * 0.2 },
+      { x: reach * 0.8, y: reach * 0.12, z: reach * 0.15 },
+      { x: reach * 1.1, y: reach * 0.12, z: -reach * 0.15 },
       tetherLength
     ),
     poseCase(
