@@ -3,7 +3,7 @@ import { type VRM, VRMLoaderPlugin, VRMUtils } from "@pixiv/three-vrm";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 import type { BodySkeletonFrame } from "@/body-rig";
 import type { RigId, Vec3, WorldMultiRigPose } from "@/engine/types";
@@ -32,6 +32,7 @@ const props = withDefaults(
     showPoiTargets?: boolean;
     showAxes?: boolean;
     showGrid?: boolean;
+    showUnitCircle?: boolean;
     mirroredView?: boolean;
     cameraResetVersion?: number;
   }>(),
@@ -42,6 +43,7 @@ const props = withDefaults(
     showPoiTargets: true,
     showAxes: true,
     showGrid: true,
+    showUnitCircle: true,
     mirroredView: false,
     cameraResetVersion: 0
   }
@@ -78,6 +80,7 @@ let orbitControls: OrbitControls | null = null;
 let resizeObserver: ResizeObserver | null = null;
 let axesHelper: THREE.AxesHelper | null = null;
 let gridHelper: THREE.GridHelper | null = null;
+let unitCircle: THREE.LineLoop | null = null;
 let targetRigRenderer: BodyHumanoidRenderer | null = null;
 let helperRoot: THREE.Group | null = null;
 let currentVrm: VRM | null = null;
@@ -272,8 +275,46 @@ function syncHelpers() {
   if (helperRoot) {
     helperRoot.visible = props.showVrmHelpers;
   }
+  if (unitCircle) {
+    unitCircle.visible = props.showUnitCircle;
+  }
 
   renderScene();
+}
+
+function replaceUnitCircle(profile: VrmRigProfile) {
+  if (!scene) {
+    return;
+  }
+
+  if (unitCircle) {
+    scene.remove(unitCircle);
+    unitCircle.geometry.dispose();
+    disposeMaterial(unitCircle.material);
+  }
+
+  const { origin, unitRadius } = profile.dimensions.canonicalPatternSpace;
+  const points = Array.from({ length: 128 }, (_, index) => {
+    const angle = (index / 128) * Math.PI * 2;
+    return new THREE.Vector3(
+      origin.x + Math.cos(angle) * unitRadius,
+      origin.y + Math.sin(angle) * unitRadius,
+      origin.z
+    );
+  });
+  unitCircle = new THREE.LineLoop(
+    new THREE.BufferGeometry().setFromPoints(points),
+    new THREE.LineBasicMaterial({
+      color: "#2dd4bf",
+      transparent: true,
+      opacity: 0.8,
+      depthTest: false
+    })
+  );
+  unitCircle.name = "CanonicalHandOverlapCircle";
+  unitCircle.renderOrder = 9_000;
+  unitCircle.visible = props.showUnitCircle;
+  scene.add(unitCircle);
 }
 
 function loadVrmFixture() {
@@ -318,14 +359,19 @@ function loadVrmFixture() {
       });
 
       const rigProfile = buildVrmRigProfile(vrm);
+      replaceUnitCircle(rigProfile);
       currentVrm = vrm;
       standingPoseAdapter = new VrmStandingPoseAdapter(vrm, rigProfile);
       emit("rigProfile", rigProfile);
       scene.add(vrm.scene);
       loadState.value = "ready";
       loadMessage.value = "VRM ready · normalized humanoid rig · twist constraints active";
-      syncVrmPose();
-      syncHelpers();
+      void nextTick(() => {
+        if (!disposed) {
+          syncVrmPose();
+          syncHelpers();
+        }
+      });
     },
     (progress) => {
       if (progress.total > 0) {
@@ -394,6 +440,12 @@ function disposeScene() {
     gridHelper.geometry.dispose();
     disposeMaterial(gridHelper.material);
     gridHelper = null;
+  }
+  if (unitCircle) {
+    scene?.remove(unitCircle);
+    unitCircle.geometry.dispose();
+    disposeMaterial(unitCircle.material);
+    unitCircle = null;
   }
 
   renderer?.dispose();
@@ -480,6 +532,7 @@ watch(
     props.showVrmHelpers,
     props.showAxes,
     props.showGrid,
+    props.showUnitCircle,
     props.mirroredView
   ],
   () => {

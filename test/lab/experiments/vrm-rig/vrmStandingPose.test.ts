@@ -3,14 +3,14 @@ import * as THREE from "three";
 import { describe, expect, it, vi } from "vitest";
 
 import { SKELETON_SEGMENTS } from "@/body-rig";
-import type { BodySkeletonFrame, SkeletonJointName } from "@/body-rig";
+import type { BodyRigDimensions, BodySkeletonFrame, SkeletonJointName } from "@/body-rig";
+import { VrmStandingPoseAdapter } from "@/lab/experiments/vrm-rig/vrmStandingPose";
 import {
-  resolveVrmRigScale,
-  VrmStandingPoseAdapter
-} from "@/lab/experiments/vrm-rig/vrmStandingPose";
-import { buildVrmRigProfile } from "@/lab/experiments/vrm-rig/vrmRigProfile";
+  buildVrmRigProfile,
+  resolveVrmPatternScale
+} from "@/lab/experiments/vrm-rig/vrmRigProfile";
 
-function makeFrame(): BodySkeletonFrame {
+function makeFrame(dimensions?: BodyRigDimensions): BodySkeletonFrame {
   const joints: Record<SkeletonJointName, { x: number; y: number; z: number }> = {
     headCenter: { x: 0, y: 1.65, z: 0 },
     neck: { x: 0, y: 1.52, z: 0 },
@@ -41,10 +41,10 @@ function makeFrame(): BodySkeletonFrame {
       right: { x: 1, y: 0, z: 0 }
     },
     supportPose: {
-      armReach: 0.65,
-      upperArmLength: 0.32,
-      forearmLength: 0.33,
-      shoulderSpan: 0.36
+      armReach: dimensions?.armReach ?? 0.65,
+      upperArmLength: dimensions?.config.upperArmLength ?? 0.32,
+      forearmLength: dimensions?.config.forearmLength ?? 0.33,
+      shoulderSpan: dimensions?.shoulderSpan ?? 0.36
     },
     solverDiagnostics: {
       yawRad: 0.2,
@@ -160,25 +160,25 @@ function worldDirection(from: THREE.Object3D, to: THREE.Object3D) {
     .normalize();
 }
 
-describe("resolveVrmRigScale", () => {
-  it("scales the model arm reach to the deterministic target rig", () => {
-    expect(resolveVrmRigScale(0.5, 1.25)).toBeCloseTo(2.5);
+describe("resolveVrmPatternScale", () => {
+  it("scales the measured overlap circle to the canonical target radius", () => {
+    expect(resolveVrmPatternScale(0.5, 1.25)).toBeCloseTo(2.5);
   });
 
   it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY])(
     "rejects invalid model arm reach %s",
-    (modelArmReach) => {
-      expect(() => resolveVrmRigScale(modelArmReach, 1)).toThrow(
-        "VRM fixture has an invalid humanoid arm reach"
+    (modelPatternRadius) => {
+      expect(() => resolveVrmPatternScale(modelPatternRadius, 1)).toThrow(
+        "VRM fixture has an invalid canonical pattern radius"
       );
     }
   );
 
   it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY])(
     "rejects invalid target arm reach %s",
-    (targetArmReach) => {
-      expect(() => resolveVrmRigScale(1, targetArmReach)).toThrow(
-        "Target body rig has an invalid arm reach"
+    (targetPatternRadius) => {
+      expect(() => resolveVrmPatternScale(1, targetPatternRadius)).toThrow(
+        "Target canonical pattern radius is invalid"
       );
     }
   );
@@ -186,13 +186,13 @@ describe("resolveVrmRigScale", () => {
 
 describe("VrmStandingPoseAdapter", () => {
   it("keeps target and VRM sides anatomical", () => {
-    const frame = makeFrame();
     const { vrm, bones } = makeFakeVrm();
-    const profile = buildVrmRigProfile(vrm, frame.supportPose.armReach);
+    const profile = buildVrmRigProfile(vrm);
 
     expect(profile.targetToVrmSide).toEqual({ left: "left", right: "right" });
-    expect(profile.dimensions.config.upperArmLength).toBeCloseTo(0.325);
-    expect(profile.dimensions.config.forearmLength).toBeCloseTo(0.325);
+    expect(profile.targetPatternRadius).toBe(1);
+    expect(profile.dimensions.canonicalPatternSpace.unitRadius).toBeCloseTo(1);
+    expect(profile.dimensions.armReach).toBeCloseTo(profile.modelArmReach * profile.scale);
 
     vrm.scene.quaternion.fromArray(profile.modelToTargetRotation);
     vrm.scene.updateMatrixWorld(true);
@@ -204,12 +204,10 @@ describe("VrmStandingPoseAdapter", () => {
   });
 
   it("re-solves the measured VRM arm chains onto the solver wrists", () => {
-    const frame = makeFrame();
     const { vrm, bones, humanoidUpdate, constraintUpdate } = makeFakeVrm();
-    const adapter = new VrmStandingPoseAdapter(
-      vrm,
-      buildVrmRigProfile(vrm, frame.supportPose.armReach)
-    );
+    const profile = buildVrmRigProfile(vrm);
+    const frame = makeFrame(profile.dimensions);
+    const adapter = new VrmStandingPoseAdapter(vrm, profile);
 
     adapter.apply(frame);
 
@@ -221,24 +219,22 @@ describe("VrmStandingPoseAdapter", () => {
         .get("leftUpperArm")!
         .getWorldPosition(new THREE.Vector3())
         .distanceTo(bones.get("leftLowerArm")!.getWorldPosition(new THREE.Vector3()))
-    ).toBeCloseTo(0.325);
+    ).toBeCloseTo(profile.arms.left.upperArmLength * profile.scale);
     expect(
       bones
         .get("rightUpperArm")!
         .getWorldPosition(new THREE.Vector3())
         .distanceTo(bones.get("rightLowerArm")!.getWorldPosition(new THREE.Vector3()))
-    ).toBeCloseTo(0.325);
+    ).toBeCloseTo(profile.arms.right.upperArmLength * profile.scale);
     expect(humanoidUpdate).not.toHaveBeenCalled();
     expect(constraintUpdate).not.toHaveBeenCalled();
   });
 
   it("produces the same normalized bone rotations when the same frame is reapplied", () => {
-    const frame = makeFrame();
     const { vrm, bones } = makeFakeVrm();
-    const adapter = new VrmStandingPoseAdapter(
-      vrm,
-      buildVrmRigProfile(vrm, frame.supportPose.armReach)
-    );
+    const profile = buildVrmRigProfile(vrm);
+    const frame = makeFrame(profile.dimensions);
+    const adapter = new VrmStandingPoseAdapter(vrm, profile);
 
     adapter.apply(frame);
     const firstRotations = Array.from(bones.values(), (bone) => bone.quaternion.toArray());
@@ -250,9 +246,9 @@ describe("VrmStandingPoseAdapter", () => {
   });
 
   it("re-registers the shoulder sockets when the solved body translates", () => {
-    const frame = makeFrame();
     const { vrm } = makeFakeVrm();
-    const profile = buildVrmRigProfile(vrm, frame.supportPose.armReach);
+    const profile = buildVrmRigProfile(vrm);
+    const frame = makeFrame(profile.dimensions);
     const halfSocketSpan = profile.dimensions.shoulderSpan * 0.5;
     const upperArmLength = profile.dimensions.config.upperArmLength;
     const forearmLength = profile.dimensions.config.forearmLength;

@@ -3,7 +3,7 @@ import * as THREE from "three";
 
 import {
   buildBodyRigConfigFromArmReach,
-  buildBodyRigDimensionsForCanonicalUnitRadius,
+  buildDefaultBodyRigDimensions,
   computeBodyRigCanonicalPatternSpace,
   type BodyRigDimensions
 } from "@/body-rig";
@@ -21,7 +21,8 @@ export interface VrmArmProfile {
 
 export interface VrmRigProfile {
   readonly modelArmReach: number;
-  readonly targetArmReach: number;
+  readonly modelPatternRadius: number;
+  readonly targetPatternRadius: number;
   readonly scale: number;
   readonly modelShoulderBaseSpan: number;
   readonly modelShoulderSocketSpan: number;
@@ -94,11 +95,12 @@ function safeMeasurement(value: number, fallback: number): number {
 
 function buildProfileDimensions(
   vrm: VRM,
-  targetArmReach: number,
   scale: number,
-  arms: Readonly<Record<VrmAnatomicalSide, VrmArmProfile>>
+  arms: Readonly<Record<VrmAnatomicalSide, VrmArmProfile>>,
+  modelArmReach: number
 ): BodyRigDimensions {
-  const fallback = buildBodyRigDimensionsForCanonicalUnitRadius(1);
+  const scaledArmReach = modelArmReach * scale;
+  const fallback = buildDefaultBodyRigDimensions(scaledArmReach);
   const upperArmLength = average(arms.left.upperArmLength, arms.right.upperArmLength) * scale;
   const forearmLength = average(arms.left.forearmLength, arms.right.forearmLength) * scale;
   const leftSocket = position(vrm, "leftUpperArm");
@@ -127,7 +129,7 @@ function buildProfileDimensions(
   const headHeight = Math.max(0, head.y - shoulderMidpoint.y) * scale;
   const headRadius = Math.min(fallback.headRadius, headHeight * 0.45 || fallback.headRadius);
   const config = {
-    ...buildBodyRigConfigFromArmReach(targetArmReach),
+    ...buildBodyRigConfigFromArmReach(scaledArmReach),
     upperArmLength,
     forearmLength,
     baseShoulderSpan: shoulderSpan
@@ -163,12 +165,27 @@ function buildProfileDimensions(
   };
 }
 
+export function resolveVrmPatternScale(
+  modelPatternRadius: number,
+  targetPatternRadius: number
+): number {
+  if (!Number.isFinite(modelPatternRadius) || modelPatternRadius <= MIN_MEASUREMENT) {
+    throw new Error("VRM fixture has an invalid canonical pattern radius.");
+  }
+
+  if (!Number.isFinite(targetPatternRadius) || targetPatternRadius <= MIN_MEASUREMENT) {
+    throw new Error("Target canonical pattern radius is invalid.");
+  }
+
+  return targetPatternRadius / modelPatternRadius;
+}
+
 export function buildVrmRigProfile(
   vrm: VRM,
-  targetArmReach = buildBodyRigDimensionsForCanonicalUnitRadius(1).armReach
+  targetPatternRadius = 1
 ): VrmRigProfile {
-  if (!Number.isFinite(targetArmReach) || targetArmReach <= MIN_MEASUREMENT) {
-    throw new Error("Target body rig has an invalid arm reach.");
+  if (!Number.isFinite(targetPatternRadius) || targetPatternRadius <= MIN_MEASUREMENT) {
+    throw new Error("Target canonical pattern radius is invalid.");
   }
 
   vrm.humanoid.resetNormalizedPose();
@@ -198,7 +215,15 @@ export function buildVrmRigProfile(
   if (!Number.isFinite(modelArmReach) || modelArmReach <= MIN_MEASUREMENT) {
     throw new Error("VRM fixture has an invalid humanoid arm reach.");
   }
-  const scale = targetArmReach / modelArmReach;
+  const unscaledDimensions = buildProfileDimensions(vrm, 1, arms, modelArmReach);
+  const modelPatternRadius = unscaledDimensions.canonicalPatternSpace.unitRadius;
+  const scale = resolveVrmPatternScale(modelPatternRadius, targetPatternRadius);
+  const dimensions = buildProfileDimensions(vrm, scale, arms, modelArmReach);
+  if (
+    Math.abs(dimensions.canonicalPatternSpace.unitRadius - targetPatternRadius) > 1e-6
+  ) {
+    throw new Error("VRM canonical pattern radius did not normalize to the requested target.");
+  }
   const targetToVrmSide: Readonly<Record<TargetRigSide, VrmAnatomicalSide>> = {
     left: "left",
     right: "right"
@@ -207,13 +232,14 @@ export function buildVrmRigProfile(
 
   return {
     modelArmReach,
-    targetArmReach,
+    modelPatternRadius,
+    targetPatternRadius,
     scale,
     modelShoulderBaseSpan: distance(vrm, "leftShoulder", "rightShoulder"),
     modelShoulderSocketSpan: distance(vrm, "leftUpperArm", "rightUpperArm"),
     modelToTargetRotation: modelToTargetRotation.toArray(),
     arms,
     targetToVrmSide,
-    dimensions: buildProfileDimensions(vrm, targetArmReach, scale, arms)
+    dimensions
   };
 }

@@ -47,6 +47,7 @@ const showVrmHelpers = ref(false);
 const showPoiTargets = ref(true);
 const showAxes = ref(true);
 const showGrid = ref(true);
+const showUnitCircle = ref(true);
 const mirroredView = ref(false);
 const cameraResetVersion = ref(0);
 const poseSource = ref<"live" | VrmRigPoseCaseId>("live");
@@ -127,6 +128,10 @@ const viewModeSummary = computed(() =>
     : "Audience view · projection unflipped · anatomy unchanged"
 );
 const modelJointError = computed(() => vrmPoseDiagnostics.value?.maxJointError.toFixed(4) ?? "—");
+const patternRadius = computed(
+  () => vrmRigProfile.value?.dimensions.canonicalPatternSpace.unitRadius.toFixed(4) ?? "—"
+);
+const avatarScale = computed(() => vrmRigProfile.value?.scale.toFixed(4) ?? "—");
 function formatArmJointErrors(side: "left" | "right") {
   const diagnostics = vrmPoseDiagnostics.value?.[side];
   return diagnostics
@@ -184,6 +189,7 @@ function resetView() {
           :show-poi-targets="showPoiTargets"
           :show-axes="showAxes"
           :show-grid="showGrid"
+          :show-unit-circle="showUnitCircle"
           :mirrored-view="mirroredView"
           :camera-reset-version="cameraResetVersion"
           @rig-profile="vrmRigProfile = $event"
@@ -242,6 +248,10 @@ function resetView() {
             <input v-model="showGrid" type="checkbox" />
           </label>
           <label class="flex items-center justify-between gap-3">
+            <span>Unit hand-overlap circle</span>
+            <input v-model="showUnitCircle" type="checkbox" />
+          </label>
+          <label class="flex items-center justify-between gap-3">
             <span>Mirror view</span>
             <input v-model="mirroredView" type="checkbox" />
           </label>
@@ -294,6 +304,14 @@ function resetView() {
           <p class="grid gap-1 border-t border-slate-800 pt-3 text-slate-400">
             <span>Side mapping</span>
             <span class="font-mono text-xs text-slate-200">{{ targetSideMapping }}</span>
+          </p>
+          <p class="flex justify-between gap-3 text-slate-400">
+            <span>Pattern radius</span>
+            <span class="font-mono text-slate-200">{{ patternRadius }}</span>
+          </p>
+          <p class="flex justify-between gap-3 text-slate-400">
+            <span>Avatar scale</span>
+            <span class="font-mono text-slate-200">{{ avatarScale }}</span>
           </p>
           <p class="flex justify-between gap-3 text-slate-400">
             <span>VRM max joint error</span>

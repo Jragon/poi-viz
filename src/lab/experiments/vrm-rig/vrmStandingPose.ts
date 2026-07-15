@@ -96,18 +96,6 @@ function worldPosition(vrm: VRM, name: VRMHumanBoneName): THREE.Vector3 {
   return getRequiredBone(vrm, name).getWorldPosition(new THREE.Vector3());
 }
 
-export function resolveVrmRigScale(modelArmReach: number, targetArmReach: number): number {
-  if (!Number.isFinite(modelArmReach) || modelArmReach <= MIN_DIRECTION_LENGTH) {
-    throw new Error("VRM fixture has an invalid humanoid arm reach.");
-  }
-
-  if (!Number.isFinite(targetArmReach) || targetArmReach <= MIN_DIRECTION_LENGTH) {
-    throw new Error("Target body rig has an invalid arm reach.");
-  }
-
-  return targetArmReach / modelArmReach;
-}
-
 /**
  * Applies the current deterministic body-solver output to VRM normalized bones.
  * The adapter deliberately controls only torso yaw and both arm chains. Legs,
@@ -149,7 +137,7 @@ export class VrmStandingPoseAdapter {
     const targetArmReach = frame.supportPose.armReach;
     const scale = this.profile.scale;
 
-    if (Math.abs(targetArmReach - this.profile.targetArmReach) > 1e-6) {
+    if (Math.abs(targetArmReach - this.profile.dimensions.armReach) > 1e-6) {
       throw new Error("Body rig arm reach does not match the loaded VRM rig profile.");
     }
 
