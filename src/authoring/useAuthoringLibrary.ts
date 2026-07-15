@@ -33,8 +33,6 @@ export interface AuthoringLibraryController {
   selectDocument: (id: string | null) => void;
 }
 
-type HydratedSnapshot = AuthoredDocumentLibrarySnapshot & { migrated?: true };
-
 function getDefaultStorage(): StorageLike | null {
   if (typeof globalThis.localStorage === "undefined") {
     return null;
@@ -91,64 +89,7 @@ function isValidStoredDocumentEntry(value: unknown): value is AuthoredDocumentEn
   return validateAuthoredDocument(candidate.document as AuthoredSequenceDocument).ok;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return !!value && typeof value === "object";
-}
-
-function migrateStoredNodeRadiusProfile(node: unknown): boolean {
-  if (!isRecord(node) || !("radiusProfile" in node)) {
-    return false;
-  }
-
-  const driver = node.driver;
-  if (isRecord(driver) && driver.kind === "circle" && driver.radiusProfile === undefined) {
-    driver.radiusProfile = node.radiusProfile;
-  }
-
-  delete node.radiusProfile;
-  return true;
-}
-
-function migrateStoredAuthoredDocument(document: unknown): boolean {
-  if (!isRecord(document) || !isRecord(document.tracks)) {
-    return false;
-  }
-
-  let changed = false;
-  for (const track of Object.values(document.tracks)) {
-    if (!isRecord(track) || !Array.isArray(track.segments)) {
-      continue;
-    }
-
-    for (const segment of track.segments) {
-      if (!isRecord(segment)) {
-        continue;
-      }
-
-      changed = migrateStoredNodeRadiusProfile(segment.hand) || changed;
-      changed = migrateStoredNodeRadiusProfile(segment.head) || changed;
-    }
-  }
-
-  return changed;
-}
-
-function migrateStoredSnapshot(parsed: Partial<AuthoredDocumentLibrarySnapshot>): boolean {
-  if (!Array.isArray(parsed.documents)) {
-    return false;
-  }
-
-  let changed = false;
-  for (const entry of parsed.documents) {
-    if (isRecord(entry)) {
-      changed = migrateStoredAuthoredDocument(entry.document) || changed;
-    }
-  }
-
-  return changed;
-}
-
-function parseSnapshot(raw: string | null): HydratedSnapshot | null {
+function parseSnapshot(raw: string | null): AuthoredDocumentLibrarySnapshot | null {
   if (!raw) {
     return null;
   }
@@ -158,9 +99,6 @@ function parseSnapshot(raw: string | null): HydratedSnapshot | null {
     if (!Array.isArray(parsed.documents)) {
       return null;
     }
-
-    // TODO: Remove after 2026-05-27. Migrates stored node.radiusProfile to driver.radiusProfile.
-    const migrated = migrateStoredSnapshot(parsed);
 
     const documents = parsed.documents.filter(isValidStoredDocumentEntry);
     const selectedDocumentId =
@@ -175,8 +113,7 @@ function parseSnapshot(raw: string | null): HydratedSnapshot | null {
       selectedDocumentId:
         selectedDocumentId && documents.some((document) => document.id === selectedDocumentId)
           ? selectedDocumentId
-          : documents[0].id,
-      ...(migrated ? { migrated: true } : {})
+          : documents[0].id
     };
   } catch {
     return null;
@@ -230,7 +167,7 @@ export function useAuthoringLibrary(
   documentsRef.value = hydrated?.documents ?? seedEntries;
   selectedDocumentIdRef.value = hydrated?.selectedDocumentId ?? documentsRef.value[0]?.id ?? null;
 
-  if (!hydrated || hydrated.migrated) {
+  if (!hydrated) {
     persist();
   }
 

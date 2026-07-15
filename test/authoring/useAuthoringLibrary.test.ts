@@ -86,20 +86,18 @@ describe("useAuthoringLibrary", () => {
     expect(library.selectedDocument.value?.document.name).toBe("Other");
   });
 
-  it("migrates stored node-level radius profiles into circle drivers", () => {
+  it("replaces an invalid stored snapshot with current seed documents", () => {
     const storage = new MemoryStorage();
-    const entry = makeEntry("doc-1", "Stored");
-    const legacyDocument = JSON.parse(JSON.stringify(entry.document));
-    legacyDocument.tracks.left.segments[0].hand.radiusProfile = {
-      kind: "time-keyed",
-      keys: [{ t: 0.5, radius: 2 }]
-    };
-
     storage.setItem(
       "authoring",
       JSON.stringify({
-        documents: [{ id: entry.id, document: legacyDocument }],
-        selectedDocumentId: entry.id
+        documents: [
+          {
+            id: "invalid",
+            document: { name: "Invalid", description: null, tracks: {} }
+          }
+        ],
+        selectedDocumentId: "invalid"
       })
     );
 
@@ -110,14 +108,12 @@ describe("useAuthoringLibrary", () => {
       createId: () => "generated"
     });
 
-    const hydratedSegment = library.documents.value[0].document.tracks.left!.segments[0];
-    expect(hydratedSegment.hand.driver.radiusProfile?.keys).toEqual([{ t: 0.5, radius: 2 }]);
-    expect("radiusProfile" in hydratedSegment.hand).toBe(false);
+    expect(library.documents.value.map((entry) => entry.id)).toEqual(["seed-1"]);
+    expect(library.selectedDocumentId.value).toBe("seed-1");
 
     const persisted = JSON.parse(storage.getItem("authoring") ?? "null");
-    const persistedSegment = persisted.documents[0].document.tracks.left.segments[0];
-    expect(persistedSegment.hand.driver.radiusProfile.keys).toEqual([{ t: 0.5, radius: 2 }]);
-    expect("radiusProfile" in persistedSegment.hand).toBe(false);
+    expect(persisted.documents.map((entry: { id: string }) => entry.id)).toEqual(["seed-1"]);
+    expect(persisted.selectedDocumentId).toBe("seed-1");
   });
 
   it("creates, updates, duplicates, and deletes documents while persisting selection", () => {
