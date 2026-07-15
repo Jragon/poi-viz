@@ -41,6 +41,10 @@ describe("prepareMultiRigSequence", () => {
       ok: false,
       errors: [{ code: "EXPECTED_RIG_ENTRY", index: 0, path: ["rigs", 0] }]
     });
+    expect(prepareMultiRigSequence({ rigs: [[]] })).toEqual({
+      ok: false,
+      errors: [{ code: "EXPECTED_RIG_ENTRY", index: 0, path: ["rigs", 0] }]
+    });
   });
 
   it("rejects non-string rig ids before object-key coercion", () => {

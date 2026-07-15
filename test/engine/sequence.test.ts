@@ -45,6 +45,10 @@ describe("validateSequenceStructure", () => {
       ok: false,
       errors: [{ code: "EXPECTED_SEGMENTS_ARRAY", path: ["segments"] }]
     });
+    expect(validateSequenceStructure({ segments: [[]] })).toEqual({
+      ok: false,
+      errors: [{ code: "EXPECTED_SEGMENT", index: 0, path: ["segments", 0] }]
+    });
 
     const malformed = {
       segments: [
@@ -130,6 +134,35 @@ describe("validateSequenceStructure", () => {
       });
       expect(result.errors).toContainEqual({ code: "NON_FINITE_PHASE", index: 0, node: "head" });
       expect(result.errors).toContainEqual({ code: "NEGATIVE_RADIUS", index: 0, node: "head" });
+    }
+  });
+
+  it("reports independent circle driver errors together", () => {
+    const result = validateSequenceStructure({
+      segments: [
+        {
+          ...base,
+          hand: {
+            ...base.hand,
+            driver: {
+              kind: "circle",
+              omega: Number.NaN,
+              radiusProfile: { kind: "time-keyed", keys: {} }
+            }
+          }
+        }
+      ]
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContainEqual({ code: "NON_FINITE_OMEGA", index: 0, node: "hand" });
+      expect(result.errors).toContainEqual({
+        code: "INVALID_RADIUS_PROFILE",
+        index: 0,
+        node: "hand",
+        path: ["segments", 0, "hand", "driver", "radiusProfile"]
+      });
     }
   });
 

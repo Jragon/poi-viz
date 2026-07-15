@@ -95,7 +95,7 @@ type DecodeSequenceResult =
   | { ok: false; errors: SequenceValidationError[] };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object";
+  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 function decodePose(
@@ -169,7 +169,7 @@ function decodeRadiusProfile(
       errors.push({ code: "NON_FINITE_PROFILE_TIME", index, node, keyIndex });
       keyValid = false;
     } else {
-      if (durationUnits !== null && (t <= 0 || t > durationUnits)) {
+      if (t <= 0 || (durationUnits !== null && t > durationUnits)) {
         errors.push({ code: "PROFILE_TIME_OUT_OF_RANGE", index, node, keyIndex });
         keyValid = false;
       }
@@ -215,9 +215,9 @@ function decodeDriver(
   switch (value.kind) {
     case "circle": {
       const omega = value.omega;
-      if (typeof omega !== "number" || !Number.isFinite(omega)) {
+      const validOmega = typeof omega === "number" && Number.isFinite(omega);
+      if (!validOmega) {
         errors.push({ code: "NON_FINITE_OMEGA", index, node });
-        return null;
       }
 
       let radiusProfile: RadiusProfile | null | undefined;
@@ -235,6 +235,7 @@ function decodeDriver(
       if (
         startPose !== null &&
         durationUnits !== null &&
+        validOmega &&
         !Number.isFinite(startPose.phaseAbs + omega * durationUnits)
       ) {
         errors.push({ code: "CIRCLE_PHASE_RANGE_OVERFLOW", index, node });
@@ -242,10 +243,10 @@ function decodeDriver(
 
       const driver: CircleDriver = {
         kind: "circle",
-        omega,
+        omega: omega as number,
         ...(radiusProfile ? { radiusProfile } : {})
       };
-      return radiusProfile === null ? null : driver;
+      return !validOmega || radiusProfile === null ? null : driver;
     }
     case "point-to-point": {
       if (node === "head") {
