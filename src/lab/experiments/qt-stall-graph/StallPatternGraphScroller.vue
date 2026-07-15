@@ -7,6 +7,7 @@ import {
   type StallGraphDensity
 } from "@/lab/experiments/qt-stall-graph/stallGraphGeometry";
 import type { StallPatternDraft } from "@/lab/experiments/qt-stall-graph/stallPattern";
+import type { StallPatternHand } from "@/lab/experiments/qt-stall-graph/stallPattern";
 import StallPatternGraph from "@/lab/experiments/qt-stall-graph/StallPatternGraph.vue";
 
 const props = withDefaults(
@@ -15,6 +16,7 @@ const props = withDefaults(
     density?: StallGraphDensity;
     activeBeat?: number | null;
     ariaLabel?: string;
+    editingHand?: StallPatternHand | undefined;
   }>(),
   {
     density: "editor",
@@ -22,6 +24,15 @@ const props = withDefaults(
     ariaLabel: "Scrollable horizontal quarter-time stall pattern graph"
   }
 );
+
+const emit = defineEmits<{
+  placeNode: [
+    payload: {
+      readonly beatIndex: number;
+      readonly cardinal: import("@/lab/experiments/qt-stall-graph/cardinals").Cardinal;
+    }
+  ];
+}>();
 
 const geometry = computed(() =>
   buildStallGraphGeometry(props.draft, {
@@ -71,6 +82,8 @@ function labelTop(index: number): string {
         :aria-label="props.ariaLabel"
         :show-cardinal-labels="false"
         :fit-to-container="false"
+        :editing-hand="props.editingHand"
+        @place-node="emit('placeNode', $event)"
       />
     </div>
   </div>

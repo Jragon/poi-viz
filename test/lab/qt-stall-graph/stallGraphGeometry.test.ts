@@ -27,7 +27,20 @@ describe("stall graph geometry", () => {
     expect(geometry.height).toBe(168);
     expect(geometry.points).toHaveLength(10);
     expect(geometry.connectors).toHaveLength(8);
+    expect(geometry.clickTargets).toHaveLength(24);
     expect(geometry.beatLabels.map((label) => label.text)).toEqual(["1", "2", "3", "4", "loop"]);
+  });
+
+  it("exposes editable targets for real beats but not the loop terminal", () => {
+    const geometry = buildStallGraphGeometry(pattern("URDL"), {
+      orientation: "horizontal",
+      density: "editor"
+    });
+
+    expect(geometry.clickTargets).toHaveLength(4 * 6);
+    expect(new Set(geometry.clickTargets.map((target) => target.beatIndex))).toEqual(
+      new Set([0, 1, 2, 3])
+    );
   });
 
   it("keeps a 24-beat horizontal editor at fixed height and scrollable width", () => {

@@ -62,6 +62,14 @@ export interface StallGraphConnectorView {
   readonly isLegal: boolean;
 }
 
+export interface StallGraphClickTargetView {
+  readonly key: string;
+  readonly beatIndex: number;
+  readonly cardinal: Cardinal;
+  readonly x: number;
+  readonly y: number;
+}
+
 export interface StallGraphLineView {
   readonly key: string;
   readonly x1: number;
@@ -91,6 +99,7 @@ export interface StallGraphGeometry {
   readonly beatLabels: readonly StallGraphLabelView[];
   readonly points: readonly StallGraphPointView[];
   readonly connectors: readonly StallGraphConnectorView[];
+  readonly clickTargets: readonly StallGraphClickTargetView[];
   readonly activeLine: StallGraphLineView | null;
 }
 
@@ -270,6 +279,22 @@ function makeConnectors(
   });
 }
 
+function makeClickTargets(
+  orientation: StallGraphOrientation,
+  layout: StallGraphLayout,
+  displayBeats: readonly DisplayBeat[]
+): readonly StallGraphClickTargetView[] {
+  return displayBeats.flatMap((beat) => {
+    if (beat.isTerminal) return [];
+    return CARDINAL_ORDER.map((cardinal, cardinalIndex) => ({
+      key: `target-${beat.globalIndex}-${cardinal}`,
+      beatIndex: beat.globalIndex,
+      cardinal,
+      ...coordinate(orientation, layout, beat.displayIndex, cardinalIndex)
+    }));
+  });
+}
+
 function makeActiveLine(
   activeBeat: number | null,
   displayBeats: readonly DisplayBeat[],
@@ -383,6 +408,7 @@ export function buildStallGraphGeometry(
     beatLabels,
     points: makePoints(draft, options.orientation, layout, displayBeats),
     connectors: makeConnectors(draft, options.orientation, layout, displayBeats),
+    clickTargets: makeClickTargets(options.orientation, layout, displayBeats),
     activeLine: makeActiveLine(
       options.activeBeat ?? null,
       displayBeats,

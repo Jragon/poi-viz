@@ -1,260 +1,107 @@
 import { prepareSequence } from "@/engine/sequence";
 import {
-  compileStallGraphState,
+  compileStallPattern,
   type StallGraphDiagnostic
 } from "@/lab/experiments/qt-stall-graph/compileStallGraph";
-import { type StallGraphEditState } from "@/lab/experiments/qt-stall-graph/stateModel";
+import {
+  STALL_PATTERN_VERSION,
+  type StallPatternDraft
+} from "@/lab/experiments/qt-stall-graph/stallPattern";
 import { describe, expect, it } from "vitest";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function wallFlower(): StallGraphEditState {
-  const left = new Map([
-    [0, { cardinal: "U" as const }],
-    [1, { cardinal: "R" as const }],
-    [2, { cardinal: "D" as const }],
-    [3, { cardinal: "L" as const }]
-  ]);
-  const right = new Map([
-    [0, { cardinal: "R" as const }],
-    [1, { cardinal: "D" as const }],
-    [2, { cardinal: "L" as const }],
-    [3, { cardinal: "U" as const }]
-  ]);
-  return {
-    left,
-    right,
-    editMode: "left",
-    selectedNodeKey: null,
-    showLeft: true,
-    showRight: true,
-    playLeft: true,
-    playRight: true
-  };
+function pattern(
+  left: StallPatternDraft["tracks"]["left"],
+  right: StallPatternDraft["tracks"]["right"]
+): StallPatternDraft {
+  const beatCount = left?.length ?? right?.length ?? 4;
+  return { version: STALL_PATTERN_VERSION, beatCount, tracks: { left, right } };
 }
 
-// ─── Wall flower (canonical case) ─────────────────────────────────────────────
+function wallFlower(): StallPatternDraft {
+  return pattern(["U", "R", "D", "L"], ["R", "D", "L", "U"]);
+}
 
-describe("compileStallGraphState — wall 4-petal flower", () => {
-  it("compiles without diagnostics", () => {
-    const result = compileStallGraphState(wallFlower());
-    expect(result.diagnostics).toHaveLength(0);
-    expect(result.sequence).not.toBeNull();
+describe("compileStallPattern — wall 4-petal flower", () => {
+  it("compiles deterministically without diagnostics", () => {
+    const first = compileStallPattern(wallFlower());
+    const second = compileStallPattern(wallFlower());
+
+    expect(first.diagnostics).toHaveLength(0);
+    expect(first.sequence).not.toBeNull();
+    expect(second.sequence).toEqual(first.sequence);
   });
 
-  it("produces 4 segments per hand", () => {
-    const { sequence } = compileStallGraphState(wallFlower());
-    expect(sequence).not.toBeNull();
-    const left = sequence!.rigs.find((r) => r.rigId === "left");
-    const right = sequence!.rigs.find((r) => r.rigId === "right");
-    expect(left?.sequence.segments).toHaveLength(4);
-    expect(right?.sequence.segments).toHaveLength(4);
-  });
+  it("produces four wall-plane segments per hand", () => {
+    const { sequence } = compileStallPattern(wallFlower());
 
-  it("all segments use wall plane", () => {
-    const { sequence } = compileStallGraphState(wallFlower());
-    for (const rig of sequence!.rigs) {
-      for (const seg of rig.sequence.segments) {
-        expect(seg.planeId).toBe("wall");
-      }
+    expect(sequence?.rigs.map((rig) => rig.rigId)).toEqual(["left", "right"]);
+    for (const rig of sequence?.rigs ?? []) {
+      expect(rig.sequence.segments).toHaveLength(4);
+      expect(rig.sequence.segments.every((segment) => segment.planeId === "wall")).toBe(true);
     }
   });
 
-  it("total duration is 1 unit (4 × 0.25)", () => {
-    const { sequence } = compileStallGraphState(wallFlower());
-    const prepared = prepareSequence(sequence!.rigs[0].sequence);
-    expect(prepared.ok).toBe(true);
-    if (prepared.ok) expect(prepared.prepared.totalDuration).toBeCloseTo(1, 12);
-  });
+  it("produces engine-valid one-unit sequences", () => {
+    const { sequence } = compileStallPattern(wallFlower());
 
-  it("is deterministic — identical input produces identical output", () => {
-    const a = compileStallGraphState(wallFlower());
-    const b = compileStallGraphState(wallFlower());
-    expect(JSON.stringify(a.sequence)).toBe(JSON.stringify(b.sequence));
-  });
-
-  it("sequence is engine-valid (prepareSequence succeeds)", () => {
-    const { sequence } = compileStallGraphState(wallFlower());
-    for (const rig of sequence!.rigs) {
+    for (const rig of sequence?.rigs ?? []) {
       const prepared = prepareSequence(rig.sequence);
       expect(prepared.ok).toBe(true);
+      if (prepared.ok) expect(prepared.prepared.totalDuration).toBeCloseTo(1, 12);
     }
   });
 });
 
-// ─── 3D wall + wheel mix (back-hemisphere arcs included) ─────────────────────
+describe("compileStallPattern — mixed planes", () => {
+  const mixedPattern = pattern(["U", "R", "D", "L"], ["F", "U", "B", "D"]);
 
-describe("compileStallGraphState — 3D wall + wheel flower with back-hemisphere", () => {
-  function graph3d(): StallGraphEditState {
-    const left = new Map([
-      [0, { cardinal: "U" as const }],
-      [1, { cardinal: "R" as const }],
-      [2, { cardinal: "D" as const }],
-      [3, { cardinal: "L" as const }]
-    ]);
-    const right = new Map([
-      [0, { cardinal: "F" as const }],
-      [1, { cardinal: "U" as const }],
-      [2, { cardinal: "B" as const }],
-      [3, { cardinal: "D" as const }]
-    ]);
-    return {
-      left,
-      right,
-      editMode: "left",
-      selectedNodeKey: null,
-      showLeft: true,
-      showRight: true,
-      playLeft: true,
-      playRight: true
-    };
-  }
+  it("accepts back-hemisphere wheel arcs", () => {
+    const result = compileStallPattern(mixedPattern);
 
-  it("compiles without diagnostics (back hemisphere allowed)", () => {
-    const result = compileStallGraphState(graph3d());
     expect(result.diagnostics).toHaveLength(0);
     expect(result.sequence).not.toBeNull();
   });
 
-  it("left hand uses wall plane throughout", () => {
-    const { sequence } = compileStallGraphState(graph3d());
-    const left = sequence!.rigs.find((r) => r.rigId === "left")!;
-    for (const seg of left.sequence.segments) {
-      expect(seg.planeId).toBe("wall");
-    }
-  });
+  it("keeps each hand on the resolved plane", () => {
+    const { sequence } = compileStallPattern(mixedPattern);
+    const left = sequence?.rigs.find((rig) => rig.rigId === "left");
+    const right = sequence?.rigs.find((rig) => rig.rigId === "right");
 
-  it("right hand uses wheel plane throughout", () => {
-    const { sequence } = compileStallGraphState(graph3d());
-    const right = sequence!.rigs.find((r) => r.rigId === "right")!;
-    for (const seg of right.sequence.segments) {
-      expect(seg.planeId).toBe("wheel");
-    }
-  });
-
-  it("sequence is engine-valid for both hands", () => {
-    const { sequence } = compileStallGraphState(graph3d());
-    for (const rig of sequence!.rigs) {
-      const prepared = prepareSequence(rig.sequence);
-      expect(prepared.ok).toBe(true);
-    }
+    expect(left?.sequence.segments.every((segment) => segment.planeId === "wall")).toBe(true);
+    expect(right?.sequence.segments.every((segment) => segment.planeId === "wheel")).toBe(true);
   });
 });
 
-// ─── Diagnostics ─────────────────────────────────────────────────────────────
+describe("compileStallPattern — diagnostics", () => {
+  it("reports empty present tracks and no valid hands", () => {
+    const { sequence, diagnostics } = compileStallPattern(pattern([null, null], [null, null]));
 
-describe("compileStallGraphState — diagnostics", () => {
-  it("reports EMPTY_TRACK when a hand has no marks", () => {
-    const state: StallGraphEditState = {
-      left: new Map(),
-      right: new Map(),
-      editMode: "left",
-      selectedNodeKey: null,
-      showLeft: true,
-      showRight: true,
-      playLeft: true,
-      playRight: true
-    };
-    const { sequence, diagnostics } = compileStallGraphState(state);
     expect(sequence).toBeNull();
-    expect(
-      diagnostics.some((d: StallGraphDiagnostic) => d.code === "EMPTY_TRACK" && d.hand === "left")
-    ).toBe(true);
-    expect(
-      diagnostics.some((d: StallGraphDiagnostic) => d.code === "EMPTY_TRACK" && d.hand === "right")
-    ).toBe(true);
+    expect(diagnostics).toEqual([
+      { code: "EMPTY_TRACK", hand: "left" },
+      { code: "EMPTY_TRACK", hand: "right" },
+      { code: "NO_VALID_HANDS" }
+    ]);
   });
 
-  it("reports SINGLE_MARK_TRACK when a hand has only one mark", () => {
-    const state: StallGraphEditState = {
-      left: new Map([[0, { cardinal: "U" as const }]]),
-      right: new Map([[0, { cardinal: "R" as const }]]),
-      editMode: "left",
-      selectedNodeKey: null,
-      showLeft: true,
-      showRight: true,
-      playLeft: true,
-      playRight: true
-    };
-    const { sequence, diagnostics } = compileStallGraphState(state);
+  it("reports one-mark tracks", () => {
+    const { sequence, diagnostics } = compileStallPattern(pattern(["U", null], ["R", null]));
+
     expect(sequence).toBeNull();
-    expect(
-      diagnostics.some(
-        (d: StallGraphDiagnostic) => d.code === "SINGLE_MARK_TRACK" && d.hand === "left"
-      )
-    ).toBe(true);
-    expect(
-      diagnostics.some(
-        (d: StallGraphDiagnostic) => d.code === "SINGLE_MARK_TRACK" && d.hand === "right"
-      )
-    ).toBe(true);
+    expect(diagnostics).toEqual([
+      { code: "SINGLE_MARK_TRACK", hand: "left" },
+      { code: "SINGLE_MARK_TRACK", hand: "right" },
+      { code: "NO_VALID_HANDS" }
+    ]);
   });
 
-  it("reports ILLEGAL_EDGE for an opposite-cardinal transition", () => {
-    const state: StallGraphEditState = {
-      left: new Map([
-        [0, { cardinal: "U" as const }],
-        [1, { cardinal: "D" as const }]
-      ]),
-      right: new Map([
-        [0, { cardinal: "R" as const }],
-        [1, { cardinal: "L" as const }]
-      ]),
-      editMode: "left",
-      selectedNodeKey: null,
-      showLeft: true,
-      showRight: true,
-      playLeft: true,
-      playRight: true
-    };
-    const { sequence, diagnostics } = compileStallGraphState(state);
-    expect(sequence).toBeNull();
-    expect(diagnostics.some((d: StallGraphDiagnostic) => d.code === "ILLEGAL_EDGE")).toBe(true);
-  });
+  it("reports every missing beat in a present track", () => {
+    const { sequence, diagnostics } = compileStallPattern(pattern(["U", "R", null, null], null));
 
-  it("reports MISSING_ROW_MARK when a played hand skips a beat row", () => {
-    const state: StallGraphEditState = {
-      left: new Map([
-        [0, { cardinal: "U" as const }],
-        [2, { cardinal: "R" as const }]
-      ]),
-      right: new Map(),
-      editMode: "left",
-      selectedNodeKey: null,
-      showLeft: true,
-      showRight: true,
-      playLeft: true,
-      playRight: false
-    };
-    const { sequence, diagnostics } = compileStallGraphState(state);
-    expect(sequence).toBeNull();
-    expect(
-      diagnostics.some(
-        (d: StallGraphDiagnostic) =>
-          d.code === "MISSING_ROW_MARK" && d.hand === "left" && d.beatIndex === 1
-      )
-    ).toBe(true);
-  });
-
-  it("requires marks on visible beat rows, not only rows up to the last mark", () => {
-    const state: StallGraphEditState = {
-      left: new Map([
-        [0, { cardinal: "U" as const }],
-        [1, { cardinal: "R" as const }]
-      ]),
-      right: new Map(),
-      editMode: "left",
-      selectedNodeKey: null,
-      showLeft: true,
-      showRight: true,
-      playLeft: true,
-      playRight: false
-    };
-    const { sequence, diagnostics } = compileStallGraphState(state, { beatCount: 4 });
     expect(sequence).toBeNull();
     expect(
       diagnostics.filter(
-        (d: StallGraphDiagnostic) => d.code === "MISSING_ROW_MARK" && d.hand === "left"
+        (diagnostic: StallGraphDiagnostic) => diagnostic.code === "MISSING_ROW_MARK"
       )
     ).toEqual([
       { code: "MISSING_ROW_MARK", hand: "left", beatIndex: 2 },
@@ -262,45 +109,45 @@ describe("compileStallGraphState — diagnostics", () => {
     ]);
   });
 
-  it("reports EMPTY_TRACK for a played empty hand even when the other hand is valid", () => {
-    const state: StallGraphEditState = {
-      left: new Map([
-        [0, { cardinal: "U" as const }],
-        [1, { cardinal: "R" as const }]
-      ]),
-      right: new Map(),
-      editMode: "left",
-      selectedNodeKey: null,
-      showLeft: true,
-      showRight: true,
-      playLeft: true,
-      playRight: true
-    };
-    const { sequence, diagnostics } = compileStallGraphState(state, { beatCount: 2 });
-    expect(sequence?.rigs.map((rig) => rig.rigId)).toEqual(["left"]);
-    expect(
-      diagnostics.some((d: StallGraphDiagnostic) => d.code === "EMPTY_TRACK" && d.hand === "right")
-    ).toBe(true);
+  it("reports illegal edges without silently correcting them", () => {
+    const { sequence, diagnostics } = compileStallPattern(pattern(["U", "D"], null));
+
+    expect(sequence).toBeNull();
+    expect(diagnostics).toContainEqual({
+      code: "ILLEGAL_EDGE",
+      hand: "left",
+      edgeIndex: 0,
+      from: "U",
+      to: "D"
+    });
   });
 
-  it("does not silently fix illegal edges", () => {
-    const state: StallGraphEditState = {
-      left: new Map([
-        [0, { cardinal: "U" as const }],
-        [1, { cardinal: "D" as const }]
-      ]),
-      right: new Map([
-        [0, { cardinal: "U" as const }],
-        [1, { cardinal: "D" as const }]
-      ]),
-      editMode: "left",
-      selectedNodeKey: null,
-      showLeft: true,
-      showRight: true,
-      playLeft: true,
-      playRight: true
-    };
-    const { sequence } = compileStallGraphState(state);
-    expect(sequence).toBeNull();
+  it("compiles a valid hand while retaining diagnostics for an invalid present hand", () => {
+    const { sequence, diagnostics } = compileStallPattern(
+      pattern(["U", "R", "D", "L"], [null, null, null, null])
+    );
+
+    expect(sequence?.rigs.map((rig) => rig.rigId)).toEqual(["left"]);
+    expect(diagnostics).toEqual([{ code: "EMPTY_TRACK", hand: "right" }]);
+  });
+
+  it("treats an absent track as intentionally absent", () => {
+    const { sequence, diagnostics } = compileStallPattern(pattern(["U", "R", "D", "L"], null));
+
+    expect(sequence?.rigs.map((rig) => rig.rigId)).toEqual(["left"]);
+    expect(diagnostics).toHaveLength(0);
+  });
+
+  it("rejects a draft with no hands", () => {
+    const result = compileStallPattern({
+      version: STALL_PATTERN_VERSION,
+      beatCount: 4,
+      tracks: { left: null, right: null }
+    });
+
+    expect(result).toEqual({
+      sequence: null,
+      diagnostics: [{ code: "NO_VALID_HANDS" }]
+    });
   });
 });

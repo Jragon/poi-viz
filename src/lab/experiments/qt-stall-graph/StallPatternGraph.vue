@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
+import { CARDINAL_LABELS } from "@/lab/experiments/qt-stall-graph/cardinals";
 import {
   buildStallGraphGeometry,
   type StallGraphBeatRange,
@@ -8,7 +9,10 @@ import {
   type StallGraphOrientation,
   type StallGraphPointView
 } from "@/lab/experiments/qt-stall-graph/stallGraphGeometry";
-import type { StallPatternDraft } from "@/lab/experiments/qt-stall-graph/stallPattern";
+import type {
+  StallPatternDraft,
+  StallPatternHand
+} from "@/lab/experiments/qt-stall-graph/stallPattern";
 
 const props = withDefaults(
   defineProps<{
@@ -21,6 +25,7 @@ const props = withDefaults(
     ariaLabel?: string;
     showCardinalLabels?: boolean;
     fitToContainer?: boolean;
+    editingHand?: StallPatternHand | undefined;
   }>(),
   {
     orientation: "horizontal",
@@ -32,6 +37,15 @@ const props = withDefaults(
     fitToContainer: true
   }
 );
+
+const emit = defineEmits<{
+  placeNode: [
+    payload: {
+      readonly beatIndex: number;
+      readonly cardinal: import("@/lab/experiments/qt-stall-graph/cardinals").Cardinal;
+    }
+  ];
+}>();
 
 const geometry = computed(() =>
   buildStallGraphGeometry(props.draft, {
@@ -157,6 +171,26 @@ function pointRadius(point: StallGraphPointView): number {
         :stroke-width="geometry.layout.strokeWidth"
         :stroke-dasharray="point.isTerminal ? '2 2' : undefined"
       />
+    </g>
+
+    <g v-if="props.editingHand">
+      <foreignObject
+        v-for="target in geometry.clickTargets"
+        :key="target.key"
+        :x="target.x - 15"
+        :y="target.y - 15"
+        width="30"
+        height="30"
+      >
+        <button
+          type="button"
+          class="grid h-[30px] w-[30px] place-items-center rounded-full bg-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300"
+          :aria-label="`${props.editingHand} hand beat ${target.beatIndex + 1} ${CARDINAL_LABELS[target.cardinal]}`"
+          @click="emit('placeNode', { beatIndex: target.beatIndex, cardinal: target.cardinal })"
+        >
+          <span class="sr-only">{{ target.cardinal }}</span>
+        </button>
+      </foreignObject>
     </g>
   </svg>
 </template>

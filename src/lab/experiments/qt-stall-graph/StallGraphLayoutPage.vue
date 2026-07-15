@@ -4,7 +4,6 @@ import { computed, ref } from "vue";
 import { decodeStallPattern } from "@/lab/experiments/qt-stall-graph/stallPatternCodec";
 import StallPatternGraph from "@/lab/experiments/qt-stall-graph/StallPatternGraph.vue";
 import StallPatternGraphScroller from "@/lab/experiments/qt-stall-graph/StallPatternGraphScroller.vue";
-import StallPatternStaffs from "@/lab/experiments/qt-stall-graph/StallPatternStaffs.vue";
 
 const SHORT_CODEC = "q1.4.URDL.RDLU";
 const LONG_CODEC = `q1.24.${"URDL".repeat(6)}.${"RDLU".repeat(6)}`;
@@ -30,8 +29,8 @@ const presets = [
         <p class="text-xs uppercase tracking-[0.2em] text-cyan-400">Quarter-time stall graph</p>
         <h1 class="mt-2 text-3xl font-semibold text-slate-50">Layout Playground</h1>
         <p class="mt-3 text-sm leading-6 text-slate-400">
-          Compare continuous, wrapped, fitted, horizontal and vertical renderings before choosing
-          the article layout. Every panel below uses the canonical codec model.
+          Compare continuous, fitted, horizontal and vertical renderings. Every panel below uses the
+          canonical codec model.
         </p>
       </header>
 
@@ -106,17 +105,9 @@ const presets = [
         />
       </article>
 
-      <section class="grid min-w-0 items-start gap-4 lg:grid-cols-2">
+      <section class="grid min-w-0 items-start gap-4">
         <article class="min-w-0 rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-          <p class="text-xs uppercase tracking-[0.14em] text-slate-500">Article candidate</p>
-          <h2 class="mt-1 text-sm font-semibold text-slate-200">Wrapped · eight beats per staff</h2>
-          <div v-if="decoded.ok" class="mt-4 rounded-md border border-slate-800 bg-slate-950 p-3">
-            <StallPatternStaffs :draft="decoded.draft" :beats-per-staff="8" density="compact" />
-          </div>
-        </article>
-
-        <article class="min-w-0 rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-          <p class="text-xs uppercase tracking-[0.14em] text-slate-500">Legacy comparison</p>
+          <p class="text-xs uppercase tracking-[0.14em] text-slate-500">Optional orientation</p>
           <h2 class="mt-1 text-sm font-semibold text-slate-200">Vertical · intrinsic thumbnail</h2>
           <div
             v-if="decoded.ok"
