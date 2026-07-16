@@ -12,8 +12,8 @@ import {
   WALL_TIMING_OFFSETS
 } from "@/lab/experiments/qt-stall-graph/wallPlaneTimingPatterns";
 
-const expectedSame = ["q1.4.URDL.URDL", "q1.4.RDLU.URDL", "q1.4.DLUR.URDL", "q1.4.LURD.URDL"];
-const expectedOpposite = ["q1.4.ULDR.URDL", "q1.4.LDRU.URDL", "q1.4.DRUL.URDL", "q1.4.RULD.URDL"];
+const expectedSame = ["q1.4.URDL.URDL", "q1.4.LURD.URDL", "q1.4.DLUR.URDL", "q1.4.RDLU.URDL"];
+const expectedOpposite = ["q1.4.ULDR.URDL", "q1.4.RULD.URDL", "q1.4.DRUL.URDL", "q1.4.LDRU.URDL"];
 
 describe("wall-plane timing pattern data", () => {
   it("uses the established offset labels in order", () => {
@@ -46,14 +46,16 @@ describe("wall-plane timing pattern data", () => {
     expect(compiled.sequence?.rigs.every((rig) => rig.sequence.segments.length === 4)).toBe(true);
   });
 
-  it("cycles the same-direction left track one checkpoint earlier", () => {
+  it("cycles the same-direction left track through the raw codecs", () => {
+    const shiftedEarlier = [expectedSame[3], expectedSame[0], expectedSame[1], expectedSame[2]];
+
     for (let index = 0; index < expectedSame.length; index++) {
       const decoded = decodeStallPattern(expectedSame[index]);
       expect(decoded.ok).toBe(true);
       if (!decoded.ok) continue;
       const shifted = shiftStallPatternTrack(decoded.draft, "left", -1);
       const encoded = encodeStallPattern(shifted);
-      expect(encoded).toEqual({ ok: true, codec: expectedSame[(index + 1) % expectedSame.length] });
+      expect(encoded).toEqual({ ok: true, codec: shiftedEarlier[index] });
     }
   });
 });

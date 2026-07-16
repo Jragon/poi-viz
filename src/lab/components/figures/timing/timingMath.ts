@@ -74,11 +74,24 @@ export function classifyOffset(offset: TimingOffset): TimingClassification {
     case 0:
       return "same";
     case 0.25:
-      return "quarter-right";
+      return "quarter-left";
     case 0.5:
       return "split";
     case 0.75:
-      return "quarter-left";
+      return "quarter-right";
+  }
+}
+
+export function describeTimingOffset(offset: TimingOffset): string {
+  switch (classifyOffset(offset)) {
+    case "same":
+      return "Left and right downbeats occur together.";
+    case "quarter-right":
+      return "The right downbeat leads the left by one quarter cycle.";
+    case "split":
+      return "The downbeats are separated by half a cycle.";
+    case "quarter-left":
+      return "The left downbeat leads the right by one quarter cycle.";
   }
 }
 

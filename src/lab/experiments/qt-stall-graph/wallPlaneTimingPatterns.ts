@@ -15,7 +15,7 @@ export const WALL_PLANE_SAME_DIRECTION_PATTERNS: readonly StallPatternOption[] =
     ariaLabel: "Same direction, 0/4, Same"
   },
   {
-    codec: "q1.4.RDLU.URDL",
+    codec: "q1.4.LURD.URDL",
     eyebrow: "1/4",
     label: "R +¼",
     ariaLabel: "Same direction, 1/4, R plus one quarter"
@@ -27,7 +27,7 @@ export const WALL_PLANE_SAME_DIRECTION_PATTERNS: readonly StallPatternOption[] =
     ariaLabel: "Same direction, 2/4, Split"
   },
   {
-    codec: "q1.4.LURD.URDL",
+    codec: "q1.4.RDLU.URDL",
     eyebrow: "3/4",
     label: "L +¼",
     ariaLabel: "Same direction, 3/4, L plus one quarter"
@@ -42,7 +42,7 @@ export const WALL_PLANE_OPPOSITE_DIRECTION_PATTERNS: readonly StallPatternOption
     ariaLabel: "Opposite directions, 0/4, Same"
   },
   {
-    codec: "q1.4.LDRU.URDL",
+    codec: "q1.4.RULD.URDL",
     eyebrow: "1/4",
     label: "R +¼",
     ariaLabel: "Opposite directions, 1/4, R plus one quarter"
@@ -54,7 +54,7 @@ export const WALL_PLANE_OPPOSITE_DIRECTION_PATTERNS: readonly StallPatternOption
     ariaLabel: "Opposite directions, 2/4, Split"
   },
   {
-    codec: "q1.4.RULD.URDL",
+    codec: "q1.4.LDRU.URDL",
     eyebrow: "3/4",
     label: "L +¼",
     ariaLabel: "Opposite directions, 3/4, L plus one quarter"

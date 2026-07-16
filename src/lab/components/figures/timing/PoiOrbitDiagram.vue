@@ -2,10 +2,10 @@
 import { computed } from "vue";
 
 import {
+  describeTimingOffset,
   downbeatTimes,
   formatCycleTime,
   formatDirection,
-  formatOffset,
   phaseAtTime,
   phaseToPoint,
   type OrbitDirection,
@@ -19,6 +19,7 @@ const props = withDefaults(
     rightDirection?: OrbitDirection;
     time?: number;
     compact?: boolean;
+    fluid?: boolean;
   }>(),
   {
     downbeatOffset: 0,
@@ -53,7 +54,7 @@ const accessibleLabel = computed(
   () =>
     `Wall-plane orbit at cycle time ${formatCycleTime(props.time)}. ` +
     `Left travels ${formatDirection(props.leftDirection)}; right travels ${formatDirection(props.rightDirection)}. ` +
-    `Right downbeat offset is ${formatOffset(props.downbeatOffset)}.`
+    describeTimingOffset(props.downbeatOffset)
 );
 </script>
 
@@ -63,7 +64,7 @@ const accessibleLabel = computed(
     :aria-label="accessibleLabel"
     viewBox="0 0 152 150"
     class="block h-auto w-full"
-    :class="props.compact ? 'max-h-32' : 'max-h-44'"
+    :class="props.fluid ? 'max-h-none' : props.compact ? 'max-h-32' : 'max-h-44'"
   >
     <title>Wall-plane circular timing snapshot</title>
     <desc>

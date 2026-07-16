@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   cardinalForPhase,
   classifyOffset,
+  describeTimingOffset,
   downbeatTimes,
   formatCycleTime,
   normalizePhase,
@@ -37,12 +38,21 @@ describe("timingMath", () => {
 
   it.each([
     [0, "same"],
-    [0.25, "quarter-right"],
+    [0.25, "quarter-left"],
     [0.5, "split"],
-    [0.75, "quarter-left"]
+    [0.75, "quarter-right"]
   ] as const)("classifies offset %s as %s", (offset, expected) => {
     expect(classifyOffset(offset)).toBe(expected);
     expect(downbeatTimes(offset)).toEqual({ left: 0, right: offset });
+  });
+
+  it("describes quarter offsets by the hand whose downbeat leads", () => {
+    expect(describeTimingOffset(0.75)).toBe(
+      "The right downbeat leads the left by one quarter cycle."
+    );
+    expect(describeTimingOffset(0.25)).toBe(
+      "The left downbeat leads the right by one quarter cycle."
+    );
   });
 
   it.each([

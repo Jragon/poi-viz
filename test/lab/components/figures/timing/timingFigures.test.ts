@@ -74,10 +74,17 @@ describe("timing diagram primitives", () => {
 
     expect(html).toContain("Wall-plane height waves");
     expect(html).toContain("Vertical position on the wall plane");
-    expect(html).toContain("right bottom downbeat is offset by 2/4");
+    expect(html).toContain("downbeats are separated by half a cycle");
     expect(html).toContain(">L</text>");
     expect(html).toContain(">R</text>");
     expect(html.toLowerCase()).not.toContain("pendulum");
+  });
+
+  it("adds a playhead and current-height markers when given a live time", async () => {
+    const html = await render(fixture(PhaseWaveDiagram, { downbeatOffset: 0.75, time: 0.25 }));
+
+    expect(html).toContain("phase-wave-diagram__playhead");
+    expect(html).toContain("right downbeat leads the left by one quarter cycle");
   });
 });
 
@@ -97,23 +104,28 @@ describe("composed timing figures", () => {
     const html = await render(fixture(OffsetWavesFigure));
 
     expect(html.match(/class="lab-figure-panel"/g)).toHaveLength(4);
-    expect(html).toContain("left downbeat = 0");
+    expect(html).toContain("Quarter labels name the downbeat that leads");
     expect(html).toContain("R +¼");
     expect(html).toContain("L +¼");
+    expect(html).not.toContain("Bottom downbeat timeline");
     expect(html).not.toContain("<figure");
   });
 
-  it("renders the two handed quarter forms and hand-swap relationship", async () => {
+  it("renders one interactive orbit and wave with timing and direction controls", async () => {
     const html = await render(fixture(HandedQuarterTimingFigure));
 
-    expect(html.match(/class="lab-figure-panel"/g)).toHaveLength(2);
+    expect(html).not.toContain('class="lab-figure-panel"');
+    expect(html).toContain("Same direction");
+    expect(html).toContain("Opposite directions");
     expect(html).toContain("R +¼");
     expect(html).toContain("L +¼");
-    expect(html).toContain("Swap L ↔ R");
-    expect(html.match(/Wall-plane circular timing snapshot/g)).toHaveLength(2);
-    expect(html.match(/Wall-plane height waves/g)).toHaveLength(2);
+    expect(html).toContain("Direction changes the route around the circle");
+    expect(html.match(/Wall-plane circular timing snapshot/g)).toHaveLength(1);
+    expect(html.match(/Wall-plane height waves/g)).toHaveLength(1);
+    expect(html).toContain("phase-wave-diagram__playhead");
+    expect(html).not.toContain('aria-label="Cycle time"');
+    expect(html).toContain("Pause timing animation");
     expect(html).not.toContain("Bottom downbeat timeline");
-    expect(html.toLowerCase()).not.toContain("leader");
     expect(html.toLowerCase()).not.toContain("follower");
     expect(html).not.toContain("<figure");
   });
