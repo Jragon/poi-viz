@@ -38,9 +38,6 @@ If we take the sine component from the poi (the up and down, check Drex's math p
 
 So what happens if we try other offsets too? In <LabFigureRef figureId="familiar-timing">this figure</LabFigureRef> I show what happens when we offset by one quarter of a cycle each time (one quarter phase offset).
 
-<!-- NOTE TO AI: Remove the down beat graph not needed. -->
-<!-- FROM AI: Done in the figure code. The separate downbeat timeline repeated the bottom markers already visible on the waves, so the four panels now keep only the waves. -->
-
 <LabFigure id="offset-waves" width="wide">
   <template #title>Offset waves</template>
   <OffsetWavesFigure />
@@ -61,35 +58,14 @@ Note to AI: the handed-quarter-timing diagram I'm not sure I fully understand. I
 <!-- FROM AI: A little maths explanation for the graph: it is one coordinate of the circle unfolded over time, not a different motion. If the poi angle is theta, its wall-plane position can be described with x = sin(theta) and y = cos(theta), depending on where zero is chosen. This graph plots only y, the vertical height. A quarter timing shift adds or subtracts pi/2 from theta, which slides the wave by one quarter of its period. Reversing direction changes theta to -theta, but the height trace is unchanged when it is anchored at the bottom because cos(-theta) = cos(theta). That is why the orbit can show direction while this graph only shows timing. The moving playhead and coloured dots make the practical link: at each instant, each graph dot is simply that poi's current height on the circle. -->
 
 <LabFigure id="handed-quarter-timing" width="prose">
-  <template #title>Handed quarter timing</template>
+  <template #title>Circle Timing vs wave</template>
   <HandedQuarterTimingFigure />
   <template #caption>
-    The two quarter offsets are mirror forms. Swapping the hands exchanges them, while same and split remain unchanged.
+    The circle and graph show the same motion. GRAPHPRHPARH
   </template>
 </LabFigure>
-<!-- FROM AI: Suggested replacement caption for you to add manually: "The circle and graph show the same motion. Timing changes when each poi reaches its downbeat; direction changes the route around the circle without changing this wall-height graph." -->
-<!-- FROM AI: The title could also change from "Handed quarter timing" to "Orbit and wave timing" now that the figure teaches all four timings and both direction relationships rather than only the two handed quarter forms. -->
-
-## The same pattern through different lenses
-
-<!-- TODO Rory: discuss choosing useful relationships and events without declaring one canonical feeling. -->
-<!-- FROM AI: I would remove or defer this section for now. The article has not introduced competing feelings yet, so it interrupts the move from timing offsets into antispin. It could become useful later when comparing downbeats, angular phase, cardinal checkpoints and physical feel as different views of one pattern. -->
-
-<!-- note to ai: idk if we actually need this one yet since we haven't really introduced any feelings. -->
-<!-- FROM AI: Agreed, not yet. Nothing in the current article needs this heading before the antispin section. -->
 
 ## Timing and anti spin flowers
-
-<!--
-NOTE TO AI: We don't actually need this it's in the next figure anyway...
-<LabFigure id="stall-offset-cycle" width="wide">
-  <template #title>The offset cycle</template>
-  <StallOffsetCycleFigure />
-  <template #caption>
-    Each column is one quarter-step. Shifting one complete track by one column cycles through same, the two handed quarter relationships, and split.
-  </template>
-</LabFigure> -->
-<!-- FROM AI: Agreed. Keep this removed: the timing and direction matrix below already contains the same four-step offset cycle and adds the useful live preview. -->
 
 So who actually cares about static circles, we're here to talk about and do anti spins. Anti spins aren't anything more than a static circle who's center of rotation is rotated in the opposite direction to the spin of the poi. It makes those pretty flower patterns we all love. I'm not going to go too much into detail as I assume if you've made it to my nerdy blog you'll know what an anti spin is (if not check out some of Nick's videos on youtube he explains it nice :D)
 
@@ -102,9 +78,9 @@ Anyway, so we have a cycle with four distinct parts. We can do that cycle with b
 
 If we try the quarter offsets again we get the other two nice timings, which are Right +1/4 and Left +1/4. Have a play with the <LabFigureRef figureId="familiar-timing">toy below</LabFigureRef>, you can click on each of the graphs and see the little man do the anti spins.
 
-It's probably worth quickly introducing the quarter stall graph idea: each of the 4 cardinals (plus front and back) are rows, then each column is one time unit. Each each column a circle on the row means that the poi will and arm will be pointing out at that cardinal. It can be used to describe all sorts of anti spin pattern (more on this later.) There's a more detailed post and the editor on another page. Click here to play with it. <!-- Note to AI: add a link to the stall graph page here. -->
+It's probably worth quickly introducing the quarter stall graph idea: each of the 4 cardinals (plus front and back) are rows, then each column is one time unit. Each each column a circle on the row means that the poi will and arm will be pointing out at that cardinal. It can be used to describe all sorts of anti spin pattern (more on this later.) There's a more detailed post and the editor on another page. Click here to play with it: <RouterLink to="/lab/qt-stall-graph">quarter-time stall graph</RouterLink>.
 
-<!-- FROM AI: The route is /lab/qt-stall-graph. Suggested markup for you to insert manually around the eventual link text: <RouterLink to="/lab/qt-stall-graph">quarter-time stall graph</RouterLink>. Also worth describing these as six cardinal directions and each column as one quarter-step or beat when you do the copy pass. -->
+<!-- FROM AI: worth describing these as six cardinal directions and each column as one quarter-step or beat when you do the copy pass. -->
 
 <LabFigure id="timing-direction-matrix" width="wide">
   <template #title>Timing and direction matrix</template>
@@ -113,34 +89,19 @@ It's probably worth quickly introducing the quarter stall graph idea: each of th
     The same four offsets can be traversed with same or opposite directions. The graph also shows the order in which each track visits the cardinals.
   </template>
 </LabFigure>
-<!--
-## Outside the wall plane -->
-
-<!-- TODO Rory: establish that complete loops may change planes and different routes can preserve an Infinite-L relationship. -->
-<!-- FROM AI: This is a useful setup for the 3D article rather than this wall-plane article. The key later point is that timing can remain a relationship between recurring events even when the two complete routes use different planes. -->
-<!-- NOTE TO AI: I think all this should stay in the next article.  -->
-
-<!--
-<LabFigure id="mixed-plane-cycles" width="wide">
-  <template #title>A cycle need not stay planar</template>
-  <MixedPlaneCyclesFigure />
-  <template #caption>
-    A four-step loop need not stay in one plane. The first pair shares a route; the second follows different routes while retaining an Infinite-L relationship at each checkpoint.
-  </template>
-</LabFigure> -->
-<!-- FROM AI: Agreed. Keep the mixed-plane cycle and Infinite-L discussion in the next article; the short link below is enough of a hand-off here. -->
 
 ## Timing in 3d
 
 So what happens when things aren't all on the wall plane? It gets a bit weird, and is the topic of the next post here: <RouterLink to="/lab/quarter-time-3d">Timing in 3D</RouterLink>
 
+<!--
 ## Polyryhtms / hybrid timings
 
-<!-- FROM AI: I would either defer this whole section or frame it as changing timing in hybrids, not automatically as a polyrhythm. Unequal angular frequencies make the timing relationship move around the cycle. For the triquetra versus extension example, be precise later about which rotation is twice as fast and treat same-at-top / split-at-bottom as a chosen phase example rather than a rule for every version of the hybrid. -->
+We will eventually write a whole article on this.
 
 idk if I have anything to add here but it's worth thinking about. we're mainly talking about quarter timing atm
 
-There are many patterns where one poi will be travelling faster than the other - most classic is the triquetra vs extension. The poi making the triquetra has to travel twice as fast. And as such the timing is constantly changing. You can use this fact to neatly transition between timings. Ie at the top of the pattern it's in same opps, and ad the bottom it's in split opps.
+There are many patterns where one poi will be travelling faster than the other - most classic is the triquetra vs extension. The poi making the triquetra has to travel twice as fast. And as such the timing is constantly changing. You can use this fact to neatly transition between timings. Ie at the top of the pattern it's in same opps, and ad the bottom it's in split opps. -->
 
 <script setup>
 import {
