@@ -21,6 +21,7 @@ const props = withDefaults(
     projectionMode?: ProjectionModePreference;
     projectionDragEnabled?: boolean;
     showBodyRig?: boolean;
+    bodyRigScale?: number;
   }>(),
   {
     title: "Embedded visualizer",
@@ -69,11 +70,12 @@ const activePlanesLabel = computed(() => {
   );
   return Array.from(planes).join(" / ");
 });
+const isCompact = computed(() => props.size === "compact");
 const canvasClass = computed(() =>
   props.size === "mini"
     ? "!min-h-64 rounded-none border-0 md:!min-h-80"
     : props.size === "compact"
-      ? "!min-h-80 rounded-none border-0 md:!min-h-96"
+      ? "!min-h-64 rounded-none border-0 md:!min-h-80"
       : "!min-h-112 rounded-none border-0 md:!min-h-136"
 );
 function togglePlayback() {
@@ -90,8 +92,12 @@ function setSpeed(value: number) {
 </script>
 
 <template>
-  <section class="overflow-hidden rounded-lg border border-slate-800 bg-slate-950/80">
+  <section
+    class="overflow-hidden rounded-lg border border-slate-800 bg-slate-950/80"
+    :aria-label="isCompact ? props.title : undefined"
+  >
     <header
+      v-if="!isCompact"
       class="grid gap-3 border-b border-slate-800 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start"
     >
       <div class="min-w-0">
@@ -125,22 +131,29 @@ function setSpeed(value: number) {
       v-else
       :class="canvasClass"
       :projection-drag-enabled="props.projectionDragEnabled"
+      :body-rig-scale="props.bodyRigScale"
     />
 
     <div
-      class="grid gap-4 border-t border-slate-800 px-4 py-3 text-sm text-slate-300 md:grid-cols-[auto_minmax(10rem,1fr)_auto] md:items-center"
+      class="grid border-t border-slate-800 text-sm text-slate-300 md:grid-cols-[auto_minmax(10rem,1fr)_auto] md:items-center"
+      :class="isCompact ? 'gap-2 px-2 py-2' : 'gap-4 px-4 py-3'"
     >
       <button
         type="button"
-        class="rounded-md border border-slate-700 px-3 py-2 font-medium text-slate-100 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:text-slate-500"
+        class="rounded-md border border-slate-700 font-medium text-slate-100 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:text-slate-500"
+        :class="isCompact ? 'px-2 py-1 text-xs' : 'px-3 py-2'"
+        :aria-label="transport.isPlaying.value ? 'Pause' : 'Play'"
         :disabled="transport.duration.value <= 0"
         @click="togglePlayback"
       >
         {{ transport.isPlaying.value ? "Pause" : "Play" }}
       </button>
 
-      <label class="grid gap-1 text-xs uppercase tracking-[0.18em] text-slate-500">
-        Timeline
+      <label
+        class="grid text-xs uppercase tracking-[0.18em] text-slate-500"
+        :class="isCompact ? 'gap-0' : 'gap-1'"
+      >
+        <span :class="isCompact ? 'sr-only' : ''">Timeline</span>
         <input
           type="range"
           min="0"
@@ -148,6 +161,7 @@ function setSpeed(value: number) {
           step="any"
           :value="transport.currentTime.value"
           class="w-full accent-sky-400"
+          :class="isCompact ? 'h-2' : ''"
           :disabled="transport.duration.value <= 0"
           @input="onScrub"
         />

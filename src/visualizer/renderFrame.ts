@@ -54,6 +54,22 @@ export const WEBCAM_RENDER_FRAME_GEOMETRY: RenderFrameGeometry = {
   trailLineWidth: 5
 };
 
+export function scaleBodyRigGeometry(
+  geometry: RenderFrameGeometry,
+  scale: number
+): RenderFrameGeometry {
+  const bodyScale = Number.isFinite(scale) && scale > 0 ? scale : 1;
+
+  return {
+    ...geometry,
+    bodyLineWidth: geometry.bodyLineWidth * bodyScale,
+    bodySecondaryLineWidth: geometry.bodySecondaryLineWidth * bodyScale,
+    bodyArmLineWidth: geometry.bodyArmLineWidth * bodyScale,
+    bodyJointRadius: geometry.bodyJointRadius * bodyScale,
+    bodyHeadLineWidth: geometry.bodyHeadLineWidth * bodyScale
+  };
+}
+
 export interface RigTrail {
   readonly hand?: readonly Vec2[];
   readonly head?: readonly Vec2[];

@@ -5,7 +5,8 @@ import { computeBodyOverlay } from "@/visualizer/bodyOverlay";
 import {
   DEFAULT_RENDER_FRAME_GEOMETRY,
   WEBCAM_RENDER_FRAME_GEOMETRY,
-  renderFrame
+  renderFrame,
+  scaleBodyRigGeometry
 } from "@/visualizer/renderFrame";
 import { createSceneLayout } from "@/visualizer/sceneLayout";
 
@@ -118,6 +119,20 @@ function createSingleRigRenderInput() {
 }
 
 describe("renderFrame", () => {
+  it("scales body-rig geometry without changing poi geometry", () => {
+    const geometry = scaleBodyRigGeometry(DEFAULT_RENDER_FRAME_GEOMETRY, 0.6);
+
+    expect(geometry).toMatchObject({
+      chainLineWidth: DEFAULT_RENDER_FRAME_GEOMETRY.chainLineWidth,
+      handRadius: DEFAULT_RENDER_FRAME_GEOMETRY.handRadius,
+      bodyLineWidth: expect.closeTo(7.2),
+      bodySecondaryLineWidth: expect.closeTo(3.6),
+      bodyArmLineWidth: expect.closeTo(7.2),
+      bodyJointRadius: expect.closeTo(3.3),
+      bodyHeadLineWidth: expect.closeTo(5.4)
+    });
+  });
+
   it("draws rigs in deterministic order with anchor offsets applied", () => {
     const layout = createSceneLayout({
       cssWidth: 400,

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
-import type { ProjectionMode } from "@/engine/planeProjection";
 import { BodyRigMotionSolver } from "@/body-rig";
+import type { ProjectionMode } from "@/engine/planeProjection";
 import { computeBodyOverlay, getBodyOverlaySceneExtent } from "@/visualizer/bodyOverlay";
 import { computeDisplayPixelsPerWorldUnit } from "@/visualizer/displayScale";
 import { computeDragProjection, createProjectionDragState } from "@/visualizer/projectionDrag";
-import { renderFrame } from "@/visualizer/renderFrame";
+import { renderFrame, scaleBodyRigGeometry } from "@/visualizer/renderFrame";
 import { createSceneLayout, type SceneLayout } from "@/visualizer/sceneLayout";
 import { useVisualizerWorkspace } from "@/visualizer/visualizerWorkspace";
 
@@ -22,6 +22,7 @@ const props = withDefaults(
     webcamActive?: boolean;
     webcamStream?: MediaStream | null;
     projectionDragEnabled?: boolean;
+    bodyRigScale?: number | undefined;
   }>(),
   {
     isFullscreen: false,
@@ -52,6 +53,13 @@ const dragState = createProjectionDragState();
 const bodyRigMotionSolver = new BodyRigMotionSolver();
 const isProjectionDragAvailable = computed(() => projectionDrag.value?.mode === "tilted");
 const isProjectionDragging = computed(() => activePointerId.value !== null && dragState.isActive());
+const effectiveBodyRigScale = computed(() => {
+  if (props.bodyRigScale !== undefined) {
+    return props.bodyRigScale;
+  }
+
+  return layoutRef.value && layoutRef.value.cssWidth < 640 ? 0.6 : 1;
+});
 
 watch(
   () => core.sequence.value,
@@ -94,7 +102,7 @@ const draw = () => {
     : null;
 
   renderFrame(ctx, layout, core.cartesianPoses.value, {
-    geometry: overlaySettings.geometry,
+    geometry: scaleBodyRigGeometry(overlaySettings.geometry, effectiveBodyRigScale.value),
     rigStyles: overlaySettings.rigStyles,
     rigOrder: core.rigOrder.value,
     trails: core.trails.value,
