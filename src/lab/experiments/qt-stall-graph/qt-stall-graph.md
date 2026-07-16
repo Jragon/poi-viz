@@ -31,7 +31,7 @@ The codec is the pattern definition. It does not require a name or a separate da
 
 An article can keep a small local registry of codec strings. The full-pattern graph remains recognizable at thumbnail size, so the same renderer works as a selector. Selecting a thumbnail below drives one shared live preview; **Edit** opens that exact codec in the editor.
 
-<StallPatternGallery :codecs="articlePatterns" />
+<StallPatternGallery :patterns="articlePatterns" />
 
 ### Relationships worth comparing
 
@@ -56,15 +56,18 @@ import StallGraphEditor from "./StallGraphEditor.vue";
 import StallPatternGallery from "./StallPatternGallery.vue";
 
 const articlePatterns = [
-  "q1.4.URDL.URDL",
-  "q1.4.URDL.RDLU",
-  "q1.4.URDL.DLUR",
-  "q1.4.URDL.LURD",
-  "q1.4.URDL.ULDR",
-  "q1.4.URDL.UFDB",
-  "q1.4.UFDB.RFLB",
-  "q1.8.URDLULDR.RDLULDRU",
-  "q1.8.URDLURDL.RDLURDLU",
-  `q1.24.${"URDL".repeat(6)}.${"RDLU".repeat(6)}`
+  { codec: "q1.4.URDL.URDL", label: "Same path, same phase" },
+  { codec: "q1.4.URDL.RDLU", label: "One beat phase offset" },
+  { codec: "q1.4.URDL.DLUR", label: "Two beat phase offset" },
+  { codec: "q1.4.URDL.LURD", label: "Three beat phase offset" },
+  { codec: "q1.4.URDL.ULDR", label: "Direction reversal" },
+  { codec: "q1.4.URDL.UFDB", label: "Wall to wheel" },
+  { codec: "q1.4.UFDB.RFLB", label: "Wheel to floor" },
+  { codec: "q1.8.URDLULDR.RDLULDRU", label: "Turn around and retrace" },
+  { codec: "q1.8.URDLURDL.RDLURDLU", label: "Repeated phase offset" },
+  {
+    codec: `q1.24.${"URDL".repeat(6)}.${"RDLU".repeat(6)}`,
+    label: "Twenty-four beat repetition"
+  }
 ];
 </script>

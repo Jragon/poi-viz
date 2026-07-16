@@ -64,4 +64,19 @@ describe("router", () => {
       })
     );
   });
+
+  it("registers the quarter timing direction journal", () => {
+    evaluateRouterModule(createRouterSpy, createWebHistorySpy, [
+      ["@/lab/experiments/three-d-debug/routeMeta", threeDDebugRouteMetaModule],
+      ["@/lab/experiments/vrm-rig/routeMeta", vrmRigRouteMetaModule]
+    ]);
+
+    const [routerOptions] = createRouterSpy.mock.calls[0] as [RouterOptions];
+    expect(routerOptions.routes).toContainEqual(
+      expect.objectContaining({
+        path: "/lab/quarter-timing-direction",
+        name: "quarter-timing-direction-journal"
+      })
+    );
+  });
 });

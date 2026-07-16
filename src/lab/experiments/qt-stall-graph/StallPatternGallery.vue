@@ -3,13 +3,26 @@ import { computed, ref, watch } from "vue";
 
 import EmbeddedVisualizer from "@/lab/components/EmbeddedVisualizer.vue";
 import { compileStallPattern } from "@/lab/experiments/qt-stall-graph/compileStallGraph";
-import { decodeStallPattern } from "@/lab/experiments/qt-stall-graph/stallPatternCodec";
 import StallPatternCard from "@/lab/experiments/qt-stall-graph/StallPatternCard.vue";
+import { decodeStallPattern } from "@/lab/experiments/qt-stall-graph/stallPatternCodec";
 
-const props = defineProps<{ codecs: readonly string[] }>();
+export interface StallPatternOption {
+  readonly codec: string;
+  readonly label: string;
+}
+
+const props = withDefaults(
+  defineProps<{
+    patterns: readonly StallPatternOption[];
+    compact?: boolean;
+  }>(),
+  { compact: false }
+);
 const selectedCodec = ref<string | null>(null);
 
-const validCodecs = computed(() => props.codecs.filter((codec) => decodeStallPattern(codec).ok));
+const validCodecs = computed(() =>
+  props.patterns.map((pattern) => pattern.codec).filter((codec) => decodeStallPattern(codec).ok)
+);
 
 watch(
   validCodecs,
@@ -34,13 +47,21 @@ const selection = computed(() => {
 </script>
 
 <template>
-  <section class="not-prose my-6 grid min-w-0 gap-4">
-    <div class="grid min-w-0 items-stretch gap-3 sm:grid-cols-2 lg:grid-cols-3">
+  <section
+    class="not-prose my-6 grid min-w-0 gap-4"
+    :class="props.compact ? 'max-w-4xl!' : 'max-w-6xl!'"
+  >
+    <div
+      class="grid min-w-0 items-stretch gap-3"
+      :class="props.compact ? 'grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-2 lg:grid-cols-4'"
+    >
       <StallPatternCard
-        v-for="codec in props.codecs"
-        :key="codec"
-        :codec="codec"
-        :selected="codec === selectedCodec"
+        v-for="pattern in props.patterns"
+        :key="pattern.codec"
+        :codec="pattern.codec"
+        :label="pattern.label"
+        :compact="props.compact"
+        :selected="pattern.codec === selectedCodec"
         @select="selectedCodec = $event"
       />
     </div>

@@ -19,4 +19,11 @@ describe("labLinks", () => {
       to: "/lab/qt-stall-graph/layout"
     });
   });
+
+  it("links the quarter timing direction journal", () => {
+    expect(labLinks).toContainEqual({
+      label: "Timing / Direction",
+      to: "/lab/quarter-timing-direction"
+    });
+  });
 });

@@ -7,9 +7,11 @@ import StallPatternGraph from "@/lab/experiments/qt-stall-graph/StallPatternGrap
 const props = withDefaults(
   defineProps<{
     codec: string;
+    label: string;
+    compact?: boolean;
     selected?: boolean;
   }>(),
-  { selected: false }
+  { compact: false, selected: false }
 );
 
 const emit = defineEmits<{ select: [codec: string] }>();
@@ -23,12 +25,18 @@ const decoded = computed(() => decodeStallPattern(props.codec));
   >
     <button
       type="button"
-      class="block w-full shrink-0 p-3 text-left"
+      class="flex w-full shrink-0 flex-col text-left"
+      :class="props.compact ? 'p-1' : 'p-2'"
+      :aria-label="`Select pattern: ${props.label}`"
+      :title="`${props.label} — ${props.codec}`"
       :aria-pressed="props.selected"
       :disabled="!decoded.ok"
       @click="emit('select', props.codec)"
     >
-      <span class="grid h-44 w-full place-items-center overflow-hidden">
+      <span
+        class="grid w-full place-items-center overflow-hidden"
+        :class="props.compact ? 'aspect-square' : 'h-32'"
+      >
         <StallPatternGraph
           v-if="decoded.ok"
           :draft="decoded.draft"
@@ -41,12 +49,24 @@ const decoded = computed(() => decodeStallPattern(props.codec));
           {{ decoded.error.message }}
         </span>
       </span>
+      <span
+        v-if="props.compact"
+        class="flex min-h-10 items-start justify-center px-1 pb-1 pt-1 text-center text-xs leading-4 text-slate-300 sm:text-sm"
+      >
+        <span class="line-clamp-2">{{ props.label }}</span>
+      </span>
     </button>
 
     <footer
-      class="mt-auto flex h-11 min-w-0 shrink-0 items-center gap-2 border-t border-slate-800 px-3"
+      v-if="!props.compact"
+      class="mt-auto flex min-h-12 min-w-0 shrink-0 items-center gap-2 border-t border-slate-800 px-2"
     >
-      <code class="min-w-0 flex-1 truncate text-[10px] text-slate-500">{{ props.codec }}</code>
+      <span class="grid min-w-0 flex-1 gap-0.5">
+        <span class="truncate text-[10px] text-slate-300" :title="props.label">
+          {{ props.label }}
+        </span>
+        <code class="truncate text-[9px] text-slate-500">{{ props.codec }}</code>
+      </span>
       <RouterLink
         v-if="decoded.ok"
         :to="{ name: 'qt-stall-graph', query: { p: props.codec } }"

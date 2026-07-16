@@ -11,6 +11,10 @@ export const labLinks = [
     to: "/lab/qt-stall-graph"
   },
   {
+    label: "Timing / Direction",
+    to: "/lab/quarter-timing-direction"
+  },
+  {
     label: "Stall Graph Layouts",
     to: "/lab/qt-stall-graph/layout"
   },
