@@ -23,6 +23,7 @@
     "@types/node": "^25.2.3",
     "@types/three": "^0.184.1",
     "@vitejs/plugin-vue": "^6.0.4",
+    "@vue/server-renderer": "^3.5.28",
     "eslint": "^9.39.2",
     "globals": "^17.3.0",
     "prettier": "^3.8.1",
