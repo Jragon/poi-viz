@@ -71,14 +71,35 @@ Okay so what other timings exist? We can have pretty much any poi offset and cal
 
 Use the below pattern galary to see the different timings possible using the simple 4 petal diamond mode anti spin.
 
-<StallPatternGallery :patterns="wallPlaneAntispinsSameDirection" compact />
+<LabFigure id="stall-offset-cycle" width="wide">
+  <template #title>The offset cycle</template>
+  <StallOffsetCycleFigure />
+  <template #caption>
+    Each column is one quarter-step. Shifting one complete track by one column cycles through same, the two handed quarter relationships, and split.
+  </template>
+</LabFigure>
 
 And below here we have the two timing and directions in opposites.
-<StallPatternGallery :patterns="wallPlaneAntispinsOppositesDirection" compact />
+
+<LabFigure id="timing-direction-matrix" width="wide">
+  <template #title>Timing and direction matrix</template>
+  <TimingDirectionMatrixFigure />
+  <template #caption>
+    The same four offsets can be traversed with same or opposite directions. The graph also shows the order in which each track visits the cardinals.
+  </template>
+</LabFigure>
 
 ## Outside the wall plane
 
 <!-- TODO Rory: establish that complete loops may change planes and different routes can preserve an Infinite-L relationship. -->
+
+<LabFigure id="mixed-plane-cycles" width="wide">
+  <template #title>A cycle need not stay planar</template>
+  <MixedPlaneCyclesFigure />
+  <template #caption>
+    A four-step loop need not stay in one plane. The first pair shares a route; the second follows different routes while retaining an Infinite-L relationship at each checkpoint.
+  </template>
+</LabFigure>
 
 ## Other offsets
 
@@ -101,23 +122,11 @@ import {
   FamiliarTimingFigure,
   HandedQuarterTimingFigure,
   LabFigure,
+  MixedPlaneCyclesFigure,
   OffsetWavesFigure,
 } from "@/lab/components/figures";
-import StallPatternGallery from "./StallPatternGallery.vue";
-
-const wallPlaneAntispinsSameDirection = [
-  { codec: "q1.4.URDL.URDL", label: "Same time" },
-  { codec: "q1.4.RDLU.URDL", label: "Quarter offset" },
-  { codec: "q1.4.DLUR.URDL", label: "Half offset" },
-  { codec: "q1.4.LURD.URDL", label: "Three-quarter offset" },
-];
-
-const wallPlaneAntispinsOppositesDirection = [
-  { codec: "q1.4.ULDR.URDL", label: "Same time opposites" },
-  { codec: "q1.4.RULD.URDL", label: "Quarter offset opposites" },
-  { codec: "q1.4.DRUL.URDL", label: "Split time opposites" },
-  { codec: "q1.4.LDRU.URDL", label: "Three-quarter offset opposites" },
-];
+import StallOffsetCycleFigure from "./StallOffsetCycleFigure.vue";
+import TimingDirectionMatrixFigure from "./TimingDirectionMatrixFigure.vue";
 
 const atomicAntispinsWheelWall = [
   { codec: "q1.4.UFDB.URDL", label: "Same L" },

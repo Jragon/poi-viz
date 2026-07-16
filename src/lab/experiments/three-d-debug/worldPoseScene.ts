@@ -1,4 +1,5 @@
 import type { PlaneId, RigId, Vec2, Vec3, WorldMultiRigPose, WorldRigPose } from "@/engine/types";
+import { LAB_PLANE_COLORS, LAB_PLANE_ORDER } from "@/lab/planePresentation";
 import { DEFAULT_RIG_STYLES } from "@/visualizer/drawingTools";
 
 export interface WorldPoseBounds {
@@ -51,15 +52,11 @@ export interface ThreeDDebugSceneState {
   readonly sceneRadiusWorld: number;
 }
 
-const CANONICAL_PLANE_ORDER: readonly PlaneId[] = ["wall", "wheel", "floor"];
+const CANONICAL_PLANE_ORDER = LAB_PLANE_ORDER;
 const DEFAULT_ANCHOR: Vec2 = { x: 0, y: 0 };
 export const ORIGIN_PLANE_SHEET_RADIUS_WORLD = 1.5;
 export const ORIGIN_PLANE_SHEET_OPACITY = 0.12;
-const PLANE_HELPER_COLORS: Record<PlaneId, string> = {
-  wall: "#60a5fa",
-  wheel: "#f472b6",
-  floor: "#34d399"
-};
+const PLANE_HELPER_COLORS = LAB_PLANE_COLORS;
 const PLANE_HELPER_ROTATIONS: Record<PlaneId, Vec3> = {
   wall: { x: 0, y: 0, z: 0 },
   wheel: { x: 0, y: Math.PI * 0.5, z: 0 },

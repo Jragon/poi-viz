@@ -91,6 +91,21 @@ describe("stall graph geometry", () => {
 
     expect(geometry.connectors).toHaveLength(2);
     expect(geometry.connectors.every((connector) => !connector.isLegal)).toBe(true);
+    expect(geometry.connectors.every((connector) => connector.planeId === null)).toBe(true);
+  });
+
+  it("derives connector planes through edge resolution including loop closure", () => {
+    const geometry = buildStallGraphGeometry(pattern("URDF"), {
+      orientation: "horizontal",
+      density: "compact"
+    });
+
+    expect(geometry.connectors.map((connector) => connector.planeId)).toEqual([
+      "wall",
+      "wall",
+      "wheel",
+      "wheel"
+    ]);
   });
 
   it("renders a staff range with the next global beat as its terminal", () => {

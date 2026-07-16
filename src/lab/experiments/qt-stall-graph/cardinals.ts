@@ -1,4 +1,4 @@
-import type { PlaneId } from "@/engine/types";
+import type { PlaneId, Vec3 } from "@/engine/types";
 
 // ─── Cardinal types ──────────────────────────────────────────────────────────
 
@@ -15,6 +15,26 @@ export const CARDINAL_LABELS: Record<Cardinal, string> = {
   F: "Forward",
   B: "Back"
 };
+
+export const CARDINAL_WORLD_VECTORS: Record<Cardinal, Vec3> = {
+  R: { x: 1, y: 0, z: 0 },
+  L: { x: -1, y: 0, z: 0 },
+  U: { x: 0, y: 1, z: 0 },
+  D: { x: 0, y: -1, z: 0 },
+  F: { x: 0, y: 0, z: 1 },
+  B: { x: 0, y: 0, z: -1 }
+};
+
+export type CardinalRelation = "same" | "opposite" | "perpendicular";
+
+export function classifyCardinalRelation(left: Cardinal, right: Cardinal): CardinalRelation {
+  const a = CARDINAL_WORLD_VECTORS[left];
+  const b = CARDINAL_WORLD_VECTORS[right];
+  const dot = a.x * b.x + a.y * b.y + a.z * b.z;
+  if (dot === 1) return "same";
+  if (dot === -1) return "opposite";
+  return "perpendicular";
+}
 
 // ─── Plane circle definitions ────────────────────────────────────────────────
 //

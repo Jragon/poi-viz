@@ -1,5 +1,7 @@
 import {
   CARDINAL_ORDER,
+  CARDINAL_WORLD_VECTORS,
+  classifyCardinalRelation,
   isLegalEdge,
   resolveEdge,
   type Cardinal
@@ -27,6 +29,27 @@ describe("CARDINAL_ORDER", () => {
 
   it("starts with F U R D L B (user preference)", () => {
     expect(CARDINAL_ORDER).toEqual(["F", "U", "R", "D", "L", "B"]);
+  });
+});
+
+describe("cardinal checkpoint relations", () => {
+  it("uses canonical world axes", () => {
+    expect(CARDINAL_WORLD_VECTORS).toEqual({
+      R: { x: 1, y: 0, z: 0 },
+      L: { x: -1, y: 0, z: 0 },
+      U: { x: 0, y: 1, z: 0 },
+      D: { x: 0, y: -1, z: 0 },
+      F: { x: 0, y: 0, z: 1 },
+      B: { x: 0, y: 0, z: -1 }
+    });
+  });
+
+  it("classifies every ordered cardinal pair", () => {
+    const counts = { same: 0, opposite: 0, perpendicular: 0 };
+    for (const left of ALL_CARDINALS) {
+      for (const right of ALL_CARDINALS) counts[classifyCardinalRelation(left, right)]++;
+    }
+    expect(counts).toEqual({ same: 6, opposite: 6, perpendicular: 24 });
   });
 });
 

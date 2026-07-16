@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
+import type { PlaneId } from "@/engine/types";
 import { CARDINAL_LABELS } from "@/lab/experiments/qt-stall-graph/cardinals";
 import {
   buildStallGraphGeometry,
@@ -13,6 +14,7 @@ import type {
   StallPatternDraft,
   StallPatternHand
 } from "@/lab/experiments/qt-stall-graph/stallPattern";
+import { LAB_PLANE_COLORS } from "@/lab/planePresentation";
 
 const props = withDefaults(
   defineProps<{
@@ -27,6 +29,7 @@ const props = withDefaults(
     fitToContainer?: boolean;
     fillContainer?: boolean;
     editingHand?: StallPatternHand | undefined;
+    connectorColor?: "hand" | "plane";
   }>(),
   {
     orientation: "horizontal",
@@ -36,7 +39,8 @@ const props = withDefaults(
     ariaLabel: "Quarter-time stall pattern graph",
     showCardinalLabels: true,
     fitToContainer: true,
-    fillContainer: false
+    fillContainer: false,
+    connectorColor: "hand"
   }
 );
 
@@ -61,7 +65,13 @@ const geometry = computed(() =>
 
 function connectorClass(hand: "left" | "right", isLegal: boolean): string {
   if (!isLegal) return "stroke-red-400";
+  if (props.connectorColor === "plane") return "";
   return hand === "left" ? "stroke-cyan-300" : "stroke-pink-300";
+}
+
+function connectorStroke(planeId: PlaneId | null): string | undefined {
+  if (props.connectorColor !== "plane" || planeId === null) return undefined;
+  return LAB_PLANE_COLORS[planeId];
 }
 
 function pointClass(point: StallGraphPointView): string {
@@ -163,8 +173,14 @@ function pointRadius(point: StallGraphPointView): number {
         :x2="connector.x2"
         :y2="connector.y2"
         :class="connectorClass(connector.hand, connector.isLegal)"
+        :stroke="connectorStroke(connector.planeId)"
         :stroke-width="geometry.layout.strokeWidth"
+        :stroke-dasharray="
+          props.connectorColor === 'plane' && connector.hand === 'right' ? '4 3' : undefined
+        "
         stroke-linecap="round"
+        :data-plane="connector.planeId ?? undefined"
+        :data-hand="connector.hand"
       />
     </g>
 

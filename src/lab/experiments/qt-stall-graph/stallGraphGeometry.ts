@@ -1,3 +1,4 @@
+import type { PlaneId } from "@/engine/types";
 import {
   CARDINAL_ORDER,
   resolveEdge,
@@ -60,6 +61,7 @@ export interface StallGraphConnectorView {
   readonly x2: number;
   readonly y2: number;
   readonly isLegal: boolean;
+  readonly planeId: PlaneId | null;
 }
 
 export interface StallGraphClickTargetView {
@@ -263,6 +265,7 @@ function makeConnectors(
         CARDINAL_ORDER.indexOf(from)
       );
       const end = coordinate(orientation, layout, toBeat.displayIndex, CARDINAL_ORDER.indexOf(to));
+      const edge = resolveEdge(from, to);
       connectors.push({
         key: `${hand}-${fromBeat.displayIndex}-${toBeat.displayIndex}`,
         hand,
@@ -272,7 +275,8 @@ function makeConnectors(
         y1: start.y,
         x2: end.x,
         y2: end.y,
-        isLegal: resolveEdge(from, to) !== null
+        isLegal: edge !== null,
+        planeId: edge?.planeId ?? null
       });
     }
     return connectors;

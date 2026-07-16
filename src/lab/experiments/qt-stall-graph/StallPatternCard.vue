@@ -8,10 +8,13 @@ const props = withDefaults(
   defineProps<{
     codec: string;
     label: string;
+    eyebrow?: string;
+    ariaLabel?: string;
     compact?: boolean;
     selected?: boolean;
+    selectable?: boolean;
   }>(),
-  { compact: false, selected: false }
+  { compact: false, selected: false, selectable: true }
 );
 
 const emit = defineEmits<{ select: [codec: string] }>();
@@ -23,15 +26,18 @@ const decoded = computed(() => decodeStallPattern(props.codec));
     class="flex h-full min-w-0 flex-col overflow-hidden rounded-lg border bg-slate-950/60 transition"
     :class="props.selected ? 'border-amber-400/70' : 'border-slate-800 hover:border-slate-600'"
   >
-    <button
+    <component
+      :is="props.selectable ? 'button' : 'div'"
       type="button"
       class="flex w-full shrink-0 flex-col text-left"
       :class="props.compact ? 'p-1' : 'p-2'"
-      :aria-label="`Select pattern: ${props.label}`"
+      :aria-label="
+        props.selectable ? `Select pattern: ${props.ariaLabel ?? props.label}` : undefined
+      "
       :title="`${props.label} — ${props.codec}`"
-      :aria-pressed="props.selected"
-      :disabled="!decoded.ok"
-      @click="emit('select', props.codec)"
+      :aria-pressed="props.selectable ? props.selected : undefined"
+      :disabled="props.selectable ? !decoded.ok : undefined"
+      @click="props.selectable && emit('select', props.codec)"
     >
       <span
         class="grid w-full place-items-center overflow-hidden"
@@ -51,11 +57,16 @@ const decoded = computed(() => decodeStallPattern(props.codec));
       </span>
       <span
         v-if="props.compact"
-        class="flex min-h-10 items-start justify-center px-1 pb-1 pt-1 text-center text-xs leading-4 text-slate-300 sm:text-sm"
+        class="grid min-h-10 place-items-center px-1 pb-1 pt-1 text-center leading-4"
       >
-        <span class="line-clamp-2">{{ props.label }}</span>
+        <span>
+          <span v-if="props.eyebrow" class="block font-mono text-[9px] text-slate-500">
+            {{ props.eyebrow }}
+          </span>
+          <span class="line-clamp-2 text-xs text-slate-300 sm:text-sm">{{ props.label }}</span>
+        </span>
       </span>
-    </button>
+    </component>
 
     <footer
       v-if="!props.compact"
