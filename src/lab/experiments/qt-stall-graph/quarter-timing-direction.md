@@ -9,7 +9,7 @@
 
 # Exploring _all_ the timing and directions
 
-### The OG timings (split / same)
+## The timings we already know
 
 Clasically we're taught about two different timing modes. _Same / Together_ time and _Split_ time. Same and split are ways of describing the phase relationship between the two poi through a sequence. Though we do technically need to bring in direction here too now since same time / split time means something different depending on the directions of the poi.
 
@@ -31,11 +31,43 @@ This is a really important realisation and it completely changes the way a patte
 
 I guess the best way to define split and same time is really with the idea of the beat. Then we can use the phase offset as another way to look at it on top afterwards.
 
-### Quarter timing
+<LabFigure id="familiar-timing" width="wide">
+  <template #title>Familiar timing</template>
+  <FamiliarTimingFigure />
+  <template #caption>
+    Same time aligns the two downbeats. Split time places them half a cycle apart. Direction changes how the relationship appears on the wall plane.
+  </template>
+</LabFigure>
+
+## Timing as an offset
 
 Okay so what other timings exist? We can have pretty much any poi offset and call it a timing right, as long as we keep it consistent.
 
-### Wall plane timing and direction lab
+<!-- TODO Rory: hold one cycle fixed, shift the other, introduce 0/4, 1/4, 2/4, 3/4 and handedness. -->
+
+<LabFigure id="offset-waves" width="wide">
+  <template #title>Offset waves</template>
+  <OffsetWavesFigure />
+  <template #caption>
+    Moving one poi phase around the cycle produces four quarter-step relationships. Same and split are two points in the same offset cycle.
+  </template>
+</LabFigure>
+
+<LabFigure id="handed-quarter-timing" width="wide">
+  <template #title>Handed quarter timing</template>
+  <HandedQuarterTimingFigure />
+  <template #caption>
+    The two quarter offsets are mirror forms. Swapping the hands exchanges them, while same and split remain unchanged.
+  </template>
+</LabFigure>
+
+## The same pattern through different lenses
+
+<!-- TODO Rory: discuss choosing useful relationships and events without declaring one canonical feeling. -->
+
+## Quarter-time stall graphs
+
+<!-- TODO Rory: explain that the columns are synchronized quarter-step or stall checkpoints, and explain track shifting. -->
 
 Use the below pattern galary to see the different timings possible using the simple 4 petal diamond mode anti spin.
 
@@ -44,14 +76,33 @@ Use the below pattern galary to see the different timings possible using the sim
 And below here we have the two timing and directions in opposites.
 <StallPatternGallery :patterns="wallPlaneAntispinsOppositesDirection" compact />
 
-### Timing in 3d
+## Outside the wall plane
 
-### Polyryhtms / hybrid timings
+<!-- TODO Rory: establish that complete loops may change planes and different routes can preserve an Infinite-L relationship. -->
+
+## Other offsets
+
+<!-- TODO Rory: decide whether continuous offsets and relationship loops belong in the main article or an expandable aside. -->
+
+## Timing in 3d
+
+<!-- TODO Rory: write the short authored bridge to the 3D article; do not duplicate the 3D explanation here. -->
+
+<RouterLink to="/lab/quarter-time-3d">Quarter time in 3D</RouterLink>
+
+## Polyryhtms / hybrid timings
 
 There are many patterns where one poi will be travelling faster than the other - most classic is the triquetra vs extension. The poi making the triquetra has to travel twice as fast. And as such the timing is constantly changing. You can use this fact to neatly transition between timings. Ie at the top of the pattern it's in same opps, and ad the bottom it's in split opps.
 
+<!-- TODO Rory: expand the changing-relative-timing example when you are ready; retain the triquetra/extension idea. -->
+
 <script setup>
-import StallGraphEditor from "./StallGraphEditor.vue";
+import {
+  FamiliarTimingFigure,
+  HandedQuarterTimingFigure,
+  LabFigure,
+  OffsetWavesFigure,
+} from "@/lab/components/figures";
 import StallPatternGallery from "./StallPatternGallery.vue";
 
 const wallPlaneAntispinsSameDirection = [
