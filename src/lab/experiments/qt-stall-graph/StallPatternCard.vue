@@ -8,7 +8,6 @@ const props = withDefaults(
   defineProps<{
     codec: string;
     label: string;
-    eyebrow?: string;
     ariaLabel?: string;
     compact?: boolean;
     selected?: boolean;
@@ -57,14 +56,9 @@ const decoded = computed(() => decodeStallPattern(props.codec));
       </span>
       <span
         v-if="props.compact"
-        class="grid min-h-10 place-items-center px-1 pb-1 pt-1 text-center leading-4"
+        class="flex min-h-10 items-start justify-center px-1 pb-1 pt-1 text-center text-xs leading-4 text-slate-300 sm:text-sm"
       >
-        <span>
-          <span v-if="props.eyebrow" class="block font-mono text-[9px] text-slate-500">
-            {{ props.eyebrow }}
-          </span>
-          <span class="line-clamp-2 text-xs text-slate-300 sm:text-sm">{{ props.label }}</span>
-        </span>
+        <span class="line-clamp-2">{{ props.label }}</span>
       </span>
     </component>
 

@@ -5,8 +5,8 @@ import type { ProjectionModePreference } from "@/engine/planeProjection";
 import type { MultiRigSequence } from "@/engine/types";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
 import {
-  createVisualizerWorkspace,
-  provideVisualizerWorkspace
+    createVisualizerWorkspace,
+    provideVisualizerWorkspace
 } from "@/visualizer/visualizerWorkspace";
 
 type EmbeddedVisualizerSize = "normal" | "compact" | "mini";

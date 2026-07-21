@@ -3,10 +3,10 @@ import { describe, expect, it } from "vitest";
 import type { CartesianMultiRigPose } from "@/engine/types";
 import { computeBodyOverlay } from "@/visualizer/bodyOverlay";
 import {
-  DEFAULT_RENDER_FRAME_GEOMETRY,
-  WEBCAM_RENDER_FRAME_GEOMETRY,
-  renderFrame,
-  scaleBodyRigGeometry
+    DEFAULT_RENDER_FRAME_GEOMETRY,
+    WEBCAM_RENDER_FRAME_GEOMETRY,
+    renderFrame,
+    scaleBodyRigGeometry
 } from "@/visualizer/renderFrame";
 import { createSceneLayout } from "@/visualizer/sceneLayout";
 

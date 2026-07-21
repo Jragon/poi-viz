@@ -3,20 +3,20 @@ import type { CartesianMultiRigPose, RigId, Vec2 } from "@/engine/types";
 import type { BodyOverlayFrame } from "@/visualizer/bodyOverlay";
 
 import {
-  DEFAULT_RIG_STYLES,
-  clearFrame,
-  drawFadingPolyline,
-  drawLabel,
-  drawLine,
-  drawNode,
-  drawPolyline,
-  type RigRenderStyle
+    DEFAULT_RIG_STYLES,
+    clearFrame,
+    drawFadingPolyline,
+    drawLabel,
+    drawLine,
+    drawNode,
+    drawPolyline,
+    type RigRenderStyle
 } from "@/visualizer/drawingTools";
 import {
-  getRigAnchor,
-  translatePoint,
-  worldToCanvas,
-  type SceneLayout
+    getRigAnchor,
+    translatePoint,
+    worldToCanvas,
+    type SceneLayout
 } from "@/visualizer/sceneLayout";
 
 export interface RenderFrameGeometry {

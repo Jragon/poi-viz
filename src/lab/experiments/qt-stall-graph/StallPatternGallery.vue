@@ -1,8 +1,16 @@
 <script setup lang="ts">
+import { computed, ref, watch } from "vue";
+
 import EmbeddedVisualizer from "@/lab/components/EmbeddedVisualizer.vue";
+import { compileStallPattern } from "@/lab/experiments/qt-stall-graph/compileStallGraph";
 import StallPatternCard from "@/lab/experiments/qt-stall-graph/StallPatternCard.vue";
-import type { StallPatternOption } from "@/lab/experiments/qt-stall-graph/stallPatternOptions";
-import { useStallPatternSelection } from "@/lab/experiments/qt-stall-graph/useStallPatternSelection";
+import { decodeStallPattern } from "@/lab/experiments/qt-stall-graph/stallPatternCodec";
+
+export interface StallPatternOption {
+  readonly codec: string;
+  readonly label: string;
+  readonly ariaLabel?: string;
+}
 
 const props = withDefaults(
   defineProps<{
@@ -11,7 +19,32 @@ const props = withDefaults(
   }>(),
   { compact: false }
 );
-const { selectedCodec, selection, select } = useStallPatternSelection(() => props.patterns);
+const selectedCodec = ref<string | null>(null);
+
+const validCodecs = computed(() =>
+  props.patterns.map((pattern) => pattern.codec).filter((codec) => decodeStallPattern(codec).ok)
+);
+
+watch(
+  validCodecs,
+  (codecs) => {
+    if (selectedCodec.value && codecs.includes(selectedCodec.value)) return;
+    selectedCodec.value = codecs[0] ?? null;
+  },
+  { immediate: true }
+);
+
+const selection = computed(() => {
+  if (!selectedCodec.value) return null;
+  const decoded = decodeStallPattern(selectedCodec.value);
+  if (!decoded.ok) return null;
+  const compiled = compileStallPattern(decoded.draft);
+  if (!compiled.sequence) return null;
+  return {
+    codec: selectedCodec.value,
+    sequence: compiled.sequence
+  };
+});
 </script>
 
 <template>
@@ -28,13 +61,11 @@ const { selectedCodec, selection, select } = useStallPatternSelection(() => prop
         :key="pattern.codec"
         :codec="pattern.codec"
         :label="pattern.label"
-        v-bind="{
-          ...(pattern.eyebrow ? { eyebrow: pattern.eyebrow } : {}),
-          ...(pattern.ariaLabel ? { ariaLabel: pattern.ariaLabel } : {})
-        }"
+        :aria-label="pattern.ariaLabel"
         :compact="props.compact"
+        selectable
         :selected="pattern.codec === selectedCodec"
-        @select="select"
+        @select="selectedCodec = $event"
       />
     </div>
 
