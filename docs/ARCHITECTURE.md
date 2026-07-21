@@ -77,6 +77,20 @@ The engine represents a two-node `hand -> head` chain moving in local 2D coordin
 
 Canvas rendering, humanoid body overlays, and the Three.js debug visualizer exist above the engine and should remain replaceable consumers of engine output.
 
+### Pattern Registry
+
+The src/patterns layer is an application-level integration layer above authoring and lab source
+documents. It owns the saved pattern catalogue, folders, global selection, localStorage persistence,
+and the explicit-save working-copy boundary. It may depend on source validators and compilers to
+provide a shared viewer resolver, but those compilers remain responsible for their own semantics.
+
+The registry stores serializable authoring, stall-graph, and beat-graph source data. It must not store
+prepared sequences or runtime-driver callbacks. Editors load compatible deep-cloned working copies;
+the main visualizer and 3D consumers compile the globally selected saved source. A selected source
+that is incompatible with an editor causes that editor to use its existing default source.
+Registry records own the common display metadata; the current authoring payload retains its historical
+name and description fields until the authored-content shape is migrated separately.
+
 ## Reproducible Verification
 
 The supported toolchain is Node.js 22 with the pnpm version pinned in `package.json`. A clean verification run is:

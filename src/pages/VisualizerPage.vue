@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
-import { useAuthoringLibrary } from "@/authoring/useAuthoringLibrary";
 import FloatingPanel from "@/components/FloatingPanel.vue";
-import DocumentSelector from "@/pages/components/DocumentSelector.vue";
-import { useVisualizerDocumentSource } from "@/pages/useVisualizerDocumentSource";
+import { useSelectedPatternSequence } from "@/patterns/useSelectedPatternSequence";
+import PatternRegistryControls from "@/patterns/components/PatternRegistryControls.vue";
 import { demoSequence } from "@/visualizer/demoSequence";
 import MetronomeControls from "@/visualizer/MetronomeControls.vue";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
@@ -32,13 +31,8 @@ type CanvasViewportExposed = {
   recomputeLayout: () => void;
 };
 
-const library = useAuthoringLibrary();
-const {
-  documents,
-  selectedId,
-  sequence: selectedSequence,
-  select: selectDocument
-} = useVisualizerDocumentSource(library);
+const { selectedEntry, sequence: selectedSequence, errorMessage: selectedPatternError } =
+  useSelectedPatternSequence(demoSequence);
 const activeSequence = computed(() => selectedSequence.value ?? demoSequence);
 const workspace = provideVisualizerWorkspace(
   createVisualizerWorkspace(activeSequence, {
@@ -47,12 +41,11 @@ const workspace = provideVisualizerWorkspace(
   })
 );
 const core = workspace.core;
-const {
-  rigOrder,
-  transportDurationLabel,
-  errorMessage: visualizerErrorMessage,
-  isReady: visualizerReady
-} = core;
+const { rigOrder, transportDurationLabel, errorMessage: visualizerErrorMessage, isReady: visualizerReady } =
+  core;
+const combinedVisualizerError = computed(
+  () => selectedPatternError.value ?? visualizerErrorMessage.value
+);
 const displaySettings = workspace.display;
 const { activePresetId, panelOpen, setWebcamActive, togglePanel, closePanel } = displaySettings;
 const {
@@ -172,13 +165,9 @@ async function toggleWebcam() {
 
 <template>
   <main class="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-6 py-8">
-    <template v-if="selectedSequence">
+    <template>
       <div class="w-full">
-        <DocumentSelector
-          :documents="documents"
-          :selected-id="selectedId"
-          @select="selectDocument($event)"
-        />
+        <PatternRegistryControls :current-name="selectedEntry?.name ?? 'Demo pattern'" />
       </div>
 
       <section class="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 md:p-6">
@@ -206,11 +195,11 @@ async function toggleWebcam() {
 
             <div class="relative grid gap-4">
               <div
-                v-if="visualizerErrorMessage"
+                v-if="combinedVisualizerError"
                 class="rounded-2xl border border-rose-900/60 bg-rose-950/40 p-6 text-sm text-rose-100"
               >
                 <p class="text-xs uppercase tracking-[0.24em] text-rose-300">Visualizer Error</p>
-                <p class="mt-3">{{ visualizerErrorMessage }}</p>
+                <p class="mt-3">{{ combinedVisualizerError }}</p>
               </div>
 
               <PoiCanvasViewport
@@ -303,17 +292,5 @@ async function toggleWebcam() {
       </FloatingPanel>
     </template>
 
-    <section
-      v-else
-      class="mx-auto w-full max-w-6xl rounded-2xl border border-slate-800 bg-slate-900/40 p-8 text-center text-sm text-slate-400"
-    >
-      <p>No saved documents.</p>
-      <router-link
-        to="/authoring"
-        class="mt-3 inline-block rounded-xl bg-emerald-400 px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-emerald-300"
-      >
-        Create one in the editor
-      </router-link>
-    </section>
   </main>
 </template>

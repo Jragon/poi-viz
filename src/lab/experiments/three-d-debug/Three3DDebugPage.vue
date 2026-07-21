@@ -2,9 +2,8 @@
 import { useStorage } from "@vueuse/core";
 import { computed, ref, watch } from "vue";
 
-import { useAuthoringLibrary } from "@/authoring/useAuthoringLibrary";
-import DocumentSelector from "@/pages/components/DocumentSelector.vue";
-import { useVisualizerDocumentSource } from "@/pages/useVisualizerDocumentSource";
+import PatternRegistryControls from "@/patterns/components/PatternRegistryControls.vue";
+import { useSelectedPatternSequence } from "@/patterns/useSelectedPatternSequence";
 import { threeDDebugSequence } from "@/visualizer/demoSequence";
 import TransportControls from "@/visualizer/TransportControls.vue";
 import {
@@ -34,13 +33,9 @@ import Three3DDebugCanvas from "./Three3DDebugCanvas.vue";
 import { buildBodyHumanoidScene } from "./bodyHumanoidScene";
 import { buildThreeDDebugSceneState } from "./worldPoseScene";
 
-const library = useAuthoringLibrary();
-const {
-  documents,
-  selectedId,
-  sequence: selectedSequence,
-  select: selectDocument
-} = useVisualizerDocumentSource(library);
+const { selectedEntry, sequence: selectedSequence } = useSelectedPatternSequence(
+  threeDDebugSequence
+);
 const activeSequence = computed(() => selectedSequence.value ?? threeDDebugSequence);
 const workspace = provideVisualizerWorkspace(
   createVisualizerWorkspace(activeSequence, {
@@ -168,11 +163,7 @@ function updateFirePoiSettings(next: FirePoiSettings) {
       </p>
     </section>
 
-    <DocumentSelector
-      :documents="documents"
-      :selected-id="selectedId"
-      @select="selectDocument($event)"
-    />
+    <PatternRegistryControls :current-name="selectedEntry?.name ?? '3D demo pattern'" />
 
     <section
       class="grid gap-4 rounded-2xl border border-slate-800 bg-slate-950/70 p-5 lg:grid-cols-[minmax(0,1fr)_20rem]"

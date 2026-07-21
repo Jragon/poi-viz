@@ -22,7 +22,7 @@ describe("Three3DDebugPage source wiring", () => {
     expect(source).toContain(">Head Trails<");
     expect(source).toContain(':show-hand-trails="showHandTrails"');
     expect(source).toContain(':show-head-trails="showHeadTrails"');
-    expect(source).toContain("<DocumentSelector");
+    expect(source).toContain("<PatternRegistryControls");
   });
 
   it("routes world trail sampling through the shared visibility gate", () => {

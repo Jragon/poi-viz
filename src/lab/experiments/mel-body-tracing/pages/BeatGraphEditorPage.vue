@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import { onBeforeRouteLeave, useRoute } from "vue-router";
 
 import {
   compilePoiBeatGraph,
@@ -21,12 +22,17 @@ import type {
   PoiBeatDirection,
   PoiBeatLaneId,
   PoiBeatPhaseLabel,
+  PoiBeatGraph as PoiBeatGraphData,
   PoiBeatTrack
 } from "@/lab/experiments/mel-body-tracing/beat-graph/types";
 import { useBeatGraphPngSequenceExport } from "@/lab/experiments/mel-body-tracing/beat-graph/useBeatGraphPngSequenceExport";
 import { useBeatGraphUrlState } from "@/lab/experiments/mel-body-tracing/beat-graph/useBeatGraphUrlState";
 import PoiBeatGraph from "@/lab/experiments/mel-body-tracing/components/PoiBeatGraph.vue";
 import PoiBeatGraphDebugPanel from "@/lab/experiments/mel-body-tracing/components/PoiBeatGraphDebugPanel.vue";
+import PatternRegistryControls from "@/patterns/components/PatternRegistryControls.vue";
+import { clonePatternSource } from "@/patterns/patternAdapters";
+import { usePatternRegistry } from "@/patterns/usePatternRegistry";
+import type { PatternEntry, PatternSource } from "@/patterns/types";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
 import {
   createVisualizerWorkspace,
@@ -34,6 +40,10 @@ import {
 } from "@/visualizer/visualizerWorkspace";
 
 const { graph } = useBeatGraphUrlState(createLowCommonCosmoBeatGraph);
+const route = useRoute();
+const registry = usePatternRegistry();
+const loadedPatternId = ref<string | null>(null);
+const savedBaseline = ref<string | null>(null);
 const compilerOptions = DEFAULT_POI_BEAT_COMPILER_OPTIONS;
 const editingTrackId = ref(graph.value.tracks[0]?.id ?? "");
 const visibleTrackIds = ref(graph.value.tracks.map((track) => track.id));
@@ -41,6 +51,11 @@ const showStickFigure = ref(true);
 const beatGraphExportRoot = ref<HTMLElement | null>(null);
 const activeStepOverride = ref<number | null>(null);
 const visibleGraph = computed(() => filterPoiBeatGraphTracks(graph.value, visibleTrackIds.value));
+const currentSource = computed<PatternSource>(() => ({ kind: "beat-graph", graph: graph.value }));
+const isDirty = computed(() => JSON.stringify(graph.value) !== savedBaseline.value);
+const currentName = computed(
+  () => registry.get(loadedPatternId.value ?? "")?.name ?? "Untitled Beat Graph"
+);
 const compiled = computed(() => compilePoiBeatGraph(visibleGraph.value, compilerOptions));
 const workspace = provideVisualizerWorkspace(
   createVisualizerWorkspace(() => compiled.value.sequence, {
@@ -162,6 +177,35 @@ function setSpeed(value: number) {
   transport.setSpeed(value);
 }
 
+function loadGraph(graphValue: PoiBeatGraphData, patternId: string | null): void {
+  graph.value = graphValue;
+  loadedPatternId.value = patternId;
+  visibleTrackIds.value = graphValue.tracks.map((track) => track.id);
+  editingTrackId.value = graphValue.tracks[0]?.id ?? "";
+  savedBaseline.value = JSON.stringify(graphValue);
+}
+
+function loadSelectedPattern(): void {
+  if (route.query.s !== undefined || route.query.lt !== undefined || route.query.rt !== undefined) {
+    return;
+  }
+  const selected = registry.selectedPattern.value;
+  if (selected?.source.kind === "beat-graph") {
+    const source = clonePatternSource(selected.source);
+    if (source.kind !== "beat-graph") return;
+    loadGraph(source.graph, selected.id);
+  } else {
+    loadGraph(createLowCommonCosmoBeatGraph(), null);
+  }
+}
+
+function openPattern(entry: PatternEntry): void {
+  if (entry.source.kind !== "beat-graph") return;
+  const source = clonePatternSource(entry.source);
+  if (source.kind !== "beat-graph") return;
+  loadGraph(source.graph, entry.id);
+}
+
 function exportGraphPngSequence() {
   void graphPngExport
     .exportGraph({ graph: graph.value, halfBeatDuration: compilerOptions.halfBeatDuration })
@@ -208,6 +252,13 @@ function phaseButtonClass(track: PoiBeatTrack, phase: PoiBeatPhaseLabel): string
   if (track.initialPhase === phase) return "border-slate-200 bg-slate-100 text-slate-950";
   return "border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200";
 }
+
+watch(registry.selectedPatternId, loadSelectedPattern, { immediate: true });
+
+onBeforeRouteLeave(() => {
+  if (!isDirty.value || typeof window === "undefined") return true;
+  return window.confirm("Discard unsaved changes?");
+});
 </script>
 
 <template>
@@ -220,6 +271,20 @@ function phaseButtonClass(track: PoiBeatTrack, phase: PoiBeatPhaseLabel): string
               <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Mel body tracing</p>
               <h1 class="mt-2 text-2xl font-semibold text-slate-50">Beat Graph Editor</h1>
             </div>
+            <PatternRegistryControls
+              editor-kind="beat-graph"
+              :current-pattern-id="loadedPatternId"
+              :current-source="currentSource"
+              :current-name="currentName"
+              :is-dirty="isDirty"
+              @open="openPattern"
+              @saved="
+                (entry) => {
+                  loadedPatternId = entry.id;
+                  savedBaseline = JSON.stringify(graph);
+                }
+              "
+            />
           </div>
           <p class="mt-2 text-sm leading-6 text-slate-400">
             Play around with the beat graphs from Mel's

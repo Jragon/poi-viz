@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 
 import EmbeddedVisualizer from "@/lab/components/EmbeddedVisualizer.vue";
 import type { Cardinal } from "@/lab/experiments/qt-stall-graph/cardinals";
@@ -19,8 +19,17 @@ import {
 import StallPatternGraph from "@/lab/experiments/qt-stall-graph/StallPatternGraph.vue";
 import StallPatternGraphScroller from "@/lab/experiments/qt-stall-graph/StallPatternGraphScroller.vue";
 import { useStallPatternUrlState } from "@/lab/experiments/qt-stall-graph/useStallPatternUrlState";
+import PatternRegistryControls from "@/patterns/components/PatternRegistryControls.vue";
+import { clonePatternSource } from "@/patterns/patternAdapters";
+import { usePatternRegistry } from "@/patterns/usePatternRegistry";
+import type { PatternEntry, PatternSource } from "@/patterns/types";
+import { onBeforeRouteLeave, useRoute } from "vue-router";
 
 const { draft, orientation, codec, codecError, reset } = useStallPatternUrlState();
+const route = useRoute();
+const registry = usePatternRegistry();
+const loadedPatternId = ref<string | null>(null);
+const savedBaseline = ref<string | null>(null);
 const editingHand = ref<StallPatternHand>("left");
 const copyStatus = ref("");
 
@@ -28,10 +37,43 @@ const compiled = computed(() => (draft.value ? compileStallPattern(draft.value) 
 const sequence = computed(() => compiled.value?.sequence ?? null);
 const diagnostics = computed(() => compiled.value?.diagnostics ?? []);
 const canDeleteBeat = computed(() => (draft.value?.beatCount ?? 2) > 2);
+const currentSource = computed<PatternSource | null>(() =>
+  draft.value ? { kind: "stall-graph", draft: draft.value } : null
+);
+const isDirty = computed(
+  () => draft.value !== null && JSON.stringify(draft.value) !== savedBaseline.value
+);
+const currentName = computed(
+  () => registry.get(loadedPatternId.value ?? "")?.name ?? "Untitled Stall Graph"
+);
 
 function updateDraft(next: NonNullable<typeof draft.value>): void {
   draft.value = next;
   copyStatus.value = "";
+}
+
+function loadSelectedPattern(): void {
+  if (route.query.p !== undefined) return;
+  const selected = registry.selectedPattern.value;
+  if (selected?.source.kind === "stall-graph") {
+    const source = clonePatternSource(selected.source);
+    if (source.kind !== "stall-graph") return;
+    draft.value = source.draft;
+    loadedPatternId.value = selected.id;
+  } else {
+    reset();
+    loadedPatternId.value = null;
+  }
+  savedBaseline.value = draft.value ? JSON.stringify(draft.value) : null;
+}
+
+function openPattern(entry: PatternEntry): void {
+  if (entry.source.kind !== "stall-graph") return;
+  const source = clonePatternSource(entry.source);
+  if (source.kind !== "stall-graph") return;
+  draft.value = source.draft;
+  loadedPatternId.value = entry.id;
+  savedBaseline.value = JSON.stringify(draft.value);
 }
 
 function placeNode(payload: { readonly beatIndex: number; readonly cardinal: Cardinal }): void {
@@ -99,6 +141,13 @@ function diagnosticText(diagnostic: StallGraphDiagnostic): string {
   const edge = diagnostic.from && diagnostic.to ? ` ${diagnostic.from}→${diagnostic.to}` : "";
   return `${diagnostic.code}${hand}${beat}${edge}`;
 }
+
+watch(registry.selectedPatternId, loadSelectedPattern, { immediate: true });
+
+onBeforeRouteLeave(() => {
+  if (!isDirty.value || typeof window === "undefined") return true;
+  return window.confirm("Discard unsaved changes?");
+});
 </script>
 
 <template>
@@ -114,7 +163,21 @@ function diagnosticText(diagnostic: StallGraphDiagnostic): string {
           </h2>
         </div>
 
-        <div class="flex flex-wrap gap-2 text-xs">
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <PatternRegistryControls
+            editor-kind="stall-graph"
+            :current-pattern-id="loadedPatternId"
+            :current-source="currentSource"
+            :current-name="currentName"
+            :is-dirty="isDirty"
+            @open="openPattern"
+            @saved="
+              (entry) => {
+                loadedPatternId = entry.id;
+                savedBaseline = draft ? JSON.stringify(draft) : null;
+              }
+            "
+          />
           <button
             v-for="hand in ['left', 'right'] as const"
             :key="hand"

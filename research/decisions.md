@@ -215,3 +215,23 @@ torso solutions. Independent per-frame minimization can therefore bounce between
 - POI hand coordinates now mean palm centres for a loaded VRM. The adapter measures the index/middle/
   ring knuckle line and uses its midpoint from the wrist as the palm centre; sparse humanoid mappings
   deliberately fall back to the wrist rather than inventing an offset.
+
+## 2026-07-21: Unified Source Pattern Registry with Explicit Save
+
+Saved patterns are application-level source documents, not compiled engine sequences. The registry
+supports three incompatible source kinds: authoring documents, stall-graph drafts, and beat graphs.
+
+- One global selected pattern drives the main visualizer, Three.js debug visualizer, and VRM visualizer.
+- Each editor accepts only its own source kind. Incompatible registry entries remain visible but are
+  disabled. An editor with an incompatible global selection loads its existing default source.
+- Editors use deep-cloned working copies. Editing does not write the registry. Save overwrites the
+  loaded source record; Save As creates a new record and selects it globally.
+- Runtime drivers are compiler-created behavior and are never persisted. Beat-graph sources are
+  persisted so their runtime callbacks can be recreated by the compiler.
+- Registry entries own displayed names, descriptions, folders, and selection. The existing authoring
+  source still carries its legacy name and description fields for this first migration slice.
+  Folder deletion is rejected while patterns or child folders remain inside.
+- Persistence starts in a single versioned localStorage snapshot. JSON import/export and a bundled
+  Git catalogue remain future extensions of the same JSON-compatible shape.
+- Existing authoring localStorage data is migrated once into the registry without retaining a second
+  active authoring library or deleting the old storage key.

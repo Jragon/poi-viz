@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef, watch } from "vue";
 
-import { useAuthoringLibrary } from "@/authoring/useAuthoringLibrary";
 import { BodyRigMotionSolver, buildBodyRigDimensionsForCanonicalUnitRadius } from "@/body-rig";
 import type { RigId } from "@/engine/types";
 import { buildBodyHumanoidScene } from "@/lab/experiments/three-d-debug/bodyHumanoidScene";
 import { buildThreeDDebugSceneState } from "@/lab/experiments/three-d-debug/worldPoseScene";
-import DocumentSelector from "@/pages/components/DocumentSelector.vue";
-import { useVisualizerDocumentSource } from "@/pages/useVisualizerDocumentSource";
+import PatternRegistryControls from "@/patterns/components/PatternRegistryControls.vue";
+import { useSelectedPatternSequence } from "@/patterns/useSelectedPatternSequence";
 import { threeDDebugSequence } from "@/visualizer/demoSequence";
 import TransportControls from "@/visualizer/TransportControls.vue";
 import {
@@ -27,13 +26,9 @@ import {
 import type { VrmPoseDiagnostics } from "./vrmStandingPose";
 import type { VrmRigProfile } from "./vrmRigProfile";
 
-const library = useAuthoringLibrary();
-const {
-  documents,
-  selectedId,
-  sequence: selectedSequence,
-  select: selectDocument
-} = useVisualizerDocumentSource(library);
+const { selectedEntry, sequence: selectedSequence } = useSelectedPatternSequence(
+  threeDDebugSequence
+);
 const activeSequence = computed(() => selectedSequence.value ?? threeDDebugSequence);
 const workspace = provideVisualizerWorkspace(
   createVisualizerWorkspace(activeSequence, {
@@ -209,11 +204,7 @@ function resetView() {
       </p>
     </section>
 
-    <DocumentSelector
-      :documents="documents"
-      :selected-id="selectedId"
-      @select="selectDocument($event)"
-    />
+    <PatternRegistryControls :current-name="selectedEntry?.name ?? '3D demo pattern'" />
 
     <section
       class="grid gap-4 rounded-2xl border border-slate-800 bg-slate-950/70 p-5 xl:grid-cols-[minmax(0,1fr)_21rem]"

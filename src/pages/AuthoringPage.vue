@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, reactive, ref, watch } from "vue";
+import { computed, reactive, ref, watch } from "vue";
+import { onBeforeRouteLeave } from "vue-router";
 
 import { findActiveSegmentIndex } from "@/authoring/activeSegment";
 import { compileAuthoredDocument } from "@/authoring/compile";
@@ -12,7 +13,11 @@ import type {
   AuthoredTrackId
 } from "@/authoring/types";
 import { useAuthoringEditor, type SelectedSegment } from "@/authoring/useAuthoringEditor";
-import { useAuthoringLibrary } from "@/authoring/useAuthoringLibrary";
+import PatternRegistryControls from "@/patterns/components/PatternRegistryControls.vue";
+import { clonePatternSource } from "@/patterns/patternAdapters";
+import { createDefaultAuthoringDocument } from "@/patterns/patternDefaults";
+import { usePatternRegistry } from "@/patterns/usePatternRegistry";
+import type { PatternSource } from "@/patterns/types";
 import {
   createVisualizerWorkspace,
   provideVisualizerWorkspace
@@ -20,11 +25,21 @@ import {
 
 const TRACK_IDS: readonly AuthoredTrackId[] = ["left", "right"];
 
-const library = useAuthoringLibrary();
-const selectedEntry = computed<AuthoredDocumentEntry | null>(() => library.selectedDocument.value);
-const selectedDocument = computed<AuthoredSequenceDocument | null>(
-  () => selectedEntry.value?.document ?? null
-);
+const registry = usePatternRegistry();
+const workingPatternId = ref<string | null>(null);
+const workingDocument = ref<AuthoredSequenceDocument>(createDefaultAuthoringDocument());
+const savedBaseline = ref(JSON.stringify(workingDocument.value));
+
+const selectedEntry = computed<AuthoredDocumentEntry>(() => ({
+  id: workingPatternId.value ?? "__unsaved-authoring__",
+  document: workingDocument.value
+}));
+const selectedDocument = computed<AuthoredSequenceDocument>(() => workingDocument.value);
+const currentPatternSource = computed<PatternSource>(() => ({
+  kind: "authoring",
+  document: workingDocument.value
+}));
+const isDirty = computed(() => JSON.stringify(workingDocument.value) !== savedBaseline.value);
 
 const initialCompiled = (() => {
   const entry = selectedEntry.value;
@@ -43,13 +58,11 @@ const initialCompiled = (() => {
 const lastValidCompiled = ref(initialCompiled);
 const compileErrorMessage = ref<string | null>(null);
 const selectedSegment = ref<SelectedSegment>(null);
-const exportFeedbackMessage = ref<string | null>(null);
 const metaDrafts = reactive<{ name: string | null; description: string | null }>({
   name: null,
   description: null
 });
 const globalOmegaUnit = ref<AuthoredOmegaUnit>("circles-per-unit");
-let exportFeedbackTimeout: number | null = null;
 
 const previewWorkspace = provideVisualizerWorkspace(
   createVisualizerWorkspace(() => lastValidCompiled.value.sequence, {
@@ -83,8 +96,6 @@ const trackTotals = computed(() =>
   trackViews.value.map((view) => ({ trackId: view.trackId, totalDuration: view.totalDuration }))
 );
 
-const selectedDocumentId = computed(() => selectedEntry.value?.id ?? null);
-
 const presentTrackCount = computed(() => trackViews.value.filter((view) => view.track).length);
 
 const editor = useAuthoringEditor({
@@ -92,7 +103,9 @@ const editor = useAuthoringEditor({
   lastValidCompiled,
   selectedSegment,
   compileErrorMessage,
-  persist: (id, document) => library.updateDocument(id, document)
+  persist: (_id, document) => {
+    workingDocument.value = document;
+  }
 });
 
 const {
@@ -142,11 +155,6 @@ function commitMetaDescription() {
   editor.updateDocumentDescription(next);
 }
 
-function onDocumentSelectionChange(event: Event) {
-  const id = (event.target as HTMLSelectElement).value || null;
-  library.selectDocument(id);
-}
-
 function isSelected(trackId: AuthoredTrackId, segmentIndex: number): boolean {
   return (
     selectedSegment.value?.trackId === trackId &&
@@ -159,69 +167,18 @@ function canDeleteSegment(_trackId: AuthoredTrackId, totalSegmentsInTrack: numbe
   return presentTrackCount.value > 1;
 }
 
-function setExportFeedbackMessage(message: string | null) {
-  exportFeedbackMessage.value = message;
+function loadSelectedPattern() {
+  const selected = registry.selectedPattern.value;
+  const source =
+    selected?.source.kind === "authoring"
+      ? clonePatternSource(selected.source)
+      : { kind: "authoring" as const, document: createDefaultAuthoringDocument() };
+  if (source.kind !== "authoring") return;
 
-  if (exportFeedbackTimeout !== null) {
-    window.clearTimeout(exportFeedbackTimeout);
-    exportFeedbackTimeout = null;
-  }
-
-  if (message) {
-    exportFeedbackTimeout = window.setTimeout(() => {
-      exportFeedbackMessage.value = null;
-      exportFeedbackTimeout = null;
-    }, 2400);
-  }
-}
-
-function copyTextWithExecCommand(text: string): boolean {
-  const textarea = document.createElement("textarea");
-  textarea.value = text;
-  textarea.setAttribute("readonly", "true");
-  textarea.style.position = "absolute";
-  textarea.style.left = "-9999px";
-  document.body.appendChild(textarea);
-  textarea.select();
-
-  try {
-    return document.execCommand("copy");
-  } finally {
-    document.body.removeChild(textarea);
-  }
-}
-
-async function exportSelectedDocumentJson() {
-  if (!selectedEntry.value) {
-    return;
-  }
-
-  const exportedJson = JSON.stringify(selectedEntry.value, null, 2);
-
-  try {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(exportedJson);
-    } else if (!copyTextWithExecCommand(exportedJson)) {
-      throw new Error("Copy command failed");
-    }
-
-    setExportFeedbackMessage("Copied selected document JSON.");
-  } catch {
-    setExportFeedbackMessage("Could not copy JSON to clipboard.");
-  }
-}
-
-watch(selectedDocumentId, (nextId, previousId) => {
-  if (!nextId || nextId === previousId) {
-    return;
-  }
-
-  const entry = selectedEntry.value;
-  if (!entry) {
-    return;
-  }
-
-  const nextCompiled = compileAuthoredDocument(entry.document);
+  workingPatternId.value = selected?.source.kind === "authoring" ? selected.id : null;
+  workingDocument.value = source.document;
+  savedBaseline.value = JSON.stringify(workingDocument.value);
+  const nextCompiled = compileAuthoredDocument(workingDocument.value);
   if (!nextCompiled.ok) {
     compileErrorMessage.value = nextCompiled.errors.map((error) => error.code).join(", ");
     return;
@@ -232,13 +189,15 @@ watch(selectedDocumentId, (nextId, previousId) => {
   selectedSegment.value = null;
   compileErrorMessage.value = null;
   lastValidCompiled.value = nextCompiled;
+}
+
+watch(registry.selectedPatternId, loadSelectedPattern, { immediate: true });
+
+onBeforeRouteLeave(() => {
+  if (!isDirty.value || typeof window === "undefined") return true;
+  return window.confirm("Discard unsaved changes?");
 });
 
-onBeforeUnmount(() => {
-  if (exportFeedbackTimeout !== null) {
-    window.clearTimeout(exportFeedbackTimeout);
-  }
-});
 </script>
 
 <template>
@@ -378,52 +337,21 @@ onBeforeUnmount(() => {
         <section
           class="grid gap-2 rounded-3xl border border-slate-800 bg-slate-900/60 p-5 text-sm text-slate-300"
         >
-          <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Document</p>
-          <select
-            class="w-full min-w-0 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-slate-100 outline-none transition focus:border-sky-400"
-            :value="selectedEntry?.id ?? ''"
-            @change="onDocumentSelectionChange"
-          >
-            <option v-for="entry in library.documents.value" :key="entry.id" :value="entry.id">
-              {{ entry.document.name }}
-            </option>
-          </select>
-          <div class="flex flex-wrap gap-2 pt-1">
-            <button
-              type="button"
-              class="rounded-lg bg-emerald-400 px-3 py-2 text-sm font-medium text-slate-950 transition hover:bg-emerald-300"
-              @click="library.createDocument()"
-            >
-              New
-            </button>
-            <button
-              type="button"
-              class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 transition hover:border-slate-500 disabled:opacity-50"
-              :disabled="!selectedEntry"
-              @click="selectedEntry && library.duplicateDocument(selectedEntry.id)"
-            >
-              Duplicate
-            </button>
-            <button
-              type="button"
-              class="rounded-lg border border-rose-800 px-3 py-2 text-sm text-rose-200 transition hover:border-rose-600 disabled:opacity-50"
-              :disabled="library.documents.value.length <= 1 || !selectedEntry"
-              @click="selectedEntry && library.deleteDocument(selectedEntry.id)"
-            >
-              Delete
-            </button>
-            <button
-              type="button"
-              class="rounded-lg border border-sky-700 px-3 py-2 text-sm text-sky-200 transition hover:border-sky-500 disabled:opacity-50"
-              :disabled="!selectedEntry"
-              @click="exportSelectedDocumentJson"
-            >
-              Export JSON
-            </button>
-          </div>
-          <p v-if="exportFeedbackMessage" class="pt-1 text-xs text-sky-300">
-            {{ exportFeedbackMessage }}
-          </p>
+          <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Pattern</p>
+          <PatternRegistryControls
+            editor-kind="authoring"
+            :current-pattern-id="workingPatternId"
+            :current-source="currentPatternSource"
+            :current-name="selectedDocument.name"
+            :is-dirty="isDirty"
+            @saved="
+              (entry) => {
+                workingDocument.name = entry.name;
+                workingDocument.description = entry.description;
+                savedBaseline = JSON.stringify(workingDocument);
+              }
+            "
+          />
         </section>
 
         <AuthoringPreviewPanel :error-message="previewErrorMessage" :track-totals="trackTotals" />

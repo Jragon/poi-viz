@@ -3,8 +3,8 @@ import { computed, ref, watch } from "vue";
 
 import { compileAuthoredDocument } from "@/authoring/compile";
 import type { AuthoredDocumentEntry } from "@/authoring/types";
-import { useAuthoringLibrary } from "@/authoring/useAuthoringLibrary";
 import type { MultiRigSequence } from "@/engine/types";
+import { usePatternRegistry } from "@/patterns/usePatternRegistry";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
 import {
   createVisualizerWorkspace,
@@ -17,9 +17,19 @@ function compileAuthoredSequence(entry: AuthoredDocumentEntry): MultiRigSequence
   return result.ok ? result.sequence : null;
 }
 
-const authoringLibrary = useAuthoringLibrary();
-const selectedSequenceId = ref(authoringLibrary.selectedDocumentId.value);
-const authoredDocuments = computed(() => authoringLibrary.documents.value);
+const registry = usePatternRegistry();
+const authoredDocuments = computed<AuthoredDocumentEntry[]>(() =>
+  registry.entries.value.flatMap((entry) =>
+    entry.source.kind === "authoring"
+      ? [{ id: entry.id, document: entry.source.document }]
+      : []
+  )
+);
+const selectedSequenceId = ref(
+  registry.selectedPattern.value?.source.kind === "authoring"
+    ? registry.selectedPattern.value.id
+    : authoredDocuments.value[0]?.id ?? null
+);
 const selectedDocument = computed(() => {
   if (!selectedSequenceId.value) {
     return null;
@@ -90,6 +100,7 @@ function resetPlayback() {
 }
 
 watch(selectedSequenceId, () => {
+  if (selectedSequenceId.value) registry.select(selectedSequenceId.value);
   transport.reset();
 });
 
