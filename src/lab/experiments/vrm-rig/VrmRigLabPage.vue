@@ -26,9 +26,11 @@ import {
 import type { VrmPoseDiagnostics } from "./vrmStandingPose";
 import type { VrmRigProfile } from "./vrmRigProfile";
 
-const { selectedEntry, sequence: selectedSequence } = useSelectedPatternSequence(
-  threeDDebugSequence
-);
+const {
+  selectedEntry,
+  sequence: selectedSequence,
+  errorMessage: selectedPatternError
+} = useSelectedPatternSequence(threeDDebugSequence);
 const activeSequence = computed(() => selectedSequence.value ?? threeDDebugSequence);
 const workspace = provideVisualizerWorkspace(
   createVisualizerWorkspace(activeSequence, {
@@ -37,6 +39,7 @@ const workspace = provideVisualizerWorkspace(
   })
 );
 const { core } = workspace;
+const playbackError = computed(() => selectedPatternError.value ?? core.errorMessage.value);
 
 const showModel = ref(true);
 const showTargetRig = ref(true);
@@ -211,10 +214,10 @@ function resetView() {
     >
       <div class="grid gap-4">
         <div
-          v-if="core.errorMessage.value"
+          v-if="playbackError"
           class="rounded-xl border border-rose-900/60 bg-rose-950/40 p-4 text-sm text-rose-100"
         >
-          {{ core.errorMessage.value }}
+          {{ playbackError }}
         </div>
 
         <VrmRigCanvas

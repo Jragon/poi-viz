@@ -70,12 +70,32 @@ function defaultSeedPatterns(): PatternEntry[] {
   }));
 }
 
+function synchronizeAuthoringMetadata(
+  source: PatternSource,
+  name: string,
+  description: string | null
+): PatternSource {
+  if (source.kind !== "authoring") return clonePatternSource(source);
+  return {
+    kind: "authoring",
+    document: {
+      ...clone(source.document),
+      name,
+      description
+    }
+  };
+}
+
 function normalizeEntry(value: unknown): PatternEntry | null {
   if (!value || typeof value !== "object") return null;
   const candidate = value as Partial<PatternEntry>;
   if (
     typeof candidate.id !== "string" ||
+    candidate.id.length === 0 ||
     typeof candidate.name !== "string" ||
+    candidate.name.trim().length === 0 ||
+    (candidate.description !== null && typeof candidate.description !== "string") ||
+    (candidate.folderId !== null && typeof candidate.folderId !== "string") ||
     !isPatternSource(candidate.source)
   ) {
     return null;
@@ -85,10 +105,43 @@ function normalizeEntry(value: unknown): PatternEntry | null {
   return {
     id: candidate.id,
     name: candidate.name,
-    description: typeof candidate.description === "string" ? candidate.description : null,
-    folderId: typeof candidate.folderId === "string" ? candidate.folderId : null,
-    source: clonePatternSource(source)
+    description: candidate.description,
+    folderId: candidate.folderId,
+    source: synchronizeAuthoringMetadata(source, candidate.name, candidate.description)
   };
+}
+
+function normalizeFolder(value: unknown): PatternFolder | null {
+  if (!value || typeof value !== "object") return null;
+  const candidate = value as Partial<PatternFolder>;
+  if (
+    typeof candidate.id !== "string" ||
+    candidate.id.length === 0 ||
+    typeof candidate.name !== "string" ||
+    candidate.name.trim().length === 0 ||
+    (candidate.parentId !== null && typeof candidate.parentId !== "string")
+  ) {
+    return null;
+  }
+  return { id: candidate.id, name: candidate.name, parentId: candidate.parentId };
+}
+
+function hasValidFolderHierarchy(folders: readonly PatternFolder[]): boolean {
+  const folderIds = new Set(folders.map((folder) => folder.id));
+  if (folderIds.size !== folders.length) return false;
+
+  const byId = new Map(folders.map((folder) => [folder.id, folder]));
+  for (const folder of folders) {
+    if (folder.parentId !== null && !folderIds.has(folder.parentId)) return false;
+    const visited = new Set<string>();
+    let current: PatternFolder | undefined = folder;
+    while (current) {
+      if (visited.has(current.id)) return false;
+      visited.add(current.id);
+      current = current.parentId === null ? undefined : byId.get(current.parentId);
+    }
+  }
+  return true;
 }
 
 function parseSnapshot(raw: string | null): PatternRegistrySnapshot | null {
@@ -102,31 +155,36 @@ function parseSnapshot(raw: string | null): PatternRegistrySnapshot | null {
     ) {
       return null;
     }
-    const patterns = parsed.patterns
-      .map(normalizeEntry)
-      .filter((entry): entry is PatternEntry => entry !== null);
-    const folders = parsed.folders.filter(
-      (folder): folder is PatternFolder =>
-        Boolean(folder) &&
-        typeof folder === "object" &&
-        typeof (folder as PatternFolder).id === "string" &&
-        typeof (folder as PatternFolder).name === "string" &&
-        ((folder as PatternFolder).parentId === null ||
-          typeof (folder as PatternFolder).parentId === "string")
-    );
-    const folderIds = new Set(folders.map((folder) => folder.id));
-    const patternIds = new Set(patterns.map((pattern) => pattern.id));
+    const patterns = parsed.patterns.map(normalizeEntry);
+    const folders = parsed.folders.map(normalizeFolder);
+    if (patterns.some((entry) => entry === null) || folders.some((folder) => folder === null)) {
+      return null;
+    }
+    const normalizedPatterns = patterns as PatternEntry[];
+    const normalizedFolders = folders as PatternFolder[];
+    if (!hasValidFolderHierarchy(normalizedFolders)) return null;
+
+    const patternIds = new Set(normalizedPatterns.map((pattern) => pattern.id));
+    if (patternIds.size !== normalizedPatterns.length) return null;
+    const folderIds = new Set(normalizedFolders.map((folder) => folder.id));
+    if (
+      normalizedPatterns.some(
+        (pattern) => pattern.folderId !== null && !folderIds.has(pattern.folderId)
+      )
+    ) {
+      return null;
+    }
+    if (
+      parsed.selectedPatternId !== null &&
+      (typeof parsed.selectedPatternId !== "string" || !patternIds.has(parsed.selectedPatternId))
+    ) {
+      return null;
+    }
     return {
       version: 1,
-      patterns: patterns.map((entry) => ({
-        ...entry,
-        folderId: entry.folderId && folderIds.has(entry.folderId) ? entry.folderId : null
-      })),
-      folders,
-      selectedPatternId:
-        typeof parsed.selectedPatternId === "string" && patternIds.has(parsed.selectedPatternId)
-          ? parsed.selectedPatternId
-          : patterns[0]?.id ?? null
+      patterns: normalizedPatterns,
+      folders: normalizedFolders,
+      selectedPatternId: parsed.selectedPatternId
     };
   } catch {
     return null;
@@ -141,18 +199,21 @@ function migrateOldAuthoringSnapshot(raw: string | null): PatternRegistrySnapsho
       selectedDocumentId?: string | null;
     };
     if (!Array.isArray(parsed.documents)) return null;
-    const patterns: PatternEntry[] = parsed.documents.flatMap((entry) => {
-      if (!entry.id || !entry.document || !validateAuthoredDocument(entry.document).ok) return [];
-      return [
-        {
-          id: entry.id,
-          name: entry.document.name,
-          description: entry.document.description,
-          folderId: null,
-          source: { kind: "authoring", document: clone(entry.document) }
-        }
-      ];
-    });
+    if (
+      parsed.documents.some(
+        (entry) => !entry.id || !entry.document || !validateAuthoredDocument(entry.document).ok
+      )
+    ) {
+      return null;
+    }
+    const patterns: PatternEntry[] = parsed.documents.map((entry) => ({
+      id: entry.id as string,
+      name: (entry.document as AuthoredSequenceDocument).name,
+      description: (entry.document as AuthoredSequenceDocument).description,
+      folderId: null,
+      source: { kind: "authoring", document: clone(entry.document as AuthoredSequenceDocument) }
+    }));
+    if (new Set(patterns.map((pattern) => pattern.id)).size !== patterns.length) return null;
     return {
       version: 1,
       folders: [],
@@ -223,15 +284,21 @@ export function createPatternRegistry(
   ) => {
     const validation = validatePatternSource(source);
     if (!validation.ok) throw new Error(validation.message);
+    if (
+      metadata.folderId !== undefined &&
+      metadata.folderId !== null &&
+      !folders.value.some((folder) => folder.id === metadata.folderId)
+    ) {
+      throw new Error("Pattern folder does not exist");
+    }
+    const name = metadata.name.trim() || "Untitled Pattern";
+    const description = metadata.description ?? null;
     const entry: PatternEntry = {
       id: createId(),
-      name: metadata.name.trim() || "Untitled Pattern",
-      description: metadata.description ?? null,
-      folderId:
-        metadata.folderId && folders.value.some((folder) => folder.id === metadata.folderId)
-          ? metadata.folderId
-          : null,
-      source: clonePatternSource(source)
+      name,
+      description,
+      folderId: metadata.folderId ?? null,
+      source: synchronizeAuthoringMetadata(source, name, description)
     };
     entries.value = [...entries.value, entry];
     selectedPatternId.value = entry.id;
@@ -241,9 +308,15 @@ export function createPatternRegistry(
 
   const save = (id: string, source: PatternSource) => {
     const validation = validatePatternSource(source);
-    if (!validation.ok || !get(id)) return false;
+    const existing = get(id);
+    if (!validation.ok || !existing || existing.source.kind !== source.kind) return false;
     entries.value = entries.value.map((entry) =>
-      entry.id === id ? { ...entry, source: clonePatternSource(source) } : entry
+      entry.id === id
+        ? {
+            ...entry,
+            source: synchronizeAuthoringMetadata(source, entry.name, entry.description)
+          }
+        : entry
     );
     write();
     return true;
@@ -254,22 +327,29 @@ export function createPatternRegistry(
     metadata: Partial<Pick<PatternEntry, "name" | "description" | "folderId">>
   ) => {
     if (!get(id)) return false;
+    if (metadata.name !== undefined && metadata.name.trim().length === 0) return false;
+    if (
+      metadata.folderId !== undefined &&
+      metadata.folderId !== null &&
+      !folders.value.some((folder) => folder.id === metadata.folderId)
+    ) {
+      return false;
+    }
     entries.value = entries.value.map((entry) =>
       entry.id === id
-        ? {
-            ...entry,
-            ...(metadata.name === undefined
-              ? {}
-              : { name: metadata.name.trim() || entry.name }),
-            ...(metadata.description === undefined
-              ? {}
-              : { description: metadata.description }),
-            ...(metadata.folderId === undefined ||
-            metadata.folderId === null ||
-            folders.value.some((folder) => folder.id === metadata.folderId)
-              ? { folderId: metadata.folderId ?? null }
-              : {})
-          }
+        ? (() => {
+            const name = metadata.name === undefined ? entry.name : metadata.name.trim();
+            const description =
+              metadata.description === undefined ? entry.description : metadata.description;
+            return {
+              ...entry,
+              name,
+              description,
+              folderId:
+                metadata.folderId === undefined ? entry.folderId : metadata.folderId,
+              source: synchronizeAuthoringMetadata(entry.source, name, description)
+            };
+          })()
         : entry
     );
     write();

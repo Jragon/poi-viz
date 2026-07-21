@@ -33,9 +33,11 @@ import Three3DDebugCanvas from "./Three3DDebugCanvas.vue";
 import { buildBodyHumanoidScene } from "./bodyHumanoidScene";
 import { buildThreeDDebugSceneState } from "./worldPoseScene";
 
-const { selectedEntry, sequence: selectedSequence } = useSelectedPatternSequence(
-  threeDDebugSequence
-);
+const {
+  selectedEntry,
+  sequence: selectedSequence,
+  errorMessage: selectedPatternError
+} = useSelectedPatternSequence(threeDDebugSequence);
 const activeSequence = computed(() => selectedSequence.value ?? threeDDebugSequence);
 const workspace = provideVisualizerWorkspace(
   createVisualizerWorkspace(activeSequence, {
@@ -44,6 +46,7 @@ const workspace = provideVisualizerWorkspace(
   })
 );
 const { core } = workspace;
+const playbackError = computed(() => selectedPatternError.value ?? core.errorMessage.value);
 
 const showAxes = ref(true);
 const showGrid = ref(true);
@@ -170,11 +173,11 @@ function updateFirePoiSettings(next: FirePoiSettings) {
     >
       <div class="grid gap-4">
         <div
-          v-if="core.errorMessage.value"
+          v-if="playbackError"
           class="rounded-xl border border-rose-900/60 bg-rose-950/40 p-4 text-sm text-rose-100"
         >
           <p class="text-xs uppercase tracking-[0.2em] text-rose-300">Playback Error</p>
-          <p class="mt-2">{{ core.errorMessage.value }}</p>
+          <p class="mt-2">{{ playbackError }}</p>
         </div>
 
         <Three3DDebugCanvas

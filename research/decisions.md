@@ -228,9 +228,13 @@ supports three incompatible source kinds: authoring documents, stall-graph draft
   loaded source record; Save As creates a new record and selects it globally.
 - Runtime drivers are compiler-created behavior and are never persisted. Beat-graph sources are
   persisted so their runtime callbacks can be recreated by the compiler.
-- Registry entries own displayed names, descriptions, folders, and selection. The existing authoring
-  source still carries its legacy name and description fields for this first migration slice.
-  Folder deletion is rejected while patterns or child folders remain inside.
+- Registry entries own displayed names, descriptions, folders, and selection. Authoring's legacy
+  name and description fields are kept synchronized at registry persistence boundaries so there is
+  one canonical value in practice. Folder deletion is rejected while patterns or child folders
+  remain inside.
+- Stored snapshots are accepted atomically: duplicate identities, broken or cyclic folder links,
+  invalid sources, and dangling selections reject the snapshot instead of silently dropping or
+  relocating records. Save cannot replace a pattern with an incompatible editor source kind.
 - Persistence starts in a single versioned localStorage snapshot. JSON import/export and a bundled
   Git catalogue remain future extensions of the same JSON-compatible shape.
 - Existing authoring localStorage data is migrated once into the registry without retaining a second

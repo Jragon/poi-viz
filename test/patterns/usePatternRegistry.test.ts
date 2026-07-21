@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { AuthoredSequenceDocument } from "@/authoring/types";
+import { createEmptyStallPatternDraft } from "@/lab/experiments/qt-stall-graph/stallPattern";
 import {
   createPatternRegistry,
   type PatternStorageLike
@@ -63,8 +64,40 @@ describe("createPatternRegistry", () => {
     if (working.kind !== "authoring") throw new Error("Fixture kind changed");
     working.document.tracks.left!.segments[0].durationUnits = 9;
 
-    expect(registry.get(entry.id)?.source).toEqual(source());
+    const savedSource = registry.get(entry.id)?.source;
+    expect(savedSource?.kind).toBe("authoring");
+    if (savedSource?.kind !== "authoring") throw new Error("Expected authored source");
+    expect(savedSource.document.name).toBe("Saved");
+    expect(savedSource.document.tracks.left?.segments[0].durationUnits).toBe(1);
     expect(JSON.parse(storage.getItem("patterns") ?? "{}").patterns[0].name).toBe("Saved");
+  });
+
+  it("keeps authoring metadata canonical and refuses cross-editor overwrites", () => {
+    const registry = createPatternRegistry({
+      storage: new MemoryStorage(),
+      storageKey: "patterns",
+      seedPatterns: [],
+      createId: () => "pattern-1"
+    });
+    const entry = registry.saveAs(source(), { name: "Saved", description: "First" });
+
+    expect(registry.updateMetadata(entry.id, { name: "Renamed", description: "Second" })).toBe(
+      true
+    );
+    const renamed = registry.get(entry.id);
+    expect(renamed?.name).toBe("Renamed");
+    expect(renamed?.source.kind === "authoring" && renamed.source.document.name).toBe("Renamed");
+    expect(
+      renamed?.source.kind === "authoring" && renamed.source.document.description
+    ).toBe("Second");
+
+    expect(
+      registry.save(entry.id, {
+        kind: "stall-graph",
+        draft: createEmptyStallPatternDraft()
+      })
+    ).toBe(false);
+    expect(registry.get(entry.id)?.source.kind).toBe("authoring");
   });
 
   it("supports folders and refuses to delete non-empty folders", () => {
@@ -106,5 +139,43 @@ describe("createPatternRegistry", () => {
     expect(registry.selectedPattern.value?.source.kind).toBe("authoring");
     expect(storage.getItem("patterns")).not.toBeNull();
     expect(storage.getItem("poi-v2:authoring-library")).not.toBeNull();
+  });
+
+  it("rejects malformed snapshots as a whole instead of silently repairing them", () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      "patterns",
+      JSON.stringify({
+        version: 1,
+        folders: [{ id: "folder", name: "Folder", parentId: "missing" }],
+        patterns: [
+          {
+            id: "stored",
+            name: "Stored",
+            description: null,
+            folderId: "folder",
+            source: source()
+          }
+        ],
+        selectedPatternId: "stored"
+      })
+    );
+    const seed = {
+      id: "seed",
+      name: "Seed",
+      description: null,
+      folderId: null,
+      source: source()
+    };
+
+    const registry = createPatternRegistry({
+      storage,
+      storageKey: "patterns",
+      seedPatterns: [seed]
+    });
+
+    expect(registry.entries.value.map((entry) => entry.id)).toEqual(["seed"]);
+    expect(registry.folders.value).toEqual([]);
+    expect(registry.selectedPatternId.value).toBe("seed");
   });
 });
