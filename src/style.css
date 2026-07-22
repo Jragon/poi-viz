@@ -1,17 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --ui-page: #20242a;
-  --ui-surface: #2a3038;
-  --ui-surface-raised: #353c46;
-  --ui-input: #171b20;
+  --ui-page: #101827;
+  --ui-surface: #18243a;
+  --ui-surface-raised: #22314d;
+  --ui-input: #0b1220;
   --ui-stage: #020617;
-  --ui-text: #f5f5f5;
-  --ui-text-secondary: #d7d9dc;
-  --ui-text-muted: #b4b8be;
-  --ui-border-subtle: #434a54;
-  --ui-border: #5f6874;
-  --ui-border-strong: #949da8;
+  --ui-text: #f8fafc;
+  --ui-text-secondary: #dbe4f0;
+  --ui-text-muted: #b8c4d6;
+  --ui-border-subtle: #33445f;
+  --ui-border: #506787;
+  --ui-border-strong: #8da3bd;
   --ui-focus: #7dd3fc;
   --ui-selected: #0c4a6e;
   --ui-selected-text: #f0f9ff;
@@ -73,9 +73,9 @@ body {
 
 @media (prefers-contrast: more) {
   :root {
-    --ui-text-muted: #d7d9dc;
-    --ui-border-subtle: #5f6874;
-    --ui-border: #949da8;
+    --ui-text-muted: #dbe4f0;
+    --ui-border-subtle: #506787;
+    --ui-border: #8da3bd;
   }
 
   :is(
@@ -177,7 +177,7 @@ body,
 }
 
 .lab-figure__caption {
-  color: var(--color-slate-400);
+  color: var(--ui-text-muted);
   font-size: var(--text-sm);
   line-height: 1.6;
 }
@@ -255,7 +255,8 @@ body,
 
 .lab-prose > div > p,
 .lab-prose > div > ul li {
-  color: var(--color-slate-300);
+  color: var(--ui-text-secondary);
+  font-size: var(--text-base);
   line-height: 1.75;
 }
 
@@ -282,7 +283,7 @@ body,
 }
 
 .lab-prose > div > h1 + p {
-  color: var(--color-slate-300);
+  color: var(--ui-text-secondary);
   font-size: var(--text-lg);
   line-height: 1.7;
   margin-top: calc(var(--spacing) * -3);

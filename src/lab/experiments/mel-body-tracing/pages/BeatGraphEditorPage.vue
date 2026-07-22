@@ -286,7 +286,7 @@ onBeforeRouteLeave(() => {
               "
             />
           </div>
-          <p class="mt-2 text-sm leading-6 text-slate-400">
+          <p class="mt-2 text-sm leading-6 text-ui-text-secondary">
             Play around with the beat graphs from Mel's
             <a
               href="https://antispinner.gitbook.io/btf"
@@ -439,13 +439,13 @@ onBeforeRouteLeave(() => {
             >
               <div>
                 <dt class="uppercase tracking-[0.18em] text-ui-text-muted">Time</dt>
-                <dd class="font-mono text-slate-300">
+                <dd class="font-mono text-ui-text-secondary">
                   {{ currentTimeLabel }} / {{ durationLabel }}
                 </dd>
               </div>
               <div>
                 <dt class="uppercase tracking-[0.18em] text-ui-text-muted">Planes</dt>
-                <dd class="font-mono text-slate-300">{{ activePlanesLabel }}</dd>
+                <dd class="font-mono text-ui-text-secondary">{{ activePlanesLabel }}</dd>
               </div>
             </dl>
           </header>
@@ -464,7 +464,7 @@ onBeforeRouteLeave(() => {
           />
 
           <div
-            class="grid gap-4 border-t border-ui-border-subtle px-4 py-3 text-sm text-slate-300 md:grid-cols-[auto_minmax(10rem,1fr)_auto] md:items-center"
+            class="grid gap-4 border-t border-ui-border-subtle px-4 py-3 text-sm text-ui-text-secondary md:grid-cols-[auto_minmax(10rem,1fr)_auto] md:items-center"
           >
             <button
               type="button"
@@ -504,7 +504,7 @@ onBeforeRouteLeave(() => {
                   :class="
                     transport.speed.value === speed
                       ? 'bg-sky-400 text-slate-950 hover:bg-sky-300 hover:text-slate-950'
-                      : 'bg-slate-950 text-slate-200'
+                      : 'bg-ui-input text-ui-text-secondary'
                   "
                   @click="setSpeed(speed)"
                 >

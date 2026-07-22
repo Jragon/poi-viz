@@ -109,16 +109,18 @@ function displayStep(step: number): number {
 </script>
 
 <template>
-  <section class="rounded-lg border border-ui-border-subtle bg-slate-900/60 text-sm text-slate-300">
+  <section
+    class="rounded-lg border border-ui-border-subtle bg-ui-surface text-sm text-ui-text-secondary"
+  >
     <div class="border-b border-ui-border-subtle px-4 py-3">
       <p class="text-xs uppercase tracking-[0.16em] text-ui-text-muted">Debug</p>
-      <h2 class="mt-1 text-sm font-semibold text-slate-200">Playback graph state</h2>
+      <h2 class="mt-1 text-sm font-semibold text-ui-text">Playback graph state</h2>
     </div>
 
     <div class="grid gap-4 px-4 py-4">
       <div class="overflow-x-auto rounded-md border border-ui-border-subtle">
-        <table class="min-w-full divide-y divide-slate-800 text-left text-xs">
-          <thead class="bg-slate-950/80 text-ui-text-muted">
+        <table class="min-w-full divide-y divide-ui-border-subtle text-left text-xs">
+          <thead class="bg-ui-stage text-ui-text-muted">
             <tr>
               <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">Current</th>
               <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">Duration</th>
@@ -127,7 +129,7 @@ function displayStep(step: number): number {
               <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">Tracks</th>
             </tr>
           </thead>
-          <tbody class="bg-slate-950/60 font-mono text-slate-300">
+          <tbody class="bg-ui-input font-mono text-ui-text-secondary">
             <tr>
               <td class="whitespace-nowrap px-3 py-2">{{ currentTimeLabel }}</td>
               <td class="whitespace-nowrap px-3 py-2">{{ durationLabel }}</td>
@@ -151,8 +153,8 @@ function displayStep(step: number): number {
           v-if="sequenceRows.length > 0"
           class="overflow-x-auto rounded-md border border-ui-border-subtle"
         >
-          <table class="min-w-full divide-y divide-slate-800 text-left text-xs">
-            <thead class="bg-slate-950/80 text-ui-text-muted">
+          <table class="min-w-full divide-y divide-ui-border-subtle text-left text-xs">
+            <thead class="bg-ui-stage text-ui-text-muted">
               <tr>
                 <th class="w-14 px-3 py-2 font-semibold uppercase tracking-[0.14em]" rowspan="2">
                   Step
@@ -183,33 +185,37 @@ function displayStep(step: number): number {
                 </template>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-900 bg-slate-950/60 font-mono text-slate-300">
+            <tbody
+              class="divide-y divide-ui-border-subtle bg-ui-input font-mono text-ui-text-secondary"
+            >
               <tr
                 v-for="row in sequenceRows"
                 :key="row.key"
-                :class="row.isActive ? 'bg-amber-400/10 text-amber-100' : ''"
+                :class="row.isActive ? 'bg-ui-selected/60 text-ui-selected-text' : ''"
                 :data-active-debug-row="row.isActive ? 'true' : undefined"
               >
                 <td class="whitespace-nowrap px-3 py-2 font-semibold">
                   {{ displayStep(row.step) }}
                 </td>
-                <td class="whitespace-nowrap px-3 py-2 text-slate-400">
+                <td class="whitespace-nowrap px-3 py-2 text-ui-text-muted">
                   {{ formatTime(row.time) }}
                 </td>
                 <template v-for="cell in row.cells" :key="cell.track.id">
-                  <td class="whitespace-nowrap border-l border-slate-900 px-3 py-2 text-slate-200">
+                  <td
+                    class="whitespace-nowrap border-l border-ui-border-subtle px-3 py-2 text-ui-text"
+                  >
                     {{ cell.laneLabel ?? "-" }}
                   </td>
-                  <td class="whitespace-nowrap px-3 py-2 text-slate-400">
+                  <td class="whitespace-nowrap px-3 py-2 text-ui-text-muted">
                     {{ cell.rowState?.phaseLabel ?? "-" }}
                   </td>
-                  <td class="whitespace-nowrap px-3 py-2 text-slate-400">
+                  <td class="whitespace-nowrap px-3 py-2 text-ui-text-muted">
                     {{ cell.rowState?.planeSide ?? "-" }}
                   </td>
-                  <td class="whitespace-nowrap px-3 py-2 text-slate-400">
+                  <td class="whitespace-nowrap px-3 py-2 text-ui-text-muted">
                     {{ cell.rowState ? (cell.rowState.isBTB ? "yes" : "no") : "-" }}
                   </td>
-                  <td class="whitespace-nowrap px-3 py-2 text-slate-400">
+                  <td class="whitespace-nowrap px-3 py-2 text-ui-text-muted">
                     {{ intervalLabel(cell) }}
                   </td>
                 </template>
@@ -220,7 +226,7 @@ function displayStep(step: number): number {
 
         <p
           v-else
-          class="rounded-md border border-ui-border-subtle bg-slate-950/60 px-3 py-2 text-xs text-ui-text-muted"
+          class="rounded-md border border-ui-border-subtle bg-ui-input px-3 py-2 text-xs text-ui-text-muted"
         >
           No sequence rows.
         </p>

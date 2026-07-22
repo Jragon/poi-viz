@@ -133,7 +133,7 @@ function tabButtonClass(tab: BodyTracingExplorerTab): string {
         <header class="order-1">
           <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Mel body tracing</p>
           <h1 class="mt-2 text-2xl font-semibold text-slate-50">Body Tracing Explorer</h1>
-          <p class="mt-2 text-sm leading-6 text-slate-400">
+          <p class="mt-2 text-sm leading-6 text-ui-text-secondary">
             Play with reels, wraps, and cosmos from Mel's
             <a
               href="https://antispinner.gitbook.io/btf"
@@ -217,18 +217,18 @@ function tabButtonClass(tab: BodyTracingExplorerTab): string {
       </div>
 
       <div class="grid content-start gap-6">
-        <section class="overflow-hidden rounded-lg border border-ui-border-subtle bg-slate-950/80">
+        <section class="overflow-hidden rounded-lg border border-ui-border-subtle bg-ui-stage">
           <header class="flex justify-end border-b border-ui-border-subtle px-4 py-3">
-            <dl class="grid grid-cols-2 gap-x-5 gap-y-1 text-xs text-slate-400 md:text-right">
+            <dl class="grid grid-cols-2 gap-x-5 gap-y-1 text-xs text-ui-text-muted md:text-right">
               <div>
                 <dt class="uppercase tracking-[0.18em] text-ui-text-muted">Time</dt>
-                <dd class="font-mono text-slate-300">
+                <dd class="font-mono text-ui-text-secondary">
                   {{ currentTimeLabel }} / {{ durationLabel }}
                 </dd>
               </div>
               <div>
                 <dt class="uppercase tracking-[0.18em] text-ui-text-muted">Planes</dt>
-                <dd class="font-mono text-slate-300">{{ activePlanesLabel }}</dd>
+                <dd class="font-mono text-ui-text-secondary">{{ activePlanesLabel }}</dd>
               </div>
             </dl>
           </header>
@@ -247,7 +247,7 @@ function tabButtonClass(tab: BodyTracingExplorerTab): string {
           />
 
           <div
-            class="grid gap-4 border-t border-ui-border-subtle px-4 py-3 text-sm text-slate-300 md:grid-cols-[auto_minmax(10rem,1fr)_auto] md:items-center"
+            class="grid gap-4 border-t border-ui-border-subtle px-4 py-3 text-sm text-ui-text-secondary md:grid-cols-[auto_minmax(10rem,1fr)_auto] md:items-center"
           >
             <button
               type="button"
@@ -287,7 +287,7 @@ function tabButtonClass(tab: BodyTracingExplorerTab): string {
                   :class="
                     transport.speed.value === speed
                       ? 'bg-sky-400 text-slate-950 hover:bg-sky-300 hover:text-slate-950'
-                      : 'bg-slate-950 text-slate-200'
+                      : 'bg-ui-input text-ui-text-secondary'
                   "
                   @click="setSpeed(speed)"
                 >

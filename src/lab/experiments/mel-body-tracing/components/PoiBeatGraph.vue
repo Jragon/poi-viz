@@ -328,7 +328,7 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
         role="img"
         aria-label="Poi beat graph with vertical time rows and symmetric lanes"
         :viewBox="`0 0 ${svgWidth} ${svgHeight}`"
-        class="block w-full text-slate-400"
+        class="block w-full text-ui-text-muted"
       >
         <g aria-hidden="true">
           <line
@@ -465,7 +465,7 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
       </button>
     </div>
 
-    <div class="grid grid-cols-2 border-t border-ui-border-subtle text-xs text-slate-400">
+    <div class="grid grid-cols-2 border-t border-ui-border-subtle text-xs text-ui-text-muted">
       <div class="border-r border-ui-border-subtle px-3 py-2">
         <span class="font-mono text-sky-300">dotted</span> BTB interval
       </div>

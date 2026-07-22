@@ -28,20 +28,22 @@ function setOppositeFlow(flow: "inwards" | "outwards"): void {
 }
 
 function directionModeButtonClass(mode: ReelDirection["mode"]): string {
-  if (props.direction.mode === mode) return "border-slate-200 bg-slate-100 text-slate-950";
+  if (props.direction.mode === mode) {
+    return "border-sky-300 bg-ui-selected text-ui-selected-text";
+  }
   return "border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised";
 }
 
 function sameDirectionButtonClass(direction: PoiBeatDirection): string {
   if (props.direction.mode === "same" && props.direction.direction === direction) {
-    return "border-slate-200 bg-slate-100 text-slate-950";
+    return "border-sky-300 bg-ui-selected text-ui-selected-text";
   }
   return "border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised";
 }
 
 function oppositeFlowButtonClass(flow: "inwards" | "outwards"): string {
   if (props.direction.mode === "opposite" && props.direction.flow === flow) {
-    return "border-slate-200 bg-slate-100 text-slate-950";
+    return "border-sky-300 bg-ui-selected text-ui-selected-text";
   }
   return "border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised";
 }
