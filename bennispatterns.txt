@@ -23,7 +23,7 @@ not super possible:
 http://localhost:5173/lab/beat-graph?s=8&lt=cw-down-5d3b1d3d4d4d3d5d&rt=ccw-up-1d1d3b5d3d2d2d3d
 http://localhost:5173/lab/beat-graph?s=8&lt=cw-down-5d3b1d3d4d4d3d5d&rt=ccw-up-3b5d3d2d2d3d1d1d
 
-benni's pattern 
+benni's pattern
 http://localhost:5173/lab/beat-graph?s=8&lt=cw-down-5d3b1d3d4d4d3d5d&rt=ccw-up-2d3d1d1d3b5d3d2d
 http://localhost:5173/lab/beat-graph?s=8&lt=cw-down-5d3b1d3d4d4d3d5d&rt=ccw-up-3d2d2d3d1d1d3b5d
 
@@ -46,3 +46,10 @@ antispin: s=8&lt=ccw-down-1d3b5d3d3d4d4d3d&rt=cw-down-5d3b1d3d3d2d2d3d
 inwards:
 inspin: s=8&lt=cw-down-1d3b5d3d4d4d3d1d&rt=ccw-down-5d3b1d3d2d2d3d5d
 antispin: s=8&lt=cw-down-5d3b1d3d4d4d3d5d&rt=ccw-down-1d3b5d3d2d2d3d1d
+
+?s=8&lt=ccw-up-2d3d1d1d3b5d3d2d&rt=cw-down-5d3b1d3d4d4d3d5d outwards native weave anti spin
+
+currently learning this in outwards: https://jragon.github.io/poi-viz/lab/beat-graph?s=8&lt=ccw-up-4d4d3d1d3b5d3d3d&rt=cw-down-5d3b1d3d3d2d2d3d
+
+
+https://jragon.github.io/poi-viz/lab/beat-graph?s=8&lt=cw-down-5d3b1d3d4d4d3d5d&rt=cw-down-5d3b1d3d3d2d2d3d
