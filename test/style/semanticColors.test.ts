@@ -26,7 +26,7 @@ function contrastRatio(foreground: string, background: string): number {
 }
 
 describe("semantic UI colors", () => {
-  const backgrounds = ["ui-page", "ui-surface", "ui-surface-raised", "ui-input"];
+  const backgrounds = ["ui-page", "ui-surface", "ui-surface-raised", "ui-input", "ui-stage"];
 
   it("keeps all text roles at normal-text AA against application surfaces", () => {
     for (const foreground of ["ui-text", "ui-text-secondary", "ui-text-muted"]) {
@@ -37,7 +37,13 @@ describe("semantic UI colors", () => {
   });
 
   it("keeps focus indicators and essential control borders visible", () => {
-    for (const background of ["ui-page", "ui-surface", "ui-surface-raised", "ui-input"]) {
+    for (const background of [
+      "ui-page",
+      "ui-surface",
+      "ui-surface-raised",
+      "ui-input",
+      "ui-stage"
+    ]) {
       expect(contrastRatio(token("ui-focus"), token(background))).toBeGreaterThanOrEqual(3);
       expect(contrastRatio(token("ui-border-strong"), token(background))).toBeGreaterThanOrEqual(3);
     }

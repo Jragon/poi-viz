@@ -93,7 +93,7 @@ function setSpeed(value: number) {
 
 <template>
   <section
-    class="overflow-hidden rounded-lg border border-ui-border-subtle bg-slate-950/80"
+    class="overflow-hidden rounded-lg border border-ui-border-subtle bg-ui-stage"
     :aria-label="isCompact ? props.title : undefined"
   >
     <header

@@ -609,7 +609,7 @@ onBeforeUnmount(() => {
 <template>
   <div
     ref="mountRef"
-    class="relative min-h-112 overflow-hidden rounded-xl border border-ui-border-subtle bg-slate-950"
+    class="relative min-h-112 overflow-hidden rounded-xl border border-ui-border-subtle bg-ui-stage"
   >
     <div
       v-if="rendererError"

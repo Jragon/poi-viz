@@ -323,7 +323,7 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
       </h2>
     </div>
 
-    <div class="px-3 py-3">
+    <div class="bg-ui-stage px-3 py-3">
       <svg
         role="img"
         aria-label="Poi beat graph with vertical time rows and symmetric lanes"

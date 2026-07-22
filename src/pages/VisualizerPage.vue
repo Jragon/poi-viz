@@ -184,7 +184,7 @@ async function toggleWebcam() {
 
         <div
           ref="fullscreenTargetRef"
-          :class="['grid gap-4', isFullscreen ? 'bg-slate-950 p-4 md:p-6' : '']"
+          :class="['grid gap-4', isFullscreen ? 'bg-ui-stage p-4 md:p-6' : '']"
         >
           <VisualizerControls
             :active-preset-id="activePresetId"

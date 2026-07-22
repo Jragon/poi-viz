@@ -157,7 +157,7 @@ function updateFirePoiSettings(next: FirePoiSettings) {
 
 <template>
   <main class="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-6 py-8">
-    <section class="rounded-2xl border border-ui-border-subtle bg-slate-950/70 p-5">
+    <section class="rounded-2xl border border-ui-border-subtle bg-ui-surface p-5">
       <p class="text-xs uppercase tracking-[0.24em] text-ui-text-muted">Lab Experiment</p>
       <h1 class="mt-2 text-3xl font-semibold text-slate-100">Three.js Debug World Renderer</h1>
       <p class="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
@@ -169,7 +169,7 @@ function updateFirePoiSettings(next: FirePoiSettings) {
     <PatternRegistryControls :current-name="selectedEntry?.name ?? '3D demo pattern'" />
 
     <section
-      class="grid gap-4 rounded-2xl border border-ui-border-subtle bg-slate-950/70 p-5 lg:grid-cols-[minmax(0,1fr)_20rem]"
+      class="grid gap-4 rounded-2xl border border-ui-border-subtle bg-ui-surface p-5 lg:grid-cols-[minmax(0,1fr)_20rem]"
     >
       <div class="grid gap-4">
         <div
@@ -200,11 +200,11 @@ function updateFirePoiSettings(next: FirePoiSettings) {
       </div>
 
       <aside
-        class="grid gap-4 rounded-xl border border-ui-border-subtle bg-slate-900/65 p-4 text-sm text-slate-300"
+        class="grid gap-4 rounded-xl border border-ui-border-subtle bg-ui-surface-raised p-4 text-sm text-ui-text-secondary"
       >
         <TransportControls />
 
-        <div class="grid gap-3 rounded-xl border border-ui-border-subtle bg-slate-950/50 p-3">
+        <div class="grid gap-3 rounded-xl border border-ui-border-subtle bg-ui-surface p-3">
           <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Motion Inspection</p>
           <button
             type="button"
@@ -230,7 +230,7 @@ function updateFirePoiSettings(next: FirePoiSettings) {
           </label>
         </div>
 
-        <div class="grid gap-2 rounded-xl border border-ui-border-subtle bg-slate-950/50 p-3">
+        <div class="grid gap-2 rounded-xl border border-ui-border-subtle bg-ui-surface p-3">
           <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Scene State</p>
           <p>
             <span class="text-ui-text-muted">Active planes:</span>

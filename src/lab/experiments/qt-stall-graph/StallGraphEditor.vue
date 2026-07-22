@@ -250,7 +250,7 @@ onBeforeRouteLeave(() => {
             aria-label="Editable horizontal quarter-time stall pattern"
             @place-node="placeNode"
           />
-          <div v-else class="max-h-[38rem] overflow-auto rounded-md bg-slate-950">
+          <div v-else class="max-h-[38rem] overflow-auto rounded-md bg-ui-stage">
             <StallPatternGraph
               :draft="draft"
               orientation="vertical"

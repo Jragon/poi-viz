@@ -262,7 +262,7 @@ onBeforeRouteLeave(() => {
 </script>
 
 <template>
-  <main class="min-h-screen bg-slate-950 px-5 py-8 text-slate-100 md:px-8 md:py-10">
+  <main class="min-h-screen bg-transparent px-5 py-8 text-ui-text md:px-8 md:py-10">
     <section class="mx-auto grid max-w-7xl gap-5 lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)]">
       <div class="grid content-start gap-4">
         <header class="order-1">

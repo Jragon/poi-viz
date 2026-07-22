@@ -35,9 +35,7 @@ watch(
 </script>
 
 <template>
-  <div
-    class="min-h-screen bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.10),transparent_35%),linear-gradient(180deg,rgba(15,23,42,1),rgba(2,6,23,1))] text-ui-text"
-  >
+  <div class="app-shell min-h-screen text-ui-text">
     <nav
       aria-label="Primary navigation"
       class="relative z-50 border-b border-ui-border bg-ui-page/95 shadow-lg shadow-slate-950/20 backdrop-blur"

@@ -51,10 +51,10 @@ function labelTop(index: number): string {
 </script>
 
 <template>
-  <div class="relative isolate min-w-0 max-w-full overflow-hidden rounded-md bg-slate-950">
+  <div class="relative isolate min-w-0 max-w-full overflow-hidden rounded-md bg-ui-stage">
     <div
       aria-hidden="true"
-      class="pointer-events-none absolute inset-y-0 left-0 z-10 border-r border-ui-border-subtle/80 bg-slate-950/95 shadow-[10px_0_16px_rgba(2,6,23,0.88)]"
+      class="pointer-events-none absolute inset-y-0 left-0 z-10 border-r border-ui-border-subtle/80 bg-ui-stage/95 shadow-[10px_0_16px_rgba(2,6,23,0.88)]"
       :style="{
         width: `${labelPanelWidth}px`,
         height: `${geometry.height}px`

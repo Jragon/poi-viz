@@ -23,7 +23,7 @@ const presets = [
 </script>
 
 <template>
-  <main class="min-h-screen bg-slate-950 px-5 py-8 text-slate-100 md:px-8 md:py-10">
+  <main class="min-h-screen bg-transparent px-5 py-8 text-ui-text md:px-8 md:py-10">
     <section class="mx-auto grid min-w-0 max-w-7xl gap-6">
       <header class="min-w-0 max-w-3xl">
         <p class="text-xs uppercase tracking-[0.2em] text-cyan-400">Quarter-time stall graph</p>

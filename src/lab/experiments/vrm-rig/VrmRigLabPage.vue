@@ -197,7 +197,7 @@ function resetView() {
 
 <template>
   <main class="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-6 py-8">
-    <section class="rounded-2xl border border-ui-border-subtle bg-slate-950/70 p-5">
+    <section class="rounded-2xl border border-ui-border-subtle bg-ui-surface p-5">
       <p class="text-xs uppercase tracking-[0.24em] text-ui-text-muted">Lab Experiment</p>
       <h1 class="mt-2 text-3xl font-semibold text-slate-100">VRM Standing Rig</h1>
       <p class="mt-3 max-w-4xl text-sm leading-6 text-slate-400">
@@ -210,7 +210,7 @@ function resetView() {
     <PatternRegistryControls :current-name="selectedEntry?.name ?? '3D demo pattern'" />
 
     <section
-      class="grid gap-4 rounded-2xl border border-ui-border-subtle bg-slate-950/70 p-5 xl:grid-cols-[minmax(0,1fr)_21rem]"
+      class="grid gap-4 rounded-2xl border border-ui-border-subtle bg-ui-surface p-5 xl:grid-cols-[minmax(0,1fr)_21rem]"
     >
       <div class="grid gap-4">
         <div
@@ -242,7 +242,7 @@ function resetView() {
       </div>
 
       <aside class="grid content-start gap-4 text-sm text-slate-300">
-        <div class="rounded-xl border border-ui-border-subtle bg-slate-900/65 p-4">
+        <div class="rounded-xl border border-ui-border-subtle bg-ui-surface-raised p-4">
           <TransportControls v-if="poseSource === 'live'" />
           <div v-else class="grid gap-2 text-sm text-slate-300">
             <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Fixed pose case</p>
@@ -251,7 +251,7 @@ function resetView() {
           </div>
         </div>
 
-        <div class="grid gap-3 rounded-xl border border-ui-border-subtle bg-slate-900/65 p-4">
+        <div class="grid gap-3 rounded-xl border border-ui-border-subtle bg-ui-surface-raised p-4">
           <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Rig Inspection</p>
 
           <label class="grid gap-1 text-slate-400">
@@ -310,7 +310,7 @@ function resetView() {
           </button>
         </div>
 
-        <div class="grid gap-2 rounded-xl border border-ui-border-subtle bg-slate-900/65 p-4">
+        <div class="grid gap-2 rounded-xl border border-ui-border-subtle bg-ui-surface-raised p-4">
           <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Live Diagnostics</p>
           <p>{{ solverSummary }}</p>
           <p class="flex justify-between gap-3 text-slate-400">
@@ -396,7 +396,7 @@ function resetView() {
         </div>
 
         <div
-          class="grid gap-2 rounded-xl border border-ui-border-subtle bg-slate-900/65 p-4 text-xs leading-5 text-slate-400"
+          class="grid gap-2 rounded-xl border border-ui-border-subtle bg-ui-surface-raised p-4 text-xs leading-5 text-ui-text-muted"
         >
           <p class="font-medium text-slate-200">{{ VRM_RIG_MODEL_NAME }}</p>
           <p>{{ VRM_RIG_MODEL_AUTHOR }} · {{ VRM_RIG_MODEL_FORMAT }} · CC0</p>

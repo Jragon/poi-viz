@@ -311,7 +311,7 @@ onBeforeUnmount(() => {
     @pointercancel="onProjectionPointerEnd"
     @lostpointercapture="onProjectionLostPointerCapture"
     :class="[
-      'relative overflow-hidden bg-slate-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]',
+      'relative overflow-hidden bg-ui-stage shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]',
       props.isFullscreen
         ? 'min-h-[calc(100vh-12rem)] rounded-none border-0'
         : 'min-h-112 rounded-2xl border border-ui-border-subtle',
