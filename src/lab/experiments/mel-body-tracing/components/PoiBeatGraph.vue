@@ -281,7 +281,11 @@ function connectorClass(connector: ConnectorView): string {
 }
 
 function isCenterSideSwitch(connector: ConnectorView): boolean {
-  return connector.interval.kind === "center-side-switch";
+  return (
+    connector.interval.fromRow.laneId === "center" &&
+    connector.interval.toRow.laneId === "center" &&
+    connector.interval.fromSide !== connector.interval.toSide
+  );
 }
 
 function connectorStrokeDasharray(connector: ConnectorView): string | undefined {

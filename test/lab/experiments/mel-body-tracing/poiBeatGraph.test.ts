@@ -375,7 +375,7 @@ describe("PoiBeatGraph lower-wrap seed", () => {
       [4, 5],
       [5, 0]
     ]);
-    expect(intervals.map((interval) => interval.kind)).toEqual([
+    expect(intervals.map((interval) => interval.laneMotion)).toEqual([
       "same-lane",
       "lane-switch",
       "lane-switch",
@@ -383,7 +383,14 @@ describe("PoiBeatGraph lower-wrap seed", () => {
       "lane-switch",
       "lane-switch"
     ]);
-    expect(intervals.map((interval) => interval.planeSide)).toEqual(["b", "a", "b", "b", "a", "b"]);
+    expect(intervals.map((interval) => [interval.fromSide, interval.toSide])).toEqual([
+      ["b", "b"],
+      ["b", "a"],
+      ["a", "b"],
+      ["b", "b"],
+      ["b", "a"],
+      ["a", "b"]
+    ]);
   });
 
   it("moves one row's active lane without mutating the original graph", () => {
@@ -566,7 +573,7 @@ describe("PoiBeatGraph low common cosmo seed", () => {
     ]);
   });
 
-  it("derives center-side-switch intervals and local BTB flags", () => {
+  it("derives independent lane and plane-side motion with local BTB flags", () => {
     const right = getTrack(createLowCommonCosmoBeatGraph(), "right");
     const states = deriveRowStates(right);
     const intervals = deriveLoopIntervals(right, HALF_BEAT_DURATION);
@@ -601,25 +608,25 @@ describe("PoiBeatGraph low common cosmo seed", () => {
       true,
       false
     ]);
-    expect(intervals.map((interval) => interval.kind)).toEqual([
+    expect(intervals.map((interval) => interval.laneMotion)).toEqual([
       "same-lane",
       "lane-switch",
-      "center-side-switch",
+      "same-lane",
       "lane-switch",
       "same-lane",
       "lane-switch",
-      "center-side-switch",
+      "same-lane",
       "lane-switch"
     ]);
-    expect(intervals.map((interval) => interval.planeSide)).toEqual([
-      "b",
-      "a",
-      "b",
-      "a",
-      "a",
-      "b",
-      "a",
-      "b"
+    expect(intervals.map((interval) => [interval.fromSide, interval.toSide])).toEqual([
+      ["b", "b"],
+      ["b", "a"],
+      ["a", "b"],
+      ["b", "a"],
+      ["a", "a"],
+      ["a", "b"],
+      ["b", "a"],
+      ["a", "b"]
     ]);
   });
 });
@@ -1112,10 +1119,10 @@ describe("compilePoiBeatGraph", () => {
       "left-high:b",
       "left-high:b"
     ]);
-    expect([7, 0, 1, 2].map((index) => leftIntervals[index]?.kind)).toEqual([
+    expect([7, 0, 1, 2].map((index) => leftIntervals[index]?.laneMotion)).toEqual([
       "lane-switch",
       "same-lane",
-      "center-side-switch",
+      "same-lane",
       "lane-switch"
     ]);
     expect(result.diagnostics).toEqual([]);

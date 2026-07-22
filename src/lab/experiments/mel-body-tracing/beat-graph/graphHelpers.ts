@@ -94,20 +94,16 @@ export function deriveLoopIntervals(
     const toRow = rows[(index + 1) % rows.length];
     const fromSide = deriveRowSide(fromRow);
     const toSide = deriveRowSide(toRow);
-    const kind =
-      fromRow.laneId === "center" && toRow.laneId === "center" && fromSide !== toSide
-        ? "center-side-switch"
-        : fromRow.laneId === toRow.laneId
-          ? "same-lane"
-          : "lane-switch";
+    const laneMotion = fromRow.laneId === toRow.laneId ? "same-lane" : "lane-switch";
 
     return {
       index,
       trackId: track.id,
       fromRow,
       toRow,
-      kind,
-      planeSide: toSide,
+      laneMotion,
+      fromSide,
+      toSide,
       durationUnits: halfBeatDuration
     };
   });

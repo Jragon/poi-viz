@@ -252,3 +252,22 @@ The registry is a small application-wide utility rather than a full-screen brows
   filter because all source kinds are displayable there. Search, keyboard navigation, and
   drag-and-drop remain out of scope.
 - App-level controls are compressed to a pattern-name opener, explicit Save, and Save As actions.
+
+## 2026-07-22: Beat-Graph Crosspoints Are Derived Interval Semantics
+
+Beat-graph rows remain the authored source of truth. A plane-side crosspoint is derived by the
+beat-graph compiler when adjacent resolved row sides differ; it is not an authored row, an engine
+fixup, or visualizer geometry.
+
+- Lane motion and plane-side motion are independent interval properties.
+- Every A/B transition crosses at exactly 50 percent of its interval.
+- A crosspoint at `x = 0` is illegal. A left/right crosspoint is legal only when the poi points
+  outward on that body side.
+- The compiler emits a resolved analysis plan and separate physical-legality diagnostics. It does
+  not silently repair illegal graphs, and structural compilation diagnostics remain distinct.
+- High, mid, and low are compiler-derived crosspoint levels. A direct high-to-low or low-to-high
+  side transition crosses at mid.
+- Plane A/B widths and continuous display depth remain visualizer properties. They do not enter the
+  beat graph or its legality rules.
+- Wrap legality is validated as single-hand behavior for left/right hands and inward/outward flow;
+  two-hand combinations and cycle rotations are not separate oracle cases.

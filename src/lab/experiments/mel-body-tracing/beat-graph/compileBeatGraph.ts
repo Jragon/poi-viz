@@ -4,6 +4,7 @@ import type {
   MultiRigSequence,
   RelativeNodePose,
   Segment,
+  TimeUnit,
   Vec2
 } from "@/engine/types";
 import {
@@ -16,9 +17,16 @@ import {
 } from "@/lab/experiments/mel-body-tracing/beat-graph/graphHelpers";
 import type {
   PoiBeatCompilerOptions,
+  PoiBeatCrosspointLevel,
+  PoiBeatCrosspointViolation,
   PoiBeatGraph,
+  PoiBeatHorizontalDirection,
   PoiBeatInterval,
   PoiBeatLaneId,
+  PoiBeatResolvedCrosspoint,
+  PoiBeatResolvedInterval,
+  PoiBeatResolvedPlan,
+  PoiBeatResolvedTrack,
   PoiBeatRow,
   PoiBeatTrack
 } from "@/lab/experiments/mel-body-tracing/beat-graph/types";
@@ -40,9 +48,20 @@ export interface PoiBeatCompileDiagnostic {
   readonly laneId?: PoiBeatLaneId;
 }
 
+export interface PoiBeatCrosspointDiagnostic {
+  readonly code: PoiBeatCrosspointViolation;
+  readonly trackId: string;
+  readonly intervalIndex: number;
+  readonly step: number;
+  readonly laneId: PoiBeatLaneId;
+  readonly crosspoint: PoiBeatResolvedCrosspoint;
+}
+
 export interface CompilePoiBeatGraphResult {
   readonly sequence: MultiRigSequence;
+  readonly analysis: PoiBeatResolvedPlan;
   readonly diagnostics: readonly PoiBeatCompileDiagnostic[];
+  readonly crosspointDiagnostics: readonly PoiBeatCrosspointDiagnostic[];
 }
 
 function clamp01(value: number): number {
@@ -111,19 +130,15 @@ interface CenterMediatedTransferWindow {
   readonly setupDuration?: number;
 }
 
-function evalHandPathPoint(
-  keys: readonly HandPathKey[],
-  tOffset: number,
-  fallbackPhaseAbs: number
-): RelativeNodePose {
+function evalHandPathCartesianPoint(keys: readonly HandPathKey[], tOffset: number): Vec2 {
   const first = keys[0];
   const last = keys[keys.length - 1];
   if (!first || !last) {
     throw new Error("Hand path window requires at least one key");
   }
 
-  if (tOffset <= first.tOffset) return worldPointToPose(first.point);
-  if (tOffset >= last.tOffset) return worldPointToPose(last.point);
+  if (tOffset <= first.tOffset) return first.point;
+  if (tOffset >= last.tOffset) return last.point;
 
   for (let keyIndex = 0; keyIndex < keys.length - 1; keyIndex += 1) {
     const fromKey = keys[keyIndex];
@@ -133,10 +148,18 @@ function evalHandPathPoint(
 
     const duration = toKey.tOffset - fromKey.tOffset;
     const progress = duration <= 0 ? 1 : smootherstep((tOffset - fromKey.tOffset) / duration);
-    return cartesianToPolar(lerp2(fromKey.point, toKey.point, progress), fallbackPhaseAbs);
+    return lerp2(fromKey.point, toKey.point, progress);
   }
 
-  return worldPointToPose(last.point);
+  return last.point;
+}
+
+function evalHandPathPoint(
+  keys: readonly HandPathKey[],
+  tOffset: number,
+  fallbackPhaseAbs: number
+): RelativeNodePose {
+  return cartesianToPolar(evalHandPathCartesianPoint(keys, tOffset), fallbackPhaseAbs);
 }
 
 function evalHandPathWindow(
@@ -252,6 +275,10 @@ function rowIsCenter(row: PoiBeatRow): boolean {
   return row.laneId === "center";
 }
 
+function intervalChangesSide(interval: PoiBeatInterval): boolean {
+  return interval.fromSide !== interval.toSide;
+}
+
 function classifyCenterMediatedTransfer(
   centerRows: readonly PoiBeatRow[]
 ): CenterMediatedTransferKind | null {
@@ -307,9 +334,9 @@ function detectCenterMediatedTransferWindow(
       const entry = intervalAt(intervals, entryIndex);
       const exit = intervalAt(intervals, entryIndex + centerRowCount);
       if (!entry || !exit) continue;
-      if (entry.kind !== "lane-switch" || !rowIsCenter(entry.toRow)) continue;
+      if (entry.laneMotion !== "lane-switch" || !rowIsCenter(entry.toRow)) continue;
       if (rowIsCenter(entry.fromRow)) continue;
-      if (exit.kind !== "lane-switch" || !rowIsCenter(exit.fromRow)) continue;
+      if (exit.laneMotion !== "lane-switch" || !rowIsCenter(exit.fromRow)) continue;
       if (rowIsCenter(exit.toRow)) continue;
 
       const centerRows: PoiBeatRow[] = [entry.toRow];
@@ -341,14 +368,21 @@ function detectCenterMediatedTransferWindow(
 
       const kind = classifyCenterMediatedTransfer(centerRows);
       if (!kind) continue;
-      if (kind === "repeated-center-transfer" && centerIntervals[0]?.kind !== "same-lane") {
+      if (kind === "repeated-center-transfer" && centerIntervals[0]?.laneMotion !== "same-lane") {
         continue;
       }
-      if (kind === "cosmo-bounce" && centerIntervals[0]?.kind !== "center-side-switch") continue;
+      if (
+        kind === "cosmo-bounce" &&
+        (centerIntervals[0]?.laneMotion !== "same-lane" || !intervalChangesSide(centerIntervals[0]))
+      ) {
+        continue;
+      }
       if (
         kind === "setup-plus-bounce" &&
-        (centerIntervals[0]?.kind !== "same-lane" ||
-          centerIntervals[1]?.kind !== "center-side-switch")
+        (centerIntervals[0]?.laneMotion !== "same-lane" ||
+          intervalChangesSide(centerIntervals[0]) ||
+          centerIntervals[1]?.laneMotion !== "same-lane" ||
+          !intervalChangesSide(centerIntervals[1]))
       ) {
         continue;
       }
@@ -494,15 +528,105 @@ function makeHandPathWindow(
   return makeCenterMediatedHandPathWindow(intervals, intervalIndex, options);
 }
 
+const CROSSPOINT_CENTERLINE_EPSILON = 1e-9;
+
+function resolveIntervalHandPoint(
+  interval: PoiBeatInterval,
+  pathWindow: HandPathWindow | null,
+  options: PoiBeatCompilerOptions,
+  tLocal: TimeUnit
+): Vec2 {
+  if (pathWindow) {
+    return evalHandPathCartesianPoint(pathWindow.keys, pathWindow.localOffset + tLocal);
+  }
+
+  return evalHandPathCartesianPoint(
+    [
+      { tOffset: 0, point: laneToHandPoint(interval.fromRow.laneId, options) },
+      {
+        tOffset: interval.durationUnits,
+        point: laneToHandPoint(interval.toRow.laneId, options)
+      }
+    ],
+    tLocal
+  );
+}
+
+function classifyCrosspointLevel(
+  point: Vec2,
+  options: PoiBeatCompilerOptions
+): PoiBeatCrosspointLevel {
+  const candidates = [
+    { level: "low" as const, distance: Math.abs(point.y + options.handVerticalOffset) },
+    { level: "mid" as const, distance: Math.abs(point.y) },
+    { level: "high" as const, distance: Math.abs(point.y - options.handVerticalOffset) }
+  ];
+
+  candidates.sort((a, b) => a.distance - b.distance);
+  return candidates[0]?.level ?? "mid";
+}
+
+function resolveHorizontalDirection(phaseAbs: number): PoiBeatHorizontalDirection {
+  return Math.cos(phaseAbs) < 0 ? "left" : "right";
+}
+
+function resolveCrosspoint(
+  track: PoiBeatTrack,
+  interval: PoiBeatInterval,
+  pathWindow: HandPathWindow | null,
+  options: PoiBeatCompilerOptions,
+  omega: number
+): PoiBeatResolvedCrosspoint {
+  const timeOffsetUnits = interval.durationUnits / 2;
+  const handPoint = resolveIntervalHandPoint(interval, pathWindow, options, timeOffsetUnits);
+  const phaseAbs = deriveRowState(track, interval.fromRow).phaseAbs + omega * timeOffsetUnits;
+  const bodySide =
+    Math.abs(handPoint.x) <= CROSSPOINT_CENTERLINE_EPSILON
+      ? null
+      : handPoint.x < 0
+        ? "left"
+        : "right";
+  const poiDirection = resolveHorizontalDirection(phaseAbs);
+  const violation =
+    bodySide === null
+      ? "CENTERLINE_CROSSPOINT"
+      : bodySide !== poiDirection
+        ? "POI_POINTS_THROUGH_BODY"
+        : undefined;
+
+  return {
+    progress: 0.5,
+    timeOffsetUnits,
+    handPoint,
+    phaseAbs,
+    bodySide,
+    level: classifyCrosspointLevel(handPoint, options),
+    poiDirection,
+    legal: violation === undefined,
+    ...(violation ? { violation } : {})
+  };
+}
+
+interface ResolvedTrackIntervalCompilation {
+  readonly interval: PoiBeatResolvedInterval;
+  readonly pathWindow: HandPathWindow | null;
+}
+
+interface CompiledTrack {
+  readonly segments: Segment[];
+  readonly analysis: PoiBeatResolvedTrack;
+}
+
 function compileTrack(
   graph: PoiBeatGraph,
   track: PoiBeatTrack,
   options: PoiBeatCompilerOptions,
-  diagnostics: PoiBeatCompileDiagnostic[]
-): Segment[] {
+  diagnostics: PoiBeatCompileDiagnostic[],
+  crosspointDiagnostics: PoiBeatCrosspointDiagnostic[]
+): CompiledTrack {
   if (track.rows.length === 0) {
     diagnostics.push({ code: "EMPTY_TRACK", trackId: track.id });
-    return [];
+    return { segments: [], analysis: { trackId: track.id, intervals: [] } };
   }
 
   if (track.rows.length !== graph.cycleSteps) {
@@ -511,23 +635,46 @@ function compileTrack(
 
   const omega = (getDirectionSign(track.poiDirection) * PI) / options.halfBeatDuration;
   const intervals = deriveLoopIntervals(track, options.halfBeatDuration);
-  const segments: Segment[] = [];
+  const resolvedIntervals: ResolvedTrackIntervalCompilation[] = intervals.map(
+    (interval, intervalIndex) => {
+      const pathWindow = makeHandPathWindow(intervals, intervalIndex, options);
+      const sideMotion = intervalChangesSide(interval)
+        ? {
+            kind: "transition" as const,
+            fromSide: interval.fromSide,
+            toSide: interval.toSide,
+            crosspoint: resolveCrosspoint(track, interval, pathWindow, options, omega)
+          }
+        : { kind: "hold" as const, side: interval.fromSide };
 
-  for (const [intervalIndex, interval] of intervals.entries()) {
+      if (sideMotion.kind === "transition" && sideMotion.crosspoint.violation) {
+        crosspointDiagnostics.push({
+          code: sideMotion.crosspoint.violation,
+          trackId: track.id,
+          intervalIndex,
+          step: interval.fromRow.step,
+          laneId: interval.fromRow.laneId,
+          crosspoint: sideMotion.crosspoint
+        });
+      }
+
+      return {
+        interval: { ...interval, sideMotion },
+        pathWindow
+      };
+    }
+  );
+
+  const segments = resolvedIntervals.map(({ interval, pathWindow }) => {
     const startPoint = laneToHandPoint(interval.fromRow.laneId, options);
     const endPoint = laneToHandPoint(interval.toRow.laneId, options);
 
-    segments.push({
+    return {
       durationUnits: interval.durationUnits,
       planeId: "wall",
-      planeSide: interval.planeSide,
+      planeSide: interval.toSide,
       ...(deriveRowIsBTB(interval.fromRow) ? { behindBody: true } : {}),
-      hand: makeHandMotion(
-        interval,
-        startPoint,
-        endPoint,
-        makeHandPathWindow(intervals, intervalIndex, options)
-      ),
+      hand: makeHandMotion(interval, startPoint, endPoint, pathWindow),
       head: {
         startPose: {
           phaseAbs: deriveRowState(track, interval.fromRow).phaseAbs,
@@ -538,10 +685,16 @@ function compileTrack(
           omega
         }
       }
-    });
-  }
+    } satisfies Segment;
+  });
 
-  return segments;
+  return {
+    segments,
+    analysis: {
+      trackId: track.id,
+      intervals: resolvedIntervals.map(({ interval }) => interval)
+    }
+  };
 }
 
 export function compilePoiBeatGraph(
@@ -549,15 +702,19 @@ export function compilePoiBeatGraph(
   options: PoiBeatCompilerOptions = DEFAULT_POI_BEAT_COMPILER_OPTIONS
 ): CompilePoiBeatGraphResult {
   const diagnostics: PoiBeatCompileDiagnostic[] = [];
-  const rigs = graph.tracks.map((track) => ({
+  const crosspointDiagnostics: PoiBeatCrosspointDiagnostic[] = [];
+  const compiledTracks = graph.tracks.map((track) =>
+    compileTrack(graph, track, options, diagnostics, crosspointDiagnostics)
+  );
+  const rigs = graph.tracks.map((track, trackIndex) => ({
     rigId: track.id,
-    sequence: {
-      segments: compileTrack(graph, track, options, diagnostics)
-    }
+    sequence: { segments: compiledTracks[trackIndex]?.segments ?? [] }
   }));
 
   return {
     sequence: { rigs },
-    diagnostics
+    analysis: { tracks: compiledTracks.map((compiledTrack) => compiledTrack.analysis) },
+    diagnostics,
+    crosspointDiagnostics
   };
 }
