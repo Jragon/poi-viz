@@ -266,11 +266,11 @@ onBeforeRouteLeave(() => {
     <section class="mx-auto grid max-w-7xl gap-5 lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)]">
       <div class="grid content-start gap-4">
         <header class="order-1">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Mel body tracing</p>
-              <h1 class="mt-2 text-2xl font-semibold text-slate-50">Beat Graph Editor</h1>
-            </div>
+          <div>
+            <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Mel body tracing</p>
+            <h1 class="mt-2 text-2xl font-semibold text-slate-50">Beat Graph Editor</h1>
+          </div>
+          <div class="mt-3">
             <PatternRegistryControls
               editor-kind="beat-graph"
               :current-pattern-id="loadedPatternId"
@@ -286,7 +286,7 @@ onBeforeRouteLeave(() => {
               "
             />
           </div>
-          <p class="mt-2 text-sm leading-6 text-ui-text-secondary">
+          <p class="mt-4 text-sm leading-6 text-ui-text-secondary">
             Play around with the beat graphs from Mel's
             <a
               href="https://antispinner.gitbook.io/btf"

@@ -14,13 +14,15 @@ const props = withDefaults(
     currentName?: string;
     isDirty?: boolean;
     storageKey?: string;
+    variant?: "compact" | "panel";
   }>(),
   {
     currentPatternId: null,
     currentSource: null,
     currentName: "Untitled Pattern",
     isDirty: false,
-    storageKey: "poi-v2:pattern-registry-panel"
+    storageKey: "poi-v2:pattern-registry-panel",
+    variant: "compact"
   }
 );
 
@@ -330,21 +332,38 @@ function deleteFolder(folder: PatternFolder) {
 </script>
 
 <template>
-  <div class="flex min-w-0 flex-wrap items-center gap-1.5">
+  <div
+    class="min-w-0"
+    :class="
+      props.variant === 'panel'
+        ? 'grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center'
+        : 'flex flex-wrap items-center gap-1.5'
+    "
+  >
     <button
       type="button"
-      class="min-w-0 max-w-48 truncate rounded-md px-1.5 py-1 text-[11px] text-ui-text-secondary transition hover:bg-slate-800 hover:text-ui-text"
+      class="min-w-0 rounded-md transition"
+      :class="
+        props.variant === 'panel'
+          ? 'flex min-h-11 w-full items-center justify-between gap-2 rounded-xl border border-ui-border-strong bg-ui-input px-3 py-2.5 text-left text-sm font-medium text-ui-text hover:border-ui-focus hover:bg-ui-surface-raised'
+          : 'max-w-48 px-1.5 py-1 text-[11px] text-ui-text-secondary hover:bg-slate-800 hover:text-ui-text'
+      "
       :title="'Open ' + props.currentName"
       :aria-label="`Open pattern ${props.currentName}`"
       @click="openPanel"
     >
-      {{ props.currentName }}{{ props.isDirty ? " *" : "" }}
-      <span class="text-ui-text-muted" aria-hidden="true">⌄</span>
+      <span class="truncate">{{ props.currentName }}{{ props.isDirty ? " *" : "" }}</span>
+      <span class="shrink-0 text-ui-text-muted" aria-hidden="true">⌄</span>
     </button>
     <button
       v-if="props.editorKind"
       type="button"
-      class="rounded-md px-2 py-1 text-[11px] text-ui-text-secondary transition hover:bg-slate-800 hover:text-ui-text disabled:cursor-not-allowed disabled:text-ui-text-muted"
+      class="rounded-md text-ui-text-secondary transition disabled:cursor-not-allowed disabled:text-ui-text-muted"
+      :class="
+        props.variant === 'panel'
+          ? 'min-h-11 rounded-xl border border-ui-border-strong bg-ui-surface px-4 py-2.5 text-sm font-medium hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text disabled:border-ui-border-subtle disabled:bg-ui-surface/50'
+          : 'px-2 py-1 text-[11px] hover:bg-slate-800 hover:text-ui-text'
+      "
       :disabled="!props.currentPatternId || !props.currentSource || !props.isDirty"
       @click="saveCurrent"
     >
@@ -353,7 +372,12 @@ function deleteFolder(folder: PatternFolder) {
     <button
       v-if="props.editorKind"
       type="button"
-      class="rounded-md px-2 py-1 text-[11px] text-sky-300 transition hover:bg-sky-950/60 hover:text-sky-200"
+      class="rounded-md text-sky-300 transition hover:text-sky-200"
+      :class="
+        props.variant === 'panel'
+          ? 'min-h-11 rounded-xl border border-sky-500/60 bg-sky-950/40 px-4 py-2.5 text-sm font-medium hover:border-sky-300 hover:bg-sky-950/70'
+          : 'px-2 py-1 text-[11px] hover:bg-sky-950/60'
+      "
       @click="beginSaveAs"
     >
       Save As…

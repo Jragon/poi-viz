@@ -338,11 +338,12 @@ onBeforeRouteLeave(() => {
 
       <aside class="grid min-w-0 gap-4 self-start xl:sticky xl:top-6">
         <section
-          class="grid gap-2 rounded-3xl border border-ui-border p-5 text-sm text-ui-text-secondary"
+          class="grid gap-3 rounded-3xl border border-ui-border p-5 text-sm text-ui-text-secondary"
         >
           <p class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted">Pattern</p>
           <PatternRegistryControls
             editor-kind="authoring"
+            variant="panel"
             :current-pattern-id="workingPatternId"
             :current-source="currentPatternSource"
             :current-name="selectedDocument.name"
