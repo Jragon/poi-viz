@@ -119,6 +119,24 @@ describe("createPatternRegistry", () => {
     expect(registry.deleteFolder(folder.id)).toBe(true);
   });
 
+  it("renames folders without allowing empty names", () => {
+    const registry = createPatternRegistry({
+      storage: new MemoryStorage(),
+      storageKey: "patterns",
+      seedPatterns: [],
+      createId: (() => {
+        let index = 0;
+        return () => "folder-id-" + index++;
+      })()
+    });
+    const folder = registry.createFolder("Ideas");
+
+    expect(registry.updateFolder(folder.id, "More ideas")).toBe(true);
+    expect(registry.folders.value[0]?.name).toBe("More ideas");
+    expect(registry.updateFolder(folder.id, "   ")).toBe(false);
+    expect(registry.folders.value[0]?.name).toBe("More ideas");
+  });
+
   it("migrates the previous authoring library once", () => {
     const storage = new MemoryStorage();
     storage.setItem(

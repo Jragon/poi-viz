@@ -239,3 +239,16 @@ supports three incompatible source kinds: authoring documents, stall-graph draft
   Git catalogue remain future extensions of the same JSON-compatible shape.
 - Existing authoring localStorage data is migrated once into the registry without retaining a second
   active authoring library or deleting the old storage key.
+
+## 2026-07-22: Compact Pattern Registry UI
+
+The registry is a small application-wide utility rather than a full-screen browser on desktop.
+
+- Desktop uses a compact, body-level teleported floating panel so it remains above navigation and
+  sticky editor columns. Mobile uses the same component as a full-viewport, non-draggable panel.
+- Folders expand inline in one tree. Pattern and folder management actions live behind click-operated
+  row menus; the permanent management toolbar is removed.
+- Editor pages default to a checked `Compatible patterns only` filter. Visualizer pages omit the
+  filter because all source kinds are displayable there. Search, keyboard navigation, and
+  drag-and-drop remain out of scope.
+- App-level controls are compressed to a pattern-name opener, explicit Save, and Save As actions.

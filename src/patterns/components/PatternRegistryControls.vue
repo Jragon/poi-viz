@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 
 import FloatingPanel from "@/components/FloatingPanel.vue";
 import { patternKindLabel } from "@/patterns/patternAdapters";
 import { usePatternRegistry } from "@/patterns/usePatternRegistry";
-import type { PatternEntry, PatternKind, PatternSource } from "@/patterns/types";
+import type { PatternEntry, PatternFolder, PatternKind, PatternSource } from "@/patterns/types";
 
 const props = withDefaults(
   defineProps<{
@@ -29,30 +29,142 @@ const emit = defineEmits<{
   saved: [entry: PatternEntry];
 }>();
 
+type TreeNode =
+  | { kind: "folder"; folder: PatternFolder; depth: number; hasChildren: boolean }
+  | { kind: "pattern"; entry: PatternEntry; depth: number };
+
+const TREE_INDENT_PX = 14;
+const TREE_FOLDER_CONTENT_OFFSET_PX = 24;
+
+function treeRowPadding(depth: number, includesFolderControl: boolean): string {
+  const contentOffset = includesFolderControl ? 0 : TREE_FOLDER_CONTENT_OFFSET_PX;
+  return `${4 + depth * TREE_INDENT_PX + contentOffset}px`;
+}
+
 const registry = usePatternRegistry();
 const panelOpen = ref(false);
 const saveAsOpen = ref(false);
-const folderId = ref<string | null>(null);
+const compatibleOnly = ref(Boolean(props.editorKind));
+const expandedFolderIds = ref<Set<string>>(new Set());
+const saveFolderId = ref<string | null>(null);
+const newFolderOpen = ref(false);
+const newFolderParentId = ref<string | null>(null);
+const newFolderName = ref("");
+const editingKind = ref<"pattern" | "folder" | null>(null);
+const editingId = ref<string | null>(null);
+const editingName = ref("");
 const draftName = ref("");
 const feedback = ref<string | null>(null);
+const activeMenuKey = ref<string | null>(null);
+const movePatternId = ref<string | null>(null);
+const menuPosition = ref({ left: 0, top: 0 });
+const menuAnchor = ref<{ top: number; bottom: number; right: number } | null>(null);
+const menuRoot = ref<HTMLElement | null>(null);
+const nameInput = ref<HTMLInputElement | null>(null);
 
-const folders = computed(() =>
-  registry.folders.value.filter((folder) => folder.parentId === folderId.value)
+const sortedFolders = computed(() =>
+  [...registry.folders.value].sort((left, right) => left.name.localeCompare(right.name))
 );
-const entries = computed(() =>
+
+const visibleEntries = computed(() =>
   registry.entries.value
-    .filter((entry) => entry.folderId === folderId.value)
+    .filter((entry) => !compatibleOnly.value || entry.source.kind === props.editorKind)
     .sort((left, right) => left.name.localeCompare(right.name))
 );
-const currentFolder = computed(() =>
-  folderId.value ? registry.folders.value.find((folder) => folder.id === folderId.value) ?? null : null
-);
-const isCompatible = (entry: PatternEntry) =>
-  props.editorKind === undefined || entry.source.kind === props.editorKind;
+
+function folderHasVisibleContent(folderId: string): boolean {
+  if (visibleEntries.value.some((entry) => entry.folderId === folderId)) return true;
+  return sortedFolders.value.some(
+    (folder) => folder.parentId === folderId && folderHasVisibleContent(folder.id)
+  );
+}
+
+function folderHasChildren(folderId: string): boolean {
+  return (
+    registry.entries.value.some((entry) => entry.folderId === folderId) ||
+    registry.folders.value.some((folder) => folder.parentId === folderId)
+  );
+}
+
+const treeNodes = computed<TreeNode[]>(() => {
+  const nodes: TreeNode[] = [];
+
+  function visit(parentId: string | null, depth: number) {
+    for (const folder of sortedFolders.value.filter((candidate) => candidate.parentId === parentId)) {
+      if (compatibleOnly.value && !folderHasVisibleContent(folder.id)) continue;
+      const hasChildren = folderHasChildren(folder.id);
+      nodes.push({ kind: "folder", folder, depth, hasChildren });
+      if (expandedFolderIds.value.has(folder.id)) visit(folder.id, depth + 1);
+    }
+
+    for (const entry of visibleEntries.value.filter((candidate) => candidate.folderId === parentId)) {
+      nodes.push({ kind: "pattern", entry, depth });
+    }
+  }
+
+  visit(null, 0);
+  return nodes;
+});
+
+const activeMenu = computed(() => {
+  if (!activeMenuKey.value) return null;
+  const [kind, id] = activeMenuKey.value.split(":", 2);
+  if (kind === "pattern") return { kind: "pattern" as const, item: registry.get(id) };
+  return {
+    kind: "folder" as const,
+    item: registry.folders.value.find((folder) => folder.id === id) ?? null
+  };
+});
+
+const moveFolders = computed(() => sortedFolders.value);
+
+function isCompatible(entry: PatternEntry) {
+  return props.editorKind === undefined || entry.source.kind === props.editorKind;
+}
+
+function clearMenu() {
+  activeMenuKey.value = null;
+  movePatternId.value = null;
+  menuAnchor.value = null;
+}
+
+function dismissMenu(event: MouseEvent) {
+  if (!activeMenuKey.value && !movePatternId.value) return;
+  const target = event.target;
+  if (target instanceof Node && menuRoot.value?.contains(target)) return;
+  clearMenu();
+}
+
+onMounted(() => document.addEventListener("click", dismissMenu));
+onBeforeUnmount(() => document.removeEventListener("click", dismissMenu));
 
 function openPanel() {
+  compatibleOnly.value = Boolean(props.editorKind);
   feedback.value = null;
+  clearMenu();
   panelOpen.value = true;
+  expandSelectedAncestors();
+}
+
+function expandSelectedAncestors() {
+  const selected = registry.selectedPattern.value;
+  if (!selected) return;
+  const next = new Set(expandedFolderIds.value);
+  let folderId = selected.folderId;
+  while (folderId) {
+    next.add(folderId);
+    folderId = registry.folders.value.find((folder) => folder.id === folderId)?.parentId ?? null;
+  }
+  expandedFolderIds.value = next;
+}
+
+function toggleFolder(folder: PatternFolder) {
+  const next = new Set(expandedFolderIds.value);
+  if (next.has(folder.id)) next.delete(folder.id);
+  else next.add(folder.id);
+  expandedFolderIds.value = next;
+  saveFolderId.value = folder.id;
+  clearMenu();
 }
 
 function openEntry(entry: PatternEntry) {
@@ -81,6 +193,7 @@ function beginSaveAs() {
   saveAsOpen.value = true;
   panelOpen.value = true;
   feedback.value = null;
+  nextTick(() => nameInput.value?.focus());
 }
 
 function saveAs() {
@@ -88,7 +201,7 @@ function saveAs() {
   try {
     const entry = registry.saveAs(props.currentSource, {
       name: draftName.value,
-      folderId: folderId.value
+      folderId: saveFolderId.value
     });
     emit("saved", entry);
     saveAsOpen.value = false;
@@ -98,57 +211,131 @@ function saveAs() {
   }
 }
 
-function newFolder() {
-  const name = typeof window === "undefined" ? "" : window.prompt("Folder name");
-  if (!name) return;
+function beginNewFolder(parentId: string | null) {
+  clearMenu();
+  newFolderParentId.value = parentId;
+  newFolderName.value = "";
+  newFolderOpen.value = true;
+  if (parentId) expandedFolderIds.value = new Set([...expandedFolderIds.value, parentId]);
+  nextTick(() => nameInput.value?.focus());
+}
+
+function createFolder() {
   try {
-    const folder = registry.createFolder(name, folderId.value);
-    folderId.value = folder.id;
-    feedback.value = "Created folder";
+    const folder = registry.createFolder(newFolderName.value, newFolderParentId.value);
+    expandedFolderIds.value = new Set([...expandedFolderIds.value, folder.id]);
+    saveFolderId.value = folder.id;
+    newFolderOpen.value = false;
+    feedback.value = "Folder created";
   } catch (error) {
     feedback.value = error instanceof Error ? error.message : "Could not create folder";
   }
 }
 
-function renameSelected() {
-  const selected = registry.selectedPattern.value;
-  if (!selected || typeof window === "undefined") return;
-  const name = window.prompt("Pattern name", selected.name);
-  if (name) registry.updateMetadata(selected.id, { name });
+function beginRename(kind: "pattern" | "folder", id: string, name: string) {
+  clearMenu();
+  editingKind.value = kind;
+  editingId.value = id;
+  editingName.value = name;
+  nextTick(() => nameInput.value?.focus());
 }
 
-function moveSelectedHere() {
-  const selected = registry.selectedPattern.value;
-  if (selected) registry.move(selected.id, folderId.value);
-}
-
-function deleteSelected() {
-  const selected = registry.selectedPattern.value;
-  if (!selected || typeof window === "undefined") return;
-  if (window.confirm("Delete " + selected.name + "?")) {
-    registry.delete(selected.id);
-    feedback.value = "Deleted pattern";
+function finishRename() {
+  if (!editingKind.value || !editingId.value) return;
+  const success =
+    editingKind.value === "pattern"
+      ? registry.updateMetadata(editingId.value, { name: editingName.value })
+      : registry.updateFolder(editingId.value, editingName.value);
+  feedback.value = success ? "Renamed" : "Name cannot be empty";
+  if (success) {
+    editingKind.value = null;
+    editingId.value = null;
   }
 }
 
+function cancelEdit() {
+  editingKind.value = null;
+  editingId.value = null;
+}
+
+function openPatternMenu(entry: PatternEntry, event: MouseEvent) {
+  event.stopPropagation();
+  activeMenuKey.value = "pattern:" + entry.id;
+  movePatternId.value = null;
+  positionMenu(event.currentTarget as HTMLElement);
+}
+
+function openFolderMenu(folder: PatternFolder, event: MouseEvent) {
+  event.stopPropagation();
+  activeMenuKey.value = "folder:" + folder.id;
+  movePatternId.value = null;
+  positionMenu(event.currentTarget as HTMLElement);
+}
+
+function positionMenu(trigger: HTMLElement) {
+  const rect = trigger.getBoundingClientRect();
+  menuAnchor.value = { top: rect.top, bottom: rect.bottom, right: rect.right };
+  updateMenuPosition();
+}
+
+function updateMenuPosition() {
+  if (!menuAnchor.value) return;
+  const width = movePatternId.value ? 176 : 144;
+  const height = movePatternId.value ? 224 : 144;
+  const left = Math.max(8, Math.min(menuAnchor.value.right - width, window.innerWidth - width - 8));
+  const belowTop = menuAnchor.value.bottom + 4;
+  const opensAbove =
+    belowTop + height > window.innerHeight - 8 && menuAnchor.value.top - height - 4 >= 8;
+  menuPosition.value = {
+    left,
+    top: opensAbove ? menuAnchor.value.top - height - 4 : belowTop
+  };
+}
+
+function beginMove(entry: PatternEntry) {
+  movePatternId.value = entry.id;
+  nextTick(updateMenuPosition);
+}
+
+function moveTo(folderId: string | null) {
+  if (!movePatternId.value) return;
+  if (registry.move(movePatternId.value, folderId)) feedback.value = "Moved";
+  clearMenu();
+}
+
+function deletePattern(entry: PatternEntry) {
+  if (typeof window === "undefined" || !window.confirm("Delete " + entry.name + "?")) return;
+  registry.delete(entry.id);
+  feedback.value = "Deleted pattern";
+  clearMenu();
+}
+
+function deleteFolder(folder: PatternFolder) {
+  if (!registry.deleteFolder(folder.id)) {
+    feedback.value = "Folder must be empty";
+    clearMenu();
+    return;
+  }
+  feedback.value = "Deleted folder";
+  clearMenu();
+}
 </script>
 
 <template>
-  <div class="flex flex-wrap items-center gap-2">
-    <span class="max-w-48 truncate text-xs text-slate-400" :title="props.currentName">
-      {{ props.currentName }}{{ props.isDirty ? " *" : "" }}
-    </span>
+  <div class="flex min-w-0 flex-wrap items-center gap-1.5">
     <button
       type="button"
-      class="rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-slate-200 transition hover:border-sky-500 hover:text-sky-200"
+      class="min-w-0 max-w-48 truncate rounded-md px-1.5 py-1 text-[11px] text-slate-400 transition hover:bg-slate-800 hover:text-slate-200"
+      :title="'Open ' + props.currentName"
       @click="openPanel"
     >
-      Open…
+      {{ props.currentName }}{{ props.isDirty ? " *" : "" }}
+      <span class="text-slate-600">⌄</span>
     </button>
     <button
       v-if="props.editorKind"
       type="button"
-      class="rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-slate-200 transition hover:border-sky-500 hover:text-sky-200 disabled:cursor-not-allowed disabled:opacity-40"
+      class="rounded-md px-2 py-1 text-[11px] text-slate-400 transition hover:bg-slate-800 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-35"
       :disabled="!props.currentPatternId || !props.currentSource || !props.isDirty"
       @click="saveCurrent"
     >
@@ -157,141 +344,261 @@ function deleteSelected() {
     <button
       v-if="props.editorKind"
       type="button"
-      class="rounded-lg border border-sky-700 px-2.5 py-1.5 text-xs text-sky-200 transition hover:border-sky-500"
+      class="rounded-md px-2 py-1 text-[11px] text-sky-300 transition hover:bg-sky-950/60 hover:text-sky-200"
       @click="beginSaveAs"
     >
       Save As…
     </button>
 
-    <FloatingPanel
-      v-if="panelOpen"
-      :storage-key="props.storageKey"
-      @close="panelOpen = false"
-    >
+    <Teleport to="body">
+      <FloatingPanel
+        v-if="panelOpen"
+        :storage-key="props.storageKey"
+        compact
+        @close="panelOpen = false"
+      >
       <template #handle="{ close }">
-        <div class="flex items-center justify-between gap-3">
-          <div>
-            <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Patterns</p>
-            <p class="mt-1 text-sm font-medium text-slate-200">
-              {{ currentFolder?.name ?? "All Patterns" }}
-            </p>
+        <div class="flex items-center justify-between gap-2">
+          <p class="text-[10px] uppercase tracking-[0.2em] text-slate-500">Patterns</p>
+          <div class="flex items-center gap-1">
+            <button
+              type="button"
+              class="rounded px-1.5 py-1 text-base leading-none text-slate-500 transition hover:bg-slate-800 hover:text-slate-200"
+              title="New folder"
+              @click.stop="beginNewFolder(null)"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              class="rounded px-1.5 py-1 text-base leading-none text-slate-500 transition hover:bg-slate-800 hover:text-slate-200"
+              title="Close"
+              @click.stop="close"
+            >
+              ×
+            </button>
           </div>
-          <button
-            type="button"
-            class="rounded-lg border border-slate-700 px-2 py-1 text-xs text-slate-300"
-            @click="close"
-          >
-            Close
-          </button>
         </div>
       </template>
 
-      <div class="grid gap-2 p-3 text-sm">
-        <div v-if="currentFolder" class="flex items-center gap-2">
-          <button
-            type="button"
-            class="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300"
-            @click="folderId = currentFolder.parentId"
-          >
-            Up
-          </button>
-          <span class="truncate text-xs text-slate-500">{{ currentFolder.name }}</span>
+      <div class="relative min-w-0 p-2 text-xs" @click="clearMenu">
+        <label
+          v-if="props.editorKind"
+          class="mb-1.5 flex items-center gap-1.5 px-1 text-[11px] text-slate-400"
+        >
+          <input v-model="compatibleOnly" type="checkbox" class="h-3 w-3 accent-sky-400" />
+          <span>Compatible patterns only</span>
+        </label>
+
+        <div
+          v-if="newFolderOpen"
+          class="mb-1 flex items-center gap-1 rounded border border-slate-700 bg-slate-900 px-1.5 py-1"
+          @click.stop
+        >
+          <input
+            ref="nameInput"
+            v-model="newFolderName"
+            type="text"
+            placeholder="Folder name"
+            class="min-w-0 flex-1 bg-transparent px-1 text-[11px] text-slate-100 outline-none placeholder:text-slate-600"
+            @keyup.enter="createFolder"
+            @keyup.escape="newFolderOpen = false"
+          />
+          <button type="button" class="text-sky-300" @click="createFolder">✓</button>
+          <button type="button" class="text-slate-500" @click="newFolderOpen = false">×</button>
         </div>
 
-        <div class="flex flex-wrap gap-1.5 border-b border-slate-800 pb-2">
-          <button
-            type="button"
-            class="rounded-md border border-slate-700 px-2 py-1 text-[11px] text-slate-300"
-            @click="newFolder"
-          >
-            New Folder
-          </button>
-          <button
-            type="button"
-            class="rounded-md border border-slate-700 px-2 py-1 text-[11px] text-slate-300 disabled:opacity-40"
-            :disabled="!registry.selectedPattern.value"
-            @click="moveSelectedHere"
-          >
-            Move Selected Here
-          </button>
-          <button
-            type="button"
-            class="rounded-md border border-slate-700 px-2 py-1 text-[11px] text-slate-300 disabled:opacity-40"
-            :disabled="!registry.selectedPattern.value"
-            @click="renameSelected"
-          >
-            Rename
-          </button>
-          <button
-            type="button"
-            class="rounded-md border border-rose-900/70 px-2 py-1 text-[11px] text-rose-300 disabled:opacity-40"
-            :disabled="!registry.selectedPattern.value"
-            @click="deleteSelected"
-          >
-            Delete
-          </button>
+        <div v-if="treeNodes.length > 0" class="grid gap-px">
+          <template v-for="node in treeNodes" :key="node.kind === 'folder' ? node.folder.id : node.entry.id">
+            <div
+              v-if="node.kind === 'folder' && editingKind === 'folder' && editingId === node.folder.id"
+              class="flex items-center gap-1 px-1 py-0.5"
+              :style="{ paddingLeft: treeRowPadding(node.depth, true) }"
+              @click.stop
+            >
+              <input
+                ref="nameInput"
+                v-model="editingName"
+                class="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-1.5 py-1 text-[11px] text-slate-100 outline-none"
+                @keyup.enter="finishRename"
+                @keyup.escape="cancelEdit"
+              />
+              <button type="button" class="text-sky-300" @click="finishRename">✓</button>
+            </div>
+            <div
+              v-else-if="node.kind === 'pattern' && editingKind === 'pattern' && editingId === node.entry.id"
+              class="flex items-center gap-1 px-1 py-0.5"
+              :style="{ paddingLeft: treeRowPadding(node.depth, false) }"
+              @click.stop
+            >
+              <input
+                ref="nameInput"
+                v-model="editingName"
+                class="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-1.5 py-1 text-[11px] text-slate-100 outline-none"
+                @keyup.enter="finishRename"
+                @keyup.escape="cancelEdit"
+              />
+              <button type="button" class="text-sky-300" @click="finishRename">✓</button>
+            </div>
+            <div
+              v-else-if="node.kind === 'folder'"
+              class="group relative flex min-w-0 items-center rounded px-1 py-0.5 hover:bg-slate-900 max-sm:py-1.5"
+              :style="{ paddingLeft: treeRowPadding(node.depth, true) }"
+              @click.stop
+            >
+              <button
+                type="button"
+                class="flex min-w-0 flex-1 items-center gap-1.5 text-left text-[12px] text-slate-300"
+                @click="toggleFolder(node.folder)"
+              >
+                <span class="w-2 text-slate-500">{{ expandedFolderIds.has(node.folder.id) ? "⌄" : "›" }}</span>
+                <span class="min-w-0 truncate">{{ node.folder.name }}</span>
+              </button>
+              <button
+                type="button"
+                class="rounded px-1 text-slate-600 hover:bg-slate-800 hover:text-slate-200 sm:opacity-0 sm:group-hover:opacity-100"
+                title="Folder actions"
+                @click.stop="openFolderMenu(node.folder, $event)"
+              >
+                ⋯
+              </button>
+            </div>
+            <div
+              v-else-if="node.kind === 'pattern'"
+              class="group relative flex min-w-0 items-center rounded px-1 py-0.5 hover:bg-slate-900 max-sm:py-1.5"
+              :class="node.entry.id === registry.selectedPatternId.value ? 'bg-sky-950/50' : ''"
+              :style="{ paddingLeft: treeRowPadding(node.depth, false) }"
+              :title="isCompatible(node.entry) ? 'Open ' + node.entry.name : 'Incompatible pattern'"
+              @click.stop
+            >
+              <button
+                type="button"
+                class="min-w-0 flex-1 truncate text-left text-[12px]"
+                :class="isCompatible(node.entry) ? 'text-slate-300' : 'cursor-not-allowed text-slate-600'"
+                :disabled="!isCompatible(node.entry)"
+                @click="openEntry(node.entry)"
+              >
+                {{ node.entry.name }}
+              </button>
+              <span class="shrink-0 px-1 text-[9px] uppercase tracking-wider text-slate-600">
+                {{ patternKindLabel(node.entry.source.kind) }}
+              </span>
+              <button
+                type="button"
+                class="rounded px-1 text-slate-600 hover:bg-slate-800 hover:text-slate-200 sm:opacity-0 sm:group-hover:opacity-100"
+                title="Pattern actions"
+                @click.stop="openPatternMenu(node.entry, $event)"
+              >
+                ⋯
+              </button>
+            </div>
+          </template>
         </div>
 
-        <button
-          v-for="folder in folders"
-          :key="folder.id"
-          type="button"
-          class="flex items-center justify-between rounded-lg border border-slate-800 px-3 py-2 text-left text-slate-200 transition hover:border-slate-600 hover:bg-slate-900"
-          @click="folderId = folder.id"
-        >
-          <span>📁 {{ folder.name }}</span>
-          <span class="text-xs text-slate-600">›</span>
-        </button>
-
-        <button
-          v-for="entry in entries"
-          :key="entry.id"
-          type="button"
-          class="flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left transition disabled:cursor-not-allowed disabled:opacity-35"
-          :class="
-            entry.id === registry.selectedPatternId.value
-              ? 'border-sky-700 bg-sky-950/40'
-              : 'border-slate-800 hover:border-slate-600 hover:bg-slate-900'
-          "
-          :disabled="!isCompatible(entry)"
-          :title="
-            isCompatible(entry)
-              ? 'Open ' + entry.name
-              : 'This is a ' + patternKindLabel(entry.source.kind) + ' pattern'
-          "
-          @click="openEntry(entry)"
-        >
-          <span class="min-w-0 truncate text-slate-200">{{ entry.name }}</span>
-          <span class="shrink-0 text-[10px] uppercase tracking-wider text-slate-500">
-            {{ patternKindLabel(entry.source.kind) }}
-          </span>
-        </button>
-
-        <p v-if="folders.length === 0 && entries.length === 0" class="p-3 text-xs text-slate-500">
-          This folder is empty.
+        <p v-else class="px-1 py-3 text-[11px] text-slate-600">
+          {{ compatibleOnly ? "No compatible patterns." : "No patterns yet." }}
         </p>
 
-        <div v-if="saveAsOpen" class="mt-2 grid gap-2 border-t border-slate-800 pt-3">
-          <label class="grid gap-1 text-xs text-slate-400">
-            <span>Pattern name</span>
-            <input
-              v-model="draftName"
-              type="text"
-              class="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
-              @keyup.enter="saveAs"
-            />
-          </label>
+        <div v-if="saveAsOpen" class="mt-2 flex items-center gap-1 border-t border-slate-800 pt-2">
+          <input
+            ref="nameInput"
+            v-model="draftName"
+            type="text"
+            placeholder="Pattern name"
+            class="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-[11px] text-slate-100 outline-none placeholder:text-slate-600"
+            @keyup.enter="saveAs"
+            @keyup.escape="saveAsOpen = false"
+          />
           <button
             type="button"
-            class="rounded-lg bg-sky-400 px-3 py-2 text-sm font-medium text-slate-950"
+            class="rounded bg-sky-400 px-2 py-1.5 text-[11px] font-medium text-slate-950"
             @click="saveAs"
           >
-            Save Pattern
+            Save
           </button>
         </div>
 
-        <p v-if="feedback" class="text-xs text-sky-300">{{ feedback }}</p>
+        <p v-if="feedback" class="px-1 pt-1 text-[10px] text-sky-300">{{ feedback }}</p>
       </div>
-    </FloatingPanel>
+
+      </FloatingPanel>
+
+      <div
+        v-if="(activeMenu && activeMenu.item && !movePatternId) || movePatternId"
+        ref="menuRoot"
+        class="fixed z-[80] grid gap-0.5 rounded-lg border border-slate-700 bg-slate-900 p-1 text-[11px] shadow-2xl shadow-slate-950/80"
+        :class="movePatternId ? 'max-h-56 w-44 overflow-y-auto' : 'w-36'"
+        :style="{ left: `${menuPosition.left}px`, top: `${menuPosition.top}px` }"
+        @click.stop
+      >
+        <template v-if="activeMenu && activeMenu.item && !movePatternId">
+          <template v-if="activeMenu.kind === 'pattern'">
+            <button
+              type="button"
+              class="rounded px-2 py-1.5 text-left text-slate-300 hover:bg-slate-800"
+              @click="beginRename('pattern', activeMenu.item.id, activeMenu.item.name)"
+            >
+              Rename
+            </button>
+            <button
+              type="button"
+              class="rounded px-2 py-1.5 text-left text-slate-300 hover:bg-slate-800"
+              @click="beginMove(activeMenu.item)"
+            >
+              Move to…
+            </button>
+            <button
+              type="button"
+              class="rounded px-2 py-1.5 text-left text-rose-300 hover:bg-rose-950/70"
+              @click="deletePattern(activeMenu.item)"
+            >
+              Delete
+            </button>
+          </template>
+          <template v-else>
+            <button
+              type="button"
+              class="rounded px-2 py-1.5 text-left text-slate-300 hover:bg-slate-800"
+              @click="beginRename('folder', activeMenu.item.id, activeMenu.item.name)"
+            >
+              Rename
+            </button>
+            <button
+              type="button"
+              class="rounded px-2 py-1.5 text-left text-slate-300 hover:bg-slate-800"
+              @click="beginNewFolder(activeMenu.item.id)"
+            >
+              New subfolder
+            </button>
+            <button
+              type="button"
+              class="rounded px-2 py-1.5 text-left text-rose-300 hover:bg-rose-950/70"
+              @click="deleteFolder(activeMenu.item)"
+            >
+              Delete
+            </button>
+          </template>
+        </template>
+        <template v-else-if="movePatternId">
+          <p class="px-2 py-1 text-[10px] uppercase tracking-wider text-slate-600">Move to</p>
+          <button
+            type="button"
+            class="rounded px-2 py-1.5 text-left text-slate-300 hover:bg-slate-800"
+            @click="moveTo(null)"
+          >
+            Top level
+          </button>
+          <button
+            v-for="folder in moveFolders"
+            :key="folder.id"
+            type="button"
+            class="truncate rounded px-2 py-1.5 text-left text-slate-300 hover:bg-slate-800"
+            @click="moveTo(folder.id)"
+          >
+            {{ folder.name }}
+          </button>
+        </template>
+      </div>
+    </Teleport>
   </div>
 </template>

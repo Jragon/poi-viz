@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useDraggable, useEventListener, useStorage } from "@vueuse/core";
+import { useDraggable, useEventListener, useMediaQuery, useStorage } from "@vueuse/core";
 import { computed, nextTick, ref, watch } from "vue";
 
 import { clampPanelPosition, type PanelPosition } from "@/components/floatingPanelPosition";
@@ -10,11 +10,13 @@ const props = withDefaults(
     initialPosition?: PanelPosition;
     margin?: number;
     disabled?: boolean;
+    compact?: boolean;
   }>(),
   {
     initialPosition: () => ({ x: 32, y: 32 }),
     margin: 16,
-    disabled: false
+    disabled: false,
+    compact: false
   }
 );
 
@@ -25,12 +27,13 @@ const emit = defineEmits<{
 
 const panelRef = ref<HTMLElement | null>(null);
 const handleRef = ref<HTMLElement | null>(null);
+const isMobile = useMediaQuery("(max-width: 639px)");
 const storedPosition = useStorage(props.storageKey, props.initialPosition);
 
 const { x, y, style } = useDraggable(panelRef, {
   handle: handleRef,
   initialValue: storedPosition.value,
-  disabled: computed(() => props.disabled)
+  disabled: computed(() => props.disabled || (props.compact && isMobile.value))
 });
 
 function viewportSize() {
@@ -86,10 +89,17 @@ useEventListener("resize", () => {
 <template>
   <div
     ref="panelRef"
-    :style="style"
-    class="fixed z-40 flex max-h-[calc(100vh-2rem)] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/95 shadow-2xl shadow-slate-950/70 backdrop-blur"
+    :style="isMobile && props.compact ? undefined : style"
+    :class="
+      props.compact
+        ? 'fixed inset-0 z-[60] flex h-[100dvh] max-h-none w-full flex-col overflow-hidden rounded-none border-0 bg-slate-950/98 shadow-2xl shadow-slate-950/70 backdrop-blur sm:inset-auto sm:h-auto sm:max-h-[min(24rem,60dvh)] sm:w-[min(20rem,calc(100vw-2rem))] sm:rounded-xl sm:border'
+        : 'fixed z-40 flex max-h-[calc(100vh-2rem)] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/95 shadow-2xl shadow-slate-950/70 backdrop-blur'
+    "
   >
-    <div ref="handleRef" class="cursor-move touch-none select-none border-b border-slate-800 p-4">
+    <div
+      ref="handleRef"
+      class="cursor-move touch-none select-none border-b border-slate-800 p-3 sm:p-4"
+    >
       <slot name="handle" :close="close" :reset-position="resetPosition">
         <div class="flex items-center justify-between gap-3">
           <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Panel</p>
@@ -113,7 +123,7 @@ useEventListener("resize", () => {
       </slot>
     </div>
 
-    <div class="min-h-0 flex-1 overflow-y-auto">
+    <div class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
       <slot />
     </div>
   </div>

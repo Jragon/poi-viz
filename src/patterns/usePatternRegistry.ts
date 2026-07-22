@@ -44,6 +44,7 @@ export interface PatternRegistryController {
   delete: (id: string) => boolean;
   select: (id: string | null) => void;
   createFolder: (name: string, parentId?: string | null) => PatternFolder;
+  updateFolder: (id: string, name: string) => boolean;
   move: (id: string, folderId: string | null) => boolean;
   deleteFolder: (id: string) => boolean;
   get: (id: string) => PatternEntry | null;
@@ -379,6 +380,22 @@ export function createPatternRegistry(
     return clone(folder);
   };
 
+  const updateFolder = (id: string, name: string) => {
+    const folder = folders.value.find((candidate) => candidate.id === id);
+    if (!folder) return false;
+    let normalizedName: string;
+    try {
+      normalizedName = assertFolderName(name);
+    } catch {
+      return false;
+    }
+    folders.value = folders.value.map((candidate) =>
+      candidate.id === id ? { ...candidate, name: normalizedName } : candidate
+    );
+    write();
+    return true;
+  };
+
   const move = (id: string, folderId: string | null) => {
     if (
       !get(id) ||
@@ -413,6 +430,7 @@ export function createPatternRegistry(
     delete: remove,
     select,
     createFolder,
+    updateFolder,
     move,
     deleteFolder,
     get

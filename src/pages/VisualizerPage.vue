@@ -165,14 +165,13 @@ async function toggleWebcam() {
 
 <template>
   <main class="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-6 py-8">
-    <template>
-      <div class="w-full">
-        <PatternRegistryControls :current-name="selectedEntry?.name ?? 'Demo pattern'" />
-      </div>
+    <div class="w-full">
+      <PatternRegistryControls :current-name="selectedEntry?.name ?? 'Demo pattern'" />
+    </div>
 
-      <section class="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 md:p-6">
-        <div class="grid gap-4">
-          <TransportControls />
+    <section class="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 md:p-6">
+      <div class="grid gap-4">
+        <TransportControls />
 
           <div
             ref="fullscreenTargetRef"
@@ -253,7 +252,7 @@ async function toggleWebcam() {
             </div>
           </div>
         </div>
-      </section>
+    </section>
 
       <FloatingPanel
         v-if="panelOpen && !isFullscreen"
@@ -289,8 +288,7 @@ async function toggleWebcam() {
         </template>
 
         <VisualizerDisplayPanel :show-header="false" :framed="false" />
-      </FloatingPanel>
-    </template>
+        </FloatingPanel>
 
   </main>
 </template>
