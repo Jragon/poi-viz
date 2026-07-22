@@ -57,3 +57,20 @@ every cyclic track.
 The first legality pass found that outward vertical non-native wraps used outward row ordering with
 inward poi rotation. The generator now resolves the requested outward directions directly instead of
 flipping only the row template.
+
+## Single-hand reel oracle
+
+Reels have two side-changing intervals. Inward/outward flow changes the poi's rotation direction,
+while the derived initial phase keeps both crosspoints outward on the selected body gate.
+
+| Reel position   | Left-hand gate | Right-hand gate | Level | Side motion |
+| --------------- | -------------- | --------------- | ----- | ----------- |
+| High native     | left           | right           | high  | B→A, A→B    |
+| Low native      | left           | right           | low   | B→A, A→B    |
+| High non-native | right          | left            | high  | B→A, A→B    |
+| Low non-native  | right          | left            | low   | B→A, A→B    |
+| High back       | right          | left            | high  | A→B, B→A    |
+| Low back        | right          | left            | low   | A→B, B→A    |
+
+The oracle validates left and right hands separately for both inward and outward flow. Two-hand
+combinations and cycle offsets are not separate legality cases.

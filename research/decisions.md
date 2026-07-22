@@ -271,3 +271,6 @@ fixup, or visualizer geometry.
   beat graph or its legality rules.
 - Wrap legality is validated as single-hand behavior for left/right hands and inward/outward flow;
   two-hand combinations and cycle rotations are not separate oracle cases.
+- Reel legality follows the same single-hand policy. Native, non-native, and back positions are
+  checked at high and low for both flows; flow changes rotation direction while phase keeps the
+  crosspoint orientation outward.
