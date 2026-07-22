@@ -41,6 +41,8 @@ const layout = {
   inactiveRadius: 3.5,
   activeRadius: 7
 } as const;
+const compactViewportRows = 9;
+const compactViewportMaxHeightRem = 24;
 
 interface DisplayRowState extends PoiBeatDerivedRowState {
   readonly key: string;
@@ -126,6 +128,22 @@ const svgWidth = computed(
 const svgHeight = computed(
   () => layout.topPad + layout.bottomPad + rowGap.value * Math.max(displayRows.value.length - 1, 0)
 );
+const compactViewportHeight = layout.topPad + layout.bottomPad + 24 * (compactViewportRows - 1);
+const compactViewportStyle = computed(() => {
+  if (props.density !== "compact") return undefined;
+
+  return {
+    aspectRatio: `${svgWidth.value} / ${compactViewportHeight}`,
+    maxHeight: `${compactViewportMaxHeightRem}rem`
+  };
+});
+const compactSvgStyle = computed(() => {
+  if (props.density !== "compact") return undefined;
+
+  return {
+    maxWidth: `${(compactViewportMaxHeightRem * svgWidth.value) / compactViewportHeight}rem`
+  };
+});
 const trackPaths = computed<readonly TrackPathView[]>(() =>
   visibleTracks.value.map((visibleTrack) => makeTrackPath(visibleTrack))
 );
@@ -358,19 +376,20 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
       </div>
     </div>
 
-    <div class="bg-ui-input px-3 py-3">
+    <div
+      class="bg-ui-input"
+      :class="density === 'compact' ? 'overflow-y-auto [scrollbar-gutter:stable]' : 'px-3 py-3'"
+      :style="compactViewportStyle"
+      :tabindex="density === 'compact' ? 0 : undefined"
+      :aria-label="density === 'compact' ? 'Scrollable beat graph' : undefined"
+    >
       <svg
         role="img"
         aria-label="Poi beat graph with vertical time rows and symmetric lanes"
         :viewBox="`0 0 ${svgWidth} ${svgHeight}`"
         class="mx-auto block w-full text-ui-text-muted"
-        :class="
-          density === 'condensed'
-            ? 'max-h-[clamp(14rem,34vh,22rem)]'
-            : density === 'compact'
-              ? 'max-h-[clamp(16rem,38vh,24rem)]'
-              : ''
-        "
+        :class="density === 'condensed' ? 'max-h-[clamp(14rem,34vh,22rem)]' : ''"
+        :style="compactSvgStyle"
       >
         <g aria-hidden="true">
           <line
