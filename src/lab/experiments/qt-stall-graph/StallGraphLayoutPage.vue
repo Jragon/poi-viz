@@ -34,8 +34,11 @@ const presets = [
         </p>
       </header>
 
-      <section class="min-w-0 rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-        <label for="stall-layout-codec" class="text-xs uppercase tracking-[0.14em] text-slate-500">
+      <section class="min-w-0 rounded-lg border border-ui-border-subtle bg-slate-900/60 p-4">
+        <label
+          for="stall-layout-codec"
+          class="text-xs uppercase tracking-[0.14em] text-ui-text-muted"
+        >
           Pattern codec
         </label>
         <input
@@ -43,7 +46,7 @@ const presets = [
           v-model="codec"
           type="text"
           spellcheck="false"
-          class="mt-2 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 font-mono text-sm text-slate-200 outline-none transition focus:border-cyan-400"
+          class="mt-2 w-full rounded-md border border-ui-border-strong bg-ui-input px-3 py-2 font-mono text-sm text-ui-text-secondary transition focus:border-cyan-400"
         />
         <div class="mt-3 flex flex-wrap gap-2">
           <button
@@ -62,22 +65,22 @@ const presets = [
       </section>
 
       <section class="grid min-w-0 gap-4 lg:grid-cols-2">
-        <article class="min-w-0 rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-          <p class="text-xs uppercase tracking-[0.14em] text-slate-500">Fixed reference</p>
+        <article class="min-w-0 rounded-lg border border-ui-border-subtle bg-slate-900/50 p-4">
+          <p class="text-xs uppercase tracking-[0.14em] text-ui-text-muted">Fixed reference</p>
           <h2 class="mt-1 text-sm font-semibold text-slate-200">Four beats · 260px card</h2>
           <div
-            class="mt-4 w-[260px] max-w-full rounded-md border border-slate-800 bg-slate-950 p-3"
+            class="mt-4 w-[260px] max-w-full rounded-md border border-ui-border-subtle bg-slate-950 p-3"
           >
             <StallPatternGraph :draft="shortDraft" orientation="horizontal" density="compact" />
           </div>
         </article>
 
-        <article class="min-w-0 rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-          <p class="text-xs uppercase tracking-[0.14em] text-slate-500">Overview</p>
+        <article class="min-w-0 rounded-lg border border-ui-border-subtle bg-slate-900/50 p-4">
+          <p class="text-xs uppercase tracking-[0.14em] text-ui-text-muted">Overview</p>
           <h2 class="mt-1 text-sm font-semibold text-slate-200">Fit the entire pattern · 260px</h2>
           <div
             v-if="decoded.ok"
-            class="mt-4 w-[260px] max-w-full rounded-md border border-slate-800 bg-slate-950 p-3"
+            class="mt-4 w-[260px] max-w-full rounded-md border border-ui-border-subtle bg-slate-950 p-3"
           >
             <StallPatternGraph
               :draft="decoded.draft"
@@ -88,12 +91,12 @@ const presets = [
         </article>
       </section>
 
-      <article class="min-w-0 rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-        <p class="text-xs uppercase tracking-[0.14em] text-slate-500">Editor candidate</p>
+      <article class="min-w-0 rounded-lg border border-ui-border-subtle bg-slate-900/50 p-4">
+        <p class="text-xs uppercase tracking-[0.14em] text-ui-text-muted">Editor candidate</p>
         <h2 class="mt-1 text-sm font-semibold text-slate-200">
           Continuous horizontal timeline · scrollable
         </h2>
-        <p class="mt-2 text-xs text-slate-500">
+        <p class="mt-2 text-xs text-ui-text-muted">
           Cardinal labels remain fixed while the beat timeline scrolls.
         </p>
         <StallPatternGraphScroller
@@ -106,12 +109,12 @@ const presets = [
       </article>
 
       <section class="grid min-w-0 items-start gap-4">
-        <article class="min-w-0 rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-          <p class="text-xs uppercase tracking-[0.14em] text-slate-500">Optional orientation</p>
+        <article class="min-w-0 rounded-lg border border-ui-border-subtle bg-slate-900/50 p-4">
+          <p class="text-xs uppercase tracking-[0.14em] text-ui-text-muted">Optional orientation</p>
           <h2 class="mt-1 text-sm font-semibold text-slate-200">Vertical · intrinsic thumbnail</h2>
           <div
             v-if="decoded.ok"
-            class="mt-4 max-h-[34rem] overflow-y-auto rounded-md border border-slate-800 bg-slate-950 p-3"
+            class="mt-4 max-h-[34rem] overflow-y-auto rounded-md border border-ui-border-subtle bg-slate-950 p-3"
           >
             <StallPatternGraph
               :draft="decoded.draft"

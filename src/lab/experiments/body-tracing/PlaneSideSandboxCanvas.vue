@@ -286,12 +286,14 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="lab-live-cell overflow-hidden rounded-lg border border-slate-800 bg-slate-950/80">
+  <section
+    class="lab-live-cell overflow-hidden rounded-lg border border-ui-border-subtle bg-slate-950/80"
+  >
     <header
-      class="grid gap-3 border-b border-slate-800 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start"
+      class="grid gap-3 border-b border-ui-border-subtle px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start"
     >
       <div class="min-w-0">
-        <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Plane Side Canvas</p>
+        <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Plane Side Canvas</p>
         <h2 class="mt-1 text-lg font-semibold text-slate-100">Atomic plane side surfaces</h2>
         <p class="mt-1 text-sm leading-6 text-slate-400">
           Drag horizontally or vertically to rotate the projected view.
@@ -300,11 +302,11 @@ onBeforeUnmount(() => {
 
       <dl class="grid grid-cols-2 gap-x-5 gap-y-1 text-xs text-slate-400 md:text-right">
         <div>
-          <dt class="uppercase tracking-[0.18em] text-slate-600">Yaw</dt>
+          <dt class="uppercase tracking-[0.18em] text-ui-text-muted">Yaw</dt>
           <dd class="font-mono text-slate-300">{{ yawDeg.toFixed(0) }} deg</dd>
         </div>
         <div>
-          <dt class="uppercase tracking-[0.18em] text-slate-600">Pitch</dt>
+          <dt class="uppercase tracking-[0.18em] text-ui-text-muted">Pitch</dt>
           <dd class="font-mono text-slate-300">{{ pitchDeg.toFixed(0) }} deg</dd>
         </div>
       </dl>

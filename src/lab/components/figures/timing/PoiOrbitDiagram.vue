@@ -74,7 +74,7 @@ const accessibleLabel = computed(
     <g aria-hidden="true">
       <circle cx="76" cy="72" r="48" class="fill-none stroke-slate-700" stroke-width="1.5" />
 
-      <g class="fill-slate-500 text-[9px] font-semibold">
+      <g class="fill-slate-500 text-[10px] font-semibold">
         <text x="76" y="12" text-anchor="middle">U</text>
         <text x="137" y="75" text-anchor="middle">R</text>
         <text x="76" y="137" text-anchor="middle">D</text>
@@ -158,10 +158,10 @@ const accessibleLabel = computed(
         </text>
       </g>
 
-      <text x="100" y="11" text-anchor="middle" class="fill-cyan-300 text-[9px] font-bold">
+      <text x="100" y="11" text-anchor="middle" class="fill-cyan-300 text-[10px] font-bold">
         L {{ props.leftDirection === "positive" ? "↺" : "↻" }}
       </text>
-      <text x="130" y="11" text-anchor="middle" class="fill-pink-300 text-[9px] font-bold">
+      <text x="130" y="11" text-anchor="middle" class="fill-pink-300 text-[10px] font-bold">
         R {{ props.rightDirection === "positive" ? "↺" : "↻" }}
       </text>
     </g>

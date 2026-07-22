@@ -140,12 +140,12 @@ function onAddKey() {
 </script>
 
 <template>
-  <div class="grid min-w-0 gap-2 border-t border-slate-800 pt-3">
+  <div class="grid min-w-0 gap-2 border-t border-ui-border-subtle pt-3">
     <div class="flex items-center justify-between gap-2">
-      <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Radius keys</p>
+      <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Radius keys</p>
       <button
         type="button"
-        class="rounded-lg border border-slate-700 px-2 py-1 text-xs text-slate-200 transition hover:border-sky-400 disabled:opacity-40"
+        class="rounded-lg border border-ui-border-strong px-2 py-1 text-xs text-ui-text-secondary transition hover:border-sky-400 disabled:cursor-not-allowed disabled:border-ui-border-subtle disabled:text-ui-text-muted"
         :disabled="!nextKey"
         aria-label="Add radius key"
         title="Add radius key"
@@ -156,33 +156,33 @@ function onAddKey() {
     </div>
 
     <div class="grid grid-cols-[3.75rem_minmax(0,1fr)_1.75rem] items-end gap-1.5">
-      <span class="text-xs uppercase tracking-[0.16em] text-slate-500">t</span>
-      <span class="text-xs uppercase tracking-[0.16em] text-slate-500">Radius</span>
+      <span class="text-xs uppercase tracking-[0.16em] text-ui-text-muted">t</span>
+      <span class="text-xs uppercase tracking-[0.16em] text-ui-text-muted">Radius</span>
       <span aria-hidden="true"></span>
 
       <input
         type="number"
         value="0"
         disabled
-        class="w-full min-w-0 rounded-xl border border-slate-800 bg-slate-950/60 px-2 py-1.5 text-sm text-slate-500 outline-none"
+        class="w-full min-w-0 rounded-xl border border-ui-border-strong bg-ui-input px-2 py-1.5 text-sm text-ui-text-muted"
       />
       <input
         type="number"
         step="any"
-        class="w-full min-w-0 rounded-xl border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 outline-none transition focus:border-sky-400 disabled:border-slate-800 disabled:bg-slate-950/60 disabled:text-slate-500"
+        class="w-full min-w-0 rounded-xl border border-ui-border-strong bg-ui-input px-2 py-1.5 text-sm text-ui-text transition focus:border-sky-400 disabled:border-ui-border-subtle disabled:bg-ui-surface disabled:text-ui-text-muted"
         :class="errors.anchor ? 'border-rose-500' : ''"
         :disabled="!isAnchorEditable"
         :value="drafts.anchor ?? String(anchorRadius)"
         @input="onInput('anchor', $event)"
         @blur="onAnchorBlur"
       />
-      <span class="text-center text-xs text-slate-600" title="Start radius">start</span>
+      <span class="text-center text-xs text-ui-text-muted" title="Start radius">start</span>
 
       <template v-for="(key, keyIndex) in keys" :key="`${key.t}:${keyIndex}`">
         <input
           type="number"
           step="any"
-          class="w-full min-w-0 rounded-xl border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 outline-none transition focus:border-sky-400"
+          class="w-full min-w-0 rounded-xl border border-ui-border-strong bg-ui-input px-2 py-1.5 text-sm text-ui-text transition focus:border-sky-400"
           :class="errors[inputId(keyIndex, 't')] ? 'border-rose-500' : ''"
           :value="drafts[inputId(keyIndex, 't')] ?? String(key.t)"
           @input="onInput(inputId(keyIndex, 't'), $event)"
@@ -191,7 +191,7 @@ function onAddKey() {
         <input
           type="number"
           step="any"
-          class="w-full min-w-0 rounded-xl border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 outline-none transition focus:border-sky-400"
+          class="w-full min-w-0 rounded-xl border border-ui-border-strong bg-ui-input px-2 py-1.5 text-sm text-ui-text transition focus:border-sky-400"
           :class="errors[inputId(keyIndex, 'radius')] ? 'border-rose-500' : ''"
           :value="drafts[inputId(keyIndex, 'radius')] ?? String(key.radius)"
           @input="onInput(inputId(keyIndex, 'radius'), $event)"

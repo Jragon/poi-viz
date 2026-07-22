@@ -73,15 +73,15 @@ function projectionModeValue(event: Event): ProjectionModePreference {
     :class="[
       'max-h-full overflow-y-auto p-4',
       props.framed
-        ? 'rounded-2xl border border-slate-800 bg-slate-950/95 shadow-2xl shadow-slate-950/60 backdrop-blur'
+        ? 'rounded-2xl border border-ui-border bg-ui-surface-raised shadow-2xl shadow-slate-950/60 backdrop-blur'
         : ''
     ]"
   >
     <div class="grid gap-4">
       <div v-if="props.showHeader" class="flex items-start justify-between gap-3">
         <div>
-          <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Display</p>
-          <p class="mt-1 font-mono text-sm text-slate-300">{{ activePresetLabel }}</p>
+          <p class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted">Display</p>
+          <p class="mt-1 font-mono text-sm text-ui-text-secondary">{{ activePresetLabel }}</p>
         </div>
         <button
           type="button"
@@ -101,6 +101,7 @@ function projectionModeValue(event: Event): ProjectionModePreference {
               ? 'border-amber-400 bg-amber-400 text-slate-950'
               : 'border-slate-700 text-slate-300'
           "
+          :aria-pressed="display.activePresetId.value === 'normal'"
           :disabled="display.isWebcamPresetForced.value"
         >
           Normal
@@ -113,6 +114,7 @@ function projectionModeValue(event: Event): ProjectionModePreference {
               ? 'border-sky-400 bg-sky-400 text-slate-950'
               : 'border-slate-700 text-slate-300'
           "
+          :aria-pressed="display.activePresetId.value === 'webcam'"
           disabled
         >
           Webcam
@@ -127,7 +129,7 @@ function projectionModeValue(event: Event): ProjectionModePreference {
         Reset {{ activePresetLabel }}
       </button>
 
-      <label class="grid gap-2 text-xs uppercase tracking-[0.16em] text-slate-500">
+      <label class="grid gap-2 text-sm font-medium uppercase tracking-[0.14em] text-ui-text-muted">
         <span class="flex items-center justify-between gap-3">
           <span>{{ DISPLAY_SCALE_SETTING.label }}</span>
           <span class="font-mono text-sm normal-case tracking-normal text-slate-300">
@@ -145,9 +147,13 @@ function projectionModeValue(event: Event): ProjectionModePreference {
         />
       </label>
 
-      <fieldset class="grid gap-3 border-t border-slate-800 pt-4">
-        <legend class="text-xs uppercase tracking-[0.2em] text-slate-500">Layers</legend>
-        <div class="grid gap-2 text-sm text-slate-300 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+      <fieldset class="grid gap-3 border-t border-ui-border-subtle pt-4">
+        <legend class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted">
+          Layers
+        </legend>
+        <div
+          class="grid gap-2 text-sm text-ui-text-secondary sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2"
+        >
           <label
             v-for="control in OVERLAY_VISIBILITY_SETTINGS"
             :key="control.key"
@@ -175,12 +181,12 @@ function projectionModeValue(event: Event): ProjectionModePreference {
 
       <div
         v-if="display.external.trailDecaySteps || display.external.transportSecondsPerUnit"
-        class="grid gap-3 border-t border-slate-800 pt-4"
+        class="grid gap-3 border-t border-ui-border-subtle pt-4"
       >
-        <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Session</p>
+        <p class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted">Session</p>
         <label
           v-if="display.external.trailDecaySteps"
-          class="grid gap-2 text-xs uppercase tracking-[0.16em] text-slate-500"
+          class="grid gap-2 text-xs uppercase tracking-[0.16em] text-ui-text-muted"
         >
           <span class="flex items-center justify-between gap-3">
             <span>{{ trailDecaySetting.label }}</span>
@@ -201,7 +207,7 @@ function projectionModeValue(event: Event): ProjectionModePreference {
 
         <label
           v-if="display.external.transportSecondsPerUnit"
-          class="grid gap-2 text-xs uppercase tracking-[0.16em] text-slate-500"
+          class="grid gap-2 text-xs uppercase tracking-[0.16em] text-ui-text-muted"
         >
           <span class="flex items-center justify-between gap-3">
             <span>{{ transportSpeedSetting.label }}</span>
@@ -232,13 +238,18 @@ function projectionModeValue(event: Event): ProjectionModePreference {
           display.external.projectionPitchDeg ||
           display.external.planeSideSeparationWorld
         "
-        class="grid gap-3 border-t border-slate-800 pt-4"
+        class="grid gap-3 border-t border-ui-border-subtle pt-4"
       >
-        <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Projection</p>
-        <label v-if="display.external.projectionMode" class="grid gap-2 text-sm text-slate-300">
-          <span class="text-xs uppercase tracking-[0.16em] text-slate-500">Mode</span>
+        <p class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted">Projection</p>
+        <label
+          v-if="display.external.projectionMode"
+          class="grid gap-2 text-sm text-ui-text-secondary"
+        >
+          <span class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted"
+            >Mode</span
+          >
           <select
-            class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none transition focus:border-amber-400"
+            class="w-full rounded-lg border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text transition focus:border-amber-400"
             :value="display.external.projectionMode.value.value"
             @change="display.external.projectionMode.set(projectionModeValue($event))"
           >
@@ -250,7 +261,7 @@ function projectionModeValue(event: Event): ProjectionModePreference {
 
         <label
           v-if="display.external.projectionYawDeg"
-          class="grid gap-2 text-xs uppercase tracking-[0.16em] text-slate-500"
+          class="grid gap-2 text-xs uppercase tracking-[0.16em] text-ui-text-muted"
         >
           <span class="flex items-center justify-between gap-3">
             <span>{{ projectionYawSetting.label }}</span>
@@ -273,7 +284,7 @@ function projectionModeValue(event: Event): ProjectionModePreference {
 
         <label
           v-if="display.external.projectionPitchDeg"
-          class="grid gap-2 text-xs uppercase tracking-[0.16em] text-slate-500"
+          class="grid gap-2 text-xs uppercase tracking-[0.16em] text-ui-text-muted"
         >
           <span class="flex items-center justify-between gap-3">
             <span>{{ projectionPitchSetting.label }}</span>
@@ -298,7 +309,7 @@ function projectionModeValue(event: Event): ProjectionModePreference {
 
         <label
           v-if="display.external.planeSideSeparationWorld"
-          class="grid gap-2 text-xs uppercase tracking-[0.16em] text-slate-500"
+          class="grid gap-2 text-xs uppercase tracking-[0.16em] text-ui-text-muted"
         >
           <span class="flex items-center justify-between gap-3">
             <span>{{ planeSideSeparationSetting.label }}</span>
@@ -322,12 +333,12 @@ function projectionModeValue(event: Event): ProjectionModePreference {
         </label>
       </div>
 
-      <div class="grid gap-3 border-t border-slate-800 pt-4">
-        <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Geometry</p>
+      <div class="grid gap-3 border-t border-ui-border-subtle pt-4">
+        <p class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted">Geometry</p>
         <label
           v-for="control in OVERLAY_GEOMETRY_SETTINGS"
           :key="control.key"
-          class="grid gap-2 text-xs uppercase tracking-[0.16em] text-slate-500"
+          class="grid gap-2 text-xs uppercase tracking-[0.16em] text-ui-text-muted"
         >
           <span class="flex items-center justify-between gap-3">
             <span>{{ control.label }}</span>
@@ -347,21 +358,21 @@ function projectionModeValue(event: Event): ProjectionModePreference {
         </label>
       </div>
 
-      <div class="grid gap-4 border-t border-slate-800 pt-4">
-        <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Rig Colors</p>
+      <div class="grid gap-4 border-t border-ui-border-subtle pt-4">
+        <p class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted">Rig Colors</p>
         <section v-for="rigId in display.rigOrder.value" :key="rigId" class="grid gap-3">
-          <p class="font-mono text-sm text-slate-300">{{ rigId }}</p>
+          <p class="font-mono text-sm text-ui-text-secondary">{{ rigId }}</p>
           <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
             <label
               v-for="control in RIG_COLOR_SETTINGS"
               :key="`${rigId}-${control.key}`"
-              class="flex items-center justify-between gap-3 text-sm text-slate-300"
+              class="flex items-center justify-between gap-3 text-sm text-ui-text-secondary"
             >
               <span>{{ control.label }}</span>
               <input
                 type="color"
                 :value="display.overlaySettings.value.rigStyles[rigId]?.[control.key]"
-                class="h-8 w-12 cursor-pointer rounded border border-slate-700 bg-transparent p-0"
+                class="h-8 w-12 cursor-pointer rounded border border-ui-border-strong bg-transparent p-0"
                 @input="display.setRigOverlayStyle(rigId, control.key, inputValue($event))"
               />
             </label>

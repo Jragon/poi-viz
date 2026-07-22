@@ -92,21 +92,24 @@ useEventListener("resize", () => {
     :style="isMobile && props.compact ? undefined : style"
     :class="
       props.compact
-        ? 'fixed inset-0 z-[60] flex h-[100dvh] max-h-none w-full flex-col overflow-hidden rounded-none border-0 bg-slate-950/98 shadow-2xl shadow-slate-950/70 backdrop-blur sm:inset-auto sm:h-auto sm:max-h-[min(24rem,60dvh)] sm:w-[min(20rem,calc(100vw-2rem))] sm:rounded-xl sm:border'
-        : 'fixed z-40 flex max-h-[calc(100vh-2rem)] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/95 shadow-2xl shadow-slate-950/70 backdrop-blur'
+        ? 'fixed inset-0 z-[60] flex h-[100dvh] max-h-none w-full flex-col overflow-hidden rounded-none border-0 bg-ui-surface-raised shadow-2xl shadow-slate-950/70 backdrop-blur sm:inset-auto sm:h-auto sm:max-h-[min(24rem,60dvh)] sm:w-[min(20rem,calc(100vw-2rem))] sm:rounded-xl sm:border sm:border-ui-border'
+        : 'fixed z-40 flex max-h-[calc(100vh-2rem)] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-ui-border bg-ui-surface-raised shadow-2xl shadow-slate-950/70 backdrop-blur'
     "
   >
     <div
       ref="handleRef"
-      class="cursor-move touch-none select-none border-b border-slate-800 p-3 sm:p-4"
+      class="cursor-move touch-none select-none border-b border-ui-border-subtle p-3 sm:p-4"
     >
       <slot name="handle" :close="close" :reset-position="resetPosition">
         <div class="flex items-center justify-between gap-3">
-          <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Panel</p>
+          <p class="text-[11px] font-medium uppercase tracking-[0.14em] text-ui-text-muted">
+            Panel
+          </p>
           <div class="flex items-center gap-2">
             <button
               type="button"
               class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+              aria-label="Reset panel position"
               @click.stop="resetPosition"
             >
               Reset
@@ -114,6 +117,7 @@ useEventListener("resize", () => {
             <button
               type="button"
               class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+              aria-label="Close panel"
               @click.stop="close"
             >
               Close

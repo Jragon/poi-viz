@@ -148,7 +148,7 @@ function onPlaneSideChange(event: Event) {
     <button
       v-if="showBoundaryRow"
       type="button"
-      class="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-left text-xs text-slate-400 transition hover:border-sky-400 hover:text-slate-200"
+      class="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-ui-border bg-ui-surface px-4 py-3 text-left text-sm text-ui-text-secondary transition hover:border-sky-400 hover:bg-ui-selected hover:text-ui-selected-text"
       @click="emit('jump-to-boundary')"
     >
       <span class="min-w-0 wrap-break-word"
@@ -161,24 +161,29 @@ function onPlaneSideChange(event: Event) {
     <section
       class="grid min-w-0 gap-4 rounded-3xl border p-4 transition"
       :class="[
-        isActive ? 'border-emerald-400 bg-emerald-950/10' : 'border-slate-800 bg-slate-950/70',
-        isSelected ? 'ring-1 ring-sky-400/70' : ''
+        isActive && isSelected
+          ? 'border-sky-400 bg-ui-selected ring-1 ring-emerald-400/80'
+          : isActive
+            ? 'border-emerald-400 bg-emerald-950/35'
+            : isSelected
+              ? 'border-sky-400 bg-ui-selected/85 ring-1 ring-sky-400/70'
+              : 'border-ui-border-subtle bg-ui-surface'
       ]"
       :data-active-segment="isActive ? 'true' : 'false'"
       @click="emit('select')"
     >
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0 flex-1">
-          <p class="text-xs uppercase tracking-[0.22em] text-slate-500">
+          <p class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted">
             {{ segment.kind === "first" ? "Starting segment" : "Continuation segment" }}
           </p>
           <p class="mt-1 text-xs uppercase tracking-[0.16em] text-sky-300">
             {{ boundary.planeId }} plane
           </p>
-          <p class="mt-1 text-sm text-slate-300 wrap-break-word">
+          <p class="mt-1 text-sm text-ui-text-secondary wrap-break-word">
             {{ formatPose(boundary.startPose) }}
           </p>
-          <p class="mt-1 text-xs text-slate-500 wrap-break-word">
+          <p class="mt-1 text-sm text-ui-text-muted wrap-break-word">
             Ends {{ formatPose(boundary.endPose) }}
           </p>
         </div>
@@ -193,7 +198,7 @@ function onPlaneSideChange(event: Event) {
           </button>
           <button
             type="button"
-            class="rounded-xl border border-rose-800 px-3 py-2 text-xs text-rose-200 transition hover:border-rose-600 disabled:opacity-50"
+            class="rounded-xl border border-rose-800 px-3 py-2 text-xs text-rose-200 transition hover:border-rose-600 disabled:cursor-not-allowed disabled:border-ui-border-subtle disabled:text-ui-text-muted"
             :disabled="!canDelete"
             @click.stop="emit('delete')"
           >
@@ -203,10 +208,12 @@ function onPlaneSideChange(event: Event) {
       </div>
 
       <div class="grid gap-3 sm:grid-cols-3">
-        <label class="grid min-w-0 gap-1 text-sm text-slate-300">
-          <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Plane</span>
+        <label class="grid min-w-0 gap-1 text-sm text-ui-text-secondary">
+          <span class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted"
+            >Plane</span
+          >
           <select
-            class="w-full min-w-0 rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none transition focus:border-sky-400"
+            class="w-full min-w-0 rounded-2xl border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text transition focus:border-sky-400"
             :value="segment.planeId ?? 'wall'"
             @click.stop
             @change="onPlaneChange"
@@ -217,10 +224,12 @@ function onPlaneSideChange(event: Event) {
           </select>
         </label>
 
-        <label class="grid min-w-0 gap-1 text-sm text-slate-300">
-          <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Plane side</span>
+        <label class="grid min-w-0 gap-1 text-sm text-ui-text-secondary">
+          <span class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted"
+            >Plane side</span
+          >
           <select
-            class="w-full min-w-0 rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none transition focus:border-sky-400"
+            class="w-full min-w-0 rounded-2xl border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text transition focus:border-sky-400"
             :value="segment.planeSide ?? 'a'"
             @click.stop
             @change="onPlaneSideChange"
@@ -231,12 +240,14 @@ function onPlaneSideChange(event: Event) {
           </select>
         </label>
 
-        <label class="grid min-w-0 gap-1 text-sm text-slate-300">
-          <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Duration</span>
+        <label class="grid min-w-0 gap-1 text-sm text-ui-text-secondary">
+          <span class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted"
+            >Duration</span
+          >
           <input
             type="number"
             step="any"
-            class="w-full min-w-0 rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none transition focus:border-sky-400"
+            class="w-full min-w-0 rounded-2xl border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text transition focus:border-sky-400"
             :class="durationError ? 'border-rose-500' : ''"
             :value="durationDraft ?? String(segment.durationUnits)"
             @input="onDurationInput"

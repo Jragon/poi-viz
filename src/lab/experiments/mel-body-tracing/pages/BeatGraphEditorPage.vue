@@ -234,23 +234,23 @@ function trackAccentClass(track: PoiBeatTrack): string {
 }
 
 function editButtonClass(track: PoiBeatTrack): string {
-  if (isEditingTrack(track.id)) return "border-slate-200 bg-slate-100 text-slate-950";
-  return "border-slate-700 text-slate-300 hover:border-slate-500 hover:bg-slate-800";
+  if (isEditingTrack(track.id)) return "border-sky-400 bg-sky-950/70 text-sky-100";
+  return "border-slate-700 text-ui-text-secondary hover:border-slate-500 hover:bg-slate-800";
 }
 
 function visibilityButtonClass(track: PoiBeatTrack): string {
   if (isTrackVisible(track.id)) return "border-emerald-500/70 bg-emerald-500/15 text-emerald-200";
-  return "border-slate-700 text-slate-500 hover:border-slate-500 hover:text-slate-300";
+  return "border-slate-700 text-ui-text-muted hover:border-slate-500 hover:text-slate-300";
 }
 
 function directionButtonClass(track: PoiBeatTrack, direction: PoiBeatDirection): string {
-  if (track.poiDirection === direction) return "border-slate-200 bg-slate-100 text-slate-950";
-  return "border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200";
+  if (track.poiDirection === direction) return "border-amber-400 bg-amber-950/60 text-amber-100";
+  return "border-slate-700 text-ui-text-secondary hover:border-slate-500 hover:text-ui-text";
 }
 
 function phaseButtonClass(track: PoiBeatTrack, phase: PoiBeatPhaseLabel): string {
-  if (track.initialPhase === phase) return "border-slate-200 bg-slate-100 text-slate-950";
-  return "border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200";
+  if (track.initialPhase === phase) return "border-violet-400 bg-violet-950/60 text-violet-100";
+  return "border-slate-700 text-ui-text-secondary hover:border-slate-500 hover:text-ui-text";
 }
 
 watch(registry.selectedPatternId, loadSelectedPattern, { immediate: true });
@@ -268,7 +268,7 @@ onBeforeRouteLeave(() => {
         <header class="order-1">
           <div class="flex items-start justify-between gap-3">
             <div>
-              <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Mel body tracing</p>
+              <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Mel body tracing</p>
               <h1 class="mt-2 text-2xl font-semibold text-slate-50">Beat Graph Editor</h1>
             </div>
             <PatternRegistryControls
@@ -300,15 +300,15 @@ onBeforeRouteLeave(() => {
           </p>
         </header>
 
-        <section class="order-2 rounded-lg border border-slate-800 bg-slate-900/60 lg:order-3">
-          <div class="border-b border-slate-800 px-4 py-3">
+        <section class="order-2 rounded-lg border border-ui-border bg-ui-surface lg:order-3">
+          <div class="border-b border-ui-border-subtle px-4 py-3">
             <h2 class="text-sm font-semibold text-slate-200">Hands</h2>
           </div>
           <div class="grid gap-3 px-4 py-4 text-sm">
             <div
               v-for="track in tracks"
               :key="track.id"
-              class="rounded-md border border-slate-800 bg-slate-950/50 px-3 py-3"
+              class="rounded-md border border-ui-border-subtle bg-ui-input px-3 py-3"
             >
               <div class="flex items-center justify-between gap-3">
                 <div class="min-w-0">
@@ -316,13 +316,13 @@ onBeforeRouteLeave(() => {
                     <span :class="trackAccentClass(track)">●</span>
                     {{ trackLabel(track) }}
                   </p>
-                  <p class="mt-0.5 font-mono text-xs text-slate-500">{{ track.id }}</p>
+                  <p class="mt-0.5 font-mono text-xs text-ui-text-muted">{{ track.id }}</p>
                 </div>
 
                 <div class="flex shrink-0 gap-2">
                   <button
                     type="button"
-                    class="rounded-md border px-2.5 py-1 text-xs font-medium transition disabled:cursor-not-allowed disabled:border-slate-800 disabled:text-slate-600"
+                    class="rounded-md border px-2.5 py-1 text-xs font-medium transition disabled:cursor-not-allowed disabled:border-ui-border-subtle disabled:text-ui-text-muted"
                     :class="editButtonClass(track)"
                     :disabled="!isTrackVisible(track.id)"
                     :aria-pressed="isEditingTrack(track.id)"
@@ -385,7 +385,7 @@ onBeforeRouteLeave(() => {
               </div>
 
               <div class="mt-2 grid grid-cols-[auto_1fr] items-center gap-2">
-                <p class="text-xs uppercase tracking-[0.12em] text-slate-500">Offset</p>
+                <p class="text-xs uppercase tracking-[0.12em] text-ui-text-muted">Offset</p>
                 <div class="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -422,7 +422,7 @@ onBeforeRouteLeave(() => {
 
           <button
             type="button"
-            class="mt-3 hidden w-full rounded-md border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white disabled:cursor-wait disabled:border-slate-800 disabled:text-slate-500 md:block"
+            class="mt-3 hidden w-full rounded-md border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white disabled:cursor-wait disabled:border-ui-border-subtle disabled:text-ui-text-muted md:block"
             :disabled="graphPngExport.state.status === 'running'"
             @click="exportGraphPngSequence"
           >
@@ -432,17 +432,19 @@ onBeforeRouteLeave(() => {
       </div>
 
       <div class="grid content-start gap-6">
-        <section class="overflow-hidden rounded-lg border border-slate-800 bg-slate-950/80">
-          <header class="flex justify-end border-b border-slate-800 px-4 py-3">
-            <dl class="grid grid-cols-2 gap-x-5 gap-y-1 text-xs text-slate-400 md:text-right">
+        <section class="overflow-hidden rounded-lg border border-ui-border bg-ui-surface-raised">
+          <header class="flex justify-end border-b border-ui-border-subtle px-4 py-3">
+            <dl
+              class="grid grid-cols-2 gap-x-5 gap-y-1 text-xs text-ui-text-secondary md:text-right"
+            >
               <div>
-                <dt class="uppercase tracking-[0.18em] text-slate-600">Time</dt>
+                <dt class="uppercase tracking-[0.18em] text-ui-text-muted">Time</dt>
                 <dd class="font-mono text-slate-300">
                   {{ currentTimeLabel }} / {{ durationLabel }}
                 </dd>
               </div>
               <div>
-                <dt class="uppercase tracking-[0.18em] text-slate-600">Planes</dt>
+                <dt class="uppercase tracking-[0.18em] text-ui-text-muted">Planes</dt>
                 <dd class="font-mono text-slate-300">{{ activePlanesLabel }}</dd>
               </div>
             </dl>
@@ -462,18 +464,18 @@ onBeforeRouteLeave(() => {
           />
 
           <div
-            class="grid gap-4 border-t border-slate-800 px-4 py-3 text-sm text-slate-300 md:grid-cols-[auto_minmax(10rem,1fr)_auto] md:items-center"
+            class="grid gap-4 border-t border-ui-border-subtle px-4 py-3 text-sm text-slate-300 md:grid-cols-[auto_minmax(10rem,1fr)_auto] md:items-center"
           >
             <button
               type="button"
-              class="rounded-md border border-slate-700 px-3 py-2 font-medium text-slate-100 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:text-slate-500"
+              class="rounded-md border border-slate-700 px-3 py-2 font-medium text-slate-100 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:text-ui-text-muted"
               :disabled="transport.duration.value <= 0"
               @click="togglePlayback"
             >
               {{ transport.isPlaying.value ? "Pause" : "Play" }}
             </button>
 
-            <label class="grid gap-1 text-xs uppercase tracking-[0.18em] text-slate-500">
+            <label class="grid gap-1 text-xs uppercase tracking-[0.18em] text-ui-text-muted">
               Timeline
               <input
                 type="range"
@@ -487,7 +489,9 @@ onBeforeRouteLeave(() => {
               />
             </label>
 
-            <div class="hidden gap-1 text-xs uppercase tracking-[0.18em] text-slate-500 md:grid">
+            <div
+              class="hidden gap-1 text-xs uppercase tracking-[0.18em] text-ui-text-muted md:grid"
+            >
               Speed
               <div
                 class="grid grid-cols-3 overflow-hidden rounded-md border border-slate-700 normal-case tracking-normal"

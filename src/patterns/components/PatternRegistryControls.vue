@@ -90,14 +90,18 @@ const treeNodes = computed<TreeNode[]>(() => {
   const nodes: TreeNode[] = [];
 
   function visit(parentId: string | null, depth: number) {
-    for (const folder of sortedFolders.value.filter((candidate) => candidate.parentId === parentId)) {
+    for (const folder of sortedFolders.value.filter(
+      (candidate) => candidate.parentId === parentId
+    )) {
       if (compatibleOnly.value && !folderHasVisibleContent(folder.id)) continue;
       const hasChildren = folderHasChildren(folder.id);
       nodes.push({ kind: "folder", folder, depth, hasChildren });
       if (expandedFolderIds.value.has(folder.id)) visit(folder.id, depth + 1);
     }
 
-    for (const entry of visibleEntries.value.filter((candidate) => candidate.folderId === parentId)) {
+    for (const entry of visibleEntries.value.filter(
+      (candidate) => candidate.folderId === parentId
+    )) {
       nodes.push({ kind: "pattern", entry, depth });
     }
   }
@@ -169,7 +173,11 @@ function toggleFolder(folder: PatternFolder) {
 
 function openEntry(entry: PatternEntry) {
   if (!isCompatible(entry)) return;
-  if (props.isDirty && typeof window !== "undefined" && !window.confirm("Discard unsaved changes?")) {
+  if (
+    props.isDirty &&
+    typeof window !== "undefined" &&
+    !window.confirm("Discard unsaved changes?")
+  ) {
     return;
   }
   registry.select(entry.id);
@@ -325,17 +333,18 @@ function deleteFolder(folder: PatternFolder) {
   <div class="flex min-w-0 flex-wrap items-center gap-1.5">
     <button
       type="button"
-      class="min-w-0 max-w-48 truncate rounded-md px-1.5 py-1 text-[11px] text-slate-400 transition hover:bg-slate-800 hover:text-slate-200"
+      class="min-w-0 max-w-48 truncate rounded-md px-1.5 py-1 text-[11px] text-ui-text-secondary transition hover:bg-slate-800 hover:text-ui-text"
       :title="'Open ' + props.currentName"
+      :aria-label="`Open pattern ${props.currentName}`"
       @click="openPanel"
     >
       {{ props.currentName }}{{ props.isDirty ? " *" : "" }}
-      <span class="text-slate-600">⌄</span>
+      <span class="text-ui-text-muted" aria-hidden="true">⌄</span>
     </button>
     <button
       v-if="props.editorKind"
       type="button"
-      class="rounded-md px-2 py-1 text-[11px] text-slate-400 transition hover:bg-slate-800 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-35"
+      class="rounded-md px-2 py-1 text-[11px] text-ui-text-secondary transition hover:bg-slate-800 hover:text-ui-text disabled:cursor-not-allowed disabled:text-ui-text-muted"
       :disabled="!props.currentPatternId || !props.currentSource || !props.isDirty"
       @click="saveCurrent"
     >
@@ -357,170 +366,225 @@ function deleteFolder(folder: PatternFolder) {
         compact
         @close="panelOpen = false"
       >
-      <template #handle="{ close }">
-        <div class="flex items-center justify-between gap-2">
-          <p class="text-[10px] uppercase tracking-[0.2em] text-slate-500">Patterns</p>
-          <div class="flex items-center gap-1">
+        <template #handle="{ close }">
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-[11px] font-medium uppercase tracking-[0.14em] text-ui-text-muted">
+              Patterns
+            </p>
+            <div class="flex items-center gap-1">
+              <button
+                type="button"
+                class="rounded px-1.5 py-1 text-base leading-none text-ui-text-muted transition hover:bg-slate-800 hover:text-ui-text sm:focus-visible:opacity-100"
+                aria-label="New folder"
+                @click.stop="beginNewFolder(null)"
+              >
+                +
+              </button>
+              <button
+                type="button"
+                class="rounded px-1.5 py-1 text-base leading-none text-ui-text-muted transition hover:bg-slate-800 hover:text-ui-text sm:focus-visible:opacity-100"
+                aria-label="Close pattern registry"
+                @click.stop="close"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        </template>
+
+        <div class="relative min-w-0 p-2 text-xs" @click="clearMenu">
+          <label
+            v-if="props.editorKind"
+            class="mb-1.5 flex items-center gap-1.5 px-1 text-[11px] text-ui-text-secondary"
+          >
+            <input v-model="compatibleOnly" type="checkbox" class="h-3 w-3 accent-sky-400" />
+            <span>Compatible patterns only</span>
+          </label>
+
+          <div
+            v-if="newFolderOpen"
+            class="mb-1 flex items-center gap-1 rounded border border-slate-700 bg-slate-900 px-1.5 py-1"
+            @click.stop
+          >
+            <input
+              ref="nameInput"
+              v-model="newFolderName"
+              type="text"
+              placeholder="Folder name"
+              class="min-w-0 flex-1 bg-transparent px-1 text-[11px] text-slate-100 placeholder:text-ui-text-muted"
+              @keyup.enter="createFolder"
+              @keyup.escape="newFolderOpen = false"
+            />
+            <button type="button" class="text-sky-300" @click="createFolder">✓</button>
             <button
               type="button"
-              class="rounded px-1.5 py-1 text-base leading-none text-slate-500 transition hover:bg-slate-800 hover:text-slate-200"
-              title="New folder"
-              @click.stop="beginNewFolder(null)"
-            >
-              +
-            </button>
-            <button
-              type="button"
-              class="rounded px-1.5 py-1 text-base leading-none text-slate-500 transition hover:bg-slate-800 hover:text-slate-200"
-              title="Close"
-              @click.stop="close"
+              class="text-ui-text-muted hover:text-ui-text"
+              aria-label="Cancel new folder"
+              @click="newFolderOpen = false"
             >
               ×
             </button>
           </div>
-        </div>
-      </template>
 
-      <div class="relative min-w-0 p-2 text-xs" @click="clearMenu">
-        <label
-          v-if="props.editorKind"
-          class="mb-1.5 flex items-center gap-1.5 px-1 text-[11px] text-slate-400"
-        >
-          <input v-model="compatibleOnly" type="checkbox" class="h-3 w-3 accent-sky-400" />
-          <span>Compatible patterns only</span>
-        </label>
-
-        <div
-          v-if="newFolderOpen"
-          class="mb-1 flex items-center gap-1 rounded border border-slate-700 bg-slate-900 px-1.5 py-1"
-          @click.stop
-        >
-          <input
-            ref="nameInput"
-            v-model="newFolderName"
-            type="text"
-            placeholder="Folder name"
-            class="min-w-0 flex-1 bg-transparent px-1 text-[11px] text-slate-100 outline-none placeholder:text-slate-600"
-            @keyup.enter="createFolder"
-            @keyup.escape="newFolderOpen = false"
-          />
-          <button type="button" class="text-sky-300" @click="createFolder">✓</button>
-          <button type="button" class="text-slate-500" @click="newFolderOpen = false">×</button>
-        </div>
-
-        <div v-if="treeNodes.length > 0" class="grid gap-px">
-          <template v-for="node in treeNodes" :key="node.kind === 'folder' ? node.folder.id : node.entry.id">
-            <div
-              v-if="node.kind === 'folder' && editingKind === 'folder' && editingId === node.folder.id"
-              class="flex items-center gap-1 px-1 py-0.5"
-              :style="{ paddingLeft: treeRowPadding(node.depth, true) }"
-              @click.stop
+          <div v-if="treeNodes.length > 0" class="grid gap-px">
+            <template
+              v-for="node in treeNodes"
+              :key="node.kind === 'folder' ? node.folder.id : node.entry.id"
             >
-              <input
-                ref="nameInput"
-                v-model="editingName"
-                class="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-1.5 py-1 text-[11px] text-slate-100 outline-none"
-                @keyup.enter="finishRename"
-                @keyup.escape="cancelEdit"
-              />
-              <button type="button" class="text-sky-300" @click="finishRename">✓</button>
-            </div>
-            <div
-              v-else-if="node.kind === 'pattern' && editingKind === 'pattern' && editingId === node.entry.id"
-              class="flex items-center gap-1 px-1 py-0.5"
-              :style="{ paddingLeft: treeRowPadding(node.depth, false) }"
-              @click.stop
-            >
-              <input
-                ref="nameInput"
-                v-model="editingName"
-                class="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-1.5 py-1 text-[11px] text-slate-100 outline-none"
-                @keyup.enter="finishRename"
-                @keyup.escape="cancelEdit"
-              />
-              <button type="button" class="text-sky-300" @click="finishRename">✓</button>
-            </div>
-            <div
-              v-else-if="node.kind === 'folder'"
-              class="group relative flex min-w-0 items-center rounded px-1 py-0.5 hover:bg-slate-900 max-sm:py-1.5"
-              :style="{ paddingLeft: treeRowPadding(node.depth, true) }"
-              @click.stop
-            >
-              <button
-                type="button"
-                class="flex min-w-0 flex-1 items-center gap-1.5 text-left text-[12px] text-slate-300"
-                @click="toggleFolder(node.folder)"
+              <div
+                v-if="
+                  node.kind === 'folder' && editingKind === 'folder' && editingId === node.folder.id
+                "
+                class="flex items-center gap-1 px-1 py-0.5"
+                :style="{ paddingLeft: treeRowPadding(node.depth, true) }"
+                @click.stop
               >
-                <span class="w-2 text-slate-500">{{ expandedFolderIds.has(node.folder.id) ? "⌄" : "›" }}</span>
-                <span class="min-w-0 truncate">{{ node.folder.name }}</span>
-              </button>
-              <button
-                type="button"
-                class="rounded px-1 text-slate-600 hover:bg-slate-800 hover:text-slate-200 sm:opacity-0 sm:group-hover:opacity-100"
-                title="Folder actions"
-                @click.stop="openFolderMenu(node.folder, $event)"
+                <input
+                  ref="nameInput"
+                  v-model="editingName"
+                  class="min-w-0 flex-1 rounded border border-ui-border-strong bg-ui-input px-1.5 py-1 text-[11px] text-slate-100"
+                  @keyup.enter="finishRename"
+                  @keyup.escape="cancelEdit"
+                />
+                <button
+                  type="button"
+                  class="text-sky-300"
+                  aria-label="Confirm rename"
+                  @click="finishRename"
+                >
+                  ✓
+                </button>
+              </div>
+              <div
+                v-else-if="
+                  node.kind === 'pattern' &&
+                  editingKind === 'pattern' &&
+                  editingId === node.entry.id
+                "
+                class="flex items-center gap-1 px-1 py-0.5"
+                :style="{ paddingLeft: treeRowPadding(node.depth, false) }"
+                @click.stop
               >
-                ⋯
-              </button>
-            </div>
-            <div
-              v-else-if="node.kind === 'pattern'"
-              class="group relative flex min-w-0 items-center rounded px-1 py-0.5 hover:bg-slate-900 max-sm:py-1.5"
-              :class="node.entry.id === registry.selectedPatternId.value ? 'bg-sky-950/50' : ''"
-              :style="{ paddingLeft: treeRowPadding(node.depth, false) }"
-              :title="isCompatible(node.entry) ? 'Open ' + node.entry.name : 'Incompatible pattern'"
-              @click.stop
-            >
-              <button
-                type="button"
-                class="min-w-0 flex-1 truncate text-left text-[12px]"
-                :class="isCompatible(node.entry) ? 'text-slate-300' : 'cursor-not-allowed text-slate-600'"
-                :disabled="!isCompatible(node.entry)"
-                @click="openEntry(node.entry)"
+                <input
+                  ref="nameInput"
+                  v-model="editingName"
+                  class="min-w-0 flex-1 rounded border border-ui-border-strong bg-ui-input px-1.5 py-1 text-[11px] text-slate-100"
+                  @keyup.enter="finishRename"
+                  @keyup.escape="cancelEdit"
+                />
+                <button
+                  type="button"
+                  class="text-sky-300"
+                  aria-label="Confirm rename"
+                  @click="finishRename"
+                >
+                  ✓
+                </button>
+              </div>
+              <div
+                v-else-if="node.kind === 'folder'"
+                class="group relative flex min-w-0 items-center rounded px-1 py-0.5 hover:bg-slate-900 max-sm:py-1.5"
+                :style="{ paddingLeft: treeRowPadding(node.depth, true) }"
+                @click.stop
               >
-                {{ node.entry.name }}
-              </button>
-              <span class="shrink-0 px-1 text-[9px] uppercase tracking-wider text-slate-600">
-                {{ patternKindLabel(node.entry.source.kind) }}
-              </span>
-              <button
-                type="button"
-                class="rounded px-1 text-slate-600 hover:bg-slate-800 hover:text-slate-200 sm:opacity-0 sm:group-hover:opacity-100"
-                title="Pattern actions"
-                @click.stop="openPatternMenu(node.entry, $event)"
+                <button
+                  type="button"
+                  class="flex min-w-0 flex-1 items-center gap-1.5 text-left text-[12px] text-ui-text-secondary"
+                  :aria-expanded="expandedFolderIds.has(node.folder.id)"
+                  :aria-label="`${expandedFolderIds.has(node.folder.id) ? 'Collapse' : 'Expand'} folder ${node.folder.name}`"
+                  @click="toggleFolder(node.folder)"
+                >
+                  <span class="w-2 text-ui-text-muted" aria-hidden="true">{{
+                    expandedFolderIds.has(node.folder.id) ? "⌄" : "›"
+                  }}</span>
+                  <span class="min-w-0 truncate">{{ node.folder.name }}</span>
+                </button>
+                <button
+                  type="button"
+                  class="rounded px-1 text-ui-text-muted hover:bg-slate-800 hover:text-ui-text sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                  aria-label="Folder actions"
+                  @click.stop="openFolderMenu(node.folder, $event)"
+                >
+                  ⋯
+                </button>
+              </div>
+              <div
+                v-else-if="node.kind === 'pattern'"
+                class="group relative flex min-w-0 items-center rounded px-1 py-0.5 max-sm:py-1.5"
+                :class="
+                  node.entry.id === registry.selectedPatternId.value
+                    ? 'bg-ui-selected text-ui-selected-text hover:bg-ui-selected'
+                    : 'hover:bg-slate-900'
+                "
+                :aria-current="
+                  node.entry.id === registry.selectedPatternId.value ? 'true' : undefined
+                "
+                :style="{ paddingLeft: treeRowPadding(node.depth, false) }"
+                :title="
+                  isCompatible(node.entry) ? 'Open ' + node.entry.name : 'Incompatible pattern'
+                "
+                @click.stop
               >
-                ⋯
-              </button>
-            </div>
-          </template>
-        </div>
+                <button
+                  type="button"
+                  class="min-w-0 flex-1 truncate text-left text-[12px]"
+                  :class="
+                    isCompatible(node.entry)
+                      ? node.entry.id === registry.selectedPatternId.value
+                        ? 'text-ui-selected-text'
+                        : 'text-ui-text-secondary'
+                      : 'cursor-not-allowed text-ui-text-muted'
+                  "
+                  :disabled="!isCompatible(node.entry)"
+                  @click="openEntry(node.entry)"
+                >
+                  {{ node.entry.name }}
+                </button>
+                <span
+                  class="shrink-0 px-1 text-[10px] uppercase tracking-[0.12em] text-ui-text-muted"
+                >
+                  {{ patternKindLabel(node.entry.source.kind) }}
+                </span>
+                <button
+                  type="button"
+                  class="rounded px-1 text-ui-text-muted hover:bg-slate-800 hover:text-ui-text sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                  aria-label="Pattern actions"
+                  @click.stop="openPatternMenu(node.entry, $event)"
+                >
+                  ⋯
+                </button>
+              </div>
+            </template>
+          </div>
 
-        <p v-else class="px-1 py-3 text-[11px] text-slate-600">
-          {{ compatibleOnly ? "No compatible patterns." : "No patterns yet." }}
-        </p>
+          <p v-else class="px-1 py-3 text-[11px] text-ui-text-muted">
+            {{ compatibleOnly ? "No compatible patterns." : "No patterns yet." }}
+          </p>
 
-        <div v-if="saveAsOpen" class="mt-2 flex items-center gap-1 border-t border-slate-800 pt-2">
-          <input
-            ref="nameInput"
-            v-model="draftName"
-            type="text"
-            placeholder="Pattern name"
-            class="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-[11px] text-slate-100 outline-none placeholder:text-slate-600"
-            @keyup.enter="saveAs"
-            @keyup.escape="saveAsOpen = false"
-          />
-          <button
-            type="button"
-            class="rounded bg-sky-400 px-2 py-1.5 text-[11px] font-medium text-slate-950"
-            @click="saveAs"
+          <div
+            v-if="saveAsOpen"
+            class="mt-2 flex items-center gap-1 border-t border-ui-border-subtle pt-2"
           >
-            Save
-          </button>
+            <input
+              ref="nameInput"
+              v-model="draftName"
+              type="text"
+              placeholder="Pattern name"
+              class="min-w-0 flex-1 rounded border border-ui-border-strong bg-ui-input px-2 py-1.5 text-[11px] text-slate-100 placeholder:text-ui-text-muted"
+              @keyup.enter="saveAs"
+              @keyup.escape="saveAsOpen = false"
+            />
+            <button
+              type="button"
+              class="rounded bg-sky-400 px-2 py-1.5 text-[11px] font-medium text-slate-950"
+              @click="saveAs"
+            >
+              Save
+            </button>
+          </div>
+
+          <p v-if="feedback" class="px-1 pt-1 text-[10px] text-sky-300">{{ feedback }}</p>
         </div>
-
-        <p v-if="feedback" class="px-1 pt-1 text-[10px] text-sky-300">{{ feedback }}</p>
-      </div>
-
       </FloatingPanel>
 
       <div
@@ -580,7 +644,11 @@ function deleteFolder(folder: PatternFolder) {
           </template>
         </template>
         <template v-else-if="movePatternId">
-          <p class="px-2 py-1 text-[10px] uppercase tracking-wider text-slate-600">Move to</p>
+          <p
+            class="px-2 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ui-text-muted"
+          >
+            Move to
+          </p>
           <button
             type="button"
             class="rounded px-2 py-1.5 text-left text-slate-300 hover:bg-slate-800"

@@ -38,8 +38,8 @@ const accessibleLabel = computed(
       <line x1="26" y1="22" x2="142" y2="22" class="stroke-slate-700" />
       <line x1="26" y1="43" x2="142" y2="43" class="stroke-slate-700" />
 
-      <text x="8" y="25" class="fill-cyan-300 text-[9px] font-bold">L</text>
-      <text x="8" y="46" class="fill-pink-300 text-[9px] font-bold">R</text>
+      <text x="8" y="25" class="fill-cyan-300 text-[10px] font-bold">L</text>
+      <text x="8" y="46" class="fill-pink-300 text-[10px] font-bold">R</text>
 
       <g v-for="(label, index) in ['0', '¼', '½', '¾', '1']" :key="label">
         <line
@@ -53,7 +53,7 @@ const accessibleLabel = computed(
           :x="timelineX(index / 4)"
           y="61"
           text-anchor="middle"
-          class="fill-slate-500 text-[8px]"
+          class="fill-slate-500 text-[10px]"
         >
           {{ label }}
         </text>

@@ -315,9 +315,9 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
 </script>
 
 <template>
-  <section class="overflow-hidden rounded-lg border border-slate-800 bg-slate-900/60">
-    <div class="border-b border-slate-800 px-4 py-2.5">
-      <p class="text-xs uppercase tracking-[0.16em] text-slate-500">Graph</p>
+  <section class="overflow-hidden rounded-lg border border-ui-border bg-ui-surface">
+    <div class="border-b border-ui-border-subtle px-4 py-2.5">
+      <p class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted">Graph</p>
       <h2 class="mt-1 text-sm font-semibold text-slate-200">
         {{ readonly ? "Generated graph" : `${track.id} edit graph` }}
       </h2>
@@ -338,7 +338,7 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
             :x2="xForLane(lane.id)"
             :y1="layout.topPad - 16"
             :y2="svgHeight - layout.bottomPad + 10"
-            class="stroke-slate-800"
+            class="stroke-slate-700"
             stroke-width="1"
           />
           <line
@@ -348,7 +348,7 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
             :x2="svgWidth - layout.rightPad + 16"
             :y1="yForRowIndex(index)"
             :y2="yForRowIndex(index)"
-            class="stroke-slate-800/70"
+            class="stroke-slate-700/60"
             stroke-width="1"
           />
         </g>
@@ -360,7 +360,7 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
             :x="xForLaneIndex(index)"
             :y="20"
             text-anchor="middle"
-            class="fill-slate-400 text-[9px] font-medium"
+            class="fill-slate-400 text-[10px] font-medium"
           >
             {{ laneHeaderLabel(lane) }}
           </text>
@@ -372,7 +372,7 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
             :key="`row-label-${row.key}`"
             :x="24"
             :y="yForRowIndex(index) + 4"
-            class="fill-slate-500 font-mono text-[10px]"
+            class="fill-slate-400 font-mono text-[10px]"
           >
             {{ row.label }}
           </text>
@@ -428,7 +428,7 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
           >
             <button
               type="button"
-              class="grid h-5 w-5 place-items-center rounded-full bg-transparent"
+              class="grid h-5 w-5 place-items-center rounded-full bg-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-focus focus-visible:outline-offset-2"
               :aria-label="`${track.hand} hand step ${node.row.label} ${node.lane.label}`"
               :disabled="node.row.isLoopClosure"
               @click="selectLane(node.row, node.lane.id)"
@@ -440,10 +440,13 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
       </svg>
     </div>
 
-    <div v-if="!readonly" class="flex justify-center gap-2 border-t border-slate-800 px-3 py-2">
+    <div
+      v-if="!readonly"
+      class="flex justify-center gap-2 border-t border-ui-border-subtle px-3 py-2"
+    >
       <button
         type="button"
-        class="inline-grid h-7 w-7 place-items-center rounded-md border border-slate-700 text-base leading-none text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:border-slate-800 disabled:text-slate-600 disabled:hover:bg-transparent"
+        class="inline-grid h-7 w-7 place-items-center rounded-md border border-slate-700 text-base leading-none text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:border-ui-border-subtle disabled:text-ui-text-muted disabled:hover:bg-transparent"
         aria-label="Delete row"
         title="Delete row"
         :disabled="!canDeleteRow"
@@ -462,8 +465,8 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
       </button>
     </div>
 
-    <div class="grid grid-cols-2 border-t border-slate-800 text-xs text-slate-400">
-      <div class="border-r border-slate-800 px-3 py-2">
+    <div class="grid grid-cols-2 border-t border-ui-border-subtle text-xs text-slate-400">
+      <div class="border-r border-ui-border-subtle px-3 py-2">
         <span class="font-mono text-sky-300">dotted</span> BTB interval
       </div>
       <div class="px-3 py-2">

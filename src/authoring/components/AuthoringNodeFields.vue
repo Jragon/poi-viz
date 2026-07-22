@@ -115,14 +115,14 @@ function addInitialRadiusProfileKey() {
 
 <template>
   <div
-    class="grid min-w-0 content-start gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-3"
+    class="grid min-w-0 content-start gap-3 rounded-2xl border border-ui-border-subtle bg-ui-surface p-3"
   >
     <div class="flex items-center justify-between gap-2">
-      <p class="text-xs uppercase tracking-[0.2em] text-slate-500">{{ node }}</p>
+      <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">{{ node }}</p>
       <button
         v-if="!hasRadiusProfileKeys"
         type="button"
-        class="rounded-lg border border-slate-800 px-2 py-1 text-xs text-slate-400 transition hover:border-sky-400 hover:text-slate-200 disabled:opacity-40"
+        class="rounded-lg border border-ui-border-strong px-2 py-1 text-xs text-ui-text-secondary transition hover:border-sky-400 hover:text-ui-text disabled:cursor-not-allowed disabled:border-ui-border-subtle disabled:text-ui-text-muted"
         :disabled="!canAddRadiusProfileKey"
         aria-label="Add radius keys"
         title="Add radius keys"
@@ -133,12 +133,12 @@ function addInitialRadiusProfileKey() {
     </div>
 
     <template v-if="isFirstSegment">
-      <label class="grid min-w-0 gap-1 text-sm text-slate-300">
-        <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Start phase (deg)</span>
+      <label class="grid min-w-0 gap-1 text-sm text-ui-text-secondary">
+        <span class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Start phase (deg)</span>
         <input
           type="number"
           step="any"
-          class="w-full min-w-0 rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none transition focus:border-sky-400"
+          class="w-full min-w-0 rounded-2xl border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text transition focus:border-sky-400"
           :class="phaseError ? 'border-rose-500' : ''"
           :value="phaseDraft ?? String(phaseDeg)"
           @input="onPhaseInput"
@@ -146,12 +146,12 @@ function addInitialRadiusProfileKey() {
         />
       </label>
 
-      <label v-if="!hasRadiusProfileKeys" class="grid min-w-0 gap-1 text-sm text-slate-300">
-        <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Radius</span>
+      <label v-if="!hasRadiusProfileKeys" class="grid min-w-0 gap-1 text-sm text-ui-text-secondary">
+        <span class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Radius</span>
         <input
           type="number"
           step="any"
-          class="w-full min-w-0 rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none transition focus:border-sky-400"
+          class="w-full min-w-0 rounded-2xl border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text transition focus:border-sky-400"
           :class="radiusError ? 'border-rose-500' : ''"
           :value="radiusDraft ?? String(radius)"
           @input="onRadiusInput"
@@ -160,12 +160,12 @@ function addInitialRadiusProfileKey() {
       </label>
     </template>
 
-    <label class="grid min-w-0 gap-1 text-sm text-slate-300">
-      <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Omega</span>
+    <label class="grid min-w-0 gap-1 text-sm text-ui-text-secondary">
+      <span class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Omega</span>
       <input
         type="number"
         step="any"
-        class="w-full min-w-0 rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none transition focus:border-sky-400"
+        class="w-full min-w-0 rounded-2xl border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text transition focus:border-sky-400"
         :class="omegaError ? 'border-rose-500' : ''"
         :value="omegaDraft ?? String(omega)"
         @input="onOmegaInput"

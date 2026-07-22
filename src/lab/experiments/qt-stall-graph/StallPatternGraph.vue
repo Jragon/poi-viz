@@ -111,7 +111,7 @@ function pointRadius(point: StallGraphPointView): number {
         :y1="line.y1"
         :x2="line.x2"
         :y2="line.y2"
-        class="stroke-slate-800"
+        class="stroke-slate-700"
         stroke-width="1"
       />
       <line
@@ -121,7 +121,7 @@ function pointRadius(point: StallGraphPointView): number {
         :y1="line.y1"
         :x2="line.x2"
         :y2="line.y2"
-        class="stroke-slate-800/70"
+        class="stroke-slate-700/60"
         stroke-width="1"
       />
     </g>
@@ -156,8 +156,7 @@ function pointRadius(point: StallGraphPointView): number {
         :y="label.y"
         :text-anchor="label.textAnchor"
         :dominant-baseline="label.dominantBaseline"
-        class="fill-slate-500 font-mono"
-        :class="label.isTerminal ? 'opacity-60' : ''"
+        class="fill-slate-400 font-mono"
         :font-size="geometry.layout.labelFontSize"
       >
         {{ label.text }}
@@ -208,7 +207,7 @@ function pointRadius(point: StallGraphPointView): number {
       >
         <button
           type="button"
-          class="grid h-[30px] w-[30px] place-items-center rounded-full bg-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300"
+          class="grid h-[30px] w-[30px] place-items-center rounded-full bg-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-focus focus-visible:outline-offset-2"
           :aria-label="`${props.editingHand} hand beat ${target.beatIndex + 1} ${CARDINAL_LABELS[target.cardinal]}`"
           @click="emit('placeNode', { beatIndex: target.beatIndex, cardinal: target.cardinal })"
         >

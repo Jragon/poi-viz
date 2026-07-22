@@ -420,10 +420,12 @@ function onScrub(event: Event) {
 </script>
 
 <template>
-  <section class="lab-live-cell overflow-hidden rounded-lg border border-slate-800 bg-slate-950/80">
-    <header class="grid gap-3 border-b border-slate-800 px-4 py-3 md:items-start">
+  <section
+    class="lab-live-cell overflow-hidden rounded-lg border border-ui-border-subtle bg-slate-950/80"
+  >
+    <header class="grid gap-3 border-b border-ui-border-subtle px-4 py-3 md:items-start">
       <div class="min-w-0">
-        <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Engine Playback</p>
+        <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Engine Playback</p>
         <h2 class="mt-1 text-lg font-semibold text-slate-100">{{ wrapFixture.name }}</h2>
         <p class="mt-1 text-sm leading-6 text-slate-400">
           {{ wrapFixture.description }}
@@ -432,11 +434,11 @@ function onScrub(event: Event) {
 
       <dl class="grid grid-cols-2 gap-x-5 gap-y-1 text-xs text-slate-400 md:text-right">
         <div>
-          <dt class="uppercase tracking-[0.18em] text-slate-600">Time</dt>
+          <dt class="uppercase tracking-[0.18em] text-ui-text-muted">Time</dt>
           <dd class="font-mono text-slate-300">{{ currentTimeLabel }} / {{ durationLabel }}</dd>
         </div>
         <div>
-          <dt class="uppercase tracking-[0.18em] text-slate-600">Active</dt>
+          <dt class="uppercase tracking-[0.18em] text-ui-text-muted">Active</dt>
           <dd class="font-mono text-slate-300">{{ activeMetadata }}</dd>
         </div>
       </dl>
@@ -456,18 +458,18 @@ function onScrub(event: Event) {
     />
 
     <div
-      class="grid gap-4 border-t border-slate-800 px-4 py-3 text-sm text-slate-300 md:grid-cols-[auto_minmax(10rem,1fr)] md:items-center"
+      class="grid gap-4 border-t border-ui-border-subtle px-4 py-3 text-sm text-slate-300 md:grid-cols-[auto_minmax(10rem,1fr)] md:items-center"
     >
       <button
         type="button"
-        class="rounded-md border border-slate-700 px-3 py-2 font-medium text-slate-100 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:text-slate-500"
+        class="rounded-md border border-slate-700 px-3 py-2 font-medium text-slate-100 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:text-ui-text-muted"
         :disabled="transport.duration.value <= 0"
         @click="togglePlayback"
       >
         {{ transport.isPlaying.value ? "Pause" : "Play" }}
       </button>
 
-      <label class="grid gap-1 text-xs uppercase tracking-[0.18em] text-slate-500">
+      <label class="grid gap-1 text-xs uppercase tracking-[0.18em] text-ui-text-muted">
         Timeline
         <input
           type="range"
@@ -482,16 +484,20 @@ function onScrub(event: Event) {
       </label>
     </div>
 
-    <div class="grid gap-4 border-t border-slate-800 px-4 py-4 text-sm text-slate-300">
+    <div class="grid gap-4 border-t border-ui-border-subtle px-4 py-4 text-sm text-slate-300">
       <div class="grid gap-2">
         <div class="flex items-center justify-between gap-3">
-          <h3 class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <h3 class="text-xs font-semibold uppercase tracking-[0.18em] text-ui-text-muted">
             Segment Timing
           </h3>
-          <p class="font-mono text-xs text-slate-500">{{ wrapFixture.segments.length }} segments</p>
+          <p class="font-mono text-xs text-ui-text-muted">
+            {{ wrapFixture.segments.length }} segments
+          </p>
         </div>
 
-        <div class="flex h-8 overflow-hidden rounded-md border border-slate-800 bg-slate-950">
+        <div
+          class="flex h-8 overflow-hidden rounded-md border border-ui-border-subtle bg-slate-950"
+        >
           <div
             v-for="(summary, index) in segmentSummaries"
             :key="`${wrapFixture.id}-segment-${index}`"
@@ -511,17 +517,17 @@ function onScrub(event: Event) {
       >
         <div class="grid gap-2">
           <div class="flex items-center justify-between gap-3">
-            <h3 class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            <h3 class="text-xs font-semibold uppercase tracking-[0.18em] text-ui-text-muted">
               Head Speed
             </h3>
-            <p class="font-mono text-xs text-slate-500">
+            <p class="font-mono text-xs text-ui-text-muted">
               max {{ formatNumber(speedDiagnostics.maxHeadSpeed) }} / hand
               {{ formatNumber(speedDiagnostics.maxHandSpeed) }}
             </p>
           </div>
 
           <div
-            class="flex h-20 items-end gap-px rounded-md border border-slate-800 bg-slate-950 p-2"
+            class="flex h-20 items-end gap-px rounded-md border border-ui-border-subtle bg-slate-950 p-2"
           >
             <div
               v-for="(bar, index) in speedDiagnostics.speedBars"
@@ -533,9 +539,9 @@ function onScrub(event: Event) {
           </div>
         </div>
 
-        <div class="overflow-x-auto rounded-md border border-slate-800">
+        <div class="overflow-x-auto rounded-md border border-ui-border-subtle">
           <table class="min-w-full divide-y divide-slate-800 text-left text-xs">
-            <thead class="bg-slate-900/70 text-slate-500">
+            <thead class="bg-slate-900/70 text-ui-text-muted">
               <tr>
                 <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">Segment</th>
                 <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">Head</th>

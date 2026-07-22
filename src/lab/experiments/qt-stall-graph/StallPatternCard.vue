@@ -23,7 +23,9 @@ const decoded = computed(() => decodeStallPattern(props.codec));
 <template>
   <article
     class="flex h-full min-w-0 flex-col overflow-hidden rounded-lg border bg-slate-950/60 transition"
-    :class="props.selected ? 'border-amber-400/70' : 'border-slate-800 hover:border-slate-600'"
+    :class="
+      props.selected ? 'border-amber-400/70' : 'border-ui-border-subtle hover:border-slate-600'
+    "
   >
     <component
       :is="props.selectable ? 'button' : 'div'"
@@ -64,13 +66,13 @@ const decoded = computed(() => decodeStallPattern(props.codec));
 
     <footer
       v-if="!props.compact"
-      class="mt-auto flex min-h-12 min-w-0 shrink-0 items-center gap-2 border-t border-slate-800 px-2"
+      class="mt-auto flex min-h-12 min-w-0 shrink-0 items-center gap-2 border-t border-ui-border-subtle px-2"
     >
       <span class="grid min-w-0 flex-1 gap-0.5">
         <span class="truncate text-[10px] text-slate-300" :title="props.label">
           {{ props.label }}
         </span>
-        <code class="truncate text-[9px] text-slate-500">{{ props.codec }}</code>
+        <code class="truncate text-[10px] text-ui-text-muted">{{ props.codec }}</code>
       </span>
       <RouterLink
         v-if="decoded.ok"

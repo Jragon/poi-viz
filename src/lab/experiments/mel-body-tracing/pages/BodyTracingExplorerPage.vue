@@ -131,7 +131,7 @@ function tabButtonClass(tab: BodyTracingExplorerTab): string {
     <section class="mx-auto grid max-w-7xl gap-5 lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)]">
       <div class="grid content-start gap-4">
         <header class="order-1">
-          <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Mel body tracing</p>
+          <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Mel body tracing</p>
           <h1 class="mt-2 text-2xl font-semibold text-slate-50">Body Tracing Explorer</h1>
           <p class="mt-2 text-sm leading-6 text-slate-400">
             Play with reels, wraps, and cosmos from Mel's
@@ -172,7 +172,7 @@ function tabButtonClass(tab: BodyTracingExplorerTab): string {
 
             <button
               type="button"
-              class="mt-3 hidden w-full rounded-md border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white disabled:cursor-wait disabled:border-slate-800 disabled:text-slate-500 md:block"
+              class="mt-3 hidden w-full rounded-md border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white disabled:cursor-wait disabled:border-ui-border-subtle disabled:text-ui-text-muted md:block"
               :disabled="graphPngExport.state.status === 'running'"
               @click="exportGraphPngSequence"
             >
@@ -217,17 +217,17 @@ function tabButtonClass(tab: BodyTracingExplorerTab): string {
       </div>
 
       <div class="grid content-start gap-6">
-        <section class="overflow-hidden rounded-lg border border-slate-800 bg-slate-950/80">
-          <header class="flex justify-end border-b border-slate-800 px-4 py-3">
+        <section class="overflow-hidden rounded-lg border border-ui-border-subtle bg-slate-950/80">
+          <header class="flex justify-end border-b border-ui-border-subtle px-4 py-3">
             <dl class="grid grid-cols-2 gap-x-5 gap-y-1 text-xs text-slate-400 md:text-right">
               <div>
-                <dt class="uppercase tracking-[0.18em] text-slate-600">Time</dt>
+                <dt class="uppercase tracking-[0.18em] text-ui-text-muted">Time</dt>
                 <dd class="font-mono text-slate-300">
                   {{ currentTimeLabel }} / {{ durationLabel }}
                 </dd>
               </div>
               <div>
-                <dt class="uppercase tracking-[0.18em] text-slate-600">Planes</dt>
+                <dt class="uppercase tracking-[0.18em] text-ui-text-muted">Planes</dt>
                 <dd class="font-mono text-slate-300">{{ activePlanesLabel }}</dd>
               </div>
             </dl>
@@ -247,18 +247,18 @@ function tabButtonClass(tab: BodyTracingExplorerTab): string {
           />
 
           <div
-            class="grid gap-4 border-t border-slate-800 px-4 py-3 text-sm text-slate-300 md:grid-cols-[auto_minmax(10rem,1fr)_auto] md:items-center"
+            class="grid gap-4 border-t border-ui-border-subtle px-4 py-3 text-sm text-slate-300 md:grid-cols-[auto_minmax(10rem,1fr)_auto] md:items-center"
           >
             <button
               type="button"
-              class="rounded-md border border-slate-700 px-3 py-2 font-medium text-slate-100 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:text-slate-500"
+              class="rounded-md border border-slate-700 px-3 py-2 font-medium text-slate-100 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:text-ui-text-muted"
               :disabled="transport.duration.value <= 0"
               @click="togglePlayback"
             >
               {{ transport.isPlaying.value ? "Pause" : "Play" }}
             </button>
 
-            <label class="grid gap-1 text-xs uppercase tracking-[0.18em] text-slate-500">
+            <label class="grid gap-1 text-xs uppercase tracking-[0.18em] text-ui-text-muted">
               Timeline
               <input
                 type="range"
@@ -272,7 +272,9 @@ function tabButtonClass(tab: BodyTracingExplorerTab): string {
               />
             </label>
 
-            <div class="hidden gap-1 text-xs uppercase tracking-[0.18em] text-slate-500 md:grid">
+            <div
+              class="hidden gap-1 text-xs uppercase tracking-[0.18em] text-ui-text-muted md:grid"
+            >
               Speed
               <div
                 class="grid grid-cols-3 overflow-hidden rounded-md border border-slate-700 normal-case tracking-normal"

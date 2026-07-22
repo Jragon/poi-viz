@@ -130,7 +130,7 @@ function setShowStickFigure(event: Event) {
 
 function timingButtonClass(timing: ElementaryTimingMode) {
   if (!isTimingAvailable(timing)) {
-    return "cursor-not-allowed bg-slate-950/60 text-slate-700";
+    return "cursor-not-allowed bg-ui-surface text-ui-text-muted";
   }
 
   return timingMode.value === timing
@@ -149,7 +149,7 @@ function planeButtonClass(handId: HandId, planeId: PlaneId) {
     return "border-amber-300 bg-amber-950/55 text-amber-100";
   }
 
-  return "border-slate-800 bg-slate-950 text-slate-500 hover:border-slate-600 hover:text-slate-200";
+  return "border-ui-border-subtle bg-slate-950 text-ui-text-muted hover:border-slate-600 hover:text-slate-200";
 }
 
 function arcButtonClass(handId: HandId, arcId: ElementaryQuarterArcId) {
@@ -157,7 +157,7 @@ function arcButtonClass(handId: HandId, arcId: ElementaryQuarterArcId) {
   const available = isArcAvailable(handId, arcId);
 
   if (!available) {
-    return "cursor-not-allowed border-slate-900 bg-slate-950/50 text-slate-700 opacity-45";
+    return "cursor-not-allowed border-ui-border-subtle bg-ui-surface text-ui-text-muted";
   }
 
   if (selected && handId === "left") {
@@ -168,7 +168,7 @@ function arcButtonClass(handId: HandId, arcId: ElementaryQuarterArcId) {
     return "border-amber-300 bg-amber-950/55 text-amber-100 shadow-[0_0_0_1px_rgba(252,211,77,0.25)]";
   }
 
-  return "border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-600 hover:text-slate-100";
+  return "border-ui-border-subtle bg-slate-950 text-slate-400 hover:border-slate-600 hover:text-slate-100";
 }
 
 function arcStrokeClass(handId: HandId, arcId: ElementaryQuarterArcId) {
@@ -192,12 +192,12 @@ function arcStrokeClass(handId: HandId, arcId: ElementaryQuarterArcId) {
 
 <template>
   <div class="lab-live-cell mx-auto grid max-w-4xl! gap-3">
-    <section class="rounded-lg border border-slate-800 bg-slate-950/55 p-3">
+    <section class="rounded-lg border border-ui-border-subtle bg-slate-950/55 p-3">
       <div class="grid gap-3 lg:grid-cols-[auto_auto_auto] lg:items-end lg:justify-center">
         <div class="grid gap-1.5">
           <div class="flex items-center justify-between gap-2">
             <p class="text-[0.65rem] uppercase tracking-[0.18em] text-sky-300">Left hand</p>
-            <div class="grid grid-cols-3 overflow-hidden rounded-md border border-slate-800">
+            <div class="grid grid-cols-3 overflow-hidden rounded-md border border-ui-border-subtle">
               <button
                 v-for="plane in ELEMENTARY_PLANE_OPTIONS"
                 :key="`left-plane-${plane.id}`"
@@ -261,10 +261,10 @@ function arcStrokeClass(handId: HandId, arcId: ElementaryQuarterArcId) {
         </div>
 
         <div class="grid gap-1.5">
-          <p class="text-[0.65rem] uppercase tracking-[0.18em] text-slate-500 lg:text-center">
+          <p class="text-[0.65rem] uppercase tracking-[0.18em] text-ui-text-muted lg:text-center">
             Timing
           </p>
-          <div class="grid grid-cols-2 overflow-hidden rounded-md border border-slate-800">
+          <div class="grid grid-cols-2 overflow-hidden rounded-md border border-ui-border-subtle">
             <button
               v-for="option in ELEMENTARY_TIMING_OPTIONS"
               :key="option.id"
@@ -296,7 +296,7 @@ function arcStrokeClass(handId: HandId, arcId: ElementaryQuarterArcId) {
         <div class="grid gap-1.5">
           <div class="flex items-center justify-between gap-2">
             <p class="text-[0.65rem] uppercase tracking-[0.18em] text-amber-200">Right hand</p>
-            <div class="grid grid-cols-3 overflow-hidden rounded-md border border-slate-800">
+            <div class="grid grid-cols-3 overflow-hidden rounded-md border border-ui-border-subtle">
               <button
                 v-for="plane in ELEMENTARY_PLANE_OPTIONS"
                 :key="`right-plane-${plane.id}`"

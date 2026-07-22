@@ -76,39 +76,39 @@ function pairButtonClass(
   position: ReelPosition
 ): string {
   if (props.modelValue[hand][slot] === position)
-    return "border-slate-200 bg-slate-100 text-slate-950";
-  return "border-slate-700 text-slate-300 hover:border-slate-500 hover:bg-slate-800";
+    return "border-cyan-300 bg-cyan-950/70 text-cyan-100";
+  return "border-slate-700 text-ui-text-secondary hover:border-slate-500 hover:bg-slate-800";
 }
 
 function partnerButtonClass(hand: PoiBeatHand, position: ReelPosition): string {
-  if (props.modelValue[hand].b === position) return "border-slate-200 bg-slate-100 text-slate-950";
+  if (props.modelValue[hand].b === position) return "border-cyan-300 bg-cyan-950/70 text-cyan-100";
   if (!isValidWrapPair(props.modelValue[hand].a, position)) {
-    return "cursor-not-allowed border-slate-800 text-slate-600 opacity-55";
+    return "cursor-not-allowed border-ui-border-subtle bg-ui-surface text-ui-text-muted";
   }
-  return "border-slate-700 text-slate-300 hover:border-slate-500 hover:bg-slate-800";
+  return "border-slate-700 text-ui-text-secondary hover:border-slate-500 hover:bg-slate-800";
 }
 
 function offsetButtonClass(offset: WrapOffset): string {
-  if (props.modelValue.offset === offset) return "border-sky-300 bg-sky-300 text-slate-950";
-  return "border-slate-700 text-slate-300 hover:border-slate-500 hover:bg-slate-800";
+  if (props.modelValue.offset === offset) return "border-sky-300 bg-sky-950/70 text-sky-100";
+  return "border-slate-700 text-ui-text-secondary hover:border-slate-500 hover:bg-slate-800";
 }
 
 function visibilityButtonClass(trackId: string): string {
   if (isTrackVisible(trackId)) return "border-emerald-500/70 bg-emerald-500/15 text-emerald-200";
-  return "border-slate-700 text-slate-500 hover:border-slate-500 hover:text-slate-300";
+  return "border-slate-700 text-ui-text-muted hover:border-slate-500 hover:text-slate-300";
 }
 </script>
 
 <template>
-  <section class="rounded-lg border border-slate-800 bg-slate-900/60">
-    <div class="border-b border-slate-800 px-4 py-3">
+  <section class="rounded-lg border border-ui-border bg-ui-surface">
+    <div class="border-b border-ui-border-subtle px-4 py-3">
       <h2 class="text-sm font-semibold text-slate-200">Hands</h2>
     </div>
     <div class="grid gap-3 px-4 py-4 text-sm">
       <div
         v-for="hand in ['left', 'right'] as const"
         :key="hand"
-        class="rounded-md border border-slate-800 bg-slate-950/50 px-3 py-3"
+        class="rounded-md border border-ui-border-subtle bg-ui-input px-3 py-3"
       >
         <div class="flex items-center justify-between gap-3">
           <p class="font-medium capitalize text-slate-200">
@@ -128,7 +128,7 @@ function visibilityButtonClass(trackId: string): string {
 
         <div class="mt-3 grid gap-2">
           <div class="grid grid-cols-[1.25rem_minmax(0,1fr)] items-start gap-2">
-            <p class="pt-1.5 font-mono text-xs text-slate-500">A</p>
+            <p class="pt-1.5 font-mono text-xs text-ui-text-muted">A</p>
             <div class="grid grid-cols-2 gap-1.5">
               <button
                 v-for="position in REEL_POSITION_OPTIONS"
@@ -145,7 +145,7 @@ function visibilityButtonClass(trackId: string): string {
           </div>
 
           <div class="grid grid-cols-[1.25rem_minmax(0,1fr)] items-start gap-2">
-            <p class="pt-1.5 font-mono text-xs text-slate-500">B</p>
+            <p class="pt-1.5 font-mono text-xs text-ui-text-muted">B</p>
             <div class="grid grid-cols-2 gap-1.5">
               <button
                 v-for="position in REEL_POSITION_OPTIONS"
@@ -172,8 +172,8 @@ function visibilityButtonClass(trackId: string): string {
     @update:direction="setDirection"
   />
 
-  <section class="rounded-lg border border-slate-800 bg-slate-900/60">
-    <div class="border-b border-slate-800 px-4 py-3">
+  <section class="rounded-lg border border-ui-border bg-ui-surface">
+    <div class="border-b border-ui-border-subtle px-4 py-3">
       <h2 class="text-sm font-semibold text-slate-200">Right hand offset</h2>
     </div>
     <div class="grid gap-3 px-4 py-4 text-sm">
@@ -190,12 +190,12 @@ function visibilityButtonClass(trackId: string): string {
           {{ offset }}
         </button>
       </div>
-      <p class="font-mono text-xs text-slate-500">{{ modelValue.offset }} half-beats</p>
+      <p class="font-mono text-xs text-ui-text-muted">{{ modelValue.offset }} half-beats</p>
     </div>
   </section>
 
-  <section class="rounded-lg border border-slate-800 bg-slate-900/60 px-4 py-3">
-    <p class="text-xs uppercase tracking-[0.16em] text-slate-500">Resolved wrap</p>
+  <section class="rounded-lg border border-ui-border bg-ui-surface px-4 py-3">
+    <p class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted">Resolved wrap</p>
     <p class="mt-1 font-mono text-sm font-semibold leading-6 text-amber-200">
       {{ summaryLabel }}
     </p>

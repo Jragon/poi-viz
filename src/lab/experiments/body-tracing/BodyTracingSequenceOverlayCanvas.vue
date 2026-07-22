@@ -20,15 +20,13 @@ function compileAuthoredSequence(entry: AuthoredDocumentEntry): MultiRigSequence
 const registry = usePatternRegistry();
 const authoredDocuments = computed<AuthoredDocumentEntry[]>(() =>
   registry.entries.value.flatMap((entry) =>
-    entry.source.kind === "authoring"
-      ? [{ id: entry.id, document: entry.source.document }]
-      : []
+    entry.source.kind === "authoring" ? [{ id: entry.id, document: entry.source.document }] : []
   )
 );
 const selectedSequenceId = ref(
   registry.selectedPattern.value?.source.kind === "authoring"
     ? registry.selectedPattern.value.id
-    : authoredDocuments.value[0]?.id ?? null
+    : (authoredDocuments.value[0]?.id ?? null)
 );
 const selectedDocument = computed(() => {
   if (!selectedSequenceId.value) {
@@ -123,7 +121,7 @@ watch(
 <template>
   <div class="lab-live-cell mx-auto grid max-w-5xl! gap-3">
     <section
-      class="grid gap-3 rounded-lg border border-slate-800 bg-slate-950/65 p-3 shadow-[0_24px_120px_rgba(2,6,23,0.45)] md:p-4"
+      class="grid gap-3 rounded-lg border border-ui-border-subtle bg-slate-950/65 p-3 shadow-[0_24px_120px_rgba(2,6,23,0.45)] md:p-4"
     >
       <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div class="grid gap-1">
@@ -136,11 +134,13 @@ watch(
           </p>
         </div>
         <div class="grid gap-2 md:min-w-80">
-          <label class="grid gap-1 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+          <label
+            class="grid gap-1 text-xs font-medium uppercase tracking-[0.16em] text-ui-text-muted"
+          >
             Sequence
             <select
               v-model="selectedSequenceId"
-              class="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-medium normal-case tracking-normal text-slate-100 outline-none transition hover:border-slate-500 focus:border-teal-300"
+              class="rounded-md border border-ui-border-strong bg-ui-input px-3 py-2 text-sm font-medium normal-case tracking-normal text-ui-text transition hover:border-slate-500 focus:border-teal-300"
             >
               <option v-if="authoredDocuments.length === 0" value="" disabled>
                 No authored sequences
@@ -151,7 +151,7 @@ watch(
             </select>
           </label>
           <p
-            class="rounded-md border border-slate-800 bg-slate-900/80 px-3 py-1 text-xs tracking-[0.12em] text-slate-400 uppercase"
+            class="rounded-md border border-ui-border-subtle bg-slate-900/80 px-3 py-1 text-xs tracking-[0.12em] text-slate-400 uppercase"
           >
             {{ statusText }}
           </p>
@@ -185,7 +185,7 @@ watch(
               {{ speed }}x
             </button>
           </div>
-          <p class="text-xs uppercase tracking-[0.16em] text-slate-500">
+          <p class="text-xs uppercase tracking-[0.16em] text-ui-text-muted">
             t {{ timeLabel }} / {{ durationLabel }} / {{ speedLabel }}
           </p>
         </div>

@@ -80,7 +80,7 @@ const selection = computed(() => {
     />
     <p
       v-else
-      class="rounded-md border border-slate-800 bg-slate-950/50 px-4 py-5 text-sm text-slate-500"
+      class="rounded-md border border-ui-border-subtle bg-slate-950/50 px-4 py-5 text-sm text-ui-text-muted"
     >
       Select a complete, compilable codec to preview it.
     </p>

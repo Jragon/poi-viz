@@ -138,11 +138,11 @@ function setTone(rule: MetronomeRule, tone: MetronomeToneId) {
 </script>
 
 <template>
-  <section class="grid gap-4 rounded-2xl border border-slate-800 bg-slate-950/70 p-4 sm:p-5">
+  <section class="grid gap-4 rounded-2xl border border-ui-border bg-ui-surface p-4 sm:p-5">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Metronome</p>
-        <p class="mt-1 text-sm text-slate-300">
+        <p class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted">Metronome</p>
+        <p class="mt-1 text-sm text-ui-text-secondary">
           Phase-triggered clicks for hand, head, or head-minus-hand.
         </p>
       </div>
@@ -156,6 +156,7 @@ function setTone(rule: MetronomeRule, tone: MetronomeToneId) {
               ? 'border-emerald-500/70 bg-emerald-500/15 text-emerald-100 hover:border-emerald-400 hover:bg-emerald-500/20'
               : 'border-slate-700 text-slate-200 hover:border-slate-500 hover:text-white'
           "
+          :aria-pressed="props.isAudioEnabled"
           @click="emit('setAudioEnabled', !props.isAudioEnabled)"
         >
           {{ props.isAudioEnabled ? "Audio On" : "Audio Off" }}
@@ -183,13 +184,13 @@ function setTone(rule: MetronomeRule, tone: MetronomeToneId) {
       <div
         v-for="rule in props.rules"
         :key="rule.id"
-        class="grid gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 p-3 sm:p-4"
+        class="grid gap-3 rounded-2xl border border-ui-border-subtle bg-ui-surface-raised p-3 sm:p-4"
       >
         <div
           class="grid gap-3 lg:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,8rem)_auto] lg:items-start"
         >
           <label
-            class="inline-flex min-h-9 cursor-pointer items-center gap-2 self-end text-xs uppercase tracking-[0.18em] text-slate-500"
+            class="inline-flex min-h-9 cursor-pointer items-center gap-2 self-end text-sm font-medium uppercase tracking-[0.14em] text-ui-text-muted"
           >
             <span class="relative inline-flex h-6 w-10 items-center">
               <input
@@ -199,7 +200,7 @@ function setTone(rule: MetronomeRule, tone: MetronomeToneId) {
                 @change="setEnabled(rule, ($event.target as HTMLInputElement).checked)"
               />
               <span
-                class="absolute inset-0 rounded-full bg-slate-800 transition peer-checked:bg-emerald-500/70"
+                class="absolute inset-0 rounded-full bg-slate-800 transition peer-checked:bg-emerald-500/70 peer-focus-visible:ring-2 peer-focus-visible:ring-ui-focus peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ui-surface-raised"
               ></span>
               <span
                 class="absolute left-0.5 h-5 w-5 rounded-full bg-white transition peer-checked:translate-x-4"
@@ -208,7 +209,9 @@ function setTone(rule: MetronomeRule, tone: MetronomeToneId) {
           </label>
 
           <div class="grid gap-1 self-end">
-            <p class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Rig</p>
+            <p class="text-[11px] font-medium uppercase tracking-[0.14em] text-ui-text-muted">
+              Rig
+            </p>
             <div class="flex flex-wrap gap-2">
               <button
                 v-for="rigId in props.rigIds"
@@ -228,7 +231,9 @@ function setTone(rule: MetronomeRule, tone: MetronomeToneId) {
           </div>
 
           <div class="grid gap-1 self-end">
-            <p class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Source</p>
+            <p class="text-[11px] font-medium uppercase tracking-[0.14em] text-ui-text-muted">
+              Source
+            </p>
             <div class="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -258,7 +263,7 @@ function setTone(rule: MetronomeRule, tone: MetronomeToneId) {
           </div>
 
           <div class="grid gap-1 self-end">
-            <p class="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+            <p class="text-[11px] font-medium uppercase tracking-[0.14em] text-ui-text-muted">
               {{ rule.source.kind === "absolute" ? "Node" : "Relation" }}
             </p>
             <div v-if="rule.source.kind === 'absolute'" class="flex flex-wrap gap-2">
@@ -289,19 +294,21 @@ function setTone(rule: MetronomeRule, tone: MetronomeToneId) {
             </div>
             <div
               v-else
-              class="inline-flex min-h-9 items-center rounded-full border border-slate-800 bg-slate-950/80 px-3 py-1.5 text-sm text-slate-300"
+              class="inline-flex min-h-9 items-center rounded-full border border-ui-border-strong bg-ui-input px-3 py-1.5 text-sm text-ui-text-secondary"
             >
               Head - Hand
             </div>
           </div>
 
           <div class="grid gap-1 self-end lg:justify-items-end">
-            <p class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Phase</p>
+            <p class="text-[11px] font-medium uppercase tracking-[0.14em] text-ui-text-muted">
+              Phase
+            </p>
             <div class="flex items-center gap-2">
               <input
                 type="number"
                 step="1"
-                class="w-20 rounded-xl border border-slate-700 bg-slate-950 px-2.5 py-2 text-sm normal-case tracking-normal text-slate-200"
+                class="w-20 rounded-xl border border-ui-border-strong bg-ui-input px-2.5 py-2 text-sm normal-case tracking-normal text-ui-text"
                 :value="Math.round(radiansToDegrees(rule.targetRad) * 100) / 100"
                 @input="onPhaseChange(rule, $event)"
               />
@@ -335,10 +342,12 @@ function setTone(rule: MetronomeRule, tone: MetronomeToneId) {
         </div>
 
         <div
-          class="grid gap-2 border-t border-slate-800/80 pt-2 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center lg:gap-3"
+          class="grid gap-2 border-t border-ui-border-subtle/80 pt-2 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center lg:gap-3"
         >
           <div class="grid gap-1">
-            <p class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Tone</p>
+            <p class="text-[11px] font-medium uppercase tracking-[0.14em] text-ui-text-muted">
+              Tone
+            </p>
             <div class="flex flex-wrap gap-2">
               <button
                 v-for="tone in tonePresets"

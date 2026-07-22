@@ -5,8 +5,8 @@ import type { ProjectionModePreference } from "@/engine/planeProjection";
 import type { MultiRigSequence } from "@/engine/types";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
 import {
-    createVisualizerWorkspace,
-    provideVisualizerWorkspace
+  createVisualizerWorkspace,
+  provideVisualizerWorkspace
 } from "@/visualizer/visualizerWorkspace";
 
 type EmbeddedVisualizerSize = "normal" | "compact" | "mini";
@@ -93,15 +93,15 @@ function setSpeed(value: number) {
 
 <template>
   <section
-    class="overflow-hidden rounded-lg border border-slate-800 bg-slate-950/80"
+    class="overflow-hidden rounded-lg border border-ui-border-subtle bg-slate-950/80"
     :aria-label="isCompact ? props.title : undefined"
   >
     <header
       v-if="!isCompact"
-      class="grid gap-3 border-b border-slate-800 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start"
+      class="grid gap-3 border-b border-ui-border-subtle px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start"
     >
       <div class="min-w-0">
-        <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Live Cell</p>
+        <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Live Cell</p>
         <h2 class="mt-1 text-lg font-semibold text-slate-100">{{ props.title }}</h2>
         <p v-if="props.summary" class="mt-1 text-sm leading-6 text-slate-400">
           {{ props.summary }}
@@ -110,11 +110,11 @@ function setSpeed(value: number) {
 
       <dl class="grid grid-cols-2 gap-x-5 gap-y-1 text-xs text-slate-400 md:text-right">
         <div>
-          <dt class="uppercase tracking-[0.18em] text-slate-600">Time</dt>
+          <dt class="uppercase tracking-[0.18em] text-ui-text-muted">Time</dt>
           <dd class="font-mono text-slate-300">{{ currentTimeLabel }} / {{ durationLabel }}</dd>
         </div>
         <div>
-          <dt class="uppercase tracking-[0.18em] text-slate-600">Planes</dt>
+          <dt class="uppercase tracking-[0.18em] text-ui-text-muted">Planes</dt>
           <dd class="font-mono text-slate-300">{{ activePlanesLabel }}</dd>
         </div>
       </dl>
@@ -135,12 +135,12 @@ function setSpeed(value: number) {
     />
 
     <div
-      class="grid border-t border-slate-800 text-sm text-slate-300 md:grid-cols-[auto_minmax(10rem,1fr)_auto] md:items-center"
+      class="grid border-t border-ui-border-subtle text-sm text-slate-300 md:grid-cols-[auto_minmax(10rem,1fr)_auto] md:items-center"
       :class="isCompact ? 'gap-2 px-2 py-2' : 'gap-4 px-4 py-3'"
     >
       <button
         type="button"
-        class="rounded-md border border-slate-700 font-medium text-slate-100 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:text-slate-500"
+        class="rounded-md border border-slate-700 font-medium text-slate-100 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:text-ui-text-muted"
         :class="isCompact ? 'px-2 py-1 text-xs' : 'px-3 py-2'"
         :aria-label="transport.isPlaying.value ? 'Pause' : 'Play'"
         :disabled="transport.duration.value <= 0"
@@ -150,7 +150,7 @@ function setSpeed(value: number) {
       </button>
 
       <label
-        class="grid text-xs uppercase tracking-[0.18em] text-slate-500"
+        class="grid text-xs uppercase tracking-[0.18em] text-ui-text-muted"
         :class="isCompact ? 'gap-0' : 'gap-1'"
       >
         <span :class="isCompact ? 'sr-only' : ''">Timeline</span>
@@ -167,7 +167,7 @@ function setSpeed(value: number) {
         />
       </label>
 
-      <div class="hidden gap-1 text-xs uppercase tracking-[0.18em] text-slate-500 md:grid">
+      <div class="hidden gap-1 text-xs uppercase tracking-[0.18em] text-ui-text-muted md:grid">
         Speed
         <div
           class="grid grid-cols-3 overflow-hidden rounded-md border border-slate-700 normal-case tracking-normal"

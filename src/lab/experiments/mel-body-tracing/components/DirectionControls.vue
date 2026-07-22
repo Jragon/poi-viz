@@ -48,8 +48,8 @@ function oppositeFlowButtonClass(flow: "inwards" | "outwards"): string {
 </script>
 
 <template>
-  <section class="rounded-lg border border-slate-800 bg-slate-900/60">
-    <div class="border-b border-slate-800 px-4 py-3">
+  <section class="rounded-lg border border-ui-border bg-ui-surface">
+    <div class="border-b border-ui-border-subtle px-4 py-3">
       <h2 class="text-sm font-semibold text-slate-200">Direction</h2>
     </div>
     <div class="grid gap-3 px-4 py-4 text-sm">
@@ -117,7 +117,7 @@ function oppositeFlowButtonClass(flow: "inwards" | "outwards"): string {
       </div>
 
       <p
-        class="rounded-md border border-slate-800 bg-slate-950/60 px-3 py-2 font-mono text-xs text-slate-400"
+        class="rounded-md border border-ui-border-subtle bg-ui-input px-3 py-2 font-mono text-xs text-ui-text-secondary"
       >
         {{ resolvedLabel }}
       </p>

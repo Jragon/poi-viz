@@ -116,7 +116,7 @@ export const STALL_GRAPH_LAYOUTS: Record<StallGraphDensity, StallGraphLayout> = 
     nodeRadius: 3.5,
     sharedNodeRadius: 2,
     strokeWidth: 1.5,
-    labelFontSize: 7
+    labelFontSize: 9
   },
   compact: {
     topPad: 24,
@@ -128,7 +128,7 @@ export const STALL_GRAPH_LAYOUTS: Record<StallGraphDensity, StallGraphLayout> = 
     nodeRadius: 5,
     sharedNodeRadius: 3,
     strokeWidth: 2,
-    labelFontSize: 9
+    labelFontSize: 10
   },
   editor: {
     topPad: 30,

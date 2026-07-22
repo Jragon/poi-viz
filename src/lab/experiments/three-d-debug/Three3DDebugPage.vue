@@ -157,8 +157,8 @@ function updateFirePoiSettings(next: FirePoiSettings) {
 
 <template>
   <main class="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-6 py-8">
-    <section class="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
-      <p class="text-xs uppercase tracking-[0.24em] text-slate-500">Lab Experiment</p>
+    <section class="rounded-2xl border border-ui-border-subtle bg-slate-950/70 p-5">
+      <p class="text-xs uppercase tracking-[0.24em] text-ui-text-muted">Lab Experiment</p>
       <h1 class="mt-2 text-3xl font-semibold text-slate-100">Three.js Debug World Renderer</h1>
       <p class="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
         This shell reuses the current visualizer playback stack and world-pose output. Scope stays
@@ -169,7 +169,7 @@ function updateFirePoiSettings(next: FirePoiSettings) {
     <PatternRegistryControls :current-name="selectedEntry?.name ?? '3D demo pattern'" />
 
     <section
-      class="grid gap-4 rounded-2xl border border-slate-800 bg-slate-950/70 p-5 lg:grid-cols-[minmax(0,1fr)_20rem]"
+      class="grid gap-4 rounded-2xl border border-ui-border-subtle bg-slate-950/70 p-5 lg:grid-cols-[minmax(0,1fr)_20rem]"
     >
       <div class="grid gap-4">
         <div
@@ -200,12 +200,12 @@ function updateFirePoiSettings(next: FirePoiSettings) {
       </div>
 
       <aside
-        class="grid gap-4 rounded-xl border border-slate-800 bg-slate-900/65 p-4 text-sm text-slate-300"
+        class="grid gap-4 rounded-xl border border-ui-border-subtle bg-slate-900/65 p-4 text-sm text-slate-300"
       >
         <TransportControls />
 
-        <div class="grid gap-3 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
-          <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Motion Inspection</p>
+        <div class="grid gap-3 rounded-xl border border-ui-border-subtle bg-slate-950/50 p-3">
+          <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Motion Inspection</p>
           <button
             type="button"
             class="rounded-lg border border-slate-700 px-3 py-2 text-left text-sm text-slate-200 transition hover:border-sky-500 hover:text-sky-200"
@@ -217,7 +217,7 @@ function updateFirePoiSettings(next: FirePoiSettings) {
           <label class="grid gap-2 text-sm text-slate-300">
             <span class="flex items-center justify-between gap-3">
               <span>Trail Length</span>
-              <span class="font-mono text-xs text-slate-500">{{ trailLengthSteps }}</span>
+              <span class="font-mono text-xs text-ui-text-muted">{{ trailLengthSteps }}</span>
             </span>
             <input
               v-model.number="trailLengthSteps"
@@ -230,18 +230,18 @@ function updateFirePoiSettings(next: FirePoiSettings) {
           </label>
         </div>
 
-        <div class="grid gap-2 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
-          <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Scene State</p>
+        <div class="grid gap-2 rounded-xl border border-ui-border-subtle bg-slate-950/50 p-3">
+          <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Scene State</p>
           <p>
-            <span class="text-slate-500">Active planes:</span>
+            <span class="text-ui-text-muted">Active planes:</span>
             {{ activePlaneLabel }}
           </p>
           <p>
-            <span class="text-slate-500">Scene radius:</span>
+            <span class="text-ui-text-muted">Scene radius:</span>
             {{ sceneState.sceneRadiusWorld.toFixed(2) }}
           </p>
           <p>
-            <span class="text-slate-500">Bounds center:</span>
+            <span class="text-ui-text-muted">Bounds center:</span>
             {{ sceneState.worldBounds.center.x.toFixed(2) }},
             {{ sceneState.worldBounds.center.y.toFixed(2) }},
             {{ sceneState.worldBounds.center.z.toFixed(2) }}
@@ -249,42 +249,42 @@ function updateFirePoiSettings(next: FirePoiSettings) {
         </div>
 
         <label
-          class="flex items-center justify-between gap-3 rounded-lg border border-slate-800 px-3 py-2"
+          class="flex items-center justify-between gap-3 rounded-lg border border-ui-border-subtle px-3 py-2"
         >
           <span>Axes</span>
           <input v-model="showAxes" type="checkbox" class="h-4 w-4 accent-sky-400" />
         </label>
 
         <label
-          class="flex items-center justify-between gap-3 rounded-lg border border-slate-800 px-3 py-2"
+          class="flex items-center justify-between gap-3 rounded-lg border border-ui-border-subtle px-3 py-2"
         >
           <span>Grid</span>
           <input v-model="showGrid" type="checkbox" class="h-4 w-4 accent-sky-400" />
         </label>
 
         <label
-          class="flex items-center justify-between gap-3 rounded-lg border border-slate-800 px-3 py-2"
+          class="flex items-center justify-between gap-3 rounded-lg border border-ui-border-subtle px-3 py-2"
         >
           <span>Hand Trails</span>
           <input v-model="showHandTrails" type="checkbox" class="h-4 w-4 accent-sky-400" />
         </label>
 
         <label
-          class="flex items-center justify-between gap-3 rounded-lg border border-slate-800 px-3 py-2"
+          class="flex items-center justify-between gap-3 rounded-lg border border-ui-border-subtle px-3 py-2"
         >
           <span>Head Trails</span>
           <input v-model="showHeadTrails" type="checkbox" class="h-4 w-4 accent-sky-400" />
         </label>
 
         <label
-          class="flex items-center justify-between gap-3 rounded-lg border border-slate-800 px-3 py-2"
+          class="flex items-center justify-between gap-3 rounded-lg border border-ui-border-subtle px-3 py-2"
         >
           <span>Plane Sheets</span>
           <input v-model="showPlaneSheets" type="checkbox" class="h-4 w-4 accent-sky-400" />
         </label>
 
         <label
-          class="flex items-center justify-between gap-3 rounded-lg border border-slate-800 px-3 py-2"
+          class="flex items-center justify-between gap-3 rounded-lg border border-ui-border-subtle px-3 py-2"
         >
           <span>Fire Poi</span>
           <input v-model="firePoiEnabled" type="checkbox" class="h-4 w-4 accent-orange-400" />

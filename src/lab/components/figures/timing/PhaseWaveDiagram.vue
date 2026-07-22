@@ -76,9 +76,9 @@ const accessibleLabel = computed(
         <line x1="42" y1="13" x2="155" y2="13" class="stroke-slate-800" />
         <line x1="42" y1="35" x2="155" y2="35" class="stroke-slate-800" />
         <line x1="42" y1="57" x2="155" y2="57" class="stroke-slate-800" />
-        <text x="35" y="16" text-anchor="end" class="fill-slate-500 text-[8px]">top</text>
-        <text x="35" y="38" text-anchor="end" class="fill-slate-500 text-[8px]">centre</text>
-        <text x="35" y="60" text-anchor="end" class="fill-amber-200 text-[8px]">bottom</text>
+        <text x="35" y="16" text-anchor="end" class="fill-slate-500 text-[10px]">top</text>
+        <text x="35" y="38" text-anchor="end" class="fill-slate-500 text-[10px]">centre</text>
+        <text x="35" y="60" text-anchor="end" class="fill-amber-200 text-[10px]">bottom</text>
 
         <path
           :d="leftPath"
@@ -116,12 +116,12 @@ const accessibleLabel = computed(
           </template>
         </g>
 
-        <text x="42" y="76" text-anchor="middle" class="fill-slate-500 text-[8px]">0</text>
-        <text x="98.5" y="76" text-anchor="middle" class="fill-slate-500 text-[8px]">½</text>
-        <text x="155" y="76" text-anchor="middle" class="fill-slate-500 text-[8px]">1</text>
+        <text x="42" y="76" text-anchor="middle" class="fill-slate-500 text-[10px]">0</text>
+        <text x="98.5" y="76" text-anchor="middle" class="fill-slate-500 text-[10px]">½</text>
+        <text x="155" y="76" text-anchor="middle" class="fill-slate-500 text-[10px]">1</text>
       </g>
     </svg>
-    <p class="text-center text-[10px] leading-4 text-slate-500">
+    <p class="text-center text-[10px] leading-4 text-ui-text-muted">
       Vertical position on the wall plane
     </p>
   </div>

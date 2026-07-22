@@ -27,7 +27,7 @@ function resetDefaults() {
     <template #handle="{ close, resetPosition }">
       <div class="flex items-start justify-between gap-3">
         <div>
-          <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Fire Poi</p>
+          <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Fire Poi</p>
           <p class="mt-1 text-sm text-slate-300">Deterministic lab overlay</p>
         </div>
         <div class="flex items-center gap-2">
@@ -51,7 +51,7 @@ function resetDefaults() {
 
     <div class="grid gap-4 p-4 text-sm text-slate-300">
       <label
-        class="flex items-center justify-between gap-3 rounded-lg border border-slate-800 px-3 py-2"
+        class="flex items-center justify-between gap-3 rounded-lg border border-ui-border-subtle px-3 py-2"
       >
         <span>Enabled</span>
         <input
@@ -65,7 +65,7 @@ function resetDefaults() {
       <label class="grid gap-2">
         <span class="flex items-center justify-between gap-3">
           <span>Core Intensity</span>
-          <span class="font-mono text-xs text-slate-500">{{
+          <span class="font-mono text-xs text-ui-text-muted">{{
             settings.coreIntensity.toFixed(2)
           }}</span>
         </span>
@@ -85,7 +85,9 @@ function resetDefaults() {
       <label class="grid gap-2">
         <span class="flex items-center justify-between gap-3">
           <span>Core Radius</span>
-          <span class="font-mono text-xs text-slate-500">{{ settings.coreRadius.toFixed(2) }}</span>
+          <span class="font-mono text-xs text-ui-text-muted">{{
+            settings.coreRadius.toFixed(2)
+          }}</span>
         </span>
         <input
           :value="settings.coreRadius"
@@ -101,7 +103,7 @@ function resetDefaults() {
       <label class="grid gap-2">
         <span class="flex items-center justify-between gap-3">
           <span>Wake Length</span>
-          <span class="font-mono text-xs text-slate-500">{{ settings.wakeLengthSteps }}</span>
+          <span class="font-mono text-xs text-ui-text-muted">{{ settings.wakeLengthSteps }}</span>
         </span>
         <input
           :value="settings.wakeLengthSteps"
@@ -119,7 +121,7 @@ function resetDefaults() {
       <label class="grid gap-2">
         <span class="flex items-center justify-between gap-3">
           <span>Emission Density</span>
-          <span class="font-mono text-xs text-slate-500">{{ settings.emissionDensity }}</span>
+          <span class="font-mono text-xs text-ui-text-muted">{{ settings.emissionDensity }}</span>
         </span>
         <input
           :value="settings.emissionDensity"
@@ -137,7 +139,9 @@ function resetDefaults() {
       <label class="grid gap-2">
         <span class="flex items-center justify-between gap-3">
           <span>Turbulence</span>
-          <span class="font-mono text-xs text-slate-500">{{ settings.turbulence.toFixed(2) }}</span>
+          <span class="font-mono text-xs text-ui-text-muted">{{
+            settings.turbulence.toFixed(2)
+          }}</span>
         </span>
         <input
           :value="settings.turbulence"
@@ -153,7 +157,7 @@ function resetDefaults() {
       <label class="grid gap-2">
         <span class="flex items-center justify-between gap-3">
           <span>Spread</span>
-          <span class="font-mono text-xs text-slate-500">{{ settings.spread.toFixed(2) }}</span>
+          <span class="font-mono text-xs text-ui-text-muted">{{ settings.spread.toFixed(2) }}</span>
         </span>
         <input
           :value="settings.spread"
@@ -169,7 +173,9 @@ function resetDefaults() {
       <label class="grid gap-2">
         <span class="flex items-center justify-between gap-3">
           <span>Fade Rate</span>
-          <span class="font-mono text-xs text-slate-500">{{ settings.fadeRate.toFixed(2) }}</span>
+          <span class="font-mono text-xs text-ui-text-muted">{{
+            settings.fadeRate.toFixed(2)
+          }}</span>
         </span>
         <input
           :value="settings.fadeRate"
@@ -185,7 +191,7 @@ function resetDefaults() {
       <label class="grid gap-2">
         <span class="flex items-center justify-between gap-3">
           <span>Velocity Stretch</span>
-          <span class="font-mono text-xs text-slate-500">{{
+          <span class="font-mono text-xs text-ui-text-muted">{{
             settings.velocityStretch.toFixed(2)
           }}</span>
         </span>

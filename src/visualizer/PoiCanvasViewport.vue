@@ -314,7 +314,7 @@ onBeforeUnmount(() => {
       'relative overflow-hidden bg-slate-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]',
       props.isFullscreen
         ? 'min-h-[calc(100vh-12rem)] rounded-none border-0'
-        : 'min-h-112 rounded-2xl border border-slate-800',
+        : 'min-h-112 rounded-2xl border border-ui-border-subtle',
       isProjectionDragging ? 'cursor-grabbing' : isProjectionDragAvailable ? 'cursor-grab' : ''
     ]"
   >

@@ -96,7 +96,7 @@ onBeforeUnmount(cancelAnimation);
   <div class="mx-auto grid w-full max-w-[44rem] min-w-0 gap-4">
     <div class="grid gap-2 sm:grid-cols-2">
       <fieldset class="grid gap-1.5">
-        <legend class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+        <legend class="text-[11px] font-semibold uppercase tracking-[0.12em] text-ui-text-muted">
           Timing
         </legend>
         <div class="grid grid-cols-4 gap-1">
@@ -119,7 +119,7 @@ onBeforeUnmount(cancelAnimation);
       </fieldset>
 
       <fieldset class="grid gap-1.5">
-        <legend class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+        <legend class="text-[11px] font-semibold uppercase tracking-[0.12em] text-ui-text-muted">
           Direction
         </legend>
         <div class="grid grid-cols-2 gap-1">

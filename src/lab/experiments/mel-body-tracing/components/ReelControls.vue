@@ -51,31 +51,31 @@ function handAccentClass(hand: PoiBeatHand): string {
 }
 
 function positionButtonClass(hand: PoiBeatHand, position: ReelPosition): string {
-  if (props.modelValue[hand] === position) return "border-slate-200 bg-slate-100 text-slate-950";
-  return "border-slate-700 text-slate-300 hover:border-slate-500 hover:bg-slate-800";
+  if (props.modelValue[hand] === position) return "border-cyan-300 bg-cyan-950/70 text-cyan-100";
+  return "border-slate-700 text-ui-text-secondary hover:border-slate-500 hover:bg-slate-800";
 }
 
 function offsetButtonClass(offset: ReelConfig["offset"]): string {
-  if (props.modelValue.offset === offset) return "border-sky-300 bg-sky-300 text-slate-950";
-  return "border-slate-700 text-slate-300 hover:border-slate-500 hover:bg-slate-800";
+  if (props.modelValue.offset === offset) return "border-sky-300 bg-sky-950/70 text-sky-100";
+  return "border-slate-700 text-ui-text-secondary hover:border-slate-500 hover:bg-slate-800";
 }
 
 function visibilityButtonClass(trackId: string): string {
   if (isTrackVisible(trackId)) return "border-emerald-500/70 bg-emerald-500/15 text-emerald-200";
-  return "border-slate-700 text-slate-500 hover:border-slate-500 hover:text-slate-300";
+  return "border-slate-700 text-ui-text-muted hover:border-slate-500 hover:text-slate-300";
 }
 </script>
 
 <template>
-  <section class="rounded-lg border border-slate-800 bg-slate-900/60">
-    <div class="border-b border-slate-800 px-4 py-3">
+  <section class="rounded-lg border border-ui-border bg-ui-surface">
+    <div class="border-b border-ui-border-subtle px-4 py-3">
       <h2 class="text-sm font-semibold text-slate-200">Hands</h2>
     </div>
     <div class="grid gap-3 px-4 py-4 text-sm">
       <div
         v-for="hand in ['left', 'right'] as const"
         :key="hand"
-        class="rounded-md border border-slate-800 bg-slate-950/50 px-3 py-3"
+        class="rounded-md border border-ui-border-subtle bg-ui-input px-3 py-3"
       >
         <div class="flex items-center justify-between gap-3">
           <p class="font-medium capitalize text-slate-200">
@@ -116,8 +116,8 @@ function visibilityButtonClass(trackId: string): string {
     @update:direction="setDirection"
   />
 
-  <section class="rounded-lg border border-slate-800 bg-slate-900/60">
-    <div class="border-b border-slate-800 px-4 py-3">
+  <section class="rounded-lg border border-ui-border bg-ui-surface">
+    <div class="border-b border-ui-border-subtle px-4 py-3">
       <h2 class="text-sm font-semibold text-slate-200">Right hand offset</h2>
     </div>
     <div class="grid gap-3 px-4 py-4 text-sm">
@@ -134,12 +134,12 @@ function visibilityButtonClass(trackId: string): string {
           {{ offset }}
         </button>
       </div>
-      <p class="font-mono text-xs text-slate-500">{{ offsetLabel }}</p>
+      <p class="font-mono text-xs text-ui-text-muted">{{ offsetLabel }}</p>
     </div>
   </section>
 
-  <section class="rounded-lg border border-slate-800 bg-slate-900/60 px-4 py-3">
-    <p class="text-xs uppercase tracking-[0.16em] text-slate-500">Resolved reel</p>
+  <section class="rounded-lg border border-ui-border bg-ui-surface px-4 py-3">
+    <p class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted">Resolved reel</p>
     <p class="mt-1 font-mono text-lg font-semibold text-amber-200">{{ summaryLabel }}</p>
   </section>
 </template>

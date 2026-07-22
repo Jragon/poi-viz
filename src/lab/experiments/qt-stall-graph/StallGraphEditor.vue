@@ -152,12 +152,14 @@ onBeforeRouteLeave(() => {
 
 <template>
   <div class="grid min-w-0 gap-4">
-    <section class="min-w-0 overflow-hidden rounded-lg border border-slate-800 bg-slate-900/60">
+    <section class="min-w-0 overflow-hidden rounded-lg border border-ui-border bg-ui-surface">
       <div
-        class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 px-4 py-3"
+        class="flex flex-wrap items-center justify-between gap-3 border-b border-ui-border-subtle px-4 py-3"
       >
         <div>
-          <p class="text-xs uppercase tracking-[0.16em] text-slate-500">Pattern editor</p>
+          <p class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted">
+            Pattern editor
+          </p>
           <h2 class="mt-1 text-sm font-semibold text-slate-200">
             {{ editingHand === "left" ? "Editing left hand" : "Editing right hand" }}
           </h2>
@@ -186,23 +188,25 @@ onBeforeRouteLeave(() => {
             :class="
               editingHand === hand
                 ? hand === 'left'
-                  ? 'border-cyan-400 bg-cyan-400/10 text-cyan-200'
-                  : 'border-pink-400 bg-pink-400/10 text-pink-200'
-                : 'border-slate-700 text-slate-400 hover:border-slate-500'
+                  ? 'border-cyan-400 bg-cyan-950/70 text-cyan-200'
+                  : 'border-pink-400 bg-pink-950/70 text-pink-200'
+                : 'border-slate-700 text-ui-text-secondary hover:border-slate-500'
             "
+            :aria-pressed="editingHand === hand"
             @click="setEditingHand(hand)"
           >
             Edit {{ hand === "left" ? "L" : "R" }}
           </button>
-          <span class="mx-1 w-px bg-slate-800" aria-hidden="true" />
+          <span class="mx-1 w-px bg-ui-border-subtle" aria-hidden="true" />
           <button
             type="button"
             class="rounded-md border px-2.5 py-1.5 transition"
             :class="
               orientation === 'horizontal'
-                ? 'border-amber-400/70 text-amber-200'
-                : 'border-slate-700 text-slate-400 hover:border-slate-500'
+                ? 'border-amber-400 bg-amber-950/60 text-amber-200'
+                : 'border-slate-700 text-ui-text-secondary hover:border-slate-500'
             "
+            :aria-pressed="orientation === 'horizontal'"
             @click="orientation = 'horizontal'"
           >
             Horizontal
@@ -212,9 +216,10 @@ onBeforeRouteLeave(() => {
             class="rounded-md border px-2.5 py-1.5 transition"
             :class="
               orientation === 'vertical'
-                ? 'border-amber-400/70 text-amber-200'
-                : 'border-slate-700 text-slate-400 hover:border-slate-500'
+                ? 'border-amber-400 bg-amber-950/60 text-amber-200'
+                : 'border-slate-700 text-ui-text-secondary hover:border-slate-500'
             "
+            :aria-pressed="orientation === 'vertical'"
             @click="orientation = 'vertical'"
           >
             Vertical
@@ -259,10 +264,12 @@ onBeforeRouteLeave(() => {
         </div>
 
         <div
-          class="grid gap-3 border-t border-slate-800 px-3 py-3 text-xs md:grid-cols-2 xl:grid-cols-4"
+          class="grid gap-3 border-t border-ui-border-subtle px-3 py-3 text-xs md:grid-cols-2 xl:grid-cols-4"
         >
-          <div class="rounded-md border border-slate-800 bg-slate-950/40 p-2.5">
-            <p class="mb-2 uppercase tracking-[0.12em] text-slate-500">Beats</p>
+          <div class="rounded-md border border-ui-border-subtle bg-ui-input p-2.5">
+            <p class="mb-2 text-[11px] font-medium uppercase tracking-[0.14em] text-ui-text-muted">
+              Beats
+            </p>
             <div class="flex items-center gap-2">
               <button
                 type="button"
@@ -287,8 +294,10 @@ onBeforeRouteLeave(() => {
             </div>
           </div>
 
-          <div class="rounded-md border border-slate-800 bg-slate-950/40 p-2.5">
-            <p class="mb-2 uppercase tracking-[0.12em] text-slate-500">Track presence</p>
+          <div class="rounded-md border border-ui-border-subtle bg-ui-input p-2.5">
+            <p class="mb-2 text-[11px] font-medium uppercase tracking-[0.14em] text-ui-text-muted">
+              Track presence
+            </p>
             <div class="flex gap-2">
               <button
                 v-for="hand in ['left', 'right'] as const"
@@ -300,7 +309,7 @@ onBeforeRouteLeave(() => {
                     ? hand === 'left'
                       ? 'border-cyan-700 text-cyan-300'
                       : 'border-pink-700 text-pink-300'
-                    : 'border-slate-700 text-slate-500'
+                    : 'border-slate-700 text-ui-text-muted hover:bg-ui-surface-raised'
                 "
                 @click="toggleTrack(hand)"
               >
@@ -310,8 +319,10 @@ onBeforeRouteLeave(() => {
             </div>
           </div>
 
-          <div class="rounded-md border border-slate-800 bg-slate-950/40 p-2.5">
-            <p class="mb-2 uppercase tracking-[0.12em] text-slate-500">Hand offset</p>
+          <div class="rounded-md border border-ui-border-subtle bg-ui-input p-2.5">
+            <p class="mb-2 text-[11px] font-medium uppercase tracking-[0.14em] text-ui-text-muted">
+              Hand offset
+            </p>
             <div class="flex flex-wrap gap-2">
               <span
                 v-for="hand in ['left', 'right'] as const"
@@ -343,8 +354,10 @@ onBeforeRouteLeave(() => {
             </div>
           </div>
 
-          <div class="rounded-md border border-slate-800 bg-slate-950/40 p-2.5">
-            <p class="mb-2 uppercase tracking-[0.12em] text-slate-500">Cycle start</p>
+          <div class="rounded-md border border-ui-border-subtle bg-ui-input p-2.5">
+            <p class="mb-2 text-[11px] font-medium uppercase tracking-[0.14em] text-ui-text-muted">
+              Cycle start
+            </p>
             <div class="flex items-center gap-2">
               <button
                 type="button"
@@ -367,7 +380,7 @@ onBeforeRouteLeave(() => {
         </div>
 
         <div
-          class="flex min-w-0 flex-wrap items-center gap-2 border-t border-slate-800 px-3 py-2.5"
+          class="flex min-w-0 flex-wrap items-center gap-2 border-t border-ui-border-subtle px-3 py-2.5"
         >
           <code
             class="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded bg-slate-950 px-2.5 py-1.5 text-[11px] text-slate-400"
@@ -380,7 +393,7 @@ onBeforeRouteLeave(() => {
           >
             Copy codec
           </button>
-          <span class="min-w-14 text-xs text-slate-500" role="status">{{ copyStatus }}</span>
+          <span class="min-w-14 text-xs text-ui-text-muted" role="status">{{ copyStatus }}</span>
         </div>
       </template>
     </section>
@@ -404,7 +417,7 @@ onBeforeRouteLeave(() => {
     />
     <div
       v-else-if="draft"
-      class="rounded border border-slate-800 bg-slate-950/30 px-4 py-8 text-center text-xs text-slate-600"
+      class="rounded border border-ui-border-subtle bg-slate-950/30 px-4 py-8 text-center text-xs text-ui-text-muted"
     >
       Fill one present hand with compatible quarter-turn stalls to preview it.
     </div>

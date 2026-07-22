@@ -16,7 +16,7 @@ function onScrub(event: Event) {
 </script>
 
 <template>
-  <section class="grid gap-4 rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+  <section class="grid gap-4 rounded-2xl border border-ui-border bg-ui-surface p-4">
     <div class="grid gap-4 md:grid-cols-[auto_minmax(0,1fr)] md:items-center">
       <div class="flex gap-2">
         <button
@@ -29,7 +29,7 @@ function onScrub(event: Event) {
         </button>
         <button
           type="button"
-          class="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:text-white disabled:cursor-not-allowed disabled:border-slate-800 disabled:text-slate-500"
+          class="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:text-white disabled:cursor-not-allowed disabled:border-ui-border-subtle disabled:text-ui-text-muted"
           :disabled="duration <= 0 || !isPlaying"
           @click="pause"
         >
@@ -37,12 +37,14 @@ function onScrub(event: Event) {
         </button>
       </div>
 
-      <div class="grid w-full gap-1 text-sm text-slate-300 md:justify-self-end md:text-right">
+      <div
+        class="grid w-full gap-1 text-sm text-ui-text-secondary md:justify-self-end md:text-right"
+      >
         <p class="font-mono tabular-nums">{{ currentTimeLabel }} / {{ durationLabel }} units</p>
       </div>
     </div>
 
-    <label class="grid gap-1 text-xs uppercase tracking-[0.2em] text-slate-500">
+    <label class="grid gap-1 text-sm font-medium uppercase tracking-[0.14em] text-ui-text-muted">
       Timeline
       <input
         type="range"

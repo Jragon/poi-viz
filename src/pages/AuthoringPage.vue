@@ -197,7 +197,6 @@ onBeforeRouteLeave(() => {
   if (!isDirty.value || typeof window === "undefined") return true;
   return window.confirm("Discard unsaved changes?");
 });
-
 </script>
 
 <template>
@@ -205,24 +204,28 @@ onBeforeRouteLeave(() => {
     <section class="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.65fr)]">
       <div class="grid min-w-0 gap-6">
         <section
-          class="grid gap-4 rounded-3xl border border-slate-800 bg-slate-900/60 p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
+          class="grid gap-4 rounded-3xl border border-ui-border p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
         >
-          <label class="grid min-w-0 gap-2 text-sm text-slate-300">
-            <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Name</span>
+          <label class="grid min-w-0 gap-2 text-sm text-ui-text-secondary">
+            <span class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted"
+              >Name</span
+            >
             <input
               type="text"
-              class="w-full min-w-0 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-sky-400"
+              class="w-full min-w-0 rounded-2xl border border-ui-border-strong bg-ui-input px-4 py-3 text-ui-text transition focus:border-sky-400"
               :value="metaDrafts.name ?? selectedDocument?.name ?? ''"
               @input="metaDrafts.name = ($event.target as HTMLInputElement).value"
               @blur="commitMetaName"
             />
           </label>
 
-          <label class="grid min-w-0 gap-2 text-sm text-slate-300">
-            <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Description</span>
+          <label class="grid min-w-0 gap-2 text-sm text-ui-text-secondary">
+            <span class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted"
+              >Description</span
+            >
             <textarea
               rows="1"
-              class="min-h-12 w-full min-w-0 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-sky-400"
+              class="min-h-12 w-full min-w-0 rounded-2xl border border-ui-border-strong bg-ui-input px-4 py-3 text-ui-text transition focus:border-sky-400"
               :value="metaDrafts.description ?? selectedDocument?.description ?? ''"
               @input="metaDrafts.description = ($event.target as HTMLTextAreaElement).value"
               @blur="commitMetaDescription"
@@ -234,14 +237,14 @@ onBeforeRouteLeave(() => {
           <article
             v-for="view in trackViews"
             :key="view.trackId"
-            class="grid min-w-0 content-start gap-4 rounded-3xl border border-slate-800 bg-slate-900/55 p-4"
+            class="grid min-w-0 content-start gap-4 rounded-3xl border border-ui-border-subtle bg-ui-surface p-4"
           >
             <header class="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p class="text-xs uppercase tracking-[0.22em] text-slate-500">
+                <p class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted">
                   {{ view.trackId }} track
                 </p>
-                <p class="mt-1 text-sm text-slate-400">
+                <p class="mt-1 text-sm text-ui-text-secondary">
                   Total {{ formatNumber(view.totalDuration, 2) }} units
                 </p>
               </div>
@@ -256,7 +259,7 @@ onBeforeRouteLeave(() => {
 
             <div
               v-if="!view.track"
-              class="rounded-2xl border border-dashed border-slate-700 bg-slate-950/60 p-6 text-sm text-slate-400"
+              class="rounded-2xl border border-dashed border-ui-border-strong bg-ui-input p-6 text-sm text-ui-text-secondary"
             >
               This side is absent from the authored document.
             </div>
@@ -335,9 +338,9 @@ onBeforeRouteLeave(() => {
 
       <aside class="grid min-w-0 gap-4 self-start xl:sticky xl:top-6">
         <section
-          class="grid gap-2 rounded-3xl border border-slate-800 bg-slate-900/60 p-5 text-sm text-slate-300"
+          class="grid gap-2 rounded-3xl border border-ui-border p-5 text-sm text-ui-text-secondary"
         >
-          <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Pattern</p>
+          <p class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted">Pattern</p>
           <PatternRegistryControls
             editor-kind="authoring"
             :current-pattern-id="workingPatternId"

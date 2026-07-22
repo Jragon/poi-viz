@@ -65,7 +65,7 @@ const panels: readonly FamiliarTimingPanel[] = [
             :time="time"
             compact
           />
-          <span class="text-center font-mono text-[9px] text-slate-500">
+          <span class="text-center font-mono text-[10px] text-ui-text-muted">
             {{ time === 0 ? "0" : time === 0.25 ? "¼" : time === 0.5 ? "½" : "¾" }}
           </span>
         </div>

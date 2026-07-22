@@ -22,7 +22,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <section class="grid gap-3 rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+  <section class="grid gap-3 rounded-2xl border border-ui-border bg-ui-surface p-4">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div class="flex flex-wrap items-center gap-2">
         <button
@@ -33,11 +33,12 @@ const emit = defineEmits<{
               ? 'border-amber-400 bg-amber-400 text-slate-950 hover:bg-amber-300'
               : 'border-slate-700 text-slate-200 hover:border-slate-500 hover:text-white'
           "
+          :aria-pressed="props.isDisplayPanelOpen"
           @click="emit('toggleDisplayPanel')"
         >
           Display
         </button>
-        <span class="font-mono text-xs uppercase tracking-[0.2em] text-slate-500">
+        <span class="font-mono text-xs uppercase tracking-[0.2em] text-ui-text-muted">
           {{ props.activePresetId }}
         </span>
       </div>
@@ -46,6 +47,7 @@ const emit = defineEmits<{
         <button
           type="button"
           class="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+          :aria-pressed="props.isFullscreen"
           @click="emit('toggleFullscreen')"
         >
           {{ props.isFullscreen ? "Exit Fullscreen" : "Fullscreen" }}
@@ -58,6 +60,7 @@ const emit = defineEmits<{
               ? 'bg-rose-500 text-white hover:bg-rose-400'
               : 'bg-sky-500 text-slate-950 hover:bg-sky-400'
           "
+          :aria-pressed="props.isWebcamActive"
           @click="emit('toggleWebcam')"
         >
           {{ props.isWebcamActive ? "Disable Webcam" : "Enable Webcam" }}

@@ -109,16 +109,16 @@ function displayStep(step: number): number {
 </script>
 
 <template>
-  <section class="rounded-lg border border-slate-800 bg-slate-900/60 text-sm text-slate-300">
-    <div class="border-b border-slate-800 px-4 py-3">
-      <p class="text-xs uppercase tracking-[0.16em] text-slate-500">Debug</p>
+  <section class="rounded-lg border border-ui-border-subtle bg-slate-900/60 text-sm text-slate-300">
+    <div class="border-b border-ui-border-subtle px-4 py-3">
+      <p class="text-xs uppercase tracking-[0.16em] text-ui-text-muted">Debug</p>
       <h2 class="mt-1 text-sm font-semibold text-slate-200">Playback graph state</h2>
     </div>
 
     <div class="grid gap-4 px-4 py-4">
-      <div class="overflow-x-auto rounded-md border border-slate-800">
+      <div class="overflow-x-auto rounded-md border border-ui-border-subtle">
         <table class="min-w-full divide-y divide-slate-800 text-left text-xs">
-          <thead class="bg-slate-950/80 text-slate-500">
+          <thead class="bg-slate-950/80 text-ui-text-muted">
             <tr>
               <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">Current</th>
               <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">Duration</th>
@@ -141,18 +141,18 @@ function displayStep(step: number): number {
 
       <div class="grid gap-2">
         <div class="flex items-center justify-between gap-3">
-          <h3 class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <h3 class="text-xs font-semibold uppercase tracking-[0.16em] text-ui-text-muted">
             Sequence Rows
           </h3>
-          <p class="font-mono text-xs text-slate-500">{{ sequenceRows.length }} steps</p>
+          <p class="font-mono text-xs text-ui-text-muted">{{ sequenceRows.length }} steps</p>
         </div>
 
         <div
           v-if="sequenceRows.length > 0"
-          class="overflow-x-auto rounded-md border border-slate-800"
+          class="overflow-x-auto rounded-md border border-ui-border-subtle"
         >
           <table class="min-w-full divide-y divide-slate-800 text-left text-xs">
-            <thead class="bg-slate-950/80 text-slate-500">
+            <thead class="bg-slate-950/80 text-ui-text-muted">
               <tr>
                 <th class="w-14 px-3 py-2 font-semibold uppercase tracking-[0.14em]" rowspan="2">
                   Step
@@ -163,7 +163,7 @@ function displayStep(step: number): number {
                 <th
                   v-for="track in visibleTracks"
                   :key="track.id"
-                  class="border-l border-slate-800 px-3 py-2 font-semibold uppercase tracking-[0.14em]"
+                  class="border-l border-ui-border-subtle px-3 py-2 font-semibold uppercase tracking-[0.14em]"
                   colspan="5"
                 >
                   <span :class="trackHeaderClass(track)">{{ trackHeaderLabel(track) }}</span>
@@ -172,7 +172,7 @@ function displayStep(step: number): number {
               <tr>
                 <template v-for="track in visibleTracks" :key="`${track.id}-columns`">
                   <th
-                    class="border-l border-slate-800 px-3 py-2 font-semibold uppercase tracking-[0.14em]"
+                    class="border-l border-ui-border-subtle px-3 py-2 font-semibold uppercase tracking-[0.14em]"
                   >
                     Lane
                   </th>
@@ -220,7 +220,7 @@ function displayStep(step: number): number {
 
         <p
           v-else
-          class="rounded-md border border-slate-800 bg-slate-950/60 px-3 py-2 text-xs text-slate-500"
+          class="rounded-md border border-ui-border-subtle bg-slate-950/60 px-3 py-2 text-xs text-ui-text-muted"
         >
           No sequence rows.
         </p>

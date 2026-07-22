@@ -26,16 +26,18 @@ function formatNumber(value: number, digits = 2): string {
       <p class="mt-3">{{ errorMessage }}</p>
     </div>
 
-    <section class="grid gap-4 rounded-3xl border border-slate-800 bg-slate-900/60 p-4">
+    <section class="grid gap-4 rounded-3xl border border-ui-border p-4">
       <TransportControls />
 
       <PoiCanvasViewport :projection-drag-enabled="false" />
 
       <div
-        class="grid gap-2 rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-300"
+        class="grid gap-2 rounded-2xl border border-ui-border-subtle bg-ui-surface p-4 text-sm text-ui-text-secondary"
       >
         <div class="flex items-center justify-between gap-3">
-          <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Transport</span>
+          <span class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted"
+            >Transport</span
+          >
           <span
             >{{ formatNumber(transport.currentTime.value, 2) }} /
             {{ formatNumber(transport.duration.value, 2) }}</span
@@ -46,7 +48,9 @@ function formatNumber(value: number, digits = 2): string {
           :key="`${entry.trackId}-summary`"
           class="flex items-center justify-between gap-3"
         >
-          <span class="text-xs uppercase tracking-[0.2em] text-slate-500">{{ entry.trackId }}</span>
+          <span class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted">{{
+            entry.trackId
+          }}</span>
           <span>{{ formatNumber(entry.totalDuration, 2) }} units</span>
         </div>
       </div>

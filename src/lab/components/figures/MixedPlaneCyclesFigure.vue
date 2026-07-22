@@ -116,13 +116,13 @@ const selected = computed(
           :class="
             panel.id === selectedId
               ? 'border-amber-400/60 bg-slate-950/80'
-              : 'border-slate-800 bg-slate-950/50 hover:border-slate-600'
+              : 'border-ui-border-subtle bg-slate-950/50 hover:border-slate-600'
           "
           :aria-pressed="panel.id === selectedId"
           :aria-label="`Preview ${panel.title}`"
           @click="selectedId = panel.id"
         >
-          <code class="text-[10px] text-slate-500">{{ panel.codec }}</code>
+          <code class="text-[10px] text-ui-text-muted">{{ panel.codec }}</code>
           <StallPatternGraph
             :draft="panel.draft"
             density="thumbnail"
@@ -135,13 +135,13 @@ const selected = computed(
             <li
               v-for="checkpoint in panel.checkpoints"
               :key="checkpoint.index"
-              class="rounded border border-slate-800/80 px-1.5 py-1"
+              class="rounded border border-ui-border-subtle/80 px-1.5 py-1"
             >
               <span class="block font-mono text-slate-300">
                 {{ checkpoint.index + 1 }} · {{ checkpoint.left }}/{{ checkpoint.right }}
               </span>
               <span class="block">{{ checkpoint.relationLabel }}</span>
-              <span class="block text-[9px] text-slate-500">
+              <span class="block text-[10px] text-ui-text-muted">
                 L {{ checkpoint.leftPlane }} · R {{ checkpoint.rightPlane }}
               </span>
             </li>

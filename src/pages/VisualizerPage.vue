@@ -31,8 +31,11 @@ type CanvasViewportExposed = {
   recomputeLayout: () => void;
 };
 
-const { selectedEntry, sequence: selectedSequence, errorMessage: selectedPatternError } =
-  useSelectedPatternSequence(demoSequence);
+const {
+  selectedEntry,
+  sequence: selectedSequence,
+  errorMessage: selectedPatternError
+} = useSelectedPatternSequence(demoSequence);
 const activeSequence = computed(() => selectedSequence.value ?? demoSequence);
 const workspace = provideVisualizerWorkspace(
   createVisualizerWorkspace(activeSequence, {
@@ -41,8 +44,12 @@ const workspace = provideVisualizerWorkspace(
   })
 );
 const core = workspace.core;
-const { rigOrder, transportDurationLabel, errorMessage: visualizerErrorMessage, isReady: visualizerReady } =
-  core;
+const {
+  rigOrder,
+  transportDurationLabel,
+  errorMessage: visualizerErrorMessage,
+  isReady: visualizerReady
+} = core;
 const combinedVisualizerError = computed(
   () => selectedPatternError.value ?? visualizerErrorMessage.value
 );
@@ -169,126 +176,125 @@ async function toggleWebcam() {
       <PatternRegistryControls :current-name="selectedEntry?.name ?? 'Demo pattern'" />
     </div>
 
-    <section class="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 md:p-6">
+    <section class="rounded-2xl border border-ui-border-subtle bg-slate-900/40 p-4 md:p-6">
       <div class="grid gap-4">
         <TransportControls />
 
-          <div
-            ref="fullscreenTargetRef"
-            :class="['grid gap-4', isFullscreen ? 'bg-slate-950 p-4 md:p-6' : '']"
-          >
-            <VisualizerControls
-              :active-preset-id="activePresetId"
-              :export-state="pngSequenceExportState"
-              :is-display-panel-open="panelOpen"
-              :is-export-ready="visualizerReady"
-              :is-fullscreen="isFullscreen"
-              :is-webcam-active="webcamActive"
-              :webcam-error-message="webcamErrorMessage"
-              @start-export="startPngSequenceExport()"
-              @cancel-export="cancelPngSequenceExport()"
-              @toggle-display-panel="togglePanel()"
-              @toggle-fullscreen="toggleFullscreen"
-              @toggle-webcam="toggleWebcam"
-            />
-
-            <div class="relative grid gap-4">
-              <div
-                v-if="combinedVisualizerError"
-                class="rounded-2xl border border-rose-900/60 bg-rose-950/40 p-6 text-sm text-rose-100"
-              >
-                <p class="text-xs uppercase tracking-[0.24em] text-rose-300">Visualizer Error</p>
-                <p class="mt-3">{{ combinedVisualizerError }}</p>
-              </div>
-
-              <PoiCanvasViewport
-                v-else
-                ref="viewportRef"
-                :is-fullscreen="isFullscreen"
-                :webcam-active="webcamActive"
-                :webcam-stream="webcamStream"
-              />
-
-              <VisualizerDisplayPanel
-                v-if="panelOpen"
-                :class="[
-                  'absolute z-30',
-                  isFullscreen
-                    ? 'bottom-4 right-4 top-4 w-[min(24rem,calc(100%-2rem))]'
-                    : 'bottom-3 right-3 top-3 w-[min(24rem,calc(100%-1.5rem))] lg:hidden'
-                ]"
-              />
-            </div>
-          </div>
-
-          <MetronomeControls
-            v-if="!isFullscreen"
-            :rules="metronomeRules"
-            :rig-ids="metronomeRigIds"
-            :is-audio-enabled="metronomeAudioEnabled"
-            :audio-error-message="metronomeAudioErrorMessage"
-            @add-rule="addMetronomeRule()"
-            @remove-rule="removeMetronomeRule($event)"
-            @update-rule="(ruleId, nextRule) => updateMetronomeRule(ruleId, nextRule)"
-            @set-audio-enabled="setMetronomeAudioEnabled($event)"
+        <div
+          ref="fullscreenTargetRef"
+          :class="['grid gap-4', isFullscreen ? 'bg-slate-950 p-4 md:p-6' : '']"
+        >
+          <VisualizerControls
+            :active-preset-id="activePresetId"
+            :export-state="pngSequenceExportState"
+            :is-display-panel-open="panelOpen"
+            :is-export-ready="visualizerReady"
+            :is-fullscreen="isFullscreen"
+            :is-webcam-active="webcamActive"
+            :webcam-error-message="webcamErrorMessage"
+            @start-export="startPngSequenceExport()"
+            @cancel-export="cancelPngSequenceExport()"
+            @toggle-display-panel="togglePanel()"
+            @toggle-fullscreen="toggleFullscreen"
+            @toggle-webcam="toggleWebcam"
           />
 
-          <div
-            class="grid gap-2 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-300 md:grid-cols-3"
-          >
-            <div>
-              <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Transport Window</p>
-              <p class="mt-1">{{ transportDurationLabel }} units</p>
+          <div class="relative grid gap-4">
+            <div
+              v-if="combinedVisualizerError"
+              class="rounded-2xl border border-rose-900/60 bg-rose-950/40 p-6 text-sm text-rose-100"
+            >
+              <p class="text-xs uppercase tracking-[0.24em] text-rose-300">Visualizer Error</p>
+              <p class="mt-3">{{ combinedVisualizerError }}</p>
             </div>
-            <div>
-              <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Rig IDs</p>
-              <p class="mt-1">{{ rigOrder.join(", ") }}</p>
-            </div>
-            <div>
-              <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Loop Model</p>
-              <p class="mt-1">
-                Outer transport uses `maxSequenceDuration`; inner rig looping stays in the engine.
-              </p>
-            </div>
+
+            <PoiCanvasViewport
+              v-else
+              ref="viewportRef"
+              :is-fullscreen="isFullscreen"
+              :webcam-active="webcamActive"
+              :webcam-stream="webcamStream"
+            />
+
+            <VisualizerDisplayPanel
+              v-if="panelOpen"
+              :class="[
+                'absolute z-30',
+                isFullscreen
+                  ? 'bottom-4 right-4 top-4 w-[min(24rem,calc(100%-2rem))]'
+                  : 'bottom-3 right-3 top-3 w-[min(24rem,calc(100%-1.5rem))] lg:hidden'
+              ]"
+            />
           </div>
         </div>
+
+        <MetronomeControls
+          v-if="!isFullscreen"
+          :rules="metronomeRules"
+          :rig-ids="metronomeRigIds"
+          :is-audio-enabled="metronomeAudioEnabled"
+          :audio-error-message="metronomeAudioErrorMessage"
+          @add-rule="addMetronomeRule()"
+          @remove-rule="removeMetronomeRule($event)"
+          @update-rule="(ruleId, nextRule) => updateMetronomeRule(ruleId, nextRule)"
+          @set-audio-enabled="setMetronomeAudioEnabled($event)"
+        />
+
+        <div
+          class="grid gap-2 rounded-2xl border border-ui-border-subtle bg-slate-900/60 p-4 text-sm text-slate-300 md:grid-cols-3"
+        >
+          <div>
+            <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Transport Window</p>
+            <p class="mt-1">{{ transportDurationLabel }} units</p>
+          </div>
+          <div>
+            <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Rig IDs</p>
+            <p class="mt-1">{{ rigOrder.join(", ") }}</p>
+          </div>
+          <div>
+            <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Loop Model</p>
+            <p class="mt-1">
+              Outer transport uses `maxSequenceDuration`; inner rig looping stays in the engine.
+            </p>
+          </div>
+        </div>
+      </div>
     </section>
 
-      <FloatingPanel
-        v-if="panelOpen && !isFullscreen"
-        storage-key="poi-v2:display-panel-position"
-        class="hidden lg:flex"
-        @close="closePanel()"
-      >
-        <template #handle="{ close, resetPosition }">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Display</p>
-              <p class="mt-1 font-mono text-sm text-slate-300">
-                {{ activePresetId }}
-              </p>
-            </div>
-            <div class="flex items-center gap-2">
-              <button
-                type="button"
-                class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
-                @click.stop="resetPosition"
-              >
-                Reset Position
-              </button>
-              <button
-                type="button"
-                class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
-                @click.stop="close"
-              >
-                Close
-              </button>
-            </div>
+    <FloatingPanel
+      v-if="panelOpen && !isFullscreen"
+      storage-key="poi-v2:display-panel-position"
+      class="hidden lg:flex"
+      @close="closePanel()"
+    >
+      <template #handle="{ close, resetPosition }">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Display</p>
+            <p class="mt-1 font-mono text-sm text-slate-300">
+              {{ activePresetId }}
+            </p>
           </div>
-        </template>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+              @click.stop="resetPosition"
+            >
+              Reset Position
+            </button>
+            <button
+              type="button"
+              class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+              @click.stop="close"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </template>
 
-        <VisualizerDisplayPanel :show-header="false" :framed="false" />
-        </FloatingPanel>
-
+      <VisualizerDisplayPanel :show-header="false" :framed="false" />
+    </FloatingPanel>
   </main>
 </template>

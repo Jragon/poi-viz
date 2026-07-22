@@ -240,8 +240,7 @@ function draw() {
     if (segment.category === "arm") {
       continue;
     }
-    const width =
-      segment.category === "head" ? 6 : segment.category === "leg" ? 12 : 16;
+    const width = segment.category === "head" ? 6 : segment.category === "leg" ? 12 : 16;
     const stroke = segment.category === "leg" ? limbStroke : secondaryStroke;
     drawCapsuleSegment(
       ctx,
@@ -264,14 +263,8 @@ function draw() {
       pose,
       side === "left" ? "shoulderLeft" : "shoulderRight"
     );
-    const elbow = getSkeletonCanvasPoint(
-      pose,
-      side === "left" ? "elbowLeft" : "elbowRight"
-    );
-    const hand = getSkeletonCanvasPoint(
-      pose,
-      side === "left" ? "handLeft" : "handRight"
-    );
+    const elbow = getSkeletonCanvasPoint(pose, side === "left" ? "elbowLeft" : "elbowRight");
+    const hand = getSkeletonCanvasPoint(pose, side === "left" ? "handLeft" : "handRight");
     drawCapsuleSegment(ctx, shoulder, elbow, 12, getArmStroke(side));
     drawCapsuleSegment(ctx, elbow, hand, 10, getArmStroke(side));
   }
@@ -509,7 +502,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="lab-live-cell mx-auto grid max-w-5xl! gap-3">
     <section
-      class="grid gap-3 rounded-lg border border-slate-800 bg-slate-950/65 p-3 shadow-[0_24px_120px_rgba(2,6,23,0.45)] md:p-4"
+      class="grid gap-3 rounded-lg border border-ui-border-subtle bg-slate-950/65 p-3 shadow-[0_24px_120px_rgba(2,6,23,0.45)] md:p-4"
     >
       <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div class="grid gap-1">
@@ -523,7 +516,7 @@ onBeforeUnmount(() => {
         </div>
         <div class="grid gap-2 md:min-w-72">
           <p
-            class="rounded-md border border-slate-800 bg-slate-900/80 px-3 py-1 text-xs tracking-[0.12em] text-slate-400 uppercase"
+            class="rounded-md border border-ui-border-subtle bg-slate-900/80 px-3 py-1 text-xs tracking-[0.12em] text-slate-400 uppercase"
           >
             {{ getStatusText() }}
           </p>
@@ -539,7 +532,7 @@ onBeforeUnmount(() => {
 
       <div
         ref="containerRef"
-        class="relative min-h-112 overflow-hidden rounded-lg border border-slate-800 bg-slate-950 md:min-h-136"
+        class="relative min-h-112 overflow-hidden rounded-lg border border-ui-border-subtle bg-slate-950 md:min-h-136"
         :class="
           activeDragRef !== null
             ? 'cursor-grabbing'
@@ -558,7 +551,7 @@ onBeforeUnmount(() => {
           class="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.78),rgba(2,6,23,0.96))]"
         />
         <div
-          class="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 py-3 text-[0.68rem] uppercase tracking-[0.2em] text-slate-500"
+          class="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 py-3 text-[0.68rem] uppercase tracking-[0.2em] text-ui-text-muted"
         >
           <span>Planted feet and hips</span>
           <span>Auto shoulder solve</span>

@@ -609,7 +609,7 @@ onBeforeUnmount(() => {
 <template>
   <div
     ref="mountRef"
-    class="relative min-h-112 overflow-hidden rounded-xl border border-slate-800 bg-slate-950"
+    class="relative min-h-112 overflow-hidden rounded-xl border border-ui-border-subtle bg-slate-950"
   >
     <div
       v-if="rendererError"
@@ -620,7 +620,7 @@ onBeforeUnmount(() => {
 
     <div
       v-else
-      class="pointer-events-none absolute left-4 top-4 rounded-md border border-slate-800 bg-slate-950/80 px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-slate-400 backdrop-blur-sm"
+      class="pointer-events-none absolute left-4 top-4 rounded-md border border-ui-border-subtle bg-slate-950/80 px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-slate-400 backdrop-blur-sm"
     >
       Humanoid body / trails debug
     </div>

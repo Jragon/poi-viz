@@ -577,7 +577,7 @@ onBeforeUnmount(disposeScene);
 <template>
   <div
     ref="mountRef"
-    class="relative min-h-144 overflow-hidden rounded-xl border border-slate-800 bg-slate-950"
+    class="relative min-h-144 overflow-hidden rounded-xl border border-ui-border-subtle bg-slate-950"
   >
     <div
       class="pointer-events-none absolute left-4 top-4 z-10 rounded-md border px-3 py-2 text-[11px] uppercase tracking-[0.16em] backdrop-blur-sm"

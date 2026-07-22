@@ -194,7 +194,7 @@ body,
 
 .lab-figure-panel {
   background: color-mix(in srgb, var(--color-slate-950) 60%, transparent);
-  border: 1px solid var(--color-slate-800);
+  border: 1px solid var(--ui-border-subtle);
   border-radius: var(--radius-lg);
   display: grid;
   gap: calc(var(--spacing) * 2);
@@ -209,7 +209,7 @@ body,
 }
 
 .lab-figure-panel__label {
-  color: var(--color-slate-500);
+  color: var(--ui-text-muted);
   font-size: var(--text-xs);
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -298,9 +298,9 @@ body,
 }
 
 .lab-entry-meta span {
-  border: 1px solid var(--color-slate-800);
+  border: 1px solid var(--ui-border-subtle);
   border-radius: var(--radius-md);
-  color: var(--color-slate-500);
+  color: var(--ui-text-muted);
   font-size: var(--text-xs);
   letter-spacing: 0.18em;
   padding: calc(var(--spacing) * 1) calc(var(--spacing) * 2);
