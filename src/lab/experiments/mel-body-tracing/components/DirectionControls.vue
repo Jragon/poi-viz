@@ -2,10 +2,14 @@
 import type { PoiBeatDirection } from "@/lab/experiments/mel-body-tracing/beat-graph/types";
 import type { ReelDirection } from "@/lab/experiments/mel-body-tracing/explorers/reelTypes";
 
-const props = defineProps<{
-  direction: ReelDirection;
-  resolvedLabel: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    direction: ReelDirection;
+    resolvedLabel: string;
+    embedded?: boolean;
+  }>(),
+  { embedded: false }
+);
 
 const emit = defineEmits<{
   "update:direction": [direction: ReelDirection];
@@ -50,15 +54,21 @@ function oppositeFlowButtonClass(flow: "inwards" | "outwards"): string {
 </script>
 
 <template>
-  <section class="rounded-lg border border-ui-border bg-ui-surface">
-    <div class="border-b border-ui-border-subtle px-4 py-3">
+  <section
+    :class="
+      embedded
+        ? 'border-b border-ui-border-subtle bg-transparent'
+        : 'rounded-lg border border-ui-border bg-ui-surface'
+    "
+  >
+    <div class="border-b border-ui-border-subtle px-3 py-2">
       <h2 class="text-sm font-semibold text-slate-200">Direction</h2>
     </div>
-    <div class="grid gap-3 px-4 py-4 text-sm">
-      <div class="grid grid-cols-2 gap-2">
+    <div class="grid gap-1.5 p-2.5 text-sm">
+      <div class="grid grid-cols-2 gap-1.5">
         <button
           type="button"
-          class="rounded-md border px-3 py-2 text-xs font-medium transition"
+          class="h-8 rounded-md border px-2 text-xs font-medium transition"
           :class="directionModeButtonClass('same')"
           :aria-pressed="direction.mode === 'same'"
           @click="setDirectionMode('same')"
@@ -67,7 +77,7 @@ function oppositeFlowButtonClass(flow: "inwards" | "outwards"): string {
         </button>
         <button
           type="button"
-          class="rounded-md border px-3 py-2 text-xs font-medium transition"
+          class="h-8 rounded-md border px-2 text-xs font-medium transition"
           :class="directionModeButtonClass('opposite')"
           :aria-pressed="direction.mode === 'opposite'"
           @click="setDirectionMode('opposite')"
@@ -76,10 +86,10 @@ function oppositeFlowButtonClass(flow: "inwards" | "outwards"): string {
         </button>
       </div>
 
-      <div v-if="direction.mode === 'same'" class="grid grid-cols-2 gap-2">
+      <div v-if="direction.mode === 'same'" class="grid grid-cols-2 gap-1.5">
         <button
           type="button"
-          class="rounded-md border px-3 py-2 text-xs font-medium transition"
+          class="h-8 rounded-md border px-2 text-xs font-medium transition"
           :class="sameDirectionButtonClass('clockwise')"
           :aria-pressed="direction.direction === 'clockwise'"
           @click="setSameDirection('clockwise')"
@@ -88,7 +98,7 @@ function oppositeFlowButtonClass(flow: "inwards" | "outwards"): string {
         </button>
         <button
           type="button"
-          class="rounded-md border px-3 py-2 text-xs font-medium transition"
+          class="h-8 rounded-md border px-2 text-xs font-medium transition"
           :class="sameDirectionButtonClass('counterclockwise')"
           :aria-pressed="direction.direction === 'counterclockwise'"
           @click="setSameDirection('counterclockwise')"
@@ -97,10 +107,10 @@ function oppositeFlowButtonClass(flow: "inwards" | "outwards"): string {
         </button>
       </div>
 
-      <div v-else class="grid grid-cols-2 gap-2">
+      <div v-else class="grid grid-cols-2 gap-1.5">
         <button
           type="button"
-          class="rounded-md border px-3 py-2 text-xs font-medium transition"
+          class="h-8 rounded-md border px-2 text-xs font-medium transition"
           :class="oppositeFlowButtonClass('inwards')"
           :aria-pressed="direction.flow === 'inwards'"
           @click="setOppositeFlow('inwards')"
@@ -109,7 +119,7 @@ function oppositeFlowButtonClass(flow: "inwards" | "outwards"): string {
         </button>
         <button
           type="button"
-          class="rounded-md border px-3 py-2 text-xs font-medium transition"
+          class="h-8 rounded-md border px-2 text-xs font-medium transition"
           :class="oppositeFlowButtonClass('outwards')"
           :aria-pressed="direction.flow === 'outwards'"
           @click="setOppositeFlow('outwards')"
@@ -119,7 +129,7 @@ function oppositeFlowButtonClass(flow: "inwards" | "outwards"): string {
       </div>
 
       <p
-        class="rounded-md border border-ui-border-subtle bg-ui-input px-3 py-2 font-mono text-xs text-ui-text-secondary"
+        class="rounded-md border border-ui-border-subtle bg-ui-input px-2.5 py-1.5 font-mono text-xs text-ui-text-secondary"
       >
         {{ resolvedLabel }}
       </p>

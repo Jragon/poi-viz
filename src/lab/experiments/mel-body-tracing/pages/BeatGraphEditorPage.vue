@@ -244,12 +244,16 @@ function visibilityButtonClass(track: PoiBeatTrack): string {
 }
 
 function directionButtonClass(track: PoiBeatTrack, direction: PoiBeatDirection): string {
-  if (track.poiDirection === direction) return "border-amber-400 bg-amber-950/60 text-amber-100";
+  if (track.poiDirection === direction) {
+    return "border-sky-300 bg-ui-selected text-ui-selected-text";
+  }
   return "border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text";
 }
 
 function phaseButtonClass(track: PoiBeatTrack, phase: PoiBeatPhaseLabel): string {
-  if (track.initialPhase === phase) return "border-violet-400 bg-violet-950/60 text-violet-100";
+  if (track.initialPhase === phase) {
+    return "border-sky-300 bg-ui-selected text-ui-selected-text";
+  }
   return "border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text";
 }
 
@@ -262,15 +266,15 @@ onBeforeRouteLeave(() => {
 </script>
 
 <template>
-  <main class="min-h-screen bg-transparent px-5 py-8 text-ui-text md:px-8 md:py-10">
-    <section class="mx-auto grid max-w-7xl gap-5 lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)]">
-      <div class="grid content-start gap-4">
-        <header class="order-1">
+  <main class="min-h-screen bg-transparent px-5 py-5 text-ui-text md:px-8 lg:py-4">
+    <div class="mx-auto grid max-w-[100rem] gap-3">
+      <header class="grid gap-2">
+        <div class="grid gap-3 md:flex md:items-start md:justify-between md:gap-6">
           <div>
             <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Mel body tracing</p>
             <h1 class="mt-2 text-2xl font-semibold text-slate-50">Beat Graph Editor</h1>
           </div>
-          <div class="mt-3">
+          <div class="md:pt-1">
             <PatternRegistryControls
               editor-kind="beat-graph"
               :current-pattern-id="loadedPatternId"
@@ -286,130 +290,26 @@ onBeforeRouteLeave(() => {
               "
             />
           </div>
-          <p class="mt-4 text-sm leading-6 text-ui-text-secondary">
-            Play around with the beat graphs from Mel's
-            <a
-              href="https://antispinner.gitbook.io/btf"
-              target="_blank"
-              rel="noreferrer"
-              class="font-medium text-sky-300 underline decoration-sky-500/50 underline-offset-4 transition hover:text-sky-200"
-            >
-              Body Tracing Framework </a
-            >. Click the columns to move the beat graph around, click twice to change it to behind
-            body (dotted line).
-          </p>
-        </header>
+        </div>
+        <p class="text-sm leading-6 text-ui-text-secondary">
+          Play around with the beat graphs from Mel's
+          <a
+            href="https://antispinner.gitbook.io/btf"
+            target="_blank"
+            rel="noreferrer"
+            class="font-medium text-sky-300 underline decoration-sky-500/50 underline-offset-4 transition hover:text-sky-200"
+          >
+            Body Tracing Framework </a
+          >. Click a column to move the active beat; click it again to switch the move behind the
+          body.
+        </p>
+      </header>
 
-        <section class="order-2 rounded-lg border border-ui-border bg-ui-surface lg:order-3">
-          <div class="border-b border-ui-border-subtle px-4 py-3">
-            <h2 class="text-sm font-semibold text-slate-200">Hands</h2>
-          </div>
-          <div class="grid gap-3 px-4 py-4 text-sm">
-            <div
-              v-for="track in tracks"
-              :key="track.id"
-              class="rounded-md border border-ui-border-subtle bg-ui-input px-3 py-3"
-            >
-              <div class="flex items-center justify-between gap-3">
-                <div class="min-w-0">
-                  <p class="font-medium capitalize text-slate-200">
-                    <span :class="trackAccentClass(track)">●</span>
-                    {{ trackLabel(track) }}
-                  </p>
-                  <p class="mt-0.5 font-mono text-xs text-ui-text-muted">{{ track.id }}</p>
-                </div>
-
-                <div class="flex shrink-0 gap-2">
-                  <button
-                    type="button"
-                    class="rounded-md border px-2.5 py-1 text-xs font-medium transition disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted"
-                    :class="editButtonClass(track)"
-                    :disabled="!isTrackVisible(track.id)"
-                    :aria-pressed="isEditingTrack(track.id)"
-                    @click="setEditingTrack(track.id)"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    class="rounded-md border px-2.5 py-1 text-xs font-medium transition"
-                    :class="visibilityButtonClass(track)"
-                    :aria-pressed="isTrackVisible(track.id)"
-                    @click="toggleTrackVisibility(track.id)"
-                  >
-                    {{ isTrackVisible(track.id) ? "On" : "Off" }}
-                  </button>
-                </div>
-              </div>
-
-              <div class="mt-3 grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  class="rounded-md border px-2 py-1 text-xs font-medium transition"
-                  :class="directionButtonClass(track, 'clockwise')"
-                  :aria-pressed="track.poiDirection === 'clockwise'"
-                  @click="setTrackDirection(track.id, 'clockwise')"
-                >
-                  CW
-                </button>
-                <button
-                  type="button"
-                  class="rounded-md border px-2 py-1 text-xs font-medium transition"
-                  :class="directionButtonClass(track, 'counterclockwise')"
-                  :aria-pressed="track.poiDirection === 'counterclockwise'"
-                  @click="setTrackDirection(track.id, 'counterclockwise')"
-                >
-                  CCW
-                </button>
-              </div>
-
-              <div class="mt-2 grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  class="rounded-md border px-2 py-1 text-xs font-medium uppercase transition"
-                  :class="phaseButtonClass(track, 'up')"
-                  :aria-pressed="track.initialPhase === 'up'"
-                  @click="setTrackInitialPhase(track.id, 'up')"
-                >
-                  Up
-                </button>
-                <button
-                  type="button"
-                  class="rounded-md border px-2 py-1 text-xs font-medium uppercase transition"
-                  :class="phaseButtonClass(track, 'down')"
-                  :aria-pressed="track.initialPhase === 'down'"
-                  @click="setTrackInitialPhase(track.id, 'down')"
-                >
-                  Down
-                </button>
-              </div>
-
-              <div class="mt-2 grid grid-cols-[auto_1fr] items-center gap-2">
-                <p class="text-xs uppercase tracking-[0.12em] text-ui-text-muted">Offset</p>
-                <div class="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    class="rounded-md border border-ui-border-strong bg-ui-surface px-2 py-1 text-xs font-medium text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
-                    @click="shiftTrackRows(track.id, -1)"
-                  >
-                    -
-                  </button>
-                  <button
-                    type="button"
-                    class="rounded-md border border-ui-border-strong bg-ui-surface px-2 py-1 text-xs font-medium text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
-                    @click="shiftTrackRows(track.id, 1)"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <div ref="beatGraphExportRoot" class="order-3 lg:order-2">
+      <section class="grid items-start gap-4 lg:grid-cols-[minmax(25rem,1fr)_minmax(0,2fr)]">
+        <div ref="beatGraphExportRoot" class="grid min-w-0 content-start gap-2">
           <PoiBeatGraph
             :graph="graph"
+            density="compact"
             :track-id="editingTrackId"
             :visible-track-ids="visibleTrackIds"
             :half-beat-duration="compilerOptions.halfBeatDuration"
@@ -422,109 +322,241 @@ onBeforeRouteLeave(() => {
 
           <button
             type="button"
-            class="mt-3 hidden w-full rounded-md border border-ui-border-strong bg-ui-surface px-3 py-2 text-xs font-semibold text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text disabled:cursor-wait disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted md:block"
+            class="h-9 rounded-md border border-ui-border-strong bg-ui-surface px-3 text-xs font-semibold text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text disabled:cursor-wait disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted"
             :disabled="graphPngExport.state.status === 'running'"
             @click="exportGraphPngSequence"
           >
             {{ graphPngExportButtonLabel }}
           </button>
         </div>
-      </div>
 
-      <div class="grid content-start gap-6">
-        <section class="overflow-hidden rounded-lg border border-ui-border bg-ui-surface-raised">
-          <header class="flex justify-end border-b border-ui-border-subtle px-4 py-3">
-            <dl
-              class="grid grid-cols-2 gap-x-5 gap-y-1 text-xs text-ui-text-secondary md:text-right"
-            >
-              <div>
-                <dt class="uppercase tracking-[0.18em] text-ui-text-muted">Time</dt>
-                <dd class="font-mono text-ui-text-secondary">
-                  {{ currentTimeLabel }} / {{ durationLabel }}
-                </dd>
-              </div>
-              <div>
-                <dt class="uppercase tracking-[0.18em] text-ui-text-muted">Planes</dt>
-                <dd class="font-mono text-ui-text-secondary">{{ activePlanesLabel }}</dd>
-              </div>
-            </dl>
-          </header>
-
-          <div
-            v-if="core.errorMessage.value"
-            class="border-b border-rose-900/70 bg-rose-950/45 px-4 py-3 text-sm text-rose-100"
-          >
-            {{ core.errorMessage.value }}
-          </div>
-
-          <PoiCanvasViewport
-            v-else
-            class="min-h-112! rounded-none border-0 md:min-h-136!"
-            :projection-drag-enabled="true"
-          />
-
-          <div
-            class="grid gap-4 border-t border-ui-border-subtle px-4 py-3 text-sm text-ui-text-secondary md:grid-cols-[auto_minmax(10rem,1fr)_auto] md:items-center"
-          >
-            <button
-              type="button"
-              class="rounded-md border border-ui-border-strong bg-ui-surface px-3 py-2 font-medium text-ui-text transition hover:border-ui-focus hover:bg-ui-surface-raised disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted"
-              :disabled="transport.duration.value <= 0"
-              @click="togglePlayback"
-            >
-              {{ transport.isPlaying.value ? "Pause" : "Play" }}
-            </button>
-
-            <label class="grid gap-1 text-xs uppercase tracking-[0.18em] text-ui-text-muted">
-              Timeline
-              <input
-                type="range"
-                min="0"
-                :max="transport.duration.value"
-                step="any"
-                :value="transport.currentTime.value"
-                class="w-full accent-sky-400"
-                :disabled="transport.duration.value <= 0"
-                @input="onScrub"
-              />
-            </label>
-
-            <div
-              class="hidden gap-1 text-xs uppercase tracking-[0.18em] text-ui-text-muted md:grid"
-            >
-              Speed
+        <div class="grid min-w-0 content-start gap-3 lg:sticky lg:top-4">
+          <section class="rounded-lg border border-ui-border bg-ui-surface p-2">
+            <h2 class="sr-only">Hand controls</h2>
+            <div class="grid gap-2 text-sm md:grid-cols-2">
               <div
-                class="grid grid-cols-3 overflow-hidden rounded-md border border-ui-border-strong normal-case tracking-normal"
+                v-for="track in tracks"
+                :key="track.id"
+                class="grid gap-2 rounded-md border border-ui-border-subtle bg-ui-input p-2.5"
               >
-                <button
-                  v-for="speed in [0.25, 0.5, 1]"
-                  :key="speed"
-                  type="button"
-                  class="px-3 py-2 text-sm transition hover:bg-slate-800 hover:text-white"
-                  :class="
-                    transport.speed.value === speed
-                      ? 'bg-sky-400 text-slate-950 hover:bg-sky-300 hover:text-slate-950'
-                      : 'bg-ui-input text-ui-text-secondary'
-                  "
-                  @click="setSpeed(speed)"
-                >
-                  {{ speed }}x
-                </button>
+                <div class="flex min-w-0 items-center justify-between gap-2">
+                  <p class="truncate font-medium capitalize text-slate-200">
+                    <span :class="trackAccentClass(track)">●</span>
+                    {{ trackLabel(track) }}
+                  </p>
+                  <div class="flex shrink-0 gap-1">
+                    <button
+                      type="button"
+                      class="h-7 rounded-md border px-2 text-[0.6875rem] font-medium transition disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted"
+                      :class="editButtonClass(track)"
+                      :disabled="!isTrackVisible(track.id)"
+                      :aria-pressed="isEditingTrack(track.id)"
+                      @click="setEditingTrack(track.id)"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      class="h-7 rounded-md border px-2 text-[0.6875rem] font-medium transition"
+                      :class="visibilityButtonClass(track)"
+                      :aria-pressed="isTrackVisible(track.id)"
+                      @click="toggleTrackVisibility(track.id)"
+                    >
+                      {{ isTrackVisible(track.id) ? "On" : "Off" }}
+                    </button>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                  <div>
+                    <p
+                      class="mb-1 text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-sky-200"
+                    >
+                      Offset
+                    </p>
+                    <div class="grid grid-cols-2 gap-1">
+                      <button
+                        type="button"
+                        class="h-7 rounded-md border border-ui-border-strong bg-ui-surface px-2 text-xs font-medium text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
+                        :aria-label="`Shift ${trackLabel(track)} one beat earlier`"
+                        @click="shiftTrackRows(track.id, -1)"
+                      >
+                        −
+                      </button>
+                      <button
+                        type="button"
+                        class="h-7 rounded-md border border-ui-border-strong bg-ui-surface px-2 text-xs font-medium text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
+                        :aria-label="`Shift ${trackLabel(track)} one beat later`"
+                        @click="shiftTrackRows(track.id, 1)"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p
+                      class="mb-1 text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-ui-text-muted"
+                    >
+                      Direction
+                    </p>
+                    <div class="grid grid-cols-2 gap-1">
+                      <button
+                        type="button"
+                        class="h-7 rounded-md border px-1 text-xs font-medium transition"
+                        :class="directionButtonClass(track, 'clockwise')"
+                        :aria-pressed="track.poiDirection === 'clockwise'"
+                        @click="setTrackDirection(track.id, 'clockwise')"
+                      >
+                        CW
+                      </button>
+                      <button
+                        type="button"
+                        class="h-7 rounded-md border px-1 text-xs font-medium transition"
+                        :class="directionButtonClass(track, 'counterclockwise')"
+                        :aria-pressed="track.poiDirection === 'counterclockwise'"
+                        @click="setTrackDirection(track.id, 'counterclockwise')"
+                      >
+                        CCW
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p
+                      class="mb-1 text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-ui-text-muted"
+                    >
+                      Phase
+                    </p>
+                    <div class="grid grid-cols-2 gap-1">
+                      <button
+                        type="button"
+                        class="h-7 rounded-md border px-1 text-xs font-medium transition"
+                        :class="phaseButtonClass(track, 'up')"
+                        :aria-pressed="track.initialPhase === 'up'"
+                        @click="setTrackInitialPhase(track.id, 'up')"
+                      >
+                        Up
+                      </button>
+                      <button
+                        type="button"
+                        class="h-7 rounded-md border px-1 text-xs font-medium transition"
+                        :class="phaseButtonClass(track, 'down')"
+                        :aria-pressed="track.initialPhase === 'down'"
+                        @click="setTrackInitialPhase(track.id, 'down')"
+                      >
+                        Down
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <PoiBeatGraphDebugPanel
-          :graph="graph"
-          :visible-track-ids="visibleTrackIds"
-          :active-step="activeStep"
-          :half-beat-duration="compilerOptions.halfBeatDuration"
-          :current-time="transport.currentTime.value"
-          :duration="transport.duration.value"
-          :is-playing="transport.isPlaying.value"
-        />
-      </div>
-    </section>
+          <section class="overflow-hidden rounded-lg border border-ui-border bg-ui-surface-raised">
+            <header class="flex justify-end border-b border-ui-border-subtle px-4 py-3">
+              <dl
+                class="grid grid-cols-2 gap-x-5 gap-y-1 text-xs text-ui-text-secondary md:text-right"
+              >
+                <div>
+                  <dt class="uppercase tracking-[0.18em] text-ui-text-muted">Time</dt>
+                  <dd class="font-mono text-ui-text-secondary">
+                    {{ currentTimeLabel }} / {{ durationLabel }}
+                  </dd>
+                </div>
+                <div>
+                  <dt class="uppercase tracking-[0.18em] text-ui-text-muted">Planes</dt>
+                  <dd class="font-mono text-ui-text-secondary">{{ activePlanesLabel }}</dd>
+                </div>
+              </dl>
+            </header>
+
+            <div
+              v-if="core.errorMessage.value"
+              class="border-b border-rose-900/70 bg-rose-950/45 px-4 py-3 text-sm text-rose-100"
+            >
+              {{ core.errorMessage.value }}
+            </div>
+
+            <PoiCanvasViewport
+              v-else
+              class="min-h-80! rounded-none border-0 md:min-h-[clamp(18rem,40vh,30rem)]!"
+              :projection-drag-enabled="true"
+            />
+
+            <div
+              class="grid gap-3 border-t border-ui-border-subtle px-3 py-2.5 text-sm text-ui-text-secondary md:grid-cols-[auto_minmax(10rem,1fr)_auto] md:items-center"
+            >
+              <button
+                type="button"
+                class="h-8 rounded-md border border-ui-border-strong bg-ui-surface px-3 text-xs font-medium text-ui-text transition hover:border-ui-focus hover:bg-ui-surface-raised disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted"
+                :disabled="transport.duration.value <= 0"
+                @click="togglePlayback"
+              >
+                {{ transport.isPlaying.value ? "Pause" : "Play" }}
+              </button>
+
+              <label class="grid gap-1 text-xs uppercase tracking-[0.18em] text-ui-text-muted">
+                Timeline
+                <input
+                  type="range"
+                  min="0"
+                  :max="transport.duration.value"
+                  step="any"
+                  :value="transport.currentTime.value"
+                  class="w-full accent-sky-400"
+                  :disabled="transport.duration.value <= 0"
+                  @input="onScrub"
+                />
+              </label>
+
+              <div
+                class="hidden gap-1 text-xs uppercase tracking-[0.18em] text-ui-text-muted md:grid"
+              >
+                Speed
+                <div
+                  class="grid grid-cols-3 overflow-hidden rounded-md border border-ui-border-strong normal-case tracking-normal"
+                >
+                  <button
+                    v-for="speed in [0.25, 0.5, 1]"
+                    :key="speed"
+                    type="button"
+                    class="h-8 px-2 text-xs transition hover:bg-slate-800 hover:text-white"
+                    :class="
+                      transport.speed.value === speed
+                        ? 'bg-sky-400 text-slate-950 hover:bg-sky-300 hover:text-slate-950'
+                        : 'bg-ui-input text-ui-text-secondary'
+                    "
+                    @click="setSpeed(speed)"
+                  >
+                    {{ speed }}x
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <details class="rounded-lg border border-ui-border-subtle bg-ui-surface">
+        <summary
+          class="cursor-pointer px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-ui-text-muted transition hover:text-ui-text"
+        >
+          Debug data
+        </summary>
+        <div class="border-t border-ui-border-subtle p-3">
+          <PoiBeatGraphDebugPanel
+            :graph="graph"
+            :visible-track-ids="visibleTrackIds"
+            :active-step="activeStep"
+            :half-beat-duration="compilerOptions.halfBeatDuration"
+            :current-time="transport.currentTime.value"
+            :duration="transport.duration.value"
+            :is-playing="transport.isPlaying.value"
+          />
+        </div>
+      </details>
+    </div>
   </main>
 </template>

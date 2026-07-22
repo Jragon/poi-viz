@@ -21,6 +21,7 @@ const props = defineProps<{
   halfBeatDuration: number;
   activeStep?: number | null;
   readonly?: boolean;
+  density?: "regular" | "compact" | "condensed";
 }>();
 
 const emit = defineEmits<{
@@ -113,12 +114,17 @@ const visibleTracks = computed<readonly PoiBeatTrack[]>(() => {
   });
 });
 const displayRows = computed(() => makeDisplayRows(track.value));
+const rowGap = computed(() => {
+  if (props.density === "condensed") return 20;
+  if (props.density === "compact") return 24;
+  return layout.rowGap;
+});
 const canDeleteRow = computed(() => props.graph.cycleSteps > 2);
 const svgWidth = computed(
   () => layout.leftPad + layout.rightPad + layout.laneGap * Math.max(lanes.value.length - 1, 0)
 );
 const svgHeight = computed(
-  () => layout.topPad + layout.bottomPad + layout.rowGap * Math.max(displayRows.value.length - 1, 0)
+  () => layout.topPad + layout.bottomPad + rowGap.value * Math.max(displayRows.value.length - 1, 0)
 );
 const trackPaths = computed<readonly TrackPathView[]>(() =>
   visibleTracks.value.map((visibleTrack) => makeTrackPath(visibleTrack))
@@ -216,7 +222,7 @@ function xForLane(laneId: PoiBeatLaneId): number {
 }
 
 function yForRowIndex(index: number): number {
-  return layout.topPad + index * layout.rowGap;
+  return layout.topPad + index * rowGap.value;
 }
 
 function trackNodeClass(pathTrack: PoiBeatTrack): string {
@@ -316,19 +322,55 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
 
 <template>
   <section class="overflow-hidden rounded-lg border border-ui-border bg-ui-surface">
-    <div class="border-b border-ui-border-subtle px-4 py-2.5">
-      <p class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted">Graph</p>
-      <h2 class="mt-1 text-sm font-semibold text-slate-200">
-        {{ readonly ? "Generated graph" : `${track.id} edit graph` }}
-      </h2>
+    <div
+      class="flex items-center justify-between gap-3 border-b border-ui-border-subtle px-3 py-2.5"
+    >
+      <div class="min-w-0">
+        <p class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted">Graph</p>
+        <h2 class="mt-1 truncate text-sm font-semibold text-slate-200">
+          {{ readonly ? "Generated graph" : `${track.id} edit graph` }}
+        </h2>
+      </div>
+
+      <div class="flex shrink-0 items-center gap-1.5">
+        <template v-if="!readonly">
+          <button
+            type="button"
+            class="inline-grid h-8 w-8 place-items-center rounded-md border border-ui-border-strong bg-ui-surface text-base leading-none text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted"
+            aria-label="Delete row"
+            title="Delete row"
+            :disabled="!canDeleteRow"
+            @click="emit('deleteRow')"
+          >
+            −
+          </button>
+          <button
+            type="button"
+            class="inline-grid h-8 w-8 place-items-center rounded-md border border-ui-border-strong bg-ui-surface text-base leading-none text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
+            aria-label="Append row"
+            title="Append row"
+            @click="emit('appendRow')"
+          >
+            +
+          </button>
+        </template>
+        <slot name="toolbar" />
+      </div>
     </div>
 
-    <div class="bg-ui-stage px-3 py-3">
+    <div class="bg-ui-input px-3 py-3">
       <svg
         role="img"
         aria-label="Poi beat graph with vertical time rows and symmetric lanes"
         :viewBox="`0 0 ${svgWidth} ${svgHeight}`"
-        class="block w-full text-ui-text-muted"
+        class="mx-auto block w-full text-ui-text-muted"
+        :class="
+          density === 'condensed'
+            ? 'max-h-[clamp(14rem,34vh,22rem)]'
+            : density === 'compact'
+              ? 'max-h-[clamp(16rem,38vh,24rem)]'
+              : ''
+        "
       >
         <g aria-hidden="true">
           <line
@@ -438,31 +480,6 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
           </foreignObject>
         </g>
       </svg>
-    </div>
-
-    <div
-      v-if="!readonly"
-      class="flex justify-center gap-2 border-t border-ui-border-subtle px-3 py-2"
-    >
-      <button
-        type="button"
-        class="inline-grid h-7 w-7 place-items-center rounded-md border border-ui-border-strong bg-ui-surface text-base leading-none text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted disabled:hover:border-ui-border disabled:hover:bg-ui-surface-raised"
-        aria-label="Delete row"
-        title="Delete row"
-        :disabled="!canDeleteRow"
-        @click="emit('deleteRow')"
-      >
-        -
-      </button>
-      <button
-        type="button"
-        class="inline-grid h-7 w-7 place-items-center rounded-md border border-ui-border-strong bg-ui-surface text-base leading-none text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
-        aria-label="Append row"
-        title="Append row"
-        @click="emit('appendRow')"
-      >
-        +
-      </button>
     </div>
 
     <div class="grid grid-cols-2 border-t border-ui-border-subtle text-xs text-ui-text-muted">
