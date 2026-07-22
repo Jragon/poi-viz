@@ -13,6 +13,7 @@ import type {
   AuthoredTrackId
 } from "@/authoring/types";
 import { useAuthoringEditor, type SelectedSegment } from "@/authoring/useAuthoringEditor";
+import { formatAuthoredDocumentErrors } from "@/authoring/validationMessages";
 import PatternRegistryControls from "@/patterns/components/PatternRegistryControls.vue";
 import { clonePatternSource } from "@/patterns/patternAdapters";
 import { createDefaultAuthoringDocument } from "@/patterns/patternDefaults";
@@ -182,7 +183,7 @@ function loadSelectedPattern() {
   savedBaseline.value = JSON.stringify(workingDocument.value);
   const nextCompiled = compileAuthoredDocument(workingDocument.value);
   if (!nextCompiled.ok) {
-    compileErrorMessage.value = nextCompiled.errors.map((error) => error.code).join(", ");
+    compileErrorMessage.value = formatAuthoredDocumentErrors(nextCompiled.errors);
     return;
   }
 

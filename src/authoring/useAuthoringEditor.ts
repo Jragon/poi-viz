@@ -1,6 +1,7 @@
 import type { ComputedRef, Ref } from "vue";
 
 import { compileAuthoredDocument, validateAuthoredDocument } from "@/authoring/compile";
+import { formatAuthoredDocumentErrors } from "@/authoring/validationMessages";
 import type {
   AuthoredCircleDriverInput,
   AuthoredContinuationSegment,
@@ -231,16 +232,6 @@ function makeDefaultPendulumDriver(
   };
 }
 
-function formatCompileErrors(result: CompileAuthoredDocumentResult): string | null {
-  if (result.ok) {
-    return null;
-  }
-
-  return result.errors
-    .map((error) => [error.trackId, error.segmentIndex, error.code].filter(Boolean).join(" / "))
-    .join(", ");
-}
-
 export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
   function commitDocumentChange(
     mutate: (nextDocument: AuthoredSequenceDocument) => SelectedSegment
@@ -256,13 +247,13 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
 
     const validation = validateAuthoredDocument(nextDocument);
     if (!validation.ok) {
-      deps.compileErrorMessage.value = formatCompileErrors(validation);
+      deps.compileErrorMessage.value = formatAuthoredDocumentErrors(validation.errors);
       return;
     }
 
     const compileResult = compileAuthoredDocument(nextDocument);
     if (!compileResult.ok) {
-      deps.compileErrorMessage.value = formatCompileErrors(compileResult);
+      deps.compileErrorMessage.value = formatAuthoredDocumentErrors(compileResult.errors);
       return;
     }
 

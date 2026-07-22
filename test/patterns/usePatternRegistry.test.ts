@@ -159,6 +159,55 @@ describe("createPatternRegistry", () => {
     expect(storage.getItem("poi-v2:authoring-library")).not.toBeNull();
   });
 
+  it("adds newly bundled saved patterns once when migrating a version-one registry", () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      "patterns",
+      JSON.stringify({
+        version: 1,
+        folders: [],
+        patterns: [
+          {
+            id: "stored",
+            name: "Stored",
+            description: null,
+            folderId: null,
+            source: source()
+          }
+        ],
+        selectedPatternId: "stored"
+      })
+    );
+    const seed = {
+      id: "new-bundled-pattern",
+      name: "New bundled pattern",
+      description: null,
+      folderId: null,
+      source: source()
+    };
+
+    const registry = createPatternRegistry({
+      storage,
+      storageKey: "patterns",
+      seedPatterns: [seed]
+    });
+
+    expect(registry.entries.value.map((entry) => entry.id)).toEqual([
+      "stored",
+      "new-bundled-pattern"
+    ]);
+    expect(registry.selectedPatternId.value).toBe("stored");
+    expect(JSON.parse(storage.getItem("patterns") ?? "{}").version).toBe(2);
+
+    registry.delete("new-bundled-pattern");
+    const reloaded = createPatternRegistry({
+      storage,
+      storageKey: "patterns",
+      seedPatterns: [seed]
+    });
+    expect(reloaded.entries.value.map((entry) => entry.id)).toEqual(["stored"]);
+  });
+
   it("rejects malformed snapshots as a whole instead of silently repairing them", () => {
     const storage = new MemoryStorage();
     storage.setItem(

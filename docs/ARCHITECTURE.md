@@ -48,7 +48,7 @@ Authoring Vue components may embed visualizer components for previews. Core auth
 
 `src/lab/` owns experimental generators, evaluators, journals, and Three.js debug surfaces. Lab code may combine the other layers and may use `RuntimeDriver` when a declarative built-in driver is not flexible enough.
 
-The pendulum lab composes the built-in pendulum driver into ordinary, extended, isolated, paired-timing, mirrored, and extendulum experiments. Those compositions remain lab presets rather than new engine motion laws. Production authoring exposes circle and pendulum as explicit per-node driver choices; it does not import the lab presets or add hidden segment-level composition rules.
+The pendulum lab composes the built-in pendulum driver into ordinary, extended, isolated, paired-timing, mirrored, and extendulum experiments. Those compositions remain lab presets rather than new engine motion laws. Production authoring exposes circle and pendulum as explicit per-node driver choices and does not add hidden segment-level composition rules. The application-level pattern registry also converts the lab compositions into bundled, editable authored documents so they can be inspected as saved examples without making authoring core depend on lab code.
 
 The VRM standing-rig experiment is a replaceable consumer of `BodySkeletonFrame`: it maps the existing
 deterministic solver result into VRM normalized humanoid bones and keeps model loading, skinning, and
@@ -92,6 +92,9 @@ the main visualizer and 3D consumers compile the globally selected saved source.
 that is incompatible with an editor causes that editor to use its existing default source.
 Registry records own the common display metadata; the current authoring payload retains its historical
 name and description fields until the authored-content shape is migrated separately.
+Registry snapshot version 2 performs a one-time merge of newly bundled saved examples into version 1
+libraries. After migration, users may edit or delete those ordinary saved entries without them being
+silently restored on the next load.
 
 ## Reproducible Verification
 

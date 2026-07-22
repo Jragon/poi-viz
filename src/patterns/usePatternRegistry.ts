@@ -8,6 +8,7 @@ import {
   isPatternSource,
   validatePatternSource
 } from "@/patterns/patternAdapters";
+import { pendulumSavedPatterns } from "@/patterns/pendulumSavedPatterns";
 import type {
   PatternEntry,
   PatternFolder,
@@ -52,6 +53,12 @@ export interface PatternRegistryController {
 
 const DEFAULT_STORAGE_KEY = "poi-v2:pattern-registry";
 const OLD_AUTHORING_STORAGE_KEY = "poi-v2:authoring-library";
+const PATTERN_REGISTRY_VERSION = 2;
+
+type ParsedPatternRegistrySnapshot = {
+  readonly snapshot: PatternRegistrySnapshot;
+  readonly sourceVersion: 1 | 2;
+};
 
 function getDefaultStorage(): PatternStorageLike | null {
   return typeof globalThis.localStorage === "undefined" ? null : globalThis.localStorage;
@@ -62,13 +69,16 @@ function clone<T>(value: T): T {
 }
 
 function defaultSeedPatterns(): PatternEntry[] {
-  return seedDocuments.map((entry) => ({
-    id: entry.id,
-    name: entry.document.name,
-    description: entry.document.description,
-    folderId: null,
-    source: { kind: "authoring", document: clone(entry.document) }
-  }));
+  return [
+    ...seedDocuments.map((entry) => ({
+      id: entry.id,
+      name: entry.document.name,
+      description: entry.document.description,
+      folderId: null,
+      source: { kind: "authoring" as const, document: clone(entry.document) }
+    })),
+    ...pendulumSavedPatterns.map(clone)
+  ];
 }
 
 function synchronizeAuthoringMetadata(
@@ -145,12 +155,14 @@ function hasValidFolderHierarchy(folders: readonly PatternFolder[]): boolean {
   return true;
 }
 
-function parseSnapshot(raw: string | null): PatternRegistrySnapshot | null {
+function parseSnapshot(raw: string | null): ParsedPatternRegistrySnapshot | null {
   if (!raw) return null;
   try {
-    const parsed = JSON.parse(raw) as Partial<PatternRegistrySnapshot>;
+    const parsed = JSON.parse(raw) as Omit<Partial<PatternRegistrySnapshot>, "version"> & {
+      version?: unknown;
+    };
     if (
-      parsed.version !== 1 ||
+      (parsed.version !== 1 && parsed.version !== PATTERN_REGISTRY_VERSION) ||
       !Array.isArray(parsed.patterns) ||
       !Array.isArray(parsed.folders)
     ) {
@@ -182,10 +194,13 @@ function parseSnapshot(raw: string | null): PatternRegistrySnapshot | null {
       return null;
     }
     return {
-      version: 1,
-      patterns: normalizedPatterns,
-      folders: normalizedFolders,
-      selectedPatternId: parsed.selectedPatternId
+      sourceVersion: parsed.version,
+      snapshot: {
+        version: PATTERN_REGISTRY_VERSION,
+        patterns: normalizedPatterns,
+        folders: normalizedFolders,
+        selectedPatternId: parsed.selectedPatternId
+      }
     };
   } catch {
     return null;
@@ -216,7 +231,7 @@ function migrateOldAuthoringSnapshot(raw: string | null): PatternRegistrySnapsho
     }));
     if (new Set(patterns.map((pattern) => pattern.id)).size !== patterns.length) return null;
     return {
-      version: 1,
+      version: PATTERN_REGISTRY_VERSION,
       folders: [],
       patterns,
       selectedPatternId: patterns.some((pattern) => pattern.id === parsed.selectedDocumentId)
@@ -238,7 +253,7 @@ function persist(
   storage?.setItem(
     key,
     JSON.stringify({
-      version: 1,
+      version: PATTERN_REGISTRY_VERSION,
       patterns: entries,
       folders,
       selectedPatternId
@@ -259,12 +274,19 @@ export function createPatternRegistry(
   const storageKey = options.storageKey ?? DEFAULT_STORAGE_KEY;
   const createId = options.createId ?? (() => crypto.randomUUID());
   const seeds = clone(options.seedPatterns ?? defaultSeedPatterns());
-  const storedSnapshot = parseSnapshot(storage?.getItem(storageKey) ?? null);
-  const migratedSnapshot = storedSnapshot
+  const parsedStoredSnapshot = parseSnapshot(storage?.getItem(storageKey) ?? null);
+  const migratedSnapshot = parsedStoredSnapshot
     ? null
     : migrateOldAuthoringSnapshot(storage?.getItem(OLD_AUTHORING_STORAGE_KEY) ?? null);
-  const hydrated = storedSnapshot ?? migratedSnapshot;
-  const entries = ref<PatternEntry[]>(hydrated?.patterns.map(clone) ?? seeds);
+  const hydrated = parsedStoredSnapshot?.snapshot ?? migratedSnapshot;
+  const shouldMergeSeeds = parsedStoredSnapshot?.sourceVersion === 1 || migratedSnapshot !== null;
+  const hydratedEntries = hydrated?.patterns.map(clone) ?? seeds;
+  const existingIds = new Set(hydratedEntries.map((entry) => entry.id));
+  const entries = ref<PatternEntry[]>(
+    shouldMergeSeeds
+      ? [...hydratedEntries, ...seeds.filter((seed) => !existingIds.has(seed.id)).map(clone)]
+      : hydratedEntries
+  );
   const folders = ref<PatternFolder[]>(hydrated?.folders.map(clone) ?? []);
   const selectedPatternId = ref<string | null>(
     hydrated?.selectedPatternId ?? entries.value[0]?.id ?? null
@@ -272,7 +294,9 @@ export function createPatternRegistry(
 
   const write = () =>
     persist(storage, storageKey, entries.value, folders.value, selectedPatternId.value);
-  if (!storedSnapshot) write();
+  if (!parsedStoredSnapshot || parsedStoredSnapshot.sourceVersion !== PATTERN_REGISTRY_VERSION) {
+    write();
+  }
 
   const selectedPattern = computed(
     () => entries.value.find((entry) => entry.id === selectedPatternId.value) ?? null

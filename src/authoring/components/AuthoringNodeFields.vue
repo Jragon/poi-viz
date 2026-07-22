@@ -317,6 +317,14 @@ function addInitialRadiusProfileKey() {
           @blur="onSwingPhaseBlur"
         />
       </label>
+      <p class="text-xs leading-5 text-ui-text-muted">
+        Oscillator position: 0° crosses the centre toward increasing angle, 90° is one dead
+        point, 180° crosses back, and 270° is the other dead point.
+      </p>
+      <p v-if="node === 'head'" class="text-xs leading-5 text-ui-text-muted">
+        Head pendulums are centred straight down. Start phase, amplitude, and swing phase must
+        describe that same oscillator position.
+      </p>
     </template>
 
     <AuthoringRadiusProfileFields

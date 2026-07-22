@@ -25,7 +25,7 @@ export interface PatternEntry {
 }
 
 export interface PatternRegistrySnapshot {
-  readonly version: 1;
+  readonly version: 2;
   readonly selectedPatternId: string | null;
   readonly folders: readonly PatternFolder[];
   readonly patterns: readonly PatternEntry[];

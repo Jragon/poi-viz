@@ -110,6 +110,8 @@ The current driver does not support asymmetric forcing, changing amplitude, radi
 
 Authoring stores pendulum amplitude and swing phase in degrees plus frequency in cycles per unit, then compiles them to the engine's radian fields. The driver selector is per node. First-segment head edits keep the explicit start pose consistent with the local-down centre rule; continuation head drivers must remain compatible with their derived continuity boundary. Appending or duplicating a pendulum advances its stored oscillator phase across the source duration.
 
+Swing phase is the phase of the oscillator, not the node's spatial angle. At 0° the oscillator crosses its centre toward increasing spatial angle; 90° is one dead point; 180° crosses the centre in the opposite direction; and 270° is the other dead point. For a head pendulum, the centre is local down, so its explicit segment-start angle must satisfy `start = -90° + amplitude × sin(swing phase)` modulo full turns.
+
 ### Runtime Driver
 
 A runtime driver defines its own phase behavior through `evalPose`. Preparation validates the callback's shape but does not run it or inspect its output. Finite phase, continuity, monotonicity, purity, exceptions, and determinism are caller-owned. A consumer must not infer circle semantics from a runtime driver's output, even when its label describes circular motion.
