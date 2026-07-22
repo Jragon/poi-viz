@@ -1,6 +1,19 @@
 @import "tailwindcss";
 
 :root {
+  --ui-page: #020617;
+  --ui-surface: #0f172a;
+  --ui-surface-raised: #111c30;
+  --ui-input: #020617;
+  --ui-text: #f1f5f9;
+  --ui-text-secondary: #cbd5e1;
+  --ui-text-muted: #94a3b8;
+  --ui-border-subtle: #334155;
+  --ui-border: #475569;
+  --ui-border-strong: #64748b;
+  --ui-focus: #7dd3fc;
+  --ui-selected: #0c4a6e;
+  --ui-selected-text: #f0f9ff;
   font-family:
     ui-sans-serif,
     system-ui,
@@ -9,8 +22,62 @@
     sans-serif;
 }
 
+@theme inline {
+  --color-ui-page: var(--ui-page);
+  --color-ui-surface: var(--ui-surface);
+  --color-ui-surface-raised: var(--ui-surface-raised);
+  --color-ui-input: var(--ui-input);
+  --color-ui-text: var(--ui-text);
+  --color-ui-text-secondary: var(--ui-text-secondary);
+  --color-ui-text-muted: var(--ui-text-muted);
+  --color-ui-border-subtle: var(--ui-border-subtle);
+  --color-ui-border: var(--ui-border);
+  --color-ui-border-strong: var(--ui-border-strong);
+  --color-ui-focus: var(--ui-focus);
+  --color-ui-selected: var(--ui-selected);
+  --color-ui-selected-text: var(--ui-selected-text);
+}
+
 * {
   box-sizing: border-box;
+}
+
+html,
+body {
+  background: var(--ui-page);
+  color: var(--ui-text);
+}
+
+:where(
+  a,
+  button,
+  input,
+  textarea,
+  select,
+  summary,
+  [role="button"],
+  [tabindex]:not([tabindex="-1"])
+):focus-visible {
+  outline: 2px solid var(--ui-focus) !important;
+  outline-offset: 2px;
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --ui-text-muted: #cbd5e1;
+    --ui-border-subtle: #475569;
+    --ui-border: #64748b;
+  }
+
+  :is(
+    .bg-slate-950\/50,
+    .bg-slate-950\/60,
+    .bg-slate-950\/70,
+    .bg-slate-900\/60,
+    .bg-slate-900\/70
+  ) {
+    background-color: var(--ui-surface) !important;
+  }
 }
 
 input[type="number"] {
