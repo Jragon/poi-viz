@@ -74,3 +74,20 @@ while the derived initial phase keeps both crosspoints outward on the selected b
 
 The oracle validates left and right hands separately for both inward and outward flow. Two-hand
 combinations and cycle offsets are not separate legality cases.
+
+## Single-hand cosmo oracle
+
+Common and diagonal cosmos use the generic eight-row sequence and contain six plane-side
+crosspoints. The compiler resolves the center A/B side switch through the opposite body gate rather
+than treating the authored center row as a literal centerline crossing.
+
+| Cosmo position pair         | Crosspoint levels                  |
+| --------------------------- | ---------------------------------- |
+| High non-native / high back | high, high, high, high, high, high |
+| Low non-native / low back   | low, low, low, low, low, low       |
+| Low non-native / high back  | low, high, high, high, high, low   |
+| High non-native / low back  | high, low, low, low, low, high     |
+
+These four families are legal for left/right hands and inward/outward flow. Native vertical cosmos
+use a different center sequence and are validated separately because they require asymmetric setup
+and bounce path windows.
