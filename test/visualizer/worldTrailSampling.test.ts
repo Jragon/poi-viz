@@ -74,7 +74,8 @@ describe("worldTrailSampling", () => {
 
     const plain = sampleMultiRigWorldTrailGrid(prepared, 0, 0.25, 2, null);
     const separated = sampleMultiRigWorldTrailGrid(prepared, 0, 0.25, 2, null, {
-      separationWorld: 0.2,
+      sideADepthWorld: 0.2,
+      sideBDepthWorld: 0.2,
       defaultSide: null
     });
 

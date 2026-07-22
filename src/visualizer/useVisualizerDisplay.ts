@@ -29,6 +29,16 @@ export function useVisualizerDisplay(
       core.transport.setSpeed(1 / value);
     }
   });
+  const planeSideSeparationWorld = computed({
+    get: () =>
+      Math.max(
+        core.session.planeSideADepthWorld.value,
+        core.session.planeSideBDepthWorld.value
+      ),
+    set: (value: number) => {
+      core.session.setPlaneSideDepthsWorld(value, value);
+    }
+  });
 
   const controllerOptions: DisplaySettingsOptions = {
     rigOrder: core.rigOrder,
@@ -54,8 +64,10 @@ export function useVisualizerDisplay(
         set: core.session.setProjectionPitchDeg
       },
       planeSideSeparationWorld: {
-        value: core.session.planeSideSeparationWorld,
-        set: core.session.setPlaneSideSeparationWorld
+        value: planeSideSeparationWorld,
+        set: (value) => {
+          planeSideSeparationWorld.value = value;
+        }
       },
       transportSecondsPerUnit: {
         value: transportSecondsPerUnit,

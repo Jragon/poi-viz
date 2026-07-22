@@ -9,15 +9,19 @@ const VRM_RIG_LAB_PAGE_FILE = resolve(
 );
 
 describe("VrmRigLabPage source wiring", () => {
-  it("keeps independent plane-side depth controls wired to VRM-only poses", () => {
+  it("routes independent plane-side depth controls through shared playback", () => {
     const source = readFileSync(VRM_RIG_LAB_PAGE_FILE, "utf8");
 
     expect(source).toContain('v-model.number="sideADepthWorld"');
     expect(source).toContain('v-model.number="sideBDepthWorld"');
-    expect(source).toContain("applyAsymmetricPlaneSideDisplayOffset");
-    expect(source).toContain(':poses="vrmWorldPoses"');
+    expect(source).toContain("const sideADepthWorld = computed({");
+    expect(source).toContain("const sideBDepthWorld = computed({");
+    expect(source).toContain("core.session.setPlaneSideDepthsWorld");
+    expect(source).toContain(':poses="activeWorldPoses"');
+    expect(source).toContain(": core.worldPoses.value");
+    expect(source).not.toContain("applyAsymmetricPlaneSideDisplayOffset");
     expect(source).toContain("buildThreeDDebugSceneState(");
-    expect(source).toContain("activeWorldPoses.value,");
+    expect(source).toContain("rawActiveWorldPoses.value");
   });
 
   it("offers VRM playback speed presets through the shared transport", () => {

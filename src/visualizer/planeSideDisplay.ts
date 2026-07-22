@@ -15,19 +15,15 @@ import type {
 } from "@/engine/types";
 
 export interface PlaneSideDisplaySettings {
-  readonly separationWorld: number;
+  readonly sideADepthWorld: number;
+  readonly sideBDepthWorld: number;
   readonly defaultSide: PlaneSide | null;
   readonly transitionWindowFraction?: number;
 }
 
-export interface AsymmetricPlaneSideDisplaySettings {
-  readonly sideADepthWorld: number;
-  readonly sideBDepthWorld: number;
-  readonly defaultSide: PlaneSide | null;
-}
-
 export const DEFAULT_PLANE_SIDE_DISPLAY_SETTINGS: PlaneSideDisplaySettings = {
-  separationWorld: 0.12,
+  sideADepthWorld: 0.12,
+  sideBDepthWorld: 0.12,
   defaultSide: "a"
 };
 
@@ -44,6 +40,15 @@ function scaleWorld(point: Vec3, scalar: number): Vec3 {
 function smootherstep(t: number): number {
   const c = Math.max(0, Math.min(1, t));
   return c * c * c * (c * (c * 6 - 15) + 10);
+}
+
+function scalePlaneSideDepthFactor(
+  depthFactor: number,
+  settings: PlaneSideDisplaySettings
+): number {
+  return depthFactor >= 0
+    ? depthFactor * settings.sideADepthWorld
+    : depthFactor * settings.sideBDepthWorld;
 }
 
 export function lookupAdjacentPlaneSide(
@@ -83,37 +88,16 @@ export function applyPlaneSideDisplayOffset(
   settings: PlaneSideDisplaySettings = DEFAULT_PLANE_SIDE_DISPLAY_SETTINGS
 ): WorldRigPose {
   const side = pose.planeSide ?? settings.defaultSide;
-  if (!side || settings.separationWorld <= 0) {
-    return pose;
-  }
-
-  const offset = scaleWorld(
-    getPlaneNormal(pose.planeId),
-    getPlaneSideOffset(side) * settings.separationWorld
-  );
-
-  return {
-    ...pose,
-    handPosition: addWorld(pose.handPosition, offset),
-    headPosition: addWorld(pose.headPosition, offset)
-  };
-}
-
-export function applyAsymmetricPlaneSideDisplayOffset(
-  pose: WorldRigPose,
-  settings: AsymmetricPlaneSideDisplaySettings
-): WorldRigPose {
-  const side = pose.planeSide ?? settings.defaultSide;
   if (!side) {
     return pose;
   }
 
-  const depth = side === "a" ? settings.sideADepthWorld : settings.sideBDepthWorld;
-  if (!Number.isFinite(depth) || depth <= 0) {
+  const depthWorld = scalePlaneSideDepthFactor(getPlaneSideOffset(side), settings);
+  if (!Number.isFinite(depthWorld) || depthWorld === 0) {
     return pose;
   }
 
-  const offset = scaleWorld(getPlaneNormal(pose.planeId), getPlaneSideOffset(side) * depth);
+  const offset = scaleWorld(getPlaneNormal(pose.planeId), depthWorld);
 
   return {
     ...pose,
@@ -127,7 +111,7 @@ export function applyPlaneSideTransitionOffsets(
   preparedMultiRig: PreparedMultiRigSequence,
   settings: PlaneSideDisplaySettings = DEFAULT_PLANE_SIDE_DISPLAY_SETTINGS
 ): WorldMultiRigPose {
-  if (settings.separationWorld <= 0) return poses;
+  if (settings.sideADepthWorld <= 0 && settings.sideBDepthWorld <= 0) return poses;
 
   const windowFraction = settings.transitionWindowFraction ?? DEFAULT_TRANSITION_WINDOW_FRACTION;
 
@@ -156,10 +140,8 @@ export function applyPlaneSideTransitionOffsets(
           progress,
           windowFraction
         );
-        const offset = scaleWorld(
-          getPlaneNormal(pose.planeId),
-          depthFactor * settings.separationWorld
-        );
+        const depthWorld = scalePlaneSideDepthFactor(depthFactor, settings);
+        const offset = scaleWorld(getPlaneNormal(pose.planeId), depthWorld);
         return [
           rigId,
           {
@@ -188,5 +170,5 @@ export function projectWorldMultiRigPose(
 }
 
 export function hasPlaneSideDisplayOffset(settings: PlaneSideDisplaySettings): boolean {
-  return settings.separationWorld > 0;
+  return settings.sideADepthWorld > 0 || settings.sideBDepthWorld > 0;
 }

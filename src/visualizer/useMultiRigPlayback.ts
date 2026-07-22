@@ -59,6 +59,7 @@ export type PlaybackEvalSuccess = {
   ok: true;
   evaluatedPoses: EvaluatedMultiRigPose;
   relativePoses: Record<RigId, RelativeRigPose>;
+  rawWorldPoses: WorldMultiRigPose;
   worldPoses: WorldMultiRigPose;
   cartesianPoses: CartesianMultiRigPose;
 };
@@ -107,7 +108,8 @@ export function useMultiRigPlayback(
     projectionMode: ProjectionMode;
     projectionYawDeg: number;
     projectionPitchDeg: number;
-    planeSideSeparationWorld: number;
+    planeSideADepthWorld: number;
+    planeSideBDepthWorld: number;
     planeSideDefaultSide: PlaneSideDisplaySettings["defaultSide"];
     trails: MultiRigTrailSamples;
   } | null = null;
@@ -149,8 +151,9 @@ export function useMultiRigPlayback(
     const relativePoses = toRelativePoses(evalResult.poses);
     const currentProjectionSettings = toValue(projectionSettings);
     const currentPlaneSideDisplaySettings = toValue(planeSideDisplaySettings);
+    const rawWorldPoses = toWorldMultiRigPose(evalResult.poses);
     const worldPoses = applyPlaneSideTransitionOffsets(
-      toWorldMultiRigPose(evalResult.poses),
+      rawWorldPoses,
       prepared.value!,
       currentPlaneSideDisplaySettings
     );
@@ -158,6 +161,7 @@ export function useMultiRigPlayback(
       ok: true,
       evaluatedPoses: evalResult.poses,
       relativePoses,
+      rawWorldPoses,
       worldPoses,
       cartesianPoses: projectWorldMultiRigPose(worldPoses, currentProjectionSettings)
     };
@@ -212,7 +216,8 @@ export function useMultiRigPlayback(
       trailCache.projectionMode === currentProjectionSettings.mode &&
       trailCache.projectionYawDeg === currentProjectionSettings.yawDeg &&
       trailCache.projectionPitchDeg === currentProjectionSettings.pitchDeg &&
-      trailCache.planeSideSeparationWorld === currentPlaneSideDisplaySettings.separationWorld &&
+      trailCache.planeSideADepthWorld === currentPlaneSideDisplaySettings.sideADepthWorld &&
+      trailCache.planeSideBDepthWorld === currentPlaneSideDisplaySettings.sideBDepthWorld &&
       trailCache.planeSideDefaultSide === currentPlaneSideDisplaySettings.defaultSide
         ? trailCache.trails
         : null;
@@ -238,7 +243,8 @@ export function useMultiRigPlayback(
         projectionMode: currentProjectionSettings.mode,
         projectionYawDeg: currentProjectionSettings.yawDeg,
         projectionPitchDeg: currentProjectionSettings.pitchDeg,
-        planeSideSeparationWorld: currentPlaneSideDisplaySettings.separationWorld,
+        planeSideADepthWorld: currentPlaneSideDisplaySettings.sideADepthWorld,
+        planeSideBDepthWorld: currentPlaneSideDisplaySettings.sideBDepthWorld,
         planeSideDefaultSide: currentPlaneSideDisplaySettings.defaultSide,
         trails: baseTrails
       };

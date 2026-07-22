@@ -7,7 +7,7 @@ import { buildBodyHumanoidScene } from "@/lab/experiments/three-d-debug/bodyHuma
 import { buildThreeDDebugSceneState } from "@/lab/experiments/three-d-debug/worldPoseScene";
 import PatternRegistryControls from "@/patterns/components/PatternRegistryControls.vue";
 import { useSelectedPatternSequence } from "@/patterns/useSelectedPatternSequence";
-import { applyAsymmetricPlaneSideDisplayOffset } from "@/visualizer/planeSideDisplay";
+import { applyPlaneSideDisplayOffset } from "@/visualizer/planeSideDisplay";
 import { threeDDebugSequence } from "@/visualizer/demoSequence";
 import TransportControls from "@/visualizer/TransportControls.vue";
 import {
@@ -51,8 +51,18 @@ const showGrid = ref(true);
 const showUnitCircle = ref(true);
 const mirroredView = ref(false);
 const PLANE_SIDE_DEPTH_MAX = 1;
-const sideADepthWorld = ref(0.12);
-const sideBDepthWorld = ref(0.12);
+const sideADepthWorld = computed({
+  get: () => core.session.planeSideADepthWorld.value,
+  set: (value: number) => {
+    core.session.setPlaneSideDepthsWorld(value, core.session.planeSideBDepthWorld.value);
+  }
+});
+const sideBDepthWorld = computed({
+  get: () => core.session.planeSideBDepthWorld.value,
+  set: (value: number) => {
+    core.session.setPlaneSideDepthsWorld(core.session.planeSideADepthWorld.value, value);
+  }
+});
 const VRM_PLAYBACK_SPEEDS = [0.25, 0.5, 1, 2] as const;
 const cameraResetVersion = ref(0);
 const poseSource = ref<"live" | VrmRigPoseCaseId>("live");
@@ -76,32 +86,29 @@ const activePoseCase = computed(() =>
     ? null
     : (poseCases.find((entry) => entry.id === poseSource.value) ?? null)
 );
-const activeWorldPoses = computed(() => activePoseCase.value?.worldPoses ?? core.worldPoses.value);
-const vrmWorldPoses = computed(() =>
-  Object.fromEntries(
-    Object.entries(activeWorldPoses.value).map(([rigId, pose]) => [
-      rigId,
-      applyAsymmetricPlaneSideDisplayOffset(pose, {
-        sideADepthWorld: sideADepthWorld.value,
-        sideBDepthWorld: sideBDepthWorld.value,
-        defaultSide: "a"
-      })
-    ])
-  )
+const rawActiveWorldPoses = computed(
+  () => activePoseCase.value?.worldPoses ?? core.rawWorldPoses.value
+);
+const activeWorldPoses = computed(() =>
+  activePoseCase.value
+    ? Object.fromEntries(
+        Object.entries(activePoseCase.value.worldPoses).map(([rigId, pose]) => [
+          rigId,
+          applyPlaneSideDisplayOffset(pose, core.session.planeSideDisplaySettings.value)
+        ])
+      )
+    : core.worldPoses.value
 );
 const activeRigOrder = computed<readonly RigId[]>(() =>
   activePoseCase.value ? ["left", "right"] : core.rigOrder.value
 );
 const sceneState = computed(() =>
-  buildThreeDDebugSceneState(
-    activeWorldPoses.value,
-    core.sceneWorldRadius.value + PLANE_SIDE_DEPTH_MAX
-  )
+  buildThreeDDebugSceneState(rawActiveWorldPoses.value, core.sceneWorldRadius.value)
 );
 const bodyRigIds = computed(() => resolveBodyRigIds(activeRigOrder.value));
 const bodyFrame = computed(() =>
   buildBodyHumanoidScene(
-    vrmWorldPoses.value,
+    activeWorldPoses.value,
     undefined,
     bodyRigIds.value,
     canonicalBodyDimensions,
@@ -247,7 +254,7 @@ function setPlaybackSpeed(speed: number) {
         <VrmRigCanvas
           v-else
           :body-frame="bodyFrame"
-          :poses="vrmWorldPoses"
+          :poses="activeWorldPoses"
           :rig-order="activeRigOrder"
           :scene-center-world="sceneState.sceneCenterWorld"
           :scene-radius-world="sceneState.sceneRadiusWorld"

@@ -75,11 +75,14 @@ function createFrame(prepared: ReturnType<typeof prepare>, t: TimeUnit): Playbac
     Object.entries(result.poses).map(([rigId, value]) => [rigId, value.pose])
   );
 
+  const rawWorldPoses = toWorldMultiRigPose(result.poses);
+
   return {
     ok: true,
     evaluatedPoses: result.poses,
     relativePoses,
-    worldPoses: toWorldMultiRigPose(result.poses),
+    rawWorldPoses,
+    worldPoses: rawWorldPoses,
     cartesianPoses: toCartesianMultiRigPose(relativePoses)
   };
 }

@@ -79,7 +79,7 @@ const beatGraphEditorLocation = computed<RouteLocationRaw>(() => {
 });
 
 core.session.setProjectionMode("tilted");
-core.session.setPlaneSideSeparationWorld(0.2);
+core.session.setPlaneSideDepthsWorld(0.2, 0.2);
 transport.setSpeed(1);
 display.setOverlayVisibility("showHandTrails", false);
 display.setOverlayVisibility("showHeadTrails", true);

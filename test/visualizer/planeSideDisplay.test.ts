@@ -4,7 +4,6 @@ import type { PreparedMultiRigSequence } from "@/engine/multirig";
 import type { PreparedSegment } from "@/engine/sequence";
 import type { WorldRigPose } from "@/engine/types";
 import {
-  applyAsymmetricPlaneSideDisplayOffset,
   applyPlaneSideDisplayOffset,
   applyPlaneSideTransitionOffsets,
   computePlaneSideDepthFactor,
@@ -75,14 +74,15 @@ describe("planeSideDisplay", () => {
     expect(displayed.planeSide).toBeUndefined();
     expect(
       applyPlaneSideDisplayOffset(worldPose(), {
-        separationWorld: 0.2,
+        sideADepthWorld: 0.2,
+        sideBDepthWorld: 0.2,
         defaultSide: null
       })
     ).toEqual(worldPose());
   });
 
   it("offsets wall side a and side b in opposite depth directions", () => {
-    const settings = { separationWorld: 0.2, defaultSide: null };
+    const settings = { sideADepthWorld: 0.2, sideBDepthWorld: 0.2, defaultSide: null };
     const front = applyPlaneSideDisplayOffset(worldPose("a"), settings);
     const back = applyPlaneSideDisplayOffset(worldPose("b"), settings);
 
@@ -94,8 +94,8 @@ describe("planeSideDisplay", () => {
 
   it("supports independent front and rear depths", () => {
     const settings = { sideADepthWorld: 0.25, sideBDepthWorld: 0.4, defaultSide: null };
-    const front = applyAsymmetricPlaneSideDisplayOffset(worldPose("a"), settings);
-    const back = applyAsymmetricPlaneSideDisplayOffset(worldPose("b"), settings);
+    const front = applyPlaneSideDisplayOffset(worldPose("a"), settings);
+    const back = applyPlaneSideDisplayOffset(worldPose("b"), settings);
 
     expect(front.handPosition).toEqual({ x: 1, y: 0, z: 0.25 });
     expect(front.headPosition).toEqual({ x: 1.5, y: 0, z: 0.25 });
@@ -112,7 +112,7 @@ describe("planeSideDisplay", () => {
     };
 
     expect(
-      applyAsymmetricPlaneSideDisplayOffset(pose, {
+      applyPlaneSideDisplayOffset(pose, {
         sideADepthWorld: 0.2,
         sideBDepthWorld: 0.35,
         defaultSide: null
@@ -128,7 +128,7 @@ describe("planeSideDisplay", () => {
     const pose = worldPose();
 
     expect(
-      applyAsymmetricPlaneSideDisplayOffset(pose, {
+      applyPlaneSideDisplayOffset(pose, {
         sideADepthWorld: 0.2,
         sideBDepthWorld: 0.35,
         defaultSide: null
@@ -150,7 +150,7 @@ describe("planeSideDisplay", () => {
           { rigId: "back", prepared: prepared.rigs[0].prepared }
         ]
       },
-      { separationWorld: 0.2, defaultSide: null }
+      { sideADepthWorld: 0.2, sideBDepthWorld: 0.2, defaultSide: null }
     );
     const projected = projectWorldMultiRigPose(poses, {
       mode: "tilted",
@@ -246,7 +246,8 @@ describe("applyPlaneSideTransitionOffsets", () => {
     const prepared = makePreparedMultiRig([makePreparedSegment("a"), makePreparedSegment("b")]);
     const poses = { left: worldPoseWithMeta("b", 1, 0.5) };
     const result = applyPlaneSideTransitionOffsets(poses, prepared, {
-      separationWorld: 0,
+      sideADepthWorld: 0,
+      sideBDepthWorld: 0,
       defaultSide: null
     });
     expect(result.left).toBe(poses.left);
@@ -256,7 +257,8 @@ describe("applyPlaneSideTransitionOffsets", () => {
     const prepared = makePreparedMultiRig([makePreparedSegment("b"), makePreparedSegment("b")]);
     const pose = worldPoseWithMeta("b", 1, 0.5);
     const result = applyPlaneSideTransitionOffsets({ left: pose }, prepared, {
-      separationWorld: 0.2,
+      sideADepthWorld: 0.2,
+      sideBDepthWorld: 0.2,
       defaultSide: null
     });
     expect(result.left.handPosition.z).toBeCloseTo(-0.2, 10);
@@ -264,7 +266,7 @@ describe("applyPlaneSideTransitionOffsets", () => {
 
   it("interpolates through zero at midpoint for a→b transition", () => {
     const prepared = makePreparedMultiRig([makePreparedSegment("a"), makePreparedSegment("b")]);
-    const settings = { separationWorld: 0.2, defaultSide: null };
+    const settings = { sideADepthWorld: 0.2, sideBDepthWorld: 0.2, defaultSide: null };
 
     const atStart = applyPlaneSideTransitionOffsets(
       { left: worldPoseWithMeta("b", 1, 0) },
@@ -290,11 +292,37 @@ describe("applyPlaneSideTransitionOffsets", () => {
     expect(atEnd.left.handPosition.z).toBeCloseTo(-0.2, 10);
   });
 
+  it("keeps an asymmetric a→b transition at depth zero at the exact midpoint", () => {
+    const prepared = makePreparedMultiRig([makePreparedSegment("a"), makePreparedSegment("b")]);
+    const settings = { sideADepthWorld: 0.3, sideBDepthWorld: 0.5, defaultSide: null };
+
+    const atStart = applyPlaneSideTransitionOffsets(
+      { left: worldPoseWithMeta("b", 1, 0) },
+      prepared,
+      settings
+    );
+    const atMid = applyPlaneSideTransitionOffsets(
+      { left: worldPoseWithMeta("b", 1, 0.5) },
+      prepared,
+      settings
+    );
+    const atEnd = applyPlaneSideTransitionOffsets(
+      { left: worldPoseWithMeta("b", 1, 1) },
+      prepared,
+      settings
+    );
+
+    expect(atStart.left.handPosition.z).toBeCloseTo(0.3, 10);
+    expect(atMid.left.handPosition.z).toBeCloseTo(0, 10);
+    expect(atEnd.left.handPosition.z).toBeCloseTo(-0.5, 10);
+  });
+
   it("falls back to constant offset when pose lacks metadata", () => {
     const prepared = makePreparedMultiRig([makePreparedSegment("a"), makePreparedSegment("b")]);
     const pose = worldPose("b");
     const result = applyPlaneSideTransitionOffsets({ left: pose }, prepared, {
-      separationWorld: 0.2,
+      sideADepthWorld: 0.2,
+      sideBDepthWorld: 0.2,
       defaultSide: null
     });
     expect(result.left.handPosition.z).toBeCloseTo(-0.2, 10);
@@ -304,7 +332,8 @@ describe("applyPlaneSideTransitionOffsets", () => {
     const prepared = makePreparedMultiRig([makePreparedSegment(), makePreparedSegment()]);
     const noPose = { ...worldPose(), segmentIndex: 0, tLocal: 0 };
     const result = applyPlaneSideTransitionOffsets({ left: noPose }, prepared, {
-      separationWorld: 0.2,
+      sideADepthWorld: 0.2,
+      sideBDepthWorld: 0.2,
       defaultSide: "a"
     });
     expect(result.left.handPosition.z).toBeCloseTo(0.2);

@@ -36,6 +36,7 @@ export interface VisualizerCoreController {
   readonly transport: TransportController;
   readonly session: VisualizerSession;
   readonly rigOrder: ComputedRef<RigId[]>;
+  readonly rawWorldPoses: ComputedRef<WorldMultiRigPose>;
   readonly worldPoses: ComputedRef<WorldMultiRigPose>;
   readonly cartesianPoses: ComputedRef<CartesianMultiRigPose>;
   readonly trails: ComputedRef<MultiRigTrailSamples>;
@@ -67,6 +68,9 @@ export function useVisualizerCore(
   const { currentFrame, currentTrails, playback, errorMessage, isReady } = session;
 
   const rigOrder = computed(() => sequenceRef.value.rigs.map((rig) => rig.rigId));
+  const rawWorldPoses = computed<WorldMultiRigPose>(() =>
+    currentFrame.value?.ok ? currentFrame.value.rawWorldPoses : {}
+  );
   const worldPoses = computed<WorldMultiRigPose>(() =>
     currentFrame.value?.ok ? currentFrame.value.worldPoses : {}
   );
@@ -76,9 +80,12 @@ export function useVisualizerCore(
   const trails = currentTrails;
   const sceneWorldRadius = computed(() => {
     const prepared = playback.prepared.value;
-    const sideSeparation = session.planeSideSeparationWorld.value;
+    const sideDepth = Math.max(
+      session.planeSideADepthWorld.value,
+      session.planeSideBDepthWorld.value
+    );
     if (!prepared) {
-      return 2 + sideSeparation;
+      return 2 + sideDepth;
     }
 
     const sequenceRadius = prepared.rigs.reduce((maxRadius, rig) => {
@@ -90,7 +97,7 @@ export function useVisualizerCore(
       return Math.max(maxRadius, rigMaxRadius);
     }, 2);
 
-    return sequenceRadius + sideSeparation;
+    return sequenceRadius + sideDepth;
   });
   const transportDurationLabel = computed(() => transport.duration.value.toFixed(2));
   const sequenceSummary = computed(() =>
@@ -119,6 +126,7 @@ export function useVisualizerCore(
     transport,
     session,
     rigOrder,
+    rawWorldPoses,
     worldPoses,
     cartesianPoses,
     trails,

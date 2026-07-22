@@ -13,9 +13,10 @@ An interval whose resolved row sides differ has one plane-side transition:
 - depth is zero at the crosspoint and the semantic state is `crossing`;
 - it finishes on `toSide`.
 
-Plane A/B display widths belong to the visualizer. With unequal widths, display depth follows two
-linear pieces pinned through source depth, zero at `0.5`, and destination depth. The compiler's
-crosspoint and legality do not change when those widths change.
+Plane A/B display depths belong to the visualizer. The shared display adapter interpolates a
+normalized side factor with `smootherstep`, scales its positive and negative portions by the A and B
+depths respectively, and remains pinned through depth zero at `0.5`. The compiler's crosspoint and
+legality do not change when either display depth changes.
 
 ## Legality
 

@@ -38,10 +38,10 @@ export const PROJECTION_YAW_STEP = 1;
 export const PROJECTION_PITCH_MIN = -45;
 export const PROJECTION_PITCH_MAX = 45;
 export const PROJECTION_PITCH_STEP = 1;
-export const PLANE_SIDE_SEPARATION_MIN = 0;
-export const PLANE_SIDE_SEPARATION_MAX = 0.5;
-export const PLANE_SIDE_SEPARATION_STEP = 0.01;
-export const PLANE_SIDE_SEPARATION_DEFAULT = 0.12;
+export const PLANE_SIDE_DEPTH_MIN = 0;
+export const PLANE_SIDE_DEPTH_MAX = 1;
+export const PLANE_SIDE_DEPTH_STEP = 0.01;
+export const PLANE_SIDE_DEPTH_DEFAULT = 0.12;
 export const PLANE_SIDE_DISPLAY_DEFAULT_SIDE: PlaneSide = "a";
 
 export interface VisualizerSessionOptions {
@@ -60,7 +60,8 @@ export interface VisualizerSession {
   readonly projectionYawDeg: Ref<number>;
   readonly projectionPitchDeg: Ref<number>;
   readonly projectionSettings: ComputedRef<PlaneProjectionSettings>;
-  readonly planeSideSeparationWorld: Ref<number>;
+  readonly planeSideADepthWorld: Ref<number>;
+  readonly planeSideBDepthWorld: Ref<number>;
   readonly planeSideDisplaySettings: ComputedRef<PlaneSideDisplaySettings>;
   readonly errorMessage: ComputedRef<string | null>;
   readonly isReady: ComputedRef<boolean>;
@@ -69,7 +70,7 @@ export interface VisualizerSession {
   setProjectionMode: (value: ProjectionModePreference) => void;
   setProjectionYawDeg: (value: number) => void;
   setProjectionPitchDeg: (value: number) => void;
-  setPlaneSideSeparationWorld: (value: number) => void;
+  setPlaneSideDepthsWorld: (sideADepthWorld: number, sideBDepthWorld: number) => void;
   dispose: () => void;
 }
 
@@ -83,9 +84,9 @@ function clampProjectionDegrees(value: number, min: number, max: number, fallbac
   return Math.min(Math.max(value, min), max);
 }
 
-function clampPlaneSideSeparationWorld(value: number): number {
-  if (!Number.isFinite(value) || value <= 0) return PLANE_SIDE_SEPARATION_DEFAULT;
-  return Math.min(Math.max(value, PLANE_SIDE_SEPARATION_MIN), PLANE_SIDE_SEPARATION_MAX);
+function clampPlaneSideDepthWorld(value: number): number {
+  if (!Number.isFinite(value)) return PLANE_SIDE_DEPTH_DEFAULT;
+  return Math.min(Math.max(value, PLANE_SIDE_DEPTH_MIN), PLANE_SIDE_DEPTH_MAX);
 }
 
 function preparedUsesNonWallPlane(prepared: PreparedMultiRigSequence | null): boolean {
@@ -119,7 +120,8 @@ export function useVisualizerSession(
   const projectionMode = ref<ProjectionModePreference>("auto");
   const projectionYawDeg = ref<number>(DEFAULT_TILTED_PROJECTION_YAW_DEG);
   const projectionPitchDeg = ref<number>(DEFAULT_TILTED_PROJECTION_PITCH_DEG);
-  const planeSideSeparationWorld = ref<number>(PLANE_SIDE_SEPARATION_DEFAULT);
+  const planeSideADepthWorld = ref<number>(PLANE_SIDE_DEPTH_DEFAULT);
+  const planeSideBDepthWorld = ref<number>(PLANE_SIDE_DEPTH_DEFAULT);
   const playbackRef: { current: MultiRigPlaybackController | null } = { current: null };
   const projectionSettings = computed<PlaneProjectionSettings>(() => ({
     mode: resolveProjectionMode(projectionMode.value, playbackRef.current?.prepared.value ?? null),
@@ -127,7 +129,8 @@ export function useVisualizerSession(
     pitchDeg: projectionPitchDeg.value
   }));
   const planeSideDisplaySettings = computed<PlaneSideDisplaySettings>(() => ({
-    separationWorld: planeSideSeparationWorld.value,
+    sideADepthWorld: planeSideADepthWorld.value,
+    sideBDepthWorld: planeSideBDepthWorld.value,
     defaultSide: PLANE_SIDE_DISPLAY_DEFAULT_SIDE
   }));
   const playback = useMultiRigPlayback(
@@ -215,8 +218,9 @@ export function useVisualizerSession(
     );
   };
 
-  const setPlaneSideSeparationWorld = (value: number) => {
-    planeSideSeparationWorld.value = clampPlaneSideSeparationWorld(value);
+  const setPlaneSideDepthsWorld = (sideADepth: number, sideBDepth: number) => {
+    planeSideADepthWorld.value = clampPlaneSideDepthWorld(sideADepth);
+    planeSideBDepthWorld.value = clampPlaneSideDepthWorld(sideBDepth);
   };
 
   const errorMessage = computed(() => {
@@ -250,7 +254,8 @@ export function useVisualizerSession(
     projectionYawDeg,
     projectionPitchDeg,
     projectionSettings,
-    planeSideSeparationWorld,
+    planeSideADepthWorld,
+    planeSideBDepthWorld,
     planeSideDisplaySettings,
     errorMessage,
     isReady,
@@ -259,7 +264,7 @@ export function useVisualizerSession(
     setProjectionMode,
     setProjectionYawDeg,
     setProjectionPitchDeg,
-    setPlaneSideSeparationWorld,
+    setPlaneSideDepthsWorld,
     dispose
   };
 }

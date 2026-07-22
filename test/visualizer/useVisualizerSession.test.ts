@@ -5,8 +5,8 @@ import { createTransport } from "@/composables/useTransport";
 import { projectWorldPoint } from "@/engine/planeProjection";
 import type { MultiRigSequence, Segment } from "@/engine/types";
 import {
-  PLANE_SIDE_SEPARATION_DEFAULT,
-  PLANE_SIDE_SEPARATION_MAX,
+  PLANE_SIDE_DEPTH_DEFAULT,
+  PLANE_SIDE_DEPTH_MAX,
   PROJECTION_PITCH_MAX,
   PROJECTION_PITCH_MIN,
   PROJECTION_YAW_MAX,
@@ -206,30 +206,33 @@ describe("useVisualizerSession", () => {
     expect(session.trailDecaySteps.value).toBe(TRAIL_DECAY_DEFAULT);
   });
 
-  it("clamps plane side separation to a finite display range", () => {
+  it("clamps independent plane-side depths to a finite display range", () => {
     const { session } = createSession(makeSequence(2));
 
-    expect(session.planeSideSeparationWorld.value).toBe(PLANE_SIDE_SEPARATION_DEFAULT);
+    expect(session.planeSideADepthWorld.value).toBe(PLANE_SIDE_DEPTH_DEFAULT);
+    expect(session.planeSideBDepthWorld.value).toBe(PLANE_SIDE_DEPTH_DEFAULT);
     expect(session.planeSideDisplaySettings.value).toEqual({
-      separationWorld: PLANE_SIDE_SEPARATION_DEFAULT,
+      sideADepthWorld: PLANE_SIDE_DEPTH_DEFAULT,
+      sideBDepthWorld: PLANE_SIDE_DEPTH_DEFAULT,
       defaultSide: "a"
     });
 
-    session.setPlaneSideSeparationWorld(0.2);
-    expect(session.planeSideSeparationWorld.value).toBe(0.2);
+    session.setPlaneSideDepthsWorld(0.2, 0.35);
+    expect(session.planeSideADepthWorld.value).toBe(0.2);
+    expect(session.planeSideBDepthWorld.value).toBe(0.35);
     expect(session.planeSideDisplaySettings.value).toEqual({
-      separationWorld: 0.2,
+      sideADepthWorld: 0.2,
+      sideBDepthWorld: 0.35,
       defaultSide: "a"
     });
 
-    session.setPlaneSideSeparationWorld(10);
-    expect(session.planeSideSeparationWorld.value).toBe(PLANE_SIDE_SEPARATION_MAX);
+    session.setPlaneSideDepthsWorld(10, -1);
+    expect(session.planeSideADepthWorld.value).toBe(PLANE_SIDE_DEPTH_MAX);
+    expect(session.planeSideBDepthWorld.value).toBe(0);
 
-    session.setPlaneSideSeparationWorld(-1);
-    expect(session.planeSideSeparationWorld.value).toBe(PLANE_SIDE_SEPARATION_DEFAULT);
-
-    session.setPlaneSideSeparationWorld(Number.NaN);
-    expect(session.planeSideSeparationWorld.value).toBe(PLANE_SIDE_SEPARATION_DEFAULT);
+    session.setPlaneSideDepthsWorld(Number.NaN, Number.NaN);
+    expect(session.planeSideADepthWorld.value).toBe(PLANE_SIDE_DEPTH_DEFAULT);
+    expect(session.planeSideBDepthWorld.value).toBe(PLANE_SIDE_DEPTH_DEFAULT);
   });
 
   it("keeps the live trail tip aligned with the current frame between grid samples", async () => {

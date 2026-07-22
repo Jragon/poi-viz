@@ -261,7 +261,8 @@ describe("trailSampling", () => {
 
     const plain = sampleMultiRigTrailGrid(prepared, 0, 0.25, 2, null, projectionSettings);
     const separated = sampleMultiRigTrailGrid(prepared, 0, 0.25, 2, null, projectionSettings, {
-      separationWorld: 0.2,
+      sideADepthWorld: 0.2,
+      sideBDepthWorld: 0.2,
       defaultSide: null
     });
 

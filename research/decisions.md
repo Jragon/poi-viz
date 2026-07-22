@@ -283,7 +283,8 @@ fixup, or visualizer geometry.
 - High, mid, and low are compiler-derived crosspoint levels. A direct high-to-low or low-to-high
   side transition crosses at mid.
 - Plane A/B widths and continuous display depth remain visualizer properties. They do not enter the
-  beat graph or its legality rules.
+  beat graph or its legality rules. Independent A/B depths are inputs to the shared time-aware
+  playback display adapter, so VRM, canvas, projected poses, and trails use one transition path.
 - Wrap legality is validated as single-hand behavior for left/right hands and inward/outward flow;
   two-hand combinations and cycle rotations are not separate oracle cases.
 - Reel legality follows the same single-hand policy. Native, non-native, and back positions are
