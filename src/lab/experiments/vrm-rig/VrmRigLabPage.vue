@@ -53,6 +53,7 @@ const mirroredView = ref(false);
 const PLANE_SIDE_DEPTH_MAX = 1;
 const sideADepthWorld = ref(0.12);
 const sideBDepthWorld = ref(0.12);
+const VRM_PLAYBACK_SPEEDS = [0.25, 0.5, 1, 2] as const;
 const cameraResetVersion = ref(0);
 const poseSource = ref<"live" | VrmRigPoseCaseId>("live");
 const vrmRigProfile = shallowRef<VrmRigProfile | null>(null);
@@ -212,6 +213,10 @@ const rightJointErrors = computed(() => formatArmJointErrors("right"));
 function resetView() {
   cameraResetVersion.value += 1;
 }
+
+function setPlaybackSpeed(speed: number) {
+  core.transport.setSpeed(speed);
+}
 </script>
 
 <template>
@@ -262,7 +267,38 @@ function resetView() {
 
       <aside class="grid content-start gap-4 text-sm text-slate-300">
         <div class="rounded-xl border border-ui-border-subtle bg-ui-surface-raised p-4">
-          <TransportControls v-if="poseSource === 'live'" />
+          <template v-if="poseSource === 'live'">
+            <TransportControls />
+            <div class="mt-3 grid gap-2 border-t border-ui-border-subtle pt-3">
+              <div class="flex items-center justify-between gap-3">
+                <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">
+                  Playback speed
+                </p>
+                <p class="font-mono text-xs text-slate-200">
+                  {{ core.transport.speed.value }}×
+                </p>
+              </div>
+              <div
+                class="grid grid-cols-4 overflow-hidden rounded-lg border border-ui-border-strong"
+              >
+                <button
+                  v-for="speed in VRM_PLAYBACK_SPEEDS"
+                  :key="speed"
+                  type="button"
+                  class="border-r border-ui-border-strong px-2 py-2 text-xs transition last:border-r-0 hover:bg-slate-800 hover:text-white"
+                  :class="
+                    core.transport.speed.value === speed
+                      ? 'bg-sky-400 text-slate-950 hover:bg-sky-300 hover:text-slate-950'
+                      : 'bg-ui-input text-ui-text-secondary'
+                  "
+                  :aria-pressed="core.transport.speed.value === speed"
+                  @click="setPlaybackSpeed(speed)"
+                >
+                  {{ speed }}×
+                </button>
+              </div>
+            </div>
+          </template>
           <div v-else class="grid gap-2 text-sm text-slate-300">
             <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Fixed pose case</p>
             <p class="font-medium text-slate-100">{{ activePoseCase?.label }}</p>
