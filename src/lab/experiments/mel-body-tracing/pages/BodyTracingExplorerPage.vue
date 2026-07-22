@@ -344,6 +344,7 @@ function tabButtonClass(tab: BodyTracingExplorerTab): string {
         <div class="border-t border-ui-border-subtle p-3">
           <PoiBeatGraphDebugPanel
             :graph="graph"
+            :analysis="compiled.analysis"
             :visible-track-ids="visibleTrackIds"
             :active-step="activeStep"
             :half-beat-duration="compilerOptions.halfBeatDuration"

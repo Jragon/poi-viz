@@ -213,7 +213,7 @@ describe("wrapRules", () => {
         direction: { mode: "opposite", flow: "outwards" },
         offset: 0
       },
-      "?s=6&lt=cw-up-3d3d4d4d5d5d&rt=ccw-up-3d3d2d2d1d1d"
+      "?s=6&lt=ccw-up-3d3d4d4d5d5d&rt=cw-up-3d3d2d2d1d1d"
     ]
   ])("encodes the corrected %s graph", (_name, config, expectedUrl) => {
     expect(encodeGraphQuery(config)).toBe(expectedUrl);

@@ -3,7 +3,6 @@ import { computed } from "vue";
 
 import type { TimeUnit } from "@/engine/types";
 import {
-  deriveLoopIntervals,
   deriveRowState,
   getOrderedRows,
   getPoiBeatLane
@@ -11,13 +10,15 @@ import {
 import type {
   PoiBeatDerivedRowState,
   PoiBeatGraph,
-  PoiBeatInterval,
+  PoiBeatResolvedInterval,
+  PoiBeatResolvedPlan,
   PoiBeatRow,
   PoiBeatTrack
 } from "@/lab/experiments/mel-body-tracing/beat-graph/types";
 
 const props = defineProps<{
   graph: PoiBeatGraph;
+  analysis: PoiBeatResolvedPlan;
   visibleTrackIds?: readonly string[];
   activeStep: number | null;
   halfBeatDuration: TimeUnit;
@@ -30,7 +31,7 @@ interface TrackStepCell {
   readonly track: PoiBeatTrack;
   readonly row: PoiBeatRow | null;
   readonly rowState: PoiBeatDerivedRowState | null;
-  readonly interval: PoiBeatInterval | null;
+  readonly interval: PoiBeatResolvedInterval | null;
   readonly laneLabel: string | null;
 }
 
@@ -55,10 +56,12 @@ const sequenceRows = computed<readonly SequenceDebugRow[]>(() => {
     const cells = visibleTracks.value.map((track) => {
       const row = getOrderedRows(track).find((candidate) => candidate.step === step) ?? null;
       const rowState = row ? deriveRowState(track, row) : null;
+      const resolvedTrack = props.analysis.tracks.find(
+        (candidate) => candidate.trackId === track.id
+      );
       const interval = row
-        ? (deriveLoopIntervals(track, props.halfBeatDuration).find(
-            (candidate) => candidate.fromRow.step === row.step
-          ) ?? null)
+        ? (resolvedTrack?.intervals.find((candidate) => candidate.fromRow.step === row.step) ??
+          null)
         : null;
 
       return {
@@ -100,7 +103,26 @@ function trackHeaderClass(track: PoiBeatTrack): string {
 
 function intervalLabel(cell: TrackStepCell): string {
   if (!cell.interval) return "-";
-  return `${cell.interval.index + 1} ${cell.interval.kind}`;
+  const sideLabel =
+    cell.interval.fromSide === cell.interval.toSide
+      ? `hold ${cell.interval.fromSide.toUpperCase()}`
+      : `${cell.interval.fromSide.toUpperCase()}→${cell.interval.toSide.toUpperCase()}`;
+  return `${cell.interval.index + 1} ${cell.interval.laneMotion} / ${sideLabel}`;
+}
+
+function crosspointLabel(cell: TrackStepCell): string {
+  if (!cell.interval || cell.interval.sideMotion.kind !== "transition") return "-";
+  const crosspoint = cell.interval.sideMotion.crosspoint;
+  const gate = crosspoint.bodySide ?? "centerline";
+  const status = crosspoint.legal ? "legal" : `invalid ${crosspoint.violation}`;
+  return `${gate} ${crosspoint.level} / poi ${crosspoint.poiDirection} / ${status} / x ${crosspoint.handPoint.x.toFixed(3)} y ${crosspoint.handPoint.y.toFixed(3)}`;
+}
+
+function crosspointClass(cell: TrackStepCell): string {
+  if (!cell.interval || cell.interval.sideMotion.kind !== "transition") {
+    return "text-ui-text-muted";
+  }
+  return cell.interval.sideMotion.crosspoint.legal ? "text-emerald-300" : "text-rose-300";
 }
 
 function displayStep(step: number): number {
@@ -166,7 +188,7 @@ function displayStep(step: number): number {
                   v-for="track in visibleTracks"
                   :key="track.id"
                   class="border-l border-ui-border-subtle px-3 py-2 font-semibold uppercase tracking-[0.14em]"
-                  colspan="5"
+                  colspan="6"
                 >
                   <span :class="trackHeaderClass(track)">{{ trackHeaderLabel(track) }}</span>
                 </th>
@@ -182,6 +204,7 @@ function displayStep(step: number): number {
                   <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">Side</th>
                   <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">BTB</th>
                   <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">Interval</th>
+                  <th class="px-3 py-2 font-semibold uppercase tracking-[0.14em]">Crosspoint</th>
                 </template>
               </tr>
             </thead>
@@ -217,6 +240,9 @@ function displayStep(step: number): number {
                   </td>
                   <td class="whitespace-nowrap px-3 py-2 text-ui-text-muted">
                     {{ intervalLabel(cell) }}
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-2" :class="crosspointClass(cell)">
+                    {{ crosspointLabel(cell) }}
                   </td>
                 </template>
               </tr>

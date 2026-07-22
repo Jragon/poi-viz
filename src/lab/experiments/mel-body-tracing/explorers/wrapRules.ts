@@ -117,33 +117,15 @@ function verticalWrapLane(
   return mapPositionToLane(position, hand);
 }
 
-function resolveWrapHandDirection(
-  pair: WrapPositionPair,
-  hand: PoiBeatHand,
-  config: WrapConfig,
-  fallbackDirection: PoiBeatDirection
-): PoiBeatDirection {
-  const kind = getVerticalWrapKind(pair);
-  if (kind !== "non-native" || config.direction.mode !== "opposite") return fallbackDirection;
-
-  return hand === "left" ? "clockwise" : "counterclockwise";
-}
-
 export function buildVerticalWrapHandTrackParts(
   pair: WrapPositionPair,
   hand: PoiBeatHand,
-  handDirection: PoiBeatDirection,
-  oppositeFlow?: "inwards" | "outwards"
+  handDirection: PoiBeatDirection
 ): VerticalWrapHandTrackParts | null {
   const kind = getVerticalWrapKind(pair);
   if (!kind) return null;
 
-  const template =
-    kind === "non-native" && oppositeFlow === "outwards"
-      ? VERTICAL_WRAP_HAND_TEMPLATES[kind][hand][
-          handDirection === "clockwise" ? "counterclockwise" : "clockwise"
-        ]
-      : VERTICAL_WRAP_HAND_TEMPLATES[kind][hand][handDirection];
+  const template = VERTICAL_WRAP_HAND_TEMPLATES[kind][hand][handDirection];
   const lanes: readonly PoiBeatLaneId[] =
     template.laneOrder === "low-high"
       ? [verticalWrapLane(kind, hand, "low"), verticalWrapLane(kind, hand, "high")]
@@ -207,23 +189,12 @@ export function deriveWrapInitialPhase(
 
 export function buildWrapBeatGraph(config: WrapConfig): PoiBeatGraph {
   const directions = resolveDirections(config.direction);
-  const leftDirection = resolveWrapHandDirection(config.left, "left", config, directions.left);
-  const rightDirection = resolveWrapHandDirection(config.right, "right", config, directions.right);
+  const leftDirection = directions.left;
+  const rightDirection = directions.right;
   const leftSide = mapPositionToBodySide(config.left.a, "left");
   const rightSide = mapPositionToBodySide(config.right.a, "right");
-  const oppositeFlow = config.direction.mode === "opposite" ? config.direction.flow : undefined;
-  const leftVertical = buildVerticalWrapHandTrackParts(
-    config.left,
-    "left",
-    leftDirection,
-    oppositeFlow
-  );
-  const rightVertical = buildVerticalWrapHandTrackParts(
-    config.right,
-    "right",
-    rightDirection,
-    oppositeFlow
-  );
+  const leftVertical = buildVerticalWrapHandTrackParts(config.left, "left", leftDirection);
+  const rightVertical = buildVerticalWrapHandTrackParts(config.right, "right", rightDirection);
 
   return {
     cycleSteps: 6,

@@ -8,7 +8,36 @@ export type PoiBeatDirection = "clockwise" | "counterclockwise";
 
 export type PoiBeatPhaseLabel = "up" | "down";
 
-export type PoiBeatIntervalKind = "same-lane" | "lane-switch" | "center-side-switch";
+export type PoiBeatLaneMotion = "same-lane" | "lane-switch";
+
+export type PoiBeatBodySide = "left" | "right";
+
+export type PoiBeatCrosspointLevel = "low" | "mid" | "high";
+
+export type PoiBeatHorizontalDirection = "left" | "right";
+
+export type PoiBeatCrosspointViolation = "CENTERLINE_CROSSPOINT" | "POI_POINTS_THROUGH_BODY";
+
+export interface PoiBeatResolvedCrosspoint {
+  readonly progress: 0.5;
+  readonly timeOffsetUnits: TimeUnit;
+  readonly handPoint: Readonly<{ x: number; y: number }>;
+  readonly phaseAbs: number;
+  readonly bodySide: PoiBeatBodySide | null;
+  readonly level: PoiBeatCrosspointLevel;
+  readonly poiDirection: PoiBeatHorizontalDirection;
+  readonly legal: boolean;
+  readonly violation?: PoiBeatCrosspointViolation;
+}
+
+export type PoiBeatSideMotion =
+  | { readonly kind: "hold"; readonly side: PlaneSide }
+  | {
+      readonly kind: "transition";
+      readonly fromSide: PlaneSide;
+      readonly toSide: PlaneSide;
+      readonly crosspoint: PoiBeatResolvedCrosspoint;
+    };
 
 export interface PoiBeatLane {
   readonly id: PoiBeatLaneId;
@@ -50,9 +79,23 @@ export interface PoiBeatInterval {
   readonly trackId: string;
   readonly fromRow: PoiBeatRow;
   readonly toRow: PoiBeatRow;
-  readonly kind: PoiBeatIntervalKind;
-  readonly planeSide: PlaneSide;
+  readonly laneMotion: PoiBeatLaneMotion;
+  readonly fromSide: PlaneSide;
+  readonly toSide: PlaneSide;
   readonly durationUnits: TimeUnit;
+}
+
+export interface PoiBeatResolvedInterval extends PoiBeatInterval {
+  readonly sideMotion: PoiBeatSideMotion;
+}
+
+export interface PoiBeatResolvedTrack {
+  readonly trackId: string;
+  readonly intervals: readonly PoiBeatResolvedInterval[];
+}
+
+export interface PoiBeatResolvedPlan {
+  readonly tracks: readonly PoiBeatResolvedTrack[];
 }
 
 export interface PoiBeatCompilerOptions {

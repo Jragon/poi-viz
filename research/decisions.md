@@ -267,3 +267,25 @@ Pendulum motion is represented by a serializable deterministic built-in driver r
 - Stalls, dead-point plane changes, forcing impulses, point isolations, and radius modulation remain deferred.
 
 Validation: engine tests cover deterministic landmarks, exact segment starts, dead-point behavior, numeric domains, head centre, and plane restrictions. Lab tests prepare every preset on wall, verify the isolated preset's fixed tether midpoint, require extended timing pairs, and assert the extendulum frequency ratio.
+
+## 2026-07-22: Beat-Graph Crosspoints Are Derived Interval Semantics
+
+Beat-graph rows remain the authored source of truth. A plane-side crosspoint is derived by the
+beat-graph compiler when adjacent resolved row sides differ; it is not an authored row, an engine
+fixup, or visualizer geometry.
+
+- Lane motion and plane-side motion are independent interval properties.
+- Every A/B transition crosses at exactly 50 percent of its interval.
+- A crosspoint at `x = 0` is illegal. A left/right crosspoint is legal only when the poi points
+  outward on that body side.
+- The compiler emits a resolved analysis plan and separate physical-legality diagnostics. It does
+  not silently repair illegal graphs, and structural compilation diagnostics remain distinct.
+- High, mid, and low are compiler-derived crosspoint levels. A direct high-to-low or low-to-high
+  side transition crosses at mid.
+- Plane A/B widths and continuous display depth remain visualizer properties. They do not enter the
+  beat graph or its legality rules.
+- Wrap legality is validated as single-hand behavior for left/right hands and inward/outward flow;
+  two-hand combinations and cycle rotations are not separate oracle cases.
+- Reel legality follows the same single-hand policy. Native, non-native, and back positions are
+  checked at high and low for both flows; flow changes rotation direction while phase keeps the
+  crosspoint orientation outward.
