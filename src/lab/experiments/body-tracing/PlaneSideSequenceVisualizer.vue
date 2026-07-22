@@ -462,7 +462,7 @@ function onScrub(event: Event) {
     >
       <button
         type="button"
-        class="rounded-md border border-slate-700 px-3 py-2 font-medium text-slate-100 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:text-ui-text-muted"
+        class="rounded-md border border-ui-border-strong bg-ui-surface px-3 py-2 font-medium text-ui-text transition hover:border-ui-focus hover:bg-ui-surface-raised disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted"
         :disabled="transport.duration.value <= 0"
         @click="togglePlayback"
       >

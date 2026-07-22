@@ -235,22 +235,22 @@ function trackAccentClass(track: PoiBeatTrack): string {
 
 function editButtonClass(track: PoiBeatTrack): string {
   if (isEditingTrack(track.id)) return "border-sky-400 bg-sky-950/70 text-sky-100";
-  return "border-slate-700 text-ui-text-secondary hover:border-slate-500 hover:bg-slate-800";
+  return "border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised";
 }
 
 function visibilityButtonClass(track: PoiBeatTrack): string {
   if (isTrackVisible(track.id)) return "border-emerald-500/70 bg-emerald-500/15 text-emerald-200";
-  return "border-slate-700 text-ui-text-muted hover:border-slate-500 hover:text-slate-300";
+  return "border-ui-border-strong bg-ui-surface text-ui-text-muted hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text-secondary";
 }
 
 function directionButtonClass(track: PoiBeatTrack, direction: PoiBeatDirection): string {
   if (track.poiDirection === direction) return "border-amber-400 bg-amber-950/60 text-amber-100";
-  return "border-slate-700 text-ui-text-secondary hover:border-slate-500 hover:text-ui-text";
+  return "border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text";
 }
 
 function phaseButtonClass(track: PoiBeatTrack, phase: PoiBeatPhaseLabel): string {
   if (track.initialPhase === phase) return "border-violet-400 bg-violet-950/60 text-violet-100";
-  return "border-slate-700 text-ui-text-secondary hover:border-slate-500 hover:text-ui-text";
+  return "border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text";
 }
 
 watch(registry.selectedPatternId, loadSelectedPattern, { immediate: true });
@@ -322,7 +322,7 @@ onBeforeRouteLeave(() => {
                 <div class="flex shrink-0 gap-2">
                   <button
                     type="button"
-                    class="rounded-md border px-2.5 py-1 text-xs font-medium transition disabled:cursor-not-allowed disabled:border-ui-border-subtle disabled:text-ui-text-muted"
+                    class="rounded-md border px-2.5 py-1 text-xs font-medium transition disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted"
                     :class="editButtonClass(track)"
                     :disabled="!isTrackVisible(track.id)"
                     :aria-pressed="isEditingTrack(track.id)"
@@ -389,14 +389,14 @@ onBeforeRouteLeave(() => {
                 <div class="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    class="rounded-md border border-slate-700 px-2 py-1 text-xs font-medium text-slate-300 transition hover:border-slate-500 hover:text-slate-100"
+                    class="rounded-md border border-ui-border-strong bg-ui-surface px-2 py-1 text-xs font-medium text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
                     @click="shiftTrackRows(track.id, -1)"
                   >
                     -
                   </button>
                   <button
                     type="button"
-                    class="rounded-md border border-slate-700 px-2 py-1 text-xs font-medium text-slate-300 transition hover:border-slate-500 hover:text-slate-100"
+                    class="rounded-md border border-ui-border-strong bg-ui-surface px-2 py-1 text-xs font-medium text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
                     @click="shiftTrackRows(track.id, 1)"
                   >
                     +
@@ -422,7 +422,7 @@ onBeforeRouteLeave(() => {
 
           <button
             type="button"
-            class="mt-3 hidden w-full rounded-md border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white disabled:cursor-wait disabled:border-ui-border-subtle disabled:text-ui-text-muted md:block"
+            class="mt-3 hidden w-full rounded-md border border-ui-border-strong bg-ui-surface px-3 py-2 text-xs font-semibold text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text disabled:cursor-wait disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted md:block"
             :disabled="graphPngExport.state.status === 'running'"
             @click="exportGraphPngSequence"
           >
@@ -468,7 +468,7 @@ onBeforeRouteLeave(() => {
           >
             <button
               type="button"
-              class="rounded-md border border-slate-700 px-3 py-2 font-medium text-slate-100 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:text-ui-text-muted"
+              class="rounded-md border border-ui-border-strong bg-ui-surface px-3 py-2 font-medium text-ui-text transition hover:border-ui-focus hover:bg-ui-surface-raised disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted"
               :disabled="transport.duration.value <= 0"
               @click="togglePlayback"
             >
@@ -494,7 +494,7 @@ onBeforeRouteLeave(() => {
             >
               Speed
               <div
-                class="grid grid-cols-3 overflow-hidden rounded-md border border-slate-700 normal-case tracking-normal"
+                class="grid grid-cols-3 overflow-hidden rounded-md border border-ui-border-strong normal-case tracking-normal"
               >
                 <button
                   v-for="speed in [0.25, 0.5, 1]"

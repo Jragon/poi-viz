@@ -196,7 +196,9 @@ function arcStrokeClass(handId: HandId, arcId: ElementaryQuarterArcId) {
       <div class="grid gap-3 lg:grid-cols-[auto_auto_auto] lg:items-end lg:justify-center">
         <div class="grid gap-1.5">
           <div class="flex items-center justify-between gap-2">
-            <p class="text-[0.65rem] uppercase tracking-[0.18em] text-sky-300">Left hand</p>
+            <p class="text-[0.65rem] font-medium uppercase tracking-[0.14em] text-sky-300">
+              Left hand
+            </p>
             <div class="grid grid-cols-3 overflow-hidden rounded-md border border-ui-border-subtle">
               <button
                 v-for="plane in ELEMENTARY_PLANE_OPTIONS"
@@ -261,7 +263,9 @@ function arcStrokeClass(handId: HandId, arcId: ElementaryQuarterArcId) {
         </div>
 
         <div class="grid gap-1.5">
-          <p class="text-[0.65rem] uppercase tracking-[0.18em] text-ui-text-muted lg:text-center">
+          <p
+            class="text-[0.65rem] font-medium uppercase tracking-[0.14em] text-ui-text-muted lg:text-center"
+          >
             Timing
           </p>
           <div class="grid grid-cols-2 overflow-hidden rounded-md border border-ui-border-subtle">
@@ -295,7 +299,9 @@ function arcStrokeClass(handId: HandId, arcId: ElementaryQuarterArcId) {
 
         <div class="grid gap-1.5">
           <div class="flex items-center justify-between gap-2">
-            <p class="text-[0.65rem] uppercase tracking-[0.18em] text-amber-200">Right hand</p>
+            <p class="text-[0.65rem] font-medium uppercase tracking-[0.14em] text-amber-200">
+              Right hand
+            </p>
             <div class="grid grid-cols-3 overflow-hidden rounded-md border border-ui-border-subtle">
               <button
                 v-for="plane in ELEMENTARY_PLANE_OPTIONS"

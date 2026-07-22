@@ -140,7 +140,7 @@ function setSpeed(value: number) {
     >
       <button
         type="button"
-        class="rounded-md border border-slate-700 font-medium text-slate-100 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:text-ui-text-muted"
+        class="rounded-md border border-ui-border-strong bg-ui-surface font-medium text-ui-text transition hover:border-ui-focus hover:bg-ui-surface-raised disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted"
         :class="isCompact ? 'px-2 py-1 text-xs' : 'px-3 py-2'"
         :aria-label="transport.isPlaying.value ? 'Pause' : 'Play'"
         :disabled="transport.duration.value <= 0"
@@ -170,7 +170,7 @@ function setSpeed(value: number) {
       <div class="hidden gap-1 text-xs uppercase tracking-[0.18em] text-ui-text-muted md:grid">
         Speed
         <div
-          class="grid grid-cols-3 overflow-hidden rounded-md border border-slate-700 normal-case tracking-normal"
+          class="grid grid-cols-3 overflow-hidden rounded-md border border-ui-border-strong normal-case tracking-normal"
         >
           <button
             v-for="speed in [0.25, 0.5, 1]"

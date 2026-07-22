@@ -190,7 +190,7 @@ onBeforeRouteLeave(() => {
                 ? hand === 'left'
                   ? 'border-cyan-400 bg-cyan-950/70 text-cyan-200'
                   : 'border-pink-400 bg-pink-950/70 text-pink-200'
-                : 'border-slate-700 text-ui-text-secondary hover:border-slate-500'
+                : 'border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised'
             "
             :aria-pressed="editingHand === hand"
             @click="setEditingHand(hand)"
@@ -204,7 +204,7 @@ onBeforeRouteLeave(() => {
             :class="
               orientation === 'horizontal'
                 ? 'border-amber-400 bg-amber-950/60 text-amber-200'
-                : 'border-slate-700 text-ui-text-secondary hover:border-slate-500'
+                : 'border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised'
             "
             :aria-pressed="orientation === 'horizontal'"
             @click="orientation = 'horizontal'"
@@ -217,7 +217,7 @@ onBeforeRouteLeave(() => {
             :class="
               orientation === 'vertical'
                 ? 'border-amber-400 bg-amber-950/60 text-amber-200'
-                : 'border-slate-700 text-ui-text-secondary hover:border-slate-500'
+                : 'border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised'
             "
             :aria-pressed="orientation === 'vertical'"
             @click="orientation = 'vertical'"
@@ -309,7 +309,7 @@ onBeforeRouteLeave(() => {
                     ? hand === 'left'
                       ? 'border-cyan-700 text-cyan-300'
                       : 'border-pink-700 text-pink-300'
-                    : 'border-slate-700 text-ui-text-muted hover:bg-ui-surface-raised'
+                    : 'border-ui-border-strong bg-ui-surface text-ui-text-muted hover:border-ui-focus hover:bg-ui-surface-raised'
                 "
                 @click="toggleTrack(hand)"
               >
@@ -388,7 +388,7 @@ onBeforeRouteLeave(() => {
           >
           <button
             type="button"
-            class="rounded-md border border-slate-700 px-2.5 py-1.5 text-xs text-slate-300 transition hover:border-slate-500"
+            class="rounded-md border border-ui-border-strong bg-ui-surface px-2.5 py-1.5 text-xs text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
             @click="copyCodec"
           >
             Copy codec

@@ -125,7 +125,7 @@ watch(
     >
       <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div class="grid gap-1">
-          <p class="text-[0.68rem] uppercase tracking-[0.24em] text-teal-300">
+          <p class="text-[0.68rem] font-medium uppercase tracking-[0.16em] text-teal-300">
             Sequence-driven body overlay
           </p>
           <p class="max-w-2xl text-sm leading-6 text-slate-300">
@@ -140,7 +140,7 @@ watch(
             Sequence
             <select
               v-model="selectedSequenceId"
-              class="rounded-md border border-ui-border-strong bg-ui-input px-3 py-2 text-sm font-medium normal-case tracking-normal text-ui-text transition hover:border-slate-500 focus:border-teal-300"
+              class="rounded-md border border-ui-border-strong bg-ui-input px-3 py-2 text-sm font-medium normal-case tracking-normal text-ui-text transition hover:border-ui-focus focus:border-teal-300"
             >
               <option v-if="authoredDocuments.length === 0" value="" disabled>
                 No authored sequences
@@ -165,7 +165,7 @@ watch(
             </button>
             <button
               type="button"
-              class="rounded-md border border-slate-700 bg-slate-900 px-4 py-2 font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+              class="rounded-md border border-ui-border-strong bg-ui-surface px-4 py-2 font-medium text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
               @click="resetPlayback"
             >
               Reset
@@ -178,7 +178,7 @@ watch(
               :class="
                 transport.speed.value === speed
                   ? 'border-teal-300 bg-teal-300 text-slate-950'
-                  : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500 hover:text-white'
+                  : 'border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text'
               "
               @click="setSpeed(speed)"
             >

@@ -108,7 +108,7 @@ useEventListener("resize", () => {
           <div class="flex items-center gap-2">
             <button
               type="button"
-              class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+              class="rounded-lg border border-ui-border-strong bg-ui-surface px-3 py-1.5 text-xs font-medium text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
               aria-label="Reset panel position"
               @click.stop="resetPosition"
             >
@@ -116,7 +116,7 @@ useEventListener("resize", () => {
             </button>
             <button
               type="button"
-              class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+              class="rounded-lg border border-ui-border-strong bg-ui-surface px-3 py-1.5 text-xs font-medium text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
               aria-label="Close panel"
               @click.stop="close"
             >

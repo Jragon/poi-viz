@@ -77,7 +77,7 @@ function pairButtonClass(
 ): string {
   if (props.modelValue[hand][slot] === position)
     return "border-cyan-300 bg-cyan-950/70 text-cyan-100";
-  return "border-slate-700 text-ui-text-secondary hover:border-slate-500 hover:bg-slate-800";
+  return "border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised";
 }
 
 function partnerButtonClass(hand: PoiBeatHand, position: ReelPosition): string {
@@ -85,17 +85,17 @@ function partnerButtonClass(hand: PoiBeatHand, position: ReelPosition): string {
   if (!isValidWrapPair(props.modelValue[hand].a, position)) {
     return "cursor-not-allowed border-ui-border-subtle bg-ui-surface text-ui-text-muted";
   }
-  return "border-slate-700 text-ui-text-secondary hover:border-slate-500 hover:bg-slate-800";
+  return "border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised";
 }
 
 function offsetButtonClass(offset: WrapOffset): string {
   if (props.modelValue.offset === offset) return "border-sky-300 bg-sky-950/70 text-sky-100";
-  return "border-slate-700 text-ui-text-secondary hover:border-slate-500 hover:bg-slate-800";
+  return "border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised";
 }
 
 function visibilityButtonClass(trackId: string): string {
   if (isTrackVisible(trackId)) return "border-emerald-500/70 bg-emerald-500/15 text-emerald-200";
-  return "border-slate-700 text-ui-text-muted hover:border-slate-500 hover:text-slate-300";
+  return "border-ui-border-strong bg-ui-surface text-ui-text-muted hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text-secondary";
 }
 </script>
 

@@ -506,7 +506,7 @@ onBeforeUnmount(() => {
     >
       <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div class="grid gap-1">
-          <p class="text-[0.68rem] uppercase tracking-[0.24em] text-sky-300">
+          <p class="text-[0.68rem] font-medium uppercase tracking-[0.16em] text-sky-300">
             Body tracing sandbox
           </p>
           <p class="max-w-2xl text-sm leading-6 text-slate-300">
@@ -551,7 +551,7 @@ onBeforeUnmount(() => {
           class="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.78),rgba(2,6,23,0.96))]"
         />
         <div
-          class="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 py-3 text-[0.68rem] uppercase tracking-[0.2em] text-ui-text-muted"
+          class="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 py-3 text-[0.68rem] font-medium uppercase tracking-[0.16em] text-ui-text-muted"
         >
           <span>Planted feet and hips</span>
           <span>Auto shoulder solve</span>

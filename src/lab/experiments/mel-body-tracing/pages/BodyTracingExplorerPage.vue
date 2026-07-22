@@ -122,7 +122,7 @@ const graphPngExportButtonLabel = computed(() =>
 
 function tabButtonClass(tab: BodyTracingExplorerTab): string {
   if (activeTab.value === tab) return "border-sky-300 bg-sky-300 text-slate-950";
-  return "border-slate-700 text-slate-300 hover:border-slate-500 hover:bg-slate-800";
+  return "border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised";
 }
 </script>
 
@@ -172,7 +172,7 @@ function tabButtonClass(tab: BodyTracingExplorerTab): string {
 
             <button
               type="button"
-              class="mt-3 hidden w-full rounded-md border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white disabled:cursor-wait disabled:border-ui-border-subtle disabled:text-ui-text-muted md:block"
+              class="mt-3 hidden w-full rounded-md border border-ui-border-strong bg-ui-surface px-3 py-2 text-xs font-semibold text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text disabled:cursor-wait disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted md:block"
               :disabled="graphPngExport.state.status === 'running'"
               @click="exportGraphPngSequence"
             >
@@ -251,7 +251,7 @@ function tabButtonClass(tab: BodyTracingExplorerTab): string {
           >
             <button
               type="button"
-              class="rounded-md border border-slate-700 px-3 py-2 font-medium text-slate-100 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:text-ui-text-muted"
+              class="rounded-md border border-ui-border-strong bg-ui-surface px-3 py-2 font-medium text-ui-text transition hover:border-ui-focus hover:bg-ui-surface-raised disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted"
               :disabled="transport.duration.value <= 0"
               @click="togglePlayback"
             >
@@ -277,7 +277,7 @@ function tabButtonClass(tab: BodyTracingExplorerTab): string {
             >
               Speed
               <div
-                class="grid grid-cols-3 overflow-hidden rounded-md border border-slate-700 normal-case tracking-normal"
+                class="grid grid-cols-3 overflow-hidden rounded-md border border-ui-border-strong normal-case tracking-normal"
               >
                 <button
                   v-for="speed in [0.25, 0.5, 1]"

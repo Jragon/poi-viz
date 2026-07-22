@@ -33,14 +33,14 @@ function resetDefaults() {
         <div class="flex items-center gap-2">
           <button
             type="button"
-            class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+            class="rounded-lg border border-ui-border-strong bg-ui-surface px-3 py-1.5 text-xs font-medium text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
             @click.stop="resetPosition"
           >
             Reset Position
           </button>
           <button
             type="button"
-            class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+            class="rounded-lg border border-ui-border-strong bg-ui-surface px-3 py-1.5 text-xs font-medium text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
             @click.stop="close"
           >
             Close
@@ -210,7 +210,7 @@ function resetDefaults() {
 
       <button
         type="button"
-        class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 transition hover:border-slate-500 hover:text-white"
+        class="rounded-lg border border-ui-border-strong bg-ui-surface px-3 py-2 text-sm text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
         @click="resetDefaults"
       >
         Reset Defaults

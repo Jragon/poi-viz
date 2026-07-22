@@ -172,7 +172,7 @@ function onPlaneSideChange(event: Event) {
       :data-active-segment="isActive ? 'true' : 'false'"
       @click="emit('select')"
     >
-      <div class="flex flex-wrap items-start justify-between gap-3">
+      <div class="flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
         <div class="min-w-0 flex-1">
           <p class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted">
             {{ segment.kind === "first" ? "Starting segment" : "Continuation segment" }}
@@ -188,17 +188,17 @@ function onPlaneSideChange(event: Event) {
           </p>
         </div>
 
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap gap-2 sm:shrink-0">
           <button
             type="button"
-            class="rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-200 transition hover:border-slate-500"
+            class="rounded-xl border border-ui-border-strong bg-ui-surface px-3 py-2 text-xs text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
             @click.stop="emit('duplicate')"
           >
             Duplicate
           </button>
           <button
             type="button"
-            class="rounded-xl border border-rose-800 px-3 py-2 text-xs text-rose-200 transition hover:border-rose-600 disabled:cursor-not-allowed disabled:border-ui-border-subtle disabled:text-ui-text-muted"
+            class="rounded-xl border border-rose-800 bg-ui-surface px-3 py-2 text-xs text-rose-200 transition hover:border-rose-600 hover:bg-rose-950/30 disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted"
             :disabled="!canDelete"
             @click.stop="emit('delete')"
           >
@@ -256,7 +256,7 @@ function onPlaneSideChange(event: Event) {
         </label>
       </div>
 
-      <div class="grid min-w-0 grid-cols-2 gap-4">
+      <div class="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
         <AuthoringNodeFields
           v-for="node in ['hand', 'head'] as const"
           :key="node"

@@ -446,7 +446,7 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
     >
       <button
         type="button"
-        class="inline-grid h-7 w-7 place-items-center rounded-md border border-slate-700 text-base leading-none text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:border-ui-border-subtle disabled:text-ui-text-muted disabled:hover:bg-transparent"
+        class="inline-grid h-7 w-7 place-items-center rounded-md border border-ui-border-strong bg-ui-surface text-base leading-none text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted disabled:hover:border-ui-border disabled:hover:bg-ui-surface-raised"
         aria-label="Delete row"
         title="Delete row"
         :disabled="!canDeleteRow"
@@ -456,7 +456,7 @@ function selectLane(row: DisplayRowState, laneId: PoiBeatLaneId): void {
       </button>
       <button
         type="button"
-        class="inline-grid h-7 w-7 place-items-center rounded-md border border-slate-700 text-base leading-none text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white"
+        class="inline-grid h-7 w-7 place-items-center rounded-md border border-ui-border-strong bg-ui-surface text-base leading-none text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
         aria-label="Append row"
         title="Append row"
         @click="emit('appendRow')"

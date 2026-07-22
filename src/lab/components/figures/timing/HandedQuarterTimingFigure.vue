@@ -108,7 +108,7 @@ onBeforeUnmount(cancelAnimation);
             :class="
               selectedOffset === option.offset
                 ? 'border-cyan-300 bg-cyan-300/15 text-cyan-100'
-                : 'border-slate-700 bg-slate-950/70 text-slate-400 hover:border-slate-500'
+                : 'border-ui-border-strong bg-slate-950/70 text-ui-text-muted hover:border-ui-focus hover:bg-ui-surface-raised'
             "
             :aria-pressed="selectedOffset === option.offset"
             @click="selectTiming(option.offset)"
@@ -131,7 +131,7 @@ onBeforeUnmount(cancelAnimation);
             :class="
               selectedDirection === option.value
                 ? 'border-pink-300 bg-pink-300/15 text-pink-100'
-                : 'border-slate-700 bg-slate-950/70 text-slate-400 hover:border-slate-500'
+                : 'border-ui-border-strong bg-slate-950/70 text-ui-text-muted hover:border-ui-focus hover:bg-ui-surface-raised'
             "
             :aria-pressed="selectedDirection === option.value"
             @click="selectDirection(option.value)"
@@ -146,7 +146,7 @@ onBeforeUnmount(cancelAnimation);
       <p class="min-w-0 text-xs text-slate-400">{{ timingDescription }}</p>
       <button
         type="button"
-        class="shrink-0 rounded-md border border-slate-700 bg-slate-950/50 px-2.5 py-1 text-[11px] font-semibold text-slate-300 hover:border-slate-500"
+        class="shrink-0 rounded-md border border-ui-border-strong bg-slate-950/50 px-2.5 py-1 text-[11px] font-semibold text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised"
         :aria-label="playing ? 'Pause timing animation' : 'Play timing animation'"
         @click="togglePlayback"
       >

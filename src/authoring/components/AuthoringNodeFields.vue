@@ -122,7 +122,7 @@ function addInitialRadiusProfileKey() {
       <button
         v-if="!hasRadiusProfileKeys"
         type="button"
-        class="rounded-lg border border-ui-border-strong px-2 py-1 text-xs text-ui-text-secondary transition hover:border-sky-400 hover:text-ui-text disabled:cursor-not-allowed disabled:border-ui-border-subtle disabled:text-ui-text-muted"
+        class="rounded-lg border border-ui-border-strong bg-ui-surface px-2 py-1 text-xs text-ui-text-secondary transition hover:border-sky-400 hover:bg-ui-surface-raised hover:text-ui-text disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted"
         :disabled="!canAddRadiusProfileKey"
         aria-label="Add radius keys"
         title="Add radius keys"

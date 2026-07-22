@@ -586,7 +586,7 @@ onBeforeUnmount(disposeScene);
           ? 'border-rose-800 bg-rose-950/90 text-rose-200'
           : loadState === 'ready'
             ? 'border-emerald-800 bg-emerald-950/85 text-emerald-200'
-            : 'border-slate-700 bg-slate-950/85 text-slate-300'
+            : 'border-ui-border-strong bg-slate-950/85 text-ui-text-secondary'
       "
     >
       {{ loadMessage }}

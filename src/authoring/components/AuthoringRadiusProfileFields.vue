@@ -145,7 +145,7 @@ function onAddKey() {
       <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Radius keys</p>
       <button
         type="button"
-        class="rounded-lg border border-ui-border-strong px-2 py-1 text-xs text-ui-text-secondary transition hover:border-sky-400 disabled:cursor-not-allowed disabled:border-ui-border-subtle disabled:text-ui-text-muted"
+        class="rounded-lg border border-ui-border-strong bg-ui-surface px-2 py-1 text-xs text-ui-text-secondary transition hover:border-sky-400 hover:bg-ui-surface-raised disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted"
         :disabled="!nextKey"
         aria-label="Add radius key"
         title="Add radius key"
@@ -169,7 +169,7 @@ function onAddKey() {
       <input
         type="number"
         step="any"
-        class="w-full min-w-0 rounded-xl border border-ui-border-strong bg-ui-input px-2 py-1.5 text-sm text-ui-text transition focus:border-sky-400 disabled:border-ui-border-subtle disabled:bg-ui-surface disabled:text-ui-text-muted"
+        class="w-full min-w-0 rounded-xl border border-ui-border-strong bg-ui-input px-2 py-1.5 text-sm text-ui-text transition focus:border-sky-400 disabled:border-ui-border disabled:bg-ui-surface disabled:text-ui-text-muted"
         :class="errors.anchor ? 'border-rose-500' : ''"
         :disabled="!isAnchorEditable"
         :value="drafts.anchor ?? String(anchorRadius)"
@@ -199,7 +199,7 @@ function onAddKey() {
         />
         <button
           type="button"
-          class="w-7 rounded-lg border border-slate-700 px-2 py-1.5 text-xs text-slate-200 transition hover:border-rose-500 hover:text-rose-200"
+          class="w-7 rounded-lg border border-ui-border-strong bg-ui-surface px-2 py-1.5 text-xs text-ui-text-secondary transition hover:border-rose-500 hover:bg-rose-950/30 hover:text-rose-200"
           aria-label="Delete radius key"
           title="Delete radius key"
           @click.stop="emit('delete:key', keyIndex)"

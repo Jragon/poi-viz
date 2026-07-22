@@ -53,7 +53,7 @@ const presets = [
             v-for="preset in presets"
             :key="preset.label"
             type="button"
-            class="rounded-md border border-slate-700 px-3 py-1.5 text-xs text-slate-300 transition hover:border-cyan-500 hover:text-cyan-200"
+            class="rounded-md border border-ui-border-strong bg-ui-surface px-3 py-1.5 text-xs text-ui-text-secondary transition hover:border-cyan-400 hover:bg-ui-surface-raised hover:text-cyan-100"
             @click="codec = preset.codec"
           >
             {{ preset.label }}

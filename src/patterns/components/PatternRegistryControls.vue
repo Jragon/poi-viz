@@ -403,7 +403,7 @@ function deleteFolder(folder: PatternFolder) {
 
           <div
             v-if="newFolderOpen"
-            class="mb-1 flex items-center gap-1 rounded border border-slate-700 bg-slate-900 px-1.5 py-1"
+            class="mb-1 flex items-center gap-1 rounded border border-ui-border-strong bg-slate-900 px-1.5 py-1"
             @click.stop
           >
             <input
@@ -590,7 +590,7 @@ function deleteFolder(folder: PatternFolder) {
       <div
         v-if="(activeMenu && activeMenu.item && !movePatternId) || movePatternId"
         ref="menuRoot"
-        class="fixed z-[80] grid gap-0.5 rounded-lg border border-slate-700 bg-slate-900 p-1 text-[11px] shadow-2xl shadow-slate-950/80"
+        class="fixed z-[80] grid gap-0.5 rounded-lg border border-ui-border-strong bg-slate-900 p-1 text-[11px] shadow-2xl shadow-slate-950/80"
         :class="movePatternId ? 'max-h-56 w-44 overflow-y-auto' : 'w-36'"
         :style="{ left: `${menuPosition.left}px`, top: `${menuPosition.top}px` }"
         @click.stop
