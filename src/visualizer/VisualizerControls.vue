@@ -31,7 +31,7 @@ const emit = defineEmits<{
           :class="
             props.isDisplayPanelOpen
               ? 'border-amber-400 bg-amber-400 text-slate-950 hover:bg-amber-300'
-              : 'border-slate-700 text-slate-200 hover:border-slate-500 hover:text-white'
+              : 'border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text'
           "
           :aria-pressed="props.isDisplayPanelOpen"
           @click="emit('toggleDisplayPanel')"
@@ -46,7 +46,7 @@ const emit = defineEmits<{
       <div class="flex flex-wrap gap-2">
         <button
           type="button"
-          class="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+          class="rounded-lg border border-ui-border-strong bg-ui-surface px-4 py-2 text-sm font-medium text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
           :aria-pressed="props.isFullscreen"
           @click="emit('toggleFullscreen')"
         >
@@ -67,7 +67,7 @@ const emit = defineEmits<{
         </button>
         <button
           type="button"
-          class="rounded-lg bg-amber-400 px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+          class="rounded-lg border border-transparent bg-amber-400 px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:border-ui-border-strong disabled:bg-ui-surface-raised disabled:text-ui-text-muted"
           :disabled="!props.isExportReady || props.exportState.status === 'running'"
           @click="emit('startExport')"
         >
@@ -76,7 +76,7 @@ const emit = defineEmits<{
         <button
           v-if="props.exportState.status === 'running'"
           type="button"
-          class="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+          class="rounded-lg border border-ui-border-strong bg-ui-surface px-4 py-2 text-sm font-medium text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
           @click="emit('cancelExport')"
         >
           Cancel

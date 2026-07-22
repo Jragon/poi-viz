@@ -9,6 +9,17 @@ const labMenu = ref<HTMLDetailsElement | null>(null);
 
 const isLabRoute = computed(() => route.path.startsWith("/lab/"));
 
+const navItemBaseClass =
+  "min-w-0 flex-1 rounded-lg border px-3 py-2 text-center font-medium transition-colors sm:flex-none sm:px-4";
+const navItemActiveClass =
+  "border-sky-400/80 bg-ui-selected text-ui-selected-text shadow-sm shadow-sky-950/30 hover:border-sky-300 hover:bg-sky-900 hover:text-white";
+const navItemInactiveClass =
+  "border-transparent text-ui-text-secondary hover:border-ui-border hover:bg-ui-surface-raised hover:text-ui-text";
+
+function navItemClasses(isActive: boolean) {
+  return [navItemBaseClass, isActive ? navItemActiveClass : navItemInactiveClass];
+}
+
 function closeLabMenu() {
   if (labMenu.value) {
     labMenu.value.open = false;
@@ -27,38 +38,32 @@ watch(
   <div
     class="min-h-screen bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.10),transparent_35%),linear-gradient(180deg,rgba(15,23,42,1),rgba(2,6,23,1))] text-ui-text"
   >
-    <nav class="relative z-50 border-b border-ui-border bg-ui-page/95 backdrop-blur">
+    <nav
+      aria-label="Primary navigation"
+      class="relative z-50 border-b border-ui-border bg-ui-page/95 shadow-lg shadow-slate-950/20 backdrop-blur"
+    >
       <div
         class="mx-auto flex w-full max-w-360 flex-col items-stretch gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between md:px-6"
       >
         <div class="min-w-0">
-          <p class="text-sm font-medium uppercase tracking-[0.14em] text-ui-text">poi-vis</p>
+          <p class="text-sm font-semibold uppercase tracking-[0.14em] text-sky-100">poi-vis</p>
           <p class="max-w-72 text-sm text-ui-text-secondary sm:max-w-none">
-            The messy, over complicated, hard to use, poi visualiser
+            Poi motion authoring and simulation
           </p>
         </div>
 
         <div
-          class="flex w-full min-w-0 gap-1 rounded-2xl border border-ui-border bg-ui-surface p-1 text-sm sm:w-auto sm:gap-2"
+          class="flex w-full min-w-0 gap-1 rounded-xl border border-ui-border bg-ui-surface/80 p-1 text-sm shadow-inner shadow-slate-950/30 sm:w-auto"
         >
-          <RouterLink
-            to="/"
-            class="min-w-0 flex-1 rounded-xl px-3 py-2 text-center text-ui-text-secondary transition hover:bg-ui-surface-raised hover:text-ui-text sm:flex-none sm:px-4"
-            active-class="bg-sky-400 text-slate-950 hover:bg-sky-300"
-          >
-            Visualizer
-          </RouterLink>
-          <RouterLink
-            to="/authoring"
-            class="min-w-0 flex-1 rounded-xl px-3 py-2 text-center text-ui-text-secondary transition hover:bg-ui-surface-raised hover:text-ui-text sm:flex-none sm:px-4"
-            active-class="bg-sky-400 text-slate-950 hover:bg-sky-300"
-          >
+          <RouterLink to="/" :class="navItemClasses(route.path === '/')"> Visualizer </RouterLink>
+          <RouterLink to="/authoring" :class="navItemClasses(route.path === '/authoring')">
             Authoring
           </RouterLink>
           <details ref="labMenu" class="group relative flex-1 sm:flex-none">
             <summary
-              class="list-none rounded-xl px-3 py-2 text-ui-text-secondary transition marker:content-none hover:bg-ui-surface-raised hover:text-ui-text sm:px-4"
-              :class="isLabRoute ? 'bg-sky-400 text-slate-950 hover:bg-sky-300' : ''"
+              class="list-none cursor-pointer marker:content-none"
+              :class="navItemClasses(isLabRoute)"
+              aria-label="Open lab navigation"
             >
               <span class="flex items-center justify-center gap-2">
                 <span>Lab</span>
@@ -86,8 +91,12 @@ watch(
                 v-for="link in labLinks"
                 :key="link.to"
                 :to="link.to"
-                class="block rounded-xl px-3 py-2 text-sm text-ui-text-secondary transition hover:bg-ui-surface hover:text-ui-text"
-                active-class="bg-sky-400 text-slate-950 hover:bg-sky-300"
+                class="block rounded-xl px-3 py-2 text-sm font-medium transition-colors"
+                :class="
+                  route.path === link.to
+                    ? 'bg-ui-selected text-ui-selected-text hover:bg-sky-900 hover:text-white'
+                    : 'text-ui-text-secondary hover:bg-ui-surface hover:text-ui-text'
+                "
                 @click="closeLabMenu"
               >
                 {{ link.label }}

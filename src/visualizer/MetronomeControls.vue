@@ -154,7 +154,7 @@ function setTone(rule: MetronomeRule, tone: MetronomeToneId) {
           :class="
             props.isAudioEnabled
               ? 'border-emerald-500/70 bg-emerald-500/15 text-emerald-100 hover:border-emerald-400 hover:bg-emerald-500/20'
-              : 'border-slate-700 text-slate-200 hover:border-slate-500 hover:text-white'
+              : 'border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text'
           "
           :aria-pressed="props.isAudioEnabled"
           @click="emit('setAudioEnabled', !props.isAudioEnabled)"
@@ -163,7 +163,7 @@ function setTone(rule: MetronomeRule, tone: MetronomeToneId) {
         </button>
         <button
           type="button"
-          class="rounded-full bg-sky-500 px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+          class="rounded-full border border-transparent bg-sky-500 px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:border-ui-border-strong disabled:bg-ui-surface-raised disabled:text-ui-text-muted"
           :disabled="props.rigIds.length === 0"
           @click="emit('addRule')"
         >
@@ -221,7 +221,7 @@ function setTone(rule: MetronomeRule, tone: MetronomeToneId) {
                 :class="
                   ruleRigId(rule) === rigId
                     ? 'border-sky-400/70 bg-sky-500/15 text-sky-100'
-                    : 'border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white'
+                    : 'border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text'
                 "
                 @click="setRuleRig(rule, rigId)"
               >
@@ -241,7 +241,7 @@ function setTone(rule: MetronomeRule, tone: MetronomeToneId) {
                 :class="
                   rule.source.kind === 'absolute'
                     ? 'border-amber-400/70 bg-amber-500/15 text-amber-100'
-                    : 'border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white'
+                    : 'border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text'
                 "
                 @click="setSourceKind(rule, 'absolute')"
               >
@@ -253,7 +253,7 @@ function setTone(rule: MetronomeRule, tone: MetronomeToneId) {
                 :class="
                   rule.source.kind === 'relative-head-minus-hand'
                     ? 'border-amber-400/70 bg-amber-500/15 text-amber-100'
-                    : 'border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white'
+                    : 'border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text'
                 "
                 @click="setSourceKind(rule, 'relative-head-minus-hand')"
               >
@@ -273,7 +273,7 @@ function setTone(rule: MetronomeRule, tone: MetronomeToneId) {
                 :class="
                   rule.source.node === 'hand'
                     ? 'border-violet-400/70 bg-violet-500/15 text-violet-100'
-                    : 'border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white'
+                    : 'border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text'
                 "
                 @click="setAbsoluteNode(rule, 'hand')"
               >
@@ -285,7 +285,7 @@ function setTone(rule: MetronomeRule, tone: MetronomeToneId) {
                 :class="
                   rule.source.node === 'head'
                     ? 'border-violet-400/70 bg-violet-500/15 text-violet-100'
-                    : 'border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white'
+                    : 'border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text'
                 "
                 @click="setAbsoluteNode(rule, 'head')"
               >
@@ -357,7 +357,7 @@ function setTone(rule: MetronomeRule, tone: MetronomeToneId) {
                 :class="
                   rule.tone === tone.value
                     ? 'border-emerald-400/70 bg-emerald-500/15 text-emerald-100'
-                    : 'border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white'
+                    : 'border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text'
                 "
                 @click="setTone(rule, tone.value)"
               >
@@ -379,7 +379,7 @@ function setTone(rule: MetronomeRule, tone: MetronomeToneId) {
               v-for="preset in rule.source.kind === 'absolute' ? absolutePresets : relativePresets"
               :key="preset.label"
               type="button"
-              class="whitespace-nowrap rounded-full border border-slate-700 px-2.5 py-1 text-xs font-medium text-slate-300 transition hover:border-slate-500 hover:text-white"
+              class="whitespace-nowrap rounded-full border border-ui-border-strong bg-ui-surface px-2.5 py-1 text-xs font-medium text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
               @click="applyPreset(rule, preset.value)"
             >
               {{ preset.label }}

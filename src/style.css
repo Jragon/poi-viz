@@ -70,6 +70,9 @@ body {
   }
 
   :is(
+    .bg-ui-surface\/60,
+    .bg-ui-surface\/70,
+    .bg-ui-surface\/80,
     .bg-slate-950\/50,
     .bg-slate-950\/60,
     .bg-slate-950\/70,

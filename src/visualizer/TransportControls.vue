@@ -21,7 +21,7 @@ function onScrub(event: Event) {
       <div class="flex gap-2">
         <button
           type="button"
-          class="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+          class="rounded-lg border border-transparent bg-emerald-500 px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:border-ui-border-strong disabled:bg-ui-surface-raised disabled:text-ui-text-muted"
           :disabled="duration <= 0 || isPlaying"
           @click="play"
         >
@@ -29,7 +29,7 @@ function onScrub(event: Event) {
         </button>
         <button
           type="button"
-          class="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:text-white disabled:cursor-not-allowed disabled:border-ui-border-subtle disabled:text-ui-text-muted"
+          class="rounded-lg border border-ui-border-strong bg-ui-surface px-4 py-2 text-sm font-medium text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text disabled:cursor-not-allowed disabled:border-ui-border-strong disabled:bg-ui-surface-raised disabled:text-ui-text-muted disabled:hover:border-ui-border-strong disabled:hover:bg-ui-surface-raised"
           :disabled="duration <= 0 || !isPlaying"
           @click="pause"
         >

@@ -176,7 +176,9 @@ async function toggleWebcam() {
       <PatternRegistryControls :current-name="selectedEntry?.name ?? 'Demo pattern'" />
     </div>
 
-    <section class="rounded-2xl border border-ui-border-subtle bg-slate-900/40 p-4 md:p-6">
+    <section
+      class="rounded-2xl border border-ui-border bg-ui-surface/60 p-4 shadow-xl shadow-slate-950/20 md:p-6"
+    >
       <div class="grid gap-4">
         <TransportControls />
 
@@ -241,7 +243,7 @@ async function toggleWebcam() {
         />
 
         <div
-          class="grid gap-2 rounded-2xl border border-ui-border-subtle bg-slate-900/60 p-4 text-sm text-slate-300 md:grid-cols-3"
+          class="grid gap-2 rounded-2xl border border-ui-border bg-ui-surface-raised p-4 text-sm text-ui-text-secondary md:grid-cols-3"
         >
           <div>
             <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Transport Window</p>
@@ -278,14 +280,14 @@ async function toggleWebcam() {
           <div class="flex items-center gap-2">
             <button
               type="button"
-              class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+              class="rounded-lg border border-ui-border-strong bg-ui-surface px-3 py-1.5 text-xs font-medium text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
               @click.stop="resetPosition"
             >
               Reset Position
             </button>
             <button
               type="button"
-              class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+              class="rounded-lg border border-ui-border-strong bg-ui-surface px-3 py-1.5 text-xs font-medium text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
               @click.stop="close"
             >
               Close

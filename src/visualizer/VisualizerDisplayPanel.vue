@@ -85,7 +85,7 @@ function projectionModeValue(event: Event): ProjectionModePreference {
         </div>
         <button
           type="button"
-          class="rounded-lg border border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+          class="rounded-lg border border-ui-border-strong bg-ui-surface px-3 py-1.5 text-sm font-medium text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
           @click="display.closePanel()"
         >
           Close
@@ -99,7 +99,7 @@ function projectionModeValue(event: Event): ProjectionModePreference {
           :class="
             display.activePresetId.value === 'normal'
               ? 'border-amber-400 bg-amber-400 text-slate-950'
-              : 'border-slate-700 text-slate-300'
+              : 'border-ui-border-strong bg-ui-surface text-ui-text-secondary'
           "
           :aria-pressed="display.activePresetId.value === 'normal'"
           :disabled="display.isWebcamPresetForced.value"
@@ -112,7 +112,7 @@ function projectionModeValue(event: Event): ProjectionModePreference {
           :class="
             display.activePresetId.value === 'webcam'
               ? 'border-sky-400 bg-sky-400 text-slate-950'
-              : 'border-slate-700 text-slate-300'
+              : 'border-ui-border-strong bg-ui-surface text-ui-text-secondary'
           "
           :aria-pressed="display.activePresetId.value === 'webcam'"
           disabled
@@ -123,7 +123,7 @@ function projectionModeValue(event: Event): ProjectionModePreference {
 
       <button
         type="button"
-        class="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
+        class="rounded-lg border border-ui-border-strong bg-ui-surface px-4 py-2 text-sm font-medium text-ui-text-secondary transition hover:border-ui-focus hover:bg-ui-surface-raised hover:text-ui-text"
         @click="display.resetActivePreset()"
       >
         Reset {{ activePresetLabel }}
