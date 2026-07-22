@@ -20,6 +20,12 @@ export interface PlaneSideDisplaySettings {
   readonly transitionWindowFraction?: number;
 }
 
+export interface AsymmetricPlaneSideDisplaySettings {
+  readonly sideADepthWorld: number;
+  readonly sideBDepthWorld: number;
+  readonly defaultSide: PlaneSide | null;
+}
+
 export const DEFAULT_PLANE_SIDE_DISPLAY_SETTINGS: PlaneSideDisplaySettings = {
   separationWorld: 0.12,
   defaultSide: "a"
@@ -85,6 +91,29 @@ export function applyPlaneSideDisplayOffset(
     getPlaneNormal(pose.planeId),
     getPlaneSideOffset(side) * settings.separationWorld
   );
+
+  return {
+    ...pose,
+    handPosition: addWorld(pose.handPosition, offset),
+    headPosition: addWorld(pose.headPosition, offset)
+  };
+}
+
+export function applyAsymmetricPlaneSideDisplayOffset(
+  pose: WorldRigPose,
+  settings: AsymmetricPlaneSideDisplaySettings
+): WorldRigPose {
+  const side = pose.planeSide ?? settings.defaultSide;
+  if (!side) {
+    return pose;
+  }
+
+  const depth = side === "a" ? settings.sideADepthWorld : settings.sideBDepthWorld;
+  if (!Number.isFinite(depth) || depth <= 0) {
+    return pose;
+  }
+
+  const offset = scaleWorld(getPlaneNormal(pose.planeId), getPlaneSideOffset(side) * depth);
 
   return {
     ...pose,

@@ -32,7 +32,7 @@ Dependencies should point toward the engine. The engine must not import authorin
 - atomic `wall`, `wheel`, and `floor` metadata;
 - plane projection helpers and trace sampling primitives.
 
-Built-in circle and point-to-point drivers are validated and deterministic for identical prepared inputs and times. The engine does not contain QFT, CAPs, VTG, body-tracing generators, rendering, or authoring policy.
+Built-in circle, pendulum, and point-to-point drivers are validated and deterministic for identical prepared inputs and times. Pendulum is a kinematic angular oscillator, not a gravity integrator. The engine does not contain QFT, CAPs, VTG, body-tracing generators, rendering, or authoring policy.
 
 ### Authoring
 
@@ -47,6 +47,8 @@ Authoring Vue components may embed visualizer components for previews. Core auth
 ### Lab
 
 `src/lab/` owns experimental generators, evaluators, journals, and Three.js debug surfaces. Lab code may combine the other layers and may use `RuntimeDriver` when a declarative built-in driver is not flexible enough.
+
+The pendulum lab composes the built-in pendulum driver into ordinary, extended, isolated, paired-timing, mirrored, and extendulum experiments. Those compositions remain lab presets rather than new engine motion laws. Production authoring exposes circle and pendulum as explicit per-node driver choices; it does not import the lab presets or add hidden segment-level composition rules.
 
 The VRM standing-rig experiment is a replaceable consumer of `BodySkeletonFrame`: it maps the existing
 deterministic solver result into VRM normalized humanoid bones and keeps model loading, skinning, and

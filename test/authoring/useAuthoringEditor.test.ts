@@ -3,7 +3,9 @@ import { computed, ref, type ComputedRef, type Ref } from "vue";
 
 import { compileAuthoredDocument } from "@/authoring/compile";
 import type {
+  AuthoredCircleDriverInput,
   AuthoredDocumentEntry,
+  AuthoredDriverInput,
   AuthoredFirstSegment,
   AuthoredSequenceDocument
 } from "@/authoring/types";
@@ -13,6 +15,12 @@ import {
   type SelectedSegment
 } from "@/authoring/useAuthoringEditor";
 import { PI } from "@/engine/constants";
+
+function expectCircleDriver(driver: AuthoredDriverInput): AuthoredCircleDriverInput {
+  expect(driver.kind).toBe("circle");
+  if (driver.kind !== "circle") throw new Error("expected circle driver");
+  return driver;
+}
 
 function makeFirstSegment(overrides: Partial<AuthoredFirstSegment> = {}): AuthoredFirstSegment {
   return {
@@ -121,8 +129,8 @@ describe("useAuthoringEditor", () => {
       const appended = segments[3];
       expect(appended.kind).toBe("continuation");
       expect(appended.durationUnits).toBe(1);
-      expect(appended.hand.driver.omega).toBe(5);
-      expect(appended.head.driver.omega).toBe(6);
+      expect(expectCircleDriver(appended.hand.driver).omega).toBe(5);
+      expect(expectCircleDriver(appended.head.driver).omega).toBe(6);
       expect(harness.selectedSegment.value).toEqual({ trackId: "left", segmentIndex: 3 });
       expect(harness.persisted).toHaveLength(1);
     });
@@ -141,15 +149,17 @@ describe("useAuthoringEditor", () => {
     it("normalizes copied omega drivers to radians-per-unit", () => {
       const document = makeBaseDocument();
       const lastSegment = document.tracks.left!.segments[2];
-      lastSegment.hand.driver.omega = 0.5;
-      lastSegment.hand.driver.omegaUnit = "circles-per-unit";
+      const lastHandDriver = expectCircleDriver(lastSegment.hand.driver);
+      lastHandDriver.omega = 0.5;
+      lastHandDriver.omegaUnit = "circles-per-unit";
 
       const harness = createHarness(document);
       harness.editor.addSegment("left");
 
       const appended = harness.currentDocument().tracks.left!.segments[3];
-      expect(appended.hand.driver.omegaUnit).toBe("radians-per-unit");
-      expect(appended.hand.driver.omega).toBeCloseTo(PI, 9);
+      const appendedHandDriver = expectCircleDriver(appended.hand.driver);
+      expect(appendedHandDriver.omegaUnit).toBe("radians-per-unit");
+      expect(appendedHandDriver.omega).toBeCloseTo(PI, 9);
     });
 
     it("defaults a new track's first segment to wall", () => {
@@ -220,7 +230,7 @@ describe("useAuthoringEditor", () => {
       expect(segments).toHaveLength(4);
       expect(segments[2].kind).toBe("continuation");
       expect(segments[2].durationUnits).toBe(2);
-      expect(segments[2].hand.driver.omega).toBe(3);
+      expect(expectCircleDriver(segments[2].hand.driver).omega).toBe(3);
       expect(harness.selectedSegment.value).toEqual({ trackId: "left", segmentIndex: 2 });
     });
 
@@ -260,8 +270,8 @@ describe("useAuthoringEditor", () => {
       const promotedFirst = promoted as AuthoredFirstSegment;
       expect(promotedFirst.durationUnits).toBe(2);
       expect(promotedFirst.planeId).toBe("wall");
-      expect(promotedFirst.hand.driver.omega).toBe(3);
-      expect(promotedFirst.head.driver.omega).toBe(4);
+      expect(expectCircleDriver(promotedFirst.hand.driver).omega).toBe(3);
+      expect(expectCircleDriver(promotedFirst.head.driver).omega).toBe(4);
       expect(promotedFirst.hand.startPose.radius).toBeCloseTo(promotedStartPose.handPose.radius, 9);
       expect(promotedFirst.head.startPose.radius).toBeCloseTo(promotedStartPose.headPose.radius, 9);
     });
@@ -336,15 +346,17 @@ describe("useAuthoringEditor", () => {
 
     it("canonicalizes legacy circles-per-unit omega values when persisting", () => {
       const document = makeBaseDocument();
-      document.tracks.left!.segments[0].hand.driver.omega = 1;
-      document.tracks.left!.segments[0].hand.driver.omegaUnit = "circles-per-unit";
+      const initialHandDriver = expectCircleDriver(document.tracks.left!.segments[0].hand.driver);
+      initialHandDriver.omega = 1;
+      initialHandDriver.omegaUnit = "circles-per-unit";
       const harness = createHarness(document);
 
       harness.editor.updateDocumentName("Renamed");
 
       const handDriver = harness.currentDocument().tracks.left!.segments[0].hand.driver;
-      expect(handDriver.omegaUnit).toBe("radians-per-unit");
-      expect(handDriver.omega).toBeCloseTo(2 * PI, 9);
+      const circleHandDriver = expectCircleDriver(handDriver);
+      expect(circleHandDriver.omegaUnit).toBe("radians-per-unit");
+      expect(circleHandDriver.omega).toBeCloseTo(2 * PI, 9);
     });
   });
 
@@ -391,6 +403,80 @@ describe("useAuthoringEditor", () => {
     });
   });
 
+  describe("driver updates", () => {
+    it("switches a node between circle and pendulum with explicit pendulum controls", () => {
+      const document: AuthoredSequenceDocument = {
+        name: "One segment",
+        description: null,
+        tracks: { left: { segments: [makeFirstSegment()] } }
+      };
+      const harness = createHarness(document);
+
+      harness.editor.updateSegmentDriverKind("left", 0, "head", "pendulum");
+
+      let segment = harness.currentDocument().tracks.left!.segments[0];
+      expect(segment.head.driver).toEqual({
+        kind: "pendulum",
+        amplitudeDeg: 90,
+        cyclesPerUnit: 0.5,
+        swingPhaseDeg: 90
+      });
+
+      harness.editor.updateSegmentPendulumField("left", 0, "head", "amplitudeDeg", 45);
+      segment = harness.currentDocument().tracks.left!.segments[0];
+      expect(segment.kind).toBe("first");
+      if (segment.kind !== "first" || segment.head.driver.kind !== "pendulum") {
+        throw new Error("expected first pendulum segment");
+      }
+      expect(segment.head.driver.amplitudeDeg).toBe(45);
+      expect(segment.head.startPose.phaseDeg).toBeCloseTo(-45, 9);
+
+      harness.editor.updateSegmentPendulumField("left", 0, "head", "cyclesPerUnit", 0.25);
+      segment = harness.currentDocument().tracks.left!.segments[0];
+      expect(segment.head.driver).toMatchObject({ kind: "pendulum", cyclesPerUnit: 0.25 });
+
+      harness.editor.updateSegmentPendulumField("left", 0, "head", "swingPhaseDeg", 0);
+      segment = harness.currentDocument().tracks.left!.segments[0];
+      if (segment.kind !== "first") throw new Error("expected first segment");
+      expect(segment.head.startPose.phaseDeg).toBeCloseTo(-90, 9);
+
+      harness.editor.updateSegmentDriverKind("left", 0, "head", "circle");
+      expect(harness.currentDocument().tracks.left!.segments[0].head.driver).toEqual({
+        kind: "circle",
+        omega: 0,
+        omegaUnit: "radians-per-unit"
+      });
+    });
+
+    it("advances pendulum oscillator phase when appending a continuation", () => {
+      const document: AuthoredSequenceDocument = {
+        name: "Pendulum continuation",
+        description: null,
+        tracks: { left: { segments: [makeFirstSegment()] } }
+      };
+      const harness = createHarness(document);
+      harness.editor.updateSegmentDriverKind("left", 0, "head", "pendulum");
+      harness.editor.updateSegmentPendulumField("left", 0, "head", "swingPhaseDeg", 0);
+
+      harness.editor.addSegment("left");
+
+      const segments = harness.currentDocument().tracks.left!.segments;
+      expect(segments).toHaveLength(2);
+      expect(segments[1].head.driver).toEqual({
+        kind: "pendulum",
+        amplitudeDeg: 90,
+        cyclesPerUnit: 0.5,
+        swingPhaseDeg: 180
+      });
+      expect(
+        harness.lastValidCompiled.value.sequence.rigs[0].sequence.segments[1].head.driver
+      ).toMatchObject({
+        kind: "pendulum",
+        swingPhaseRad: PI
+      });
+    });
+  });
+
   describe("radius profile updates", () => {
     it("adds, updates, and deletes radius profile rows for either node", () => {
       const harness = createHarness(makeBaseDocument());
@@ -398,17 +484,21 @@ describe("useAuthoringEditor", () => {
       harness.editor.addSegmentRadiusProfileKey("left", 1, "head", { t: 1, radius: 0.25 });
 
       let segment = harness.currentDocument().tracks.left!.segments[1];
-      expect(segment.head.driver.radiusProfile?.keys).toEqual([{ t: 1, radius: 0.25 }]);
+      expect(expectCircleDriver(segment.head.driver).radiusProfile?.keys).toEqual([
+        { t: 1, radius: 0.25 }
+      ]);
 
       harness.editor.updateSegmentRadiusProfileKey("left", 1, "head", 0, "radius", 0.75);
 
       segment = harness.currentDocument().tracks.left!.segments[1];
-      expect(segment.head.driver.radiusProfile?.keys).toEqual([{ t: 1, radius: 0.75 }]);
+      expect(expectCircleDriver(segment.head.driver).radiusProfile?.keys).toEqual([
+        { t: 1, radius: 0.75 }
+      ]);
 
       harness.editor.deleteSegmentRadiusProfileKey("left", 1, "head", 0);
 
       segment = harness.currentDocument().tracks.left!.segments[1];
-      expect(segment.head.driver.radiusProfile).toBeUndefined();
+      expect(expectCircleDriver(segment.head.driver).radiusProfile).toBeUndefined();
     });
 
     it("does not persist radius profile keys beyond the segment duration", () => {
@@ -423,7 +513,7 @@ describe("useAuthoringEditor", () => {
 
     it("copies radius profiles when duplicating a segment", () => {
       const document = makeBaseDocument();
-      document.tracks.left!.segments[0].hand.driver.radiusProfile = {
+      expectCircleDriver(document.tracks.left!.segments[0].hand.driver).radiusProfile = {
         kind: "time-keyed",
         keys: [{ t: 0.5, radius: 2 }]
       };
@@ -433,7 +523,9 @@ describe("useAuthoringEditor", () => {
 
       const duplicate = harness.currentDocument().tracks.left!.segments[1];
       expect(duplicate.kind).toBe("continuation");
-      expect(duplicate.hand.driver.radiusProfile?.keys).toEqual([{ t: 0.5, radius: 2 }]);
+      expect(expectCircleDriver(duplicate.hand.driver).radiusProfile?.keys).toEqual([
+        { t: 0.5, radius: 2 }
+      ]);
     });
   });
 

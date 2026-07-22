@@ -2,14 +2,19 @@
 import { computed, ref, watch } from "vue";
 
 import AuthoringRadiusProfileFields from "@/authoring/components/AuthoringRadiusProfileFields.vue";
-import type { AuthoredRadiusProfileKey } from "@/authoring/types";
+import type { AuthoredDriverKind, AuthoredRadiusProfileKey } from "@/authoring/types";
 
 const props = defineProps<{
   node: "hand" | "head";
+  driverKind: AuthoredDriverKind;
+  canUsePendulum: boolean;
   isFirstSegment: boolean;
   phaseDeg: number;
   radius: number;
   omega: number;
+  amplitudeDeg: number;
+  cyclesPerUnit: number;
+  swingPhaseDeg: number;
   durationUnits: number;
   radiusProfileKeys: readonly AuthoredRadiusProfileKey[];
 }>();
@@ -18,6 +23,14 @@ const emit = defineEmits<{
   (event: "update:phase-deg", value: number): void;
   (event: "update:radius", value: number): void;
   (event: "update:omega", value: number): void;
+  (event: "update:driver-kind", value: AuthoredDriverKind): void;
+  (
+    event: "update:pendulum-field",
+    payload: {
+      field: "amplitudeDeg" | "cyclesPerUnit" | "swingPhaseDeg";
+      value: number;
+    }
+  ): void;
   (event: "add:radius-profile-key", key: AuthoredRadiusProfileKey): void;
   (
     event: "update:radius-profile-key",
@@ -32,6 +45,12 @@ const radiusDraft = ref<string | null>(null);
 const radiusError = ref(false);
 const omegaDraft = ref<string | null>(null);
 const omegaError = ref(false);
+const amplitudeDraft = ref<string | null>(null);
+const amplitudeError = ref(false);
+const cyclesDraft = ref<string | null>(null);
+const cyclesError = ref(false);
+const swingPhaseDraft = ref<string | null>(null);
+const swingPhaseError = ref(false);
 
 const hasRadiusProfileKeys = computed(() => props.radiusProfileKeys.length > 0);
 const canAddRadiusProfileKey = computed(
@@ -39,10 +58,44 @@ const canAddRadiusProfileKey = computed(
 );
 
 watch(
+  () => props.driverKind,
+  () => {
+    omegaDraft.value = null;
+    omegaError.value = false;
+    amplitudeDraft.value = null;
+    amplitudeError.value = false;
+    cyclesDraft.value = null;
+    cyclesError.value = false;
+    swingPhaseDraft.value = null;
+    swingPhaseError.value = false;
+  }
+);
+watch(
   () => props.phaseDeg,
   () => {
     phaseDraft.value = null;
     phaseError.value = false;
+  }
+);
+watch(
+  () => props.amplitudeDeg,
+  () => {
+    amplitudeDraft.value = null;
+    amplitudeError.value = false;
+  }
+);
+watch(
+  () => props.cyclesPerUnit,
+  () => {
+    cyclesDraft.value = null;
+    cyclesError.value = false;
+  }
+);
+watch(
+  () => props.swingPhaseDeg,
+  () => {
+    swingPhaseDraft.value = null;
+    swingPhaseError.value = false;
   }
 );
 watch(
@@ -104,6 +157,37 @@ function onOmegaBlur() {
   commitNumeric(omegaDraft, omegaError, props.omega, (value) => emit("update:omega", value));
 }
 
+function onAmplitudeInput(event: Event) {
+  amplitudeDraft.value = (event.target as HTMLInputElement).value;
+}
+function onAmplitudeBlur() {
+  commitNumeric(amplitudeDraft, amplitudeError, props.amplitudeDeg, (value) =>
+    emit("update:pendulum-field", { field: "amplitudeDeg", value })
+  );
+}
+
+function onCyclesInput(event: Event) {
+  cyclesDraft.value = (event.target as HTMLInputElement).value;
+}
+function onCyclesBlur() {
+  commitNumeric(cyclesDraft, cyclesError, props.cyclesPerUnit, (value) =>
+    emit("update:pendulum-field", { field: "cyclesPerUnit", value })
+  );
+}
+
+function onSwingPhaseInput(event: Event) {
+  swingPhaseDraft.value = (event.target as HTMLInputElement).value;
+}
+function onSwingPhaseBlur() {
+  commitNumeric(swingPhaseDraft, swingPhaseError, props.swingPhaseDeg, (value) =>
+    emit("update:pendulum-field", { field: "swingPhaseDeg", value })
+  );
+}
+
+function onDriverKindChange(event: Event) {
+  emit("update:driver-kind", (event.target as HTMLSelectElement).value as AuthoredDriverKind);
+}
+
 function addInitialRadiusProfileKey() {
   if (!canAddRadiusProfileKey.value) {
     return;
@@ -119,18 +203,36 @@ function addInitialRadiusProfileKey() {
   >
     <div class="flex items-center justify-between gap-2">
       <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">{{ node }}</p>
-      <button
-        v-if="!hasRadiusProfileKeys"
-        type="button"
-        class="rounded-lg border border-ui-border-strong bg-ui-surface px-2 py-1 text-xs text-ui-text-secondary transition hover:border-sky-400 hover:bg-ui-surface-raised hover:text-ui-text disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted"
-        :disabled="!canAddRadiusProfileKey"
-        aria-label="Add radius keys"
-        title="Add radius keys"
-        @click.stop="addInitialRadiusProfileKey"
-      >
-        +
-      </button>
+      <div class="flex items-center gap-2">
+        <label>
+          <span class="sr-only">{{ node }} driver</span>
+          <select
+            class="rounded-lg border border-ui-border-strong bg-ui-input px-2 py-1 text-xs text-ui-text transition focus:border-sky-400"
+            :value="driverKind"
+            @click.stop
+            @change="onDriverKindChange"
+          >
+            <option value="circle">Circle</option>
+            <option value="pendulum" :disabled="!canUsePendulum">Pendulum</option>
+          </select>
+        </label>
+        <button
+          v-if="driverKind === 'circle' && !hasRadiusProfileKeys"
+          type="button"
+          class="rounded-lg border border-ui-border-strong bg-ui-surface px-2 py-1 text-xs text-ui-text-secondary transition hover:border-sky-400 hover:bg-ui-surface-raised hover:text-ui-text disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted"
+          :disabled="!canAddRadiusProfileKey"
+          aria-label="Add radius keys"
+          title="Add radius keys"
+          @click.stop="addInitialRadiusProfileKey"
+        >
+          +
+        </button>
+      </div>
     </div>
+
+    <p v-if="driverKind === 'circle' && !canUsePendulum" class="text-xs text-ui-text-muted">
+      Pendulum requires wall or wheel; a head must start in the lower half.
+    </p>
 
     <template v-if="isFirstSegment">
       <label class="grid min-w-0 gap-1 text-sm text-ui-text-secondary">
@@ -160,7 +262,7 @@ function addInitialRadiusProfileKey() {
       </label>
     </template>
 
-    <label class="grid min-w-0 gap-1 text-sm text-ui-text-secondary">
+    <label v-if="driverKind === 'circle'" class="grid min-w-0 gap-1 text-sm text-ui-text-secondary">
       <span class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Omega</span>
       <input
         type="number"
@@ -173,8 +275,52 @@ function addInitialRadiusProfileKey() {
       />
     </label>
 
+    <template v-else>
+      <label class="grid min-w-0 gap-1 text-sm text-ui-text-secondary">
+        <span class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Amplitude (deg)</span>
+        <input
+          type="number"
+          min="0"
+          max="90"
+          step="any"
+          class="w-full min-w-0 rounded-2xl border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text transition focus:border-sky-400"
+          :class="amplitudeError ? 'border-rose-500' : ''"
+          :value="amplitudeDraft ?? String(amplitudeDeg)"
+          @input="onAmplitudeInput"
+          @blur="onAmplitudeBlur"
+        />
+      </label>
+
+      <label class="grid min-w-0 gap-1 text-sm text-ui-text-secondary">
+        <span class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Cycles per unit</span>
+        <input
+          type="number"
+          min="0"
+          step="any"
+          class="w-full min-w-0 rounded-2xl border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text transition focus:border-sky-400"
+          :class="cyclesError ? 'border-rose-500' : ''"
+          :value="cyclesDraft ?? String(cyclesPerUnit)"
+          @input="onCyclesInput"
+          @blur="onCyclesBlur"
+        />
+      </label>
+
+      <label class="grid min-w-0 gap-1 text-sm text-ui-text-secondary">
+        <span class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Swing phase (deg)</span>
+        <input
+          type="number"
+          step="any"
+          class="w-full min-w-0 rounded-2xl border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text transition focus:border-sky-400"
+          :class="swingPhaseError ? 'border-rose-500' : ''"
+          :value="swingPhaseDraft ?? String(swingPhaseDeg)"
+          @input="onSwingPhaseInput"
+          @blur="onSwingPhaseBlur"
+        />
+      </label>
+    </template>
+
     <AuthoringRadiusProfileFields
-      v-if="hasRadiusProfileKeys"
+      v-if="driverKind === 'circle' && hasRadiusProfileKeys"
       :keys="radiusProfileKeys"
       :duration-units="durationUnits"
       :anchor-radius="radius"

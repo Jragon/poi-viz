@@ -7,6 +7,7 @@ import { buildBodyHumanoidScene } from "@/lab/experiments/three-d-debug/bodyHuma
 import { buildThreeDDebugSceneState } from "@/lab/experiments/three-d-debug/worldPoseScene";
 import PatternRegistryControls from "@/patterns/components/PatternRegistryControls.vue";
 import { useSelectedPatternSequence } from "@/patterns/useSelectedPatternSequence";
+import { applyAsymmetricPlaneSideDisplayOffset } from "@/visualizer/planeSideDisplay";
 import { threeDDebugSequence } from "@/visualizer/demoSequence";
 import TransportControls from "@/visualizer/TransportControls.vue";
 import {
@@ -49,6 +50,9 @@ const showAxes = ref(true);
 const showGrid = ref(true);
 const showUnitCircle = ref(true);
 const mirroredView = ref(false);
+const PLANE_SIDE_DEPTH_MAX = 1;
+const sideADepthWorld = ref(0.12);
+const sideBDepthWorld = ref(0.12);
 const cameraResetVersion = ref(0);
 const poseSource = ref<"live" | VrmRigPoseCaseId>("live");
 const vrmRigProfile = shallowRef<VrmRigProfile | null>(null);
@@ -72,16 +76,31 @@ const activePoseCase = computed(() =>
     : (poseCases.find((entry) => entry.id === poseSource.value) ?? null)
 );
 const activeWorldPoses = computed(() => activePoseCase.value?.worldPoses ?? core.worldPoses.value);
+const vrmWorldPoses = computed(() =>
+  Object.fromEntries(
+    Object.entries(activeWorldPoses.value).map(([rigId, pose]) => [
+      rigId,
+      applyAsymmetricPlaneSideDisplayOffset(pose, {
+        sideADepthWorld: sideADepthWorld.value,
+        sideBDepthWorld: sideBDepthWorld.value,
+        defaultSide: "a"
+      })
+    ])
+  )
+);
 const activeRigOrder = computed<readonly RigId[]>(() =>
   activePoseCase.value ? ["left", "right"] : core.rigOrder.value
 );
 const sceneState = computed(() =>
-  buildThreeDDebugSceneState(activeWorldPoses.value, core.sceneWorldRadius.value)
+  buildThreeDDebugSceneState(
+    activeWorldPoses.value,
+    core.sceneWorldRadius.value + PLANE_SIDE_DEPTH_MAX
+  )
 );
 const bodyRigIds = computed(() => resolveBodyRigIds(activeRigOrder.value));
 const bodyFrame = computed(() =>
   buildBodyHumanoidScene(
-    activeWorldPoses.value,
+    vrmWorldPoses.value,
     undefined,
     bodyRigIds.value,
     canonicalBodyDimensions,
@@ -223,7 +242,7 @@ function resetView() {
         <VrmRigCanvas
           v-else
           :body-frame="bodyFrame"
-          :poses="sceneState.worldPoses"
+          :poses="vrmWorldPoses"
           :rig-order="activeRigOrder"
           :scene-center-world="sceneState.sceneCenterWorld"
           :scene-radius-world="sceneState.sceneRadiusWorld"
@@ -300,6 +319,42 @@ function resetView() {
             <input v-model="mirroredView" type="checkbox" />
           </label>
           <p class="text-xs leading-5 text-ui-text-muted">{{ viewModeSummary }}</p>
+
+          <div class="grid gap-3 border-t border-ui-border-subtle pt-3">
+            <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">Plane Side Depth</p>
+            <label class="grid gap-1 text-slate-400">
+              <span class="flex items-center justify-between gap-3">
+                <span>Side A front depth</span>
+                <span class="font-mono text-slate-200">{{ sideADepthWorld.toFixed(2) }}</span>
+              </span>
+              <input
+                v-model.number="sideADepthWorld"
+                aria-label="Plane side A front depth"
+                type="range"
+                min="0"
+                :max="PLANE_SIDE_DEPTH_MAX"
+                step="0.01"
+              />
+            </label>
+            <label class="grid gap-1 text-slate-400">
+              <span class="flex items-center justify-between gap-3">
+                <span>Side B rear depth</span>
+                <span class="font-mono text-slate-200">{{ sideBDepthWorld.toFixed(2) }}</span>
+              </span>
+              <input
+                v-model.number="sideBDepthWorld"
+                aria-label="Plane side B rear depth"
+                type="range"
+                min="0"
+                :max="PLANE_SIDE_DEPTH_MAX"
+                step="0.01"
+              />
+            </label>
+            <p class="text-xs leading-5 text-ui-text-muted">
+              Display-only offsets along each active plane normal. For the wall plane, side A is in
+              front of the character and side B is behind.
+            </p>
+          </div>
 
           <button
             type="button"

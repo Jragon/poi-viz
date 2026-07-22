@@ -5,6 +5,7 @@ import type {
   CircleDriver,
   Driver,
   MultiRigSequence,
+  PendulumDriver,
   PlaneId,
   RadiusProfile,
   RelativeNodePose,
@@ -14,6 +15,7 @@ import type {
 
 import type {
   AuthoredCircleDriverInput,
+  AuthoredDriverInput,
   AuthoredDocumentValidationError,
   AuthoredDocumentValidationResult,
   AuthoredFirstSegment,
@@ -66,7 +68,16 @@ function toRelativeNodePose(
   };
 }
 
-function toDriver(driver: AuthoredCircleDriverInput): CircleDriver {
+function toDriver(driver: AuthoredDriverInput): CircleDriver | PendulumDriver {
+  if (driver.kind === "pendulum") {
+    return {
+      kind: "pendulum",
+      amplitudeRad: toRadians(driver.amplitudeDeg),
+      cyclesPerUnit: driver.cyclesPerUnit,
+      swingPhaseRad: toRadians(driver.swingPhaseDeg)
+    };
+  }
+
   const radiusProfile = toRadiusProfile(driver.radiusProfile);
   return {
     kind: "circle",
@@ -99,19 +110,34 @@ function toAuthoredRadiusProfile(
   };
 }
 
-function assertAuthoredCircleDriver(
+function toAuthoredDriver(
   driver: Driver,
   rigId: string,
   segmentIndex: number,
   node: "hand" | "head"
-): CircleDriver {
-  if (driver.kind !== "circle") {
-    throw new Error(
-      `Rig ${rigId} segment ${segmentIndex} ${node} driver cannot be represented as an authored circle driver`
-    );
+): AuthoredDriverInput {
+  if (driver.kind === "circle") {
+    const radiusProfile = toAuthoredRadiusProfile(driver.radiusProfile);
+    return {
+      kind: "circle",
+      omega: driver.omega,
+      omegaUnit: "radians-per-unit",
+      ...(radiusProfile ? { radiusProfile } : {})
+    };
   }
 
-  return driver;
+  if (driver.kind === "pendulum") {
+    return {
+      kind: "pendulum",
+      amplitudeDeg: toDegrees(driver.amplitudeRad),
+      cyclesPerUnit: driver.cyclesPerUnit,
+      swingPhaseDeg: toDegrees(driver.swingPhaseRad)
+    };
+  }
+
+  throw new Error(
+    `Rig ${rigId} segment ${segmentIndex} ${node} driver cannot be represented as an authored driver`
+  );
 }
 
 function isPlaneId(value: unknown): value is PlaneId {
@@ -272,8 +298,31 @@ function validateFiniteDriverValues(
   segment: AuthoredSegment,
   errors: AuthoredDocumentValidationError[]
 ) {
-  if (!Number.isFinite(segment[node].driver.omega)) {
-    errors.push({ code: "INVALID_OMEGA", trackId, segmentIndex, node });
+  const driver = segment[node].driver;
+  if (driver.kind === "circle") {
+    if (!Number.isFinite(driver.omega)) {
+      errors.push({ code: "INVALID_OMEGA", trackId, segmentIndex, node });
+    }
+    return;
+  }
+
+  if (driver.kind !== "pendulum") {
+    errors.push({ code: "INVALID_DRIVER_KIND", trackId, segmentIndex, node });
+    return;
+  }
+
+  if (
+    !Number.isFinite(driver.amplitudeDeg) ||
+    driver.amplitudeDeg <= 0 ||
+    driver.amplitudeDeg > 90
+  ) {
+    errors.push({ code: "INVALID_PENDULUM_AMPLITUDE", trackId, segmentIndex, node });
+  }
+  if (!Number.isFinite(driver.cyclesPerUnit) || driver.cyclesPerUnit <= 0) {
+    errors.push({ code: "INVALID_PENDULUM_CYCLES", trackId, segmentIndex, node });
+  }
+  if (!Number.isFinite(driver.swingPhaseDeg)) {
+    errors.push({ code: "INVALID_PENDULUM_SWING_PHASE", trackId, segmentIndex, node });
   }
 }
 
@@ -284,7 +333,12 @@ function validateRadiusProfileValues(
   segment: AuthoredSegment,
   errors: AuthoredDocumentValidationError[]
 ) {
-  const radiusProfile = segment[node].driver.radiusProfile;
+  const driver = segment[node].driver;
+  if (driver.kind !== "circle") {
+    return;
+  }
+
+  const radiusProfile = driver.radiusProfile;
   if (!radiusProfile) {
     return;
   }
@@ -330,6 +384,41 @@ function validatePlaneSideValue(
 ) {
   if (segment.planeSide !== undefined && !isPlaneSide(segment.planeSide)) {
     errors.push({ code: "INVALID_PLANE_SIDE", trackId, segmentIndex });
+  }
+}
+
+function validatePendulumPlane(
+  trackId: AuthoredTrackId,
+  segmentIndex: number,
+  segment: AuthoredSegment,
+  errors: AuthoredDocumentValidationError[]
+) {
+  if (resolveAuthoredPlaneId(segment) !== "floor") {
+    return;
+  }
+
+  for (const node of ["hand", "head"] as const) {
+    if (segment[node].driver.kind === "pendulum") {
+      errors.push({ code: "PENDULUM_UNSUPPORTED_PLANE", trackId, segmentIndex, node });
+    }
+  }
+}
+
+function validatePendulumHeadCenter(
+  trackId: AuthoredTrackId,
+  segmentIndex: number,
+  segment: Segment,
+  errors: AuthoredDocumentValidationError[]
+) {
+  if (segment.head.driver.kind !== "pendulum") {
+    return;
+  }
+
+  const centerPhaseAbs =
+    segment.head.startPose.phaseAbs -
+    segment.head.driver.amplitudeRad * Math.sin(segment.head.driver.swingPhaseRad);
+  if (Math.abs(wrapAngleDelta(centerPhaseAbs + PI / 2)) > PLANE_BREAK_EPSILON) {
+    errors.push({ code: "PENDULUM_HEAD_CENTER_NOT_DOWN", trackId, segmentIndex, node: "head" });
   }
 }
 
@@ -404,6 +493,7 @@ export function validateAuthoredDocument(
       validateRadiusProfileValues(trackId, segmentIndex, "head", segment, errors);
       validatePlaneIdValue(trackId, segmentIndex, segment, errors);
       validatePlaneSideValue(trackId, segmentIndex, segment, errors);
+      validatePendulumPlane(trackId, segmentIndex, segment, errors);
 
       if (segment.kind === "first") {
         validateFiniteNodeValues(trackId, segmentIndex, "hand", segment, errors);
@@ -461,6 +551,7 @@ function deriveTrackBoundariesWithValidation(
       handPose: { ...segment.hand.startPose },
       headPose: { ...segment.head.startPose }
     };
+    validatePendulumHeadCenter(trackId, segmentIndex, segment, errors);
     const endPose = evalSegment(segment, segment.durationUnits);
     const startUnit = cursor;
     const endUnit = startUnit + segment.durationUnits;
@@ -537,22 +628,10 @@ export function authoredDocumentFromMultiRigSequence(
     tracks[rig.rigId as AuthoredTrackId] = {
       segments: rig.sequence.segments.map((segment, segmentIndex) => {
         const planeId = segment.planeId ?? DEFAULT_PLANE_ID;
-        const handDriver = assertAuthoredCircleDriver(
-          segment.hand.driver,
-          rig.rigId,
-          segmentIndex,
-          "hand"
-        );
-        const headDriver = assertAuthoredCircleDriver(
-          segment.head.driver,
-          rig.rigId,
-          segmentIndex,
-          "head"
-        );
+        const handDriver = toAuthoredDriver(segment.hand.driver, rig.rigId, segmentIndex, "hand");
+        const headDriver = toAuthoredDriver(segment.head.driver, rig.rigId, segmentIndex, "head");
 
         if (segmentIndex === 0) {
-          const handRadiusProfile = toAuthoredRadiusProfile(handDriver.radiusProfile);
-          const headRadiusProfile = toAuthoredRadiusProfile(headDriver.radiusProfile);
           const firstSegment: AuthoredFirstSegment = {
             kind: "first",
             durationUnits: segment.durationUnits,
@@ -563,24 +642,14 @@ export function authoredDocumentFromMultiRigSequence(
                 phaseDeg: toDegrees(segment.hand.startPose.phaseAbs),
                 radius: segment.hand.startPose.radius
               },
-              driver: {
-                kind: "circle",
-                omega: handDriver.omega,
-                omegaUnit: "radians-per-unit",
-                ...(handRadiusProfile ? { radiusProfile: handRadiusProfile } : {})
-              }
+              driver: handDriver
             },
             head: {
               startPose: {
                 phaseDeg: toDegrees(segment.head.startPose.phaseAbs),
                 radius: segment.head.startPose.radius
               },
-              driver: {
-                kind: "circle",
-                omega: headDriver.omega,
-                omegaUnit: "radians-per-unit",
-                ...(headRadiusProfile ? { radiusProfile: headRadiusProfile } : {})
-              }
+              driver: headDriver
             }
           };
           previousEndPose = evalSegment(segment, segment.durationUnits);
@@ -605,28 +674,16 @@ export function authoredDocumentFromMultiRigSequence(
 
         previousEndPose = evalSegment(segment, segment.durationUnits);
         previousPlaneId = planeId;
-        const handRadiusProfile = toAuthoredRadiusProfile(handDriver.radiusProfile);
-        const headRadiusProfile = toAuthoredRadiusProfile(headDriver.radiusProfile);
         return {
           kind: "continuation",
           durationUnits: segment.durationUnits,
           planeId,
           ...(segment.planeSide === undefined ? {} : { planeSide: segment.planeSide }),
           hand: {
-            driver: {
-              kind: "circle",
-              omega: handDriver.omega,
-              omegaUnit: "radians-per-unit",
-              ...(handRadiusProfile ? { radiusProfile: handRadiusProfile } : {})
-            }
+            driver: handDriver
           },
           head: {
-            driver: {
-              kind: "circle",
-              omega: headDriver.omega,
-              omegaUnit: "radians-per-unit",
-              ...(headRadiusProfile ? { radiusProfile: headRadiusProfile } : {})
-            }
+            driver: headDriver
           }
         };
       })

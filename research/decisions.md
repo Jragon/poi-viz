@@ -252,3 +252,17 @@ The registry is a small application-wide utility rather than a full-screen brows
   filter because all source kinds are displayable there. Search, keyboard navigation, and
   drag-and-drop remain out of scope.
 - App-level controls are compressed to a pattern-name opener, explicit Save, and Save As actions.
+
+## 2026-07-22: Pendulum Is a Built-In Kinematic Oscillator with Lab-Owned Compositions
+
+Pendulum motion is represented by a serializable deterministic built-in driver rather than a runtime callback or gravity simulation.
+
+- The driver stores `amplitudeRad`, `cyclesPerUnit`, and `swingPhaseRad`, and evaluates `startPhaseAbs + amplitudeRad * (sin(swingPhaseRad + 2π * cyclesPerUnit * tLocal) - sin(swingPhaseRad))` at constant radius.
+- Preparation requires amplitude in `(0, π/2]`, positive finite frequency, a finite oscillator phase and phase range, and a wall or wheel segment plane. Floor-plane pendulums are rejected.
+- A head pendulum must be centred on local down. A hand pendulum may be centred elsewhere because the upper hand arc is required by the simple fixed-midpoint isolated-pendulum composition.
+- The engine driver is kinematic, not a gravity, energy, drag, or forced-oscillator integrator. A complete oscillator cycle contains two apex-to-apex pendulum beats.
+- The wall-plane pendulum lab owns ordinary, extended, simple isolated, same-time, quarter-time, mirrored, and extendulum presets. Same-time, quarter-time, and mirrored use extended pendulums on both poi. Extendulum locks one hand circle to one head oscillator cycle, or two apex-to-apex downswings. These are compositions of existing node drivers, not additional engine laws.
+- Production authoring exposes a per-node circle/pendulum driver selector and the pendulum's amplitude, cycles-per-unit, and swing-phase controls. Pendulum authoring data is explicit and serializable; lab composition presets are not exposed in authoring. Appended and duplicated pendulum segments advance oscillator phase to preserve continuity.
+- Stalls, dead-point plane changes, forcing impulses, point isolations, and radius modulation remain deferred.
+
+Validation: engine tests cover deterministic landmarks, exact segment starts, dead-point behavior, numeric domains, head centre, and plane restrictions. Lab tests prepare every preset on wall, verify the isolated preset's fixed tether midpoint, require extended timing pairs, and assert the extendulum frequency ratio.

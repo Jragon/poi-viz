@@ -4,6 +4,7 @@ import type { PreparedMultiRigSequence } from "@/engine/multirig";
 import type { PreparedSegment } from "@/engine/sequence";
 import type { WorldRigPose } from "@/engine/types";
 import {
+  applyAsymmetricPlaneSideDisplayOffset,
   applyPlaneSideDisplayOffset,
   applyPlaneSideTransitionOffsets,
   computePlaneSideDepthFactor,
@@ -89,6 +90,50 @@ describe("planeSideDisplay", () => {
     expect(front.headPosition).toEqual({ x: 1.5, y: 0, z: 0.2 });
     expect(back.handPosition).toEqual({ x: 1, y: 0, z: -0.2 });
     expect(back.headPosition).toEqual({ x: 1.5, y: 0, z: -0.2 });
+  });
+
+  it("supports independent front and rear depths", () => {
+    const settings = { sideADepthWorld: 0.25, sideBDepthWorld: 0.4, defaultSide: null };
+    const front = applyAsymmetricPlaneSideDisplayOffset(worldPose("a"), settings);
+    const back = applyAsymmetricPlaneSideDisplayOffset(worldPose("b"), settings);
+
+    expect(front.handPosition).toEqual({ x: 1, y: 0, z: 0.25 });
+    expect(front.headPosition).toEqual({ x: 1.5, y: 0, z: 0.25 });
+    expect(back.handPosition).toEqual({ x: 1, y: 0, z: -0.4 });
+    expect(back.headPosition).toEqual({ x: 1.5, y: 0, z: -0.4 });
+  });
+
+  it("uses the active plane normal for asymmetric depths", () => {
+    const pose: WorldRigPose = {
+      handPosition: { x: 0, y: 1, z: 2 },
+      headPosition: { x: 0, y: 1.5, z: 2 },
+      planeId: "floor",
+      planeSide: "b"
+    };
+
+    expect(
+      applyAsymmetricPlaneSideDisplayOffset(pose, {
+        sideADepthWorld: 0.2,
+        sideBDepthWorld: 0.35,
+        defaultSide: null
+      })
+    ).toEqual({
+      ...pose,
+      handPosition: { x: 0, y: 0.65, z: 2 },
+      headPosition: { x: 0, y: 1.15, z: 2 }
+    });
+  });
+
+  it("leaves poses without a side unchanged when no default is configured", () => {
+    const pose = worldPose();
+
+    expect(
+      applyAsymmetricPlaneSideDisplayOffset(pose, {
+        sideADepthWorld: 0.2,
+        sideBDepthWorld: 0.35,
+        defaultSide: null
+      })
+    ).toEqual(pose);
   });
 
   it("projects side-offset world poses through tilted projection", () => {

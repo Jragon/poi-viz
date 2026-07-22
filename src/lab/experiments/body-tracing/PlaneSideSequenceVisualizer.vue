@@ -215,6 +215,10 @@ function getSegmentHandKind(segment: Segment): string {
     return "transfer";
   }
 
+  if (segment.hand.driver.kind === "pendulum") {
+    return "pendulum";
+  }
+
   if (segment.hand.driver.omega === 0) {
     return "circle";
   }

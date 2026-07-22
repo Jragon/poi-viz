@@ -73,6 +73,13 @@ export function evaluateRouterModule(
   const moduleStubs = new Map<string, unknown>([
     ["vue-router", { createRouter, createWebHistory }],
     ...eagerPageModules,
+    [
+      "@/lab/experiments/pendulum/routeMeta",
+      {
+        PENDULUM_LAB_ROUTE: { path: "/lab/pendulum", name: "pendulum-lab" },
+        loadPendulumLabPage: () => Promise.resolve({ default: { name: "PendulumLabPage" } })
+      }
+    ],
     ...additionalStubs
   ]);
 

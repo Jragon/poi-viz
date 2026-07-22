@@ -18,6 +18,44 @@ describe("evalDriver", () => {
     expect(poseA.radius).toEqual(start.radius);
   });
 
+  it("evaluates pendulum landmarks deterministically from the exact start pose", () => {
+    const start: RelativeNodePose = { phaseAbs: -PI / 2, radius: 2 };
+    const driver: Driver = {
+      kind: "pendulum",
+      amplitudeRad: PI / 2,
+      cyclesPerUnit: 1,
+      swingPhaseRad: 0
+    };
+
+    expect(evalDriver(driver, start, { ...context, tLocal: 0 })).toEqual(start);
+    expect(evalDriver(driver, start, { ...context, tLocal: 0.25 }).phaseAbs).toBeCloseTo(0);
+    expect(evalDriver(driver, start, { ...context, tLocal: 0.5 }).phaseAbs).toBeCloseTo(-PI / 2);
+    expect(evalDriver(driver, start, { ...context, tLocal: 0.75 }).phaseAbs).toBeCloseTo(-PI);
+    expect(evalDriver(driver, start, { ...context, tLocal: 1 }).phaseAbs).toBeCloseTo(
+      start.phaseAbs
+    );
+
+    const poseA = evalDriver(driver, start, { ...context, tLocal: 0.125 });
+    const poseB = evalDriver(driver, start, { ...context, tLocal: 0.125 });
+    expect(poseA).toEqual(poseB);
+    expect(poseA.radius).toBe(start.radius);
+  });
+
+  it("starts a pendulum at a dead point without an initial angular jump", () => {
+    const start: RelativeNodePose = { phaseAbs: 0, radius: 1 };
+    const driver: Driver = {
+      kind: "pendulum",
+      amplitudeRad: PI / 2,
+      cyclesPerUnit: 0.5,
+      swingPhaseRad: PI / 2
+    };
+
+    expect(evalDriver(driver, start, { ...context, tLocal: 0 })).toEqual(start);
+    const before = evalDriver(driver, start, { ...context, tLocal: 0.001 });
+    expect(before.phaseAbs).toBeLessThan(start.phaseAbs);
+    expect(Math.abs(before.phaseAbs - start.phaseAbs)).toBeLessThan(0.00001);
+  });
+
   it("interpolates radius profile from the implicit start radius anchor", () => {
     const start: RelativeNodePose = { phaseAbs: 1, radius: 2 };
     const driver: Driver = {

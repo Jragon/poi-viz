@@ -166,6 +166,147 @@ describe("validateSequenceStructure", () => {
     }
   });
 
+  it("accepts pendulum drivers on hand and head in wall and wheel planes", () => {
+    for (const planeId of ["wall", "wheel"] as const) {
+      const driver = {
+        kind: "pendulum" as const,
+        amplitudeRad: Math.PI / 2,
+        cyclesPerUnit: 0.5,
+        swingPhaseRad: 0
+      };
+      expect(
+        validateSequenceStructure({
+          segments: [
+            {
+              ...base,
+              planeId,
+              hand: { ...base.hand, driver },
+              head: { startPose: { phaseAbs: -Math.PI / 2, radius: 2 }, driver }
+            }
+          ]
+        })
+      ).toEqual({ ok: true });
+    }
+  });
+
+  it("rejects pendulum drivers in the floor plane", () => {
+    const driver = {
+      kind: "pendulum" as const,
+      amplitudeRad: Math.PI / 2,
+      cyclesPerUnit: 0.5,
+      swingPhaseRad: 0
+    };
+    const result = validateSequenceStructure({
+      segments: [
+        {
+          ...base,
+          planeId: "floor",
+          hand: { ...base.hand, driver },
+          head: { startPose: { phaseAbs: -Math.PI / 2, radius: 2 }, driver }
+        }
+      ]
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContainEqual({
+        code: "PENDULUM_UNSUPPORTED_PLANE",
+        index: 0,
+        node: "hand"
+      });
+      expect(result.errors).toContainEqual({
+        code: "PENDULUM_UNSUPPORTED_PLANE",
+        index: 0,
+        node: "head"
+      });
+    }
+  });
+
+  it("requires poi-head pendulums to be centred on local down", () => {
+    const result = validateSequenceStructure({
+      segments: [
+        {
+          ...base,
+          head: {
+            startPose: { phaseAbs: 0, radius: 2 },
+            driver: {
+              kind: "pendulum",
+              amplitudeRad: Math.PI / 2,
+              cyclesPerUnit: 0.5,
+              swingPhaseRad: 0
+            }
+          }
+        }
+      ]
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContainEqual({
+        code: "PENDULUM_HEAD_CENTER_NOT_DOWN",
+        index: 0,
+        node: "head"
+      });
+    }
+  });
+
+  it("rejects invalid pendulum parameters without fixing them", () => {
+    const result = validateSequenceStructure({
+      segments: [
+        {
+          ...base,
+          hand: {
+            ...base.hand,
+            driver: {
+              kind: "pendulum",
+              amplitudeRad: 0,
+              cyclesPerUnit: Number.NaN,
+              swingPhaseRad: Number.POSITIVE_INFINITY
+            }
+          },
+          head: {
+            ...base.head,
+            driver: {
+              kind: "pendulum",
+              amplitudeRad: Math.PI,
+              cyclesPerUnit: -1,
+              swingPhaseRad: 0
+            }
+          }
+        }
+      ]
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContainEqual({
+        code: "PENDULUM_AMPLITUDE_OUT_OF_RANGE",
+        index: 0,
+        node: "hand"
+      });
+      expect(result.errors).toContainEqual({
+        code: "NON_FINITE_PENDULUM_CYCLES",
+        index: 0,
+        node: "hand"
+      });
+      expect(result.errors).toContainEqual({
+        code: "NON_FINITE_PENDULUM_SWING_PHASE",
+        index: 0,
+        node: "hand"
+      });
+      expect(result.errors).toContainEqual({
+        code: "PENDULUM_AMPLITUDE_OUT_OF_RANGE",
+        index: 0,
+        node: "head"
+      });
+      expect(result.errors).toContainEqual({
+        code: "NON_POSITIVE_PENDULUM_CYCLES",
+        index: 0,
+        node: "head"
+      });
+    }
+  });
+
   it("validates radius-profile key domains without fixing them", () => {
     const sequence = {
       segments: [

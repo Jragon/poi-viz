@@ -1,7 +1,9 @@
 import { THREE_D_DEBUG_LAB_LINK } from "@/lab/experiments/three-d-debug/routeMeta";
 import { VRM_RIG_LAB_LINK } from "@/lab/experiments/vrm-rig/routeMeta";
+import { PENDULUM_LAB_LINK } from "@/lab/experiments/pendulum/routeMeta";
 
 export const labLinks = [
+  PENDULUM_LAB_LINK,
   {
     label: "Quarter Time",
     to: "/lab/quarter-time-3d"

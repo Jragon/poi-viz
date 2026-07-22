@@ -174,6 +174,9 @@ changed.
   explicit best-effort residuals.
 - Missing required humanoid bones fail visibly rather than being silently ignored.
 - Target-rig, POI-target, axes, grid, and upstream VRM-helper overlays can be toggled independently.
+- The VRM lab exposes display-only asymmetric plane-side depth controls. For the wall plane, side A
+  is offset in front of the character and side B behind, allowing manual calibration for a wide
+  avatar; these controls do not alter engine evaluation or authored plane metadata.
 - Typecheck, lint, unit tests, production build, and browser loading are required for the lab slice.
 
 ## Standing arm IK decision

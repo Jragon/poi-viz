@@ -5,7 +5,10 @@ import type {
   AuthoredCircleDriverInput,
   AuthoredContinuationSegment,
   AuthoredDocumentEntry,
+  AuthoredDriverInput,
+  AuthoredDriverKind,
   AuthoredOmegaUnit,
+  AuthoredPendulumDriverInput,
   AuthoredRadiusProfileInput,
   AuthoredSegment,
   AuthoredSequenceDocument,
@@ -55,6 +58,19 @@ export interface AuthoringEditor {
     segmentIndex: number,
     node: EditableNode,
     omega: number
+  ): void;
+  updateSegmentDriverKind(
+    trackId: AuthoredTrackId,
+    segmentIndex: number,
+    node: EditableNode,
+    kind: AuthoredDriverKind
+  ): void;
+  updateSegmentPendulumField(
+    trackId: AuthoredTrackId,
+    segmentIndex: number,
+    node: EditableNode,
+    field: "amplitudeDeg" | "cyclesPerUnit" | "swingPhaseDeg",
+    value: number
   ): void;
   addSegmentRadiusProfileKey(
     trackId: AuthoredTrackId,
@@ -115,6 +131,30 @@ function toCanonicalCircleDriver(driver: AuthoredCircleDriverInput): AuthoredCir
   };
 }
 
+function cloneAuthoredDriver(driver: AuthoredDriverInput): AuthoredDriverInput {
+  if (driver.kind === "pendulum") {
+    return {
+      kind: "pendulum",
+      amplitudeDeg: driver.amplitudeDeg,
+      cyclesPerUnit: driver.cyclesPerUnit,
+      swingPhaseDeg: driver.swingPhaseDeg
+    };
+  }
+
+  return toCanonicalCircleDriver(driver);
+}
+
+function cloneDriverForContinuation(
+  driver: AuthoredDriverInput,
+  sourceDurationUnits: number
+): AuthoredDriverInput {
+  const cloned = cloneAuthoredDriver(driver);
+  if (cloned.kind === "pendulum") {
+    cloned.swingPhaseDeg += 360 * cloned.cyclesPerUnit * sourceDurationUnits;
+  }
+  return cloned;
+}
+
 function cloneRadiusProfile(
   radiusProfile: AuthoredRadiusProfileInput | undefined
 ): AuthoredRadiusProfileInput | undefined {
@@ -129,11 +169,15 @@ function cloneRadiusProfile(
 }
 
 function ensureRadiusProfile(segment: AuthoredSegment, node: EditableNode) {
-  segment[node].driver.radiusProfile ??= { kind: "time-keyed", keys: [] };
-  return segment[node].driver.radiusProfile;
+  const driver = segment[node].driver;
+  if (driver.kind !== "circle") {
+    return null;
+  }
+  driver.radiusProfile ??= { kind: "time-keyed", keys: [] };
+  return driver.radiusProfile;
 }
 
-function normalizeDocumentOmegaUnits(document: AuthoredSequenceDocument) {
+function normalizeDocumentDrivers(document: AuthoredSequenceDocument) {
   for (const trackId of TRACK_IDS) {
     const track = document.tracks[trackId];
     if (!track) {
@@ -142,10 +186,49 @@ function normalizeDocumentOmegaUnits(document: AuthoredSequenceDocument) {
 
     for (const segment of track.segments) {
       for (const node of NODE_IDS) {
-        segment[node].driver = toCanonicalCircleDriver(segment[node].driver);
+        segment[node].driver = cloneAuthoredDriver(segment[node].driver);
       }
     }
   }
+}
+
+function wrapAngleDelta(angleRad: number): number {
+  return ((((angleRad + PI) % TAU) + TAU) % TAU) - PI;
+}
+
+function angularDistance(a: number, b: number): number {
+  return Math.abs(wrapAngleDelta(a - b));
+}
+
+function getHeadSwingPhaseDeg(
+  startPhaseAbs: number,
+  amplitudeDeg: number,
+  referenceSwingPhaseDeg = 0
+): number | null {
+  const amplitudeRad = (amplitudeDeg * PI) / 180;
+  const deltaFromDown = wrapAngleDelta(startPhaseAbs + PI / 2);
+  if (amplitudeRad <= 0 || Math.abs(deltaFromDown) > amplitudeRad + 1e-9) {
+    return null;
+  }
+
+  const base = Math.asin(Math.max(-1, Math.min(1, deltaFromDown / amplitudeRad)));
+  const alternate = PI - base;
+  const reference = (referenceSwingPhaseDeg * PI) / 180;
+  const selected =
+    angularDistance(base, reference) <= angularDistance(alternate, reference) ? base : alternate;
+  return toPhaseDeg(selected);
+}
+
+function makeDefaultPendulumDriver(
+  node: EditableNode,
+  startPhaseAbs: number
+): AuthoredPendulumDriverInput {
+  return {
+    kind: "pendulum",
+    amplitudeDeg: 90,
+    cyclesPerUnit: 0.5,
+    swingPhaseDeg: node === "head" ? (getHeadSwingPhaseDeg(startPhaseAbs, 90) ?? 0) : 0
+  };
 }
 
 function formatCompileErrors(result: CompileAuthoredDocumentResult): string | null {
@@ -169,10 +252,11 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
 
     const nextDocument = cloneDocument(entry.document);
     const nextSelectedSegment = mutate(nextDocument);
-    normalizeDocumentOmegaUnits(nextDocument);
+    normalizeDocumentDrivers(nextDocument);
 
     const validation = validateAuthoredDocument(nextDocument);
     if (!validation.ok) {
+      deps.compileErrorMessage.value = formatCompileErrors(validation);
       return;
     }
 
@@ -220,10 +304,10 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
         planeId: source.planeId ?? DEFAULT_PLANE_ID,
         planeSide: source.planeSide ?? DEFAULT_PLANE_SIDE,
         hand: {
-          driver: toCanonicalCircleDriver(source.hand.driver)
+          driver: cloneDriverForContinuation(source.hand.driver, source.durationUnits)
         },
         head: {
-          driver: toCanonicalCircleDriver(source.head.driver)
+          driver: cloneDriverForContinuation(source.head.driver, source.durationUnits)
         }
       };
 
@@ -248,10 +332,10 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
         planeId: source.planeId ?? DEFAULT_PLANE_ID,
         planeSide: source.planeSide ?? DEFAULT_PLANE_SIDE,
         hand: {
-          driver: toCanonicalCircleDriver(source.hand.driver)
+          driver: cloneDriverForContinuation(source.hand.driver, source.durationUnits)
         },
         head: {
-          driver: toCanonicalCircleDriver(source.head.driver)
+          driver: cloneDriverForContinuation(source.head.driver, source.durationUnits)
         }
       };
       track.segments.splice(segmentIndex + 1, 0, duplicate);
@@ -302,14 +386,14 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
                 phaseDeg: toPhaseDeg(promotedStartPose.handPose.phaseAbs),
                 radius: promotedStartPose.handPose.radius
               },
-              driver: toCanonicalCircleDriver(nextSegment.hand.driver)
+              driver: cloneAuthoredDriver(nextSegment.hand.driver)
             },
             head: {
               startPose: {
                 phaseDeg: toPhaseDeg(promotedStartPose.headPose.phaseAbs),
                 radius: promotedStartPose.headPose.radius
               },
-              driver: toCanonicalCircleDriver(nextSegment.head.driver)
+              driver: cloneAuthoredDriver(nextSegment.head.driver)
             }
           };
         }
@@ -358,9 +442,72 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
   ) {
     commitDocumentChange((nextDocument) => {
       const segment = nextDocument.tracks[trackId]?.segments[segmentIndex];
-      if (segment) {
+      if (segment?.[node].driver.kind === "circle") {
         segment[node].driver.omega = omega;
         segment[node].driver.omegaUnit = "radians-per-unit";
+      }
+      return { trackId, segmentIndex };
+    });
+  }
+
+  function updateSegmentDriverKind(
+    trackId: AuthoredTrackId,
+    segmentIndex: number,
+    node: EditableNode,
+    kind: AuthoredDriverKind
+  ) {
+    const startPose =
+      deps.lastValidCompiled.value.boundariesByTrack[trackId]?.[segmentIndex]?.startPose;
+    commitDocumentChange((nextDocument) => {
+      const segment = nextDocument.tracks[trackId]?.segments[segmentIndex];
+      if (!segment || segment[node].driver.kind === kind || !startPose) {
+        return { trackId, segmentIndex };
+      }
+
+      if (kind === "pendulum") {
+        const phaseAbs =
+          node === "hand" ? startPose.handPose.phaseAbs : startPose.headPose.phaseAbs;
+        segment[node].driver = makeDefaultPendulumDriver(node, phaseAbs);
+      } else {
+        segment[node].driver = {
+          kind: "circle",
+          omega: 0,
+          omegaUnit: "radians-per-unit"
+        };
+      }
+      return { trackId, segmentIndex };
+    });
+  }
+
+  function updateSegmentPendulumField(
+    trackId: AuthoredTrackId,
+    segmentIndex: number,
+    node: EditableNode,
+    field: "amplitudeDeg" | "cyclesPerUnit" | "swingPhaseDeg",
+    value: number
+  ) {
+    const startPose =
+      deps.lastValidCompiled.value.boundariesByTrack[trackId]?.[segmentIndex]?.startPose;
+    commitDocumentChange((nextDocument) => {
+      const segment = nextDocument.tracks[trackId]?.segments[segmentIndex];
+      const driver = segment?.[node].driver;
+      if (!segment || driver?.kind !== "pendulum") {
+        return { trackId, segmentIndex };
+      }
+
+      driver[field] = value;
+      if (node === "head" && segment.kind === "first") {
+        segment.head.startPose.phaseDeg =
+          -90 + driver.amplitudeDeg * Math.sin((driver.swingPhaseDeg * PI) / 180);
+      } else if (node === "head" && field === "amplitudeDeg" && startPose) {
+        const nextSwingPhaseDeg = getHeadSwingPhaseDeg(
+          startPose.headPose.phaseAbs,
+          driver.amplitudeDeg,
+          driver.swingPhaseDeg
+        );
+        if (nextSwingPhaseDeg !== null) {
+          driver.swingPhaseDeg = nextSwingPhaseDeg;
+        }
       }
       return { trackId, segmentIndex };
     });
@@ -376,8 +523,8 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
       const segment = nextDocument.tracks[trackId]?.segments[segmentIndex];
       if (segment) {
         const radiusProfile = ensureRadiusProfile(segment, node);
-        radiusProfile.keys.push({ t: key.t, radius: key.radius });
-        radiusProfile.keys.sort((a, b) => a.t - b.t);
+        radiusProfile?.keys.push({ t: key.t, radius: key.radius });
+        radiusProfile?.keys.sort((a, b) => a.t - b.t);
       }
       return { trackId, segmentIndex };
     });
@@ -393,7 +540,8 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
   ) {
     commitDocumentChange((nextDocument) => {
       const segment = nextDocument.tracks[trackId]?.segments[segmentIndex];
-      const radiusProfile = segment?.[node].driver.radiusProfile;
+      const driver = segment?.[node].driver;
+      const radiusProfile = driver?.kind === "circle" ? driver.radiusProfile : undefined;
       const key = radiusProfile?.keys[keyIndex];
       if (key) {
         key[field] = value;
@@ -411,11 +559,11 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
   ) {
     commitDocumentChange((nextDocument) => {
       const segment = nextDocument.tracks[trackId]?.segments[segmentIndex];
-      const radiusProfile = segment?.[node].driver.radiusProfile;
-      if (radiusProfile) {
-        radiusProfile.keys.splice(keyIndex, 1);
-        if (radiusProfile.keys.length === 0) {
-          delete segment[node].driver.radiusProfile;
+      const driver = segment?.[node].driver;
+      if (driver?.kind === "circle" && driver.radiusProfile) {
+        driver.radiusProfile.keys.splice(keyIndex, 1);
+        if (driver.radiusProfile.keys.length === 0) {
+          delete driver.radiusProfile;
         }
       }
       return { trackId, segmentIndex };
@@ -475,6 +623,8 @@ export function useAuthoringEditor(deps: AuthoringEditorDeps): AuthoringEditor {
     updateSegmentDuration,
     updateSegmentStartPose,
     updateSegmentOmega,
+    updateSegmentDriverKind,
+    updateSegmentPendulumField,
     addSegmentRadiusProfileKey,
     updateSegmentRadiusProfileKey,
     deleteSegmentRadiusProfileKey,

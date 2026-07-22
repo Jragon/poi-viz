@@ -6,6 +6,7 @@ import type {
   Driver,
   HandSegmentNodeMotion,
   HeadSegmentNodeMotion,
+  PendulumDriver,
   PlaneId,
   PlaneSide,
   RadiusProfile,
@@ -37,6 +38,14 @@ export type SequenceValidationErrorCode =
   | "NEGATIVE_RADIUS"
   | "NON_FINITE_OMEGA"
   | "CIRCLE_PHASE_RANGE_OVERFLOW"
+  | "NON_FINITE_PENDULUM_AMPLITUDE"
+  | "PENDULUM_AMPLITUDE_OUT_OF_RANGE"
+  | "NON_FINITE_PENDULUM_CYCLES"
+  | "NON_POSITIVE_PENDULUM_CYCLES"
+  | "NON_FINITE_PENDULUM_SWING_PHASE"
+  | "PENDULUM_PHASE_RANGE_OVERFLOW"
+  | "PENDULUM_HEAD_CENTER_NOT_DOWN"
+  | "PENDULUM_UNSUPPORTED_PLANE"
   | "INVALID_RADIUS_PROFILE"
   | "NON_FINITE_PROFILE_TIME"
   | "PROFILE_TIME_OUT_OF_RANGE"
@@ -248,6 +257,72 @@ function decodeDriver(
       };
       return !validOmega || radiusProfile === null ? null : driver;
     }
+    case "pendulum": {
+      const amplitudeRad = value.amplitudeRad;
+      const cyclesPerUnit = value.cyclesPerUnit;
+      const swingPhaseRad = value.swingPhaseRad;
+      let valid = true;
+
+      if (typeof amplitudeRad !== "number" || !Number.isFinite(amplitudeRad)) {
+        errors.push({ code: "NON_FINITE_PENDULUM_AMPLITUDE", index, node });
+        valid = false;
+      } else if (amplitudeRad <= 0 || amplitudeRad > Math.PI / 2) {
+        errors.push({ code: "PENDULUM_AMPLITUDE_OUT_OF_RANGE", index, node });
+        valid = false;
+      }
+
+      if (
+        node === "head" &&
+        startPose !== null &&
+        typeof amplitudeRad === "number" &&
+        Number.isFinite(amplitudeRad) &&
+        typeof swingPhaseRad === "number" &&
+        Number.isFinite(swingPhaseRad)
+      ) {
+        const centerPhaseAbs = startPose.phaseAbs - amplitudeRad * Math.sin(swingPhaseRad);
+        const downPhaseDelta = centerPhaseAbs + Math.PI / 2;
+        const distanceFromDown = Math.abs(
+          Math.atan2(Math.sin(downPhaseDelta), Math.cos(downPhaseDelta))
+        );
+        if (distanceFromDown > 1e-9) {
+          errors.push({ code: "PENDULUM_HEAD_CENTER_NOT_DOWN", index, node });
+          valid = false;
+        }
+      }
+
+      if (typeof cyclesPerUnit !== "number" || !Number.isFinite(cyclesPerUnit)) {
+        errors.push({ code: "NON_FINITE_PENDULUM_CYCLES", index, node });
+        valid = false;
+      } else if (cyclesPerUnit <= 0) {
+        errors.push({ code: "NON_POSITIVE_PENDULUM_CYCLES", index, node });
+        valid = false;
+      }
+
+      if (typeof swingPhaseRad !== "number" || !Number.isFinite(swingPhaseRad)) {
+        errors.push({ code: "NON_FINITE_PENDULUM_SWING_PHASE", index, node });
+        valid = false;
+      }
+
+      if (
+        durationUnits !== null &&
+        typeof cyclesPerUnit === "number" &&
+        Number.isFinite(cyclesPerUnit) &&
+        typeof swingPhaseRad === "number" &&
+        Number.isFinite(swingPhaseRad) &&
+        !Number.isFinite(swingPhaseRad + Math.PI * 2 * cyclesPerUnit * durationUnits)
+      ) {
+        errors.push({ code: "PENDULUM_PHASE_RANGE_OVERFLOW", index, node });
+        valid = false;
+      }
+
+      if (!valid) return null;
+      return {
+        kind: "pendulum",
+        amplitudeRad: amplitudeRad as number,
+        cyclesPerUnit: cyclesPerUnit as number,
+        swingPhaseRad: swingPhaseRad as number
+      } satisfies PendulumDriver;
+    }
     case "point-to-point": {
       if (node === "head") {
         errors.push({ code: "DRIVER_UNSUPPORTED_FOR_NODE", index, node });
@@ -374,6 +449,15 @@ function decodeSequence(input: unknown): DecodeSequenceResult {
 
     const hand = decodeNodeMotion(value.hand, durationUnits, index, "hand", errors);
     const head = decodeNodeMotion(value.head, durationUnits, index, "head", errors);
+
+    if ((planeId ?? DEFAULT_PLANE_ID) === "floor") {
+      if (hand?.driver.kind === "pendulum") {
+        errors.push({ code: "PENDULUM_UNSUPPORTED_PLANE", index, node: "hand" });
+      }
+      if (head?.driver.kind === "pendulum") {
+        errors.push({ code: "PENDULUM_UNSUPPORTED_PLANE", index, node: "head" });
+      }
+    }
 
     if (durationUnits !== null && hand !== null && head !== null) {
       segments.push({

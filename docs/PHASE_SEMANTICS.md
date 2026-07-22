@@ -93,6 +93,23 @@ The convex form avoids the avoidable intermediate overflow of `start + (end - st
 
 Point-to-point `phaseAbs` is the geometric `atan2` of the current local Cartesian point. It is not an unbounded monotonic phase clock, and consumers that require monotonic phase crossing semantics must opt out unless they implement a separate sampled-velocity design.
 
+### Pendulum Driver
+
+The pendulum driver is a deterministic angular oscillator with constant radius. It is deliberately kinematic: amplitude and frequency are authored directly, and the engine does not integrate gravity, mass, energy, drag, or forcing impulses.
+
+For amplitude `A`, cycles per unit `f`, oscillator phase `s`, and local time `t`:
+
+- `phaseAbs = startPhaseAbs + A * (sin(s + 2πft) - sin(s))`
+- `radius = startRadius`
+
+Subtracting `sin(s)` makes the segment's `startPose` exact at `t = 0`. `s = 0` starts at the oscillator centre; `s = π/2` starts at a dead point with zero instantaneous angular velocity. A full oscillator cycle contains two apex-to-apex pendulum beats.
+
+Preparation requires `0 < amplitudeRad <= π/2`, positive finite `cyclesPerUnit`, a finite `swingPhaseRad`, and a finite oscillator argument over the segment. Pendulum drivers are accepted only on wall and wheel planes. A head pendulum's inferred centre, `startPhaseAbs - A * sin(s)`, must be local down (`-π/2`, modulo `2π`). Hand pendulums may use another centre so the same primitive can express the upper hand arc in a simple isolated-pendulum composition.
+
+The current driver does not support asymmetric forcing, changing amplitude, radius profiles, stalls, dead-point plane changes, or point isolation. Those require separate contracts rather than implicit behavior in the oscillator.
+
+Authoring stores pendulum amplitude and swing phase in degrees plus frequency in cycles per unit, then compiles them to the engine's radian fields. The driver selector is per node. First-segment head edits keep the explicit start pose consistent with the local-down centre rule; continuation head drivers must remain compatible with their derived continuity boundary. Appending or duplicating a pendulum advances its stored oscillator phase across the source duration.
+
 ### Runtime Driver
 
 A runtime driver defines its own phase behavior through `evalPose`. Preparation validates the callback's shape but does not run it or inspect its output. Finite phase, continuity, monotonicity, purity, exceptions, and determinism are caller-owned. A consumer must not infer circle semantics from a runtime driver's output, even when its label describes circular motion.
@@ -117,7 +134,7 @@ Visualizer-side trigger features such as the metronome should compare against un
 Use periodic target matching against the unwrapped value rather than wrapping every sample first.
 That preserves direction, supports multiple crossings in one frame interval, and keeps boundary handling explicit.
 
-Non-circle sources are unavailable to the phase metronome because they do not provide the constant `omega` contract used for crossing detection. Therefore point-to-point and runtime nodes cannot be absolute sources. An absolute circle-driven head remains available while the hand is point-to-point or runtime; relative head-minus-hand sources require both nodes to use circle drivers.
+Non-circle sources are unavailable to the phase metronome because they do not provide the constant `omega` contract used for crossing detection. Therefore pendulum, point-to-point, and runtime nodes cannot be absolute sources. An absolute circle-driven head remains available while the hand is pendulum, point-to-point, or runtime; relative head-minus-hand sources require both nodes to use circle drivers.
 
 ## Examples
 

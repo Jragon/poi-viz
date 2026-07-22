@@ -115,6 +115,8 @@ const {
   updateSegmentDuration,
   updateSegmentStartPose,
   updateSegmentOmega,
+  updateSegmentDriverKind,
+  updateSegmentPendulumField,
   addSegmentRadiusProfileKey,
   updateSegmentRadiusProfileKey,
   deleteSegmentRadiusProfileKey,
@@ -300,6 +302,20 @@ onBeforeRouteLeave(() => {
                 @update:omega="
                   (payload) =>
                     updateSegmentOmega(view.trackId, segmentIndex, payload.node, payload.value)
+                "
+                @update:driver-kind="
+                  (payload) =>
+                    updateSegmentDriverKind(view.trackId, segmentIndex, payload.node, payload.kind)
+                "
+                @update:pendulum-field="
+                  (payload) =>
+                    updateSegmentPendulumField(
+                      view.trackId,
+                      segmentIndex,
+                      payload.node,
+                      payload.field,
+                      payload.value
+                    )
                 "
                 @add:radius-profile-key="
                   (payload) =>

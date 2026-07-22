@@ -23,6 +23,16 @@ export interface AuthoredCircleDriverInput {
   radiusProfile?: AuthoredRadiusProfileInput;
 }
 
+export interface AuthoredPendulumDriverInput {
+  kind: "pendulum";
+  amplitudeDeg: number;
+  cyclesPerUnit: number;
+  swingPhaseDeg: number;
+}
+
+export type AuthoredDriverInput = AuthoredCircleDriverInput | AuthoredPendulumDriverInput;
+export type AuthoredDriverKind = AuthoredDriverInput["kind"];
+
 export interface AuthoredRadiusProfileKey {
   t: TimeUnit;
   radius: number;
@@ -40,11 +50,11 @@ export interface AuthoredFirstSegment {
   planeSide?: PlaneSide;
   hand: {
     startPose: AuthoredNodeStartPose;
-    driver: AuthoredCircleDriverInput;
+    driver: AuthoredDriverInput;
   };
   head: {
     startPose: AuthoredNodeStartPose;
-    driver: AuthoredCircleDriverInput;
+    driver: AuthoredDriverInput;
   };
 }
 
@@ -54,10 +64,10 @@ export interface AuthoredContinuationSegment {
   planeId?: PlaneId;
   planeSide?: PlaneSide;
   hand: {
-    driver: AuthoredCircleDriverInput;
+    driver: AuthoredDriverInput;
   };
   head: {
-    driver: AuthoredCircleDriverInput;
+    driver: AuthoredDriverInput;
   };
 }
 
@@ -97,7 +107,13 @@ export type AuthoredDocumentValidationErrorCode =
   | "UNSUPPORTED_PLANE_BREAK"
   | "PLANE_BREAK_INVALID_HAND_ALIGNMENT"
   | "PLANE_BREAK_INVALID_HEAD_ALIGNMENT"
-  | "INVALID_OMEGA";
+  | "INVALID_DRIVER_KIND"
+  | "INVALID_OMEGA"
+  | "INVALID_PENDULUM_AMPLITUDE"
+  | "INVALID_PENDULUM_CYCLES"
+  | "INVALID_PENDULUM_SWING_PHASE"
+  | "PENDULUM_UNSUPPORTED_PLANE"
+  | "PENDULUM_HEAD_CENTER_NOT_DOWN";
 
 export interface AuthoredDocumentValidationError {
   code: AuthoredDocumentValidationErrorCode;

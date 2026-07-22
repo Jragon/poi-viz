@@ -66,6 +66,13 @@ export interface CircleDriver {
   radiusProfile?: RadiusProfile;
 }
 
+export interface PendulumDriver {
+  kind: "pendulum";
+  amplitudeRad: AngleRad;
+  cyclesPerUnit: number;
+  swingPhaseRad: AngleRad;
+}
+
 export interface DriverEvalContext {
   tLocal: TimeUnit;
   durationUnits: TimeUnit;
@@ -82,9 +89,9 @@ export interface RuntimeDriver {
   evalPose: (startPose: RelativeNodePose, context: DriverEvalContext) => RelativeNodePose;
 }
 
-export type HandDriver = CircleDriver | PointToPointDriver | RuntimeDriver;
+export type HandDriver = CircleDriver | PendulumDriver | PointToPointDriver | RuntimeDriver;
 
-export type HeadDriver = CircleDriver | RuntimeDriver;
+export type HeadDriver = CircleDriver | PendulumDriver | RuntimeDriver;
 
 export type Driver = HandDriver;
 

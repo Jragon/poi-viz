@@ -3,6 +3,7 @@ import { ref, watch } from "vue";
 
 import AuthoringNodeFields from "@/authoring/components/AuthoringNodeFields.vue";
 import type {
+  AuthoredDriverKind,
   AuthoredOmegaUnit,
   AuthoredRadiusProfileKey,
   AuthoredSegment,
@@ -39,6 +40,15 @@ const emit = defineEmits<{
     payload: { node: EditableNode; field: "phaseDeg" | "radius"; value: number }
   ): void;
   (event: "update:omega", payload: { node: EditableNode; value: number }): void;
+  (event: "update:driver-kind", payload: { node: EditableNode; kind: AuthoredDriverKind }): void;
+  (
+    event: "update:pendulum-field",
+    payload: {
+      node: EditableNode;
+      field: "amplitudeDeg" | "cyclesPerUnit" | "swingPhaseDeg";
+      value: number;
+    }
+  ): void;
   (
     event: "add:radius-profile-key",
     payload: { node: EditableNode; key: AuthoredRadiusProfileKey }
@@ -112,6 +122,9 @@ function fromRadiansPerUnit(value: number, unit: AuthoredOmegaUnit): number {
 
 function displayOmega(node: EditableNode): number {
   const driver = props.segment[node].driver;
+  if (driver.kind !== "circle") {
+    return 0;
+  }
   const radians = toRadiansPerUnit(driver.omega, driver.omegaUnit);
   return fromRadiansPerUnit(radians, props.omegaUnit);
 }
@@ -127,7 +140,39 @@ function displayStartRadius(node: EditableNode): number {
 }
 
 function radiusProfileKeys(node: EditableNode): readonly AuthoredRadiusProfileKey[] {
-  return props.segment[node].driver.radiusProfile?.keys ?? [];
+  const driver = props.segment[node].driver;
+  return driver.kind === "circle" ? (driver.radiusProfile?.keys ?? []) : [];
+}
+
+function pendulumField(
+  node: EditableNode,
+  field: "amplitudeDeg" | "cyclesPerUnit" | "swingPhaseDeg"
+): number {
+  const driver = props.segment[node].driver;
+  return driver.kind === "pendulum" ? driver[field] : 0;
+}
+
+function canUsePendulum(node: EditableNode): boolean {
+  if (props.boundary.planeId === "floor") {
+    return false;
+  }
+  if (node === "hand") {
+    return true;
+  }
+
+  const deltaFromDown = wrapAngleDelta(props.boundary.startPose.headPose.phaseAbs + PI / 2);
+  return Math.abs(deltaFromDown) <= PI / 2 + 1e-9;
+}
+
+function wrapAngleDelta(angleRad: number): number {
+  const tau = 2 * PI;
+  return ((((angleRad + PI) % tau) + tau) % tau) - PI;
+}
+
+function segmentHasPendulum(): boolean {
+  return (
+    props.segment.hand.driver.kind === "pendulum" || props.segment.head.driver.kind === "pendulum"
+  );
 }
 
 function onUpdateOmega(node: EditableNode, displayValue: number) {
@@ -218,7 +263,12 @@ function onPlaneSideChange(event: Event) {
             @click.stop
             @change="onPlaneChange"
           >
-            <option v-for="plane in PLANE_OPTIONS" :key="plane" :value="plane">
+            <option
+              v-for="plane in PLANE_OPTIONS"
+              :key="plane"
+              :value="plane"
+              :disabled="plane === 'floor' && segmentHasPendulum()"
+            >
               {{ plane }}
             </option>
           </select>
@@ -261,10 +311,15 @@ function onPlaneSideChange(event: Event) {
           v-for="node in ['hand', 'head'] as const"
           :key="node"
           :node="node"
+          :driver-kind="segment[node].driver.kind"
+          :can-use-pendulum="canUsePendulum(node)"
           :is-first-segment="segment.kind === 'first'"
           :phase-deg="segment.kind === 'first' ? segment[node].startPose.phaseDeg : 0"
           :radius="displayStartRadius(node)"
           :omega="displayOmega(node)"
+          :amplitude-deg="pendulumField(node, 'amplitudeDeg')"
+          :cycles-per-unit="pendulumField(node, 'cyclesPerUnit')"
+          :swing-phase-deg="pendulumField(node, 'swingPhaseDeg')"
           :duration-units="segment.durationUnits"
           :radius-profile-keys="radiusProfileKeys(node)"
           @update:phase-deg="
@@ -272,6 +327,8 @@ function onPlaneSideChange(event: Event) {
           "
           @update:radius="(value) => emit('update:start-pose', { node, field: 'radius', value })"
           @update:omega="(value) => onUpdateOmega(node, value)"
+          @update:driver-kind="(kind) => emit('update:driver-kind', { node, kind })"
+          @update:pendulum-field="(payload) => emit('update:pendulum-field', { node, ...payload })"
           @add:radius-profile-key="(key) => emit('add:radius-profile-key', { node, key })"
           @update:radius-profile-key="
             (payload) => emit('update:radius-profile-key', { node, ...payload })

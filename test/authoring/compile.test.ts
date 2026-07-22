@@ -145,9 +145,166 @@ describe("validateAuthoredDocument", () => {
       });
     }
   });
+
+  it("rejects invalid pendulum parameters and floor-plane use", () => {
+    const document: AuthoredSequenceDocument = {
+      name: "Invalid pendulum",
+      description: null,
+      tracks: {
+        left: {
+          segments: [
+            {
+              kind: "first",
+              durationUnits: 1,
+              planeId: "floor",
+              hand: {
+                startPose: { phaseDeg: -90, radius: 1 },
+                driver: {
+                  kind: "pendulum",
+                  amplitudeDeg: 0,
+                  cyclesPerUnit: 0,
+                  swingPhaseDeg: Number.NaN
+                }
+              },
+              head: {
+                startPose: { phaseDeg: -90, radius: 1 },
+                driver: { kind: "circle", omega: 0, omegaUnit: "radians-per-unit" }
+              }
+            }
+          ]
+        }
+      }
+    };
+
+    const result = validateAuthoredDocument(document);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContainEqual({
+        code: "INVALID_PENDULUM_AMPLITUDE",
+        trackId: "left",
+        segmentIndex: 0,
+        node: "hand"
+      });
+      expect(result.errors).toContainEqual({
+        code: "INVALID_PENDULUM_CYCLES",
+        trackId: "left",
+        segmentIndex: 0,
+        node: "hand"
+      });
+      expect(result.errors).toContainEqual({
+        code: "INVALID_PENDULUM_SWING_PHASE",
+        trackId: "left",
+        segmentIndex: 0,
+        node: "hand"
+      });
+      expect(result.errors).toContainEqual({
+        code: "PENDULUM_UNSUPPORTED_PLANE",
+        trackId: "left",
+        segmentIndex: 0,
+        node: "hand"
+      });
+    }
+  });
 });
 
 describe("compileAuthoredDocument", () => {
+  it("compiles explicit authored pendulum drivers for hand and head", () => {
+    const document: AuthoredSequenceDocument = {
+      name: "Pendulum",
+      description: null,
+      tracks: {
+        left: {
+          segments: [
+            {
+              kind: "first",
+              durationUnits: 2,
+              planeId: "wall",
+              hand: {
+                startPose: { phaseDeg: -90, radius: 0.4 },
+                driver: {
+                  kind: "pendulum",
+                  amplitudeDeg: 45,
+                  cyclesPerUnit: 0.5,
+                  swingPhaseDeg: 0
+                }
+              },
+              head: {
+                startPose: { phaseDeg: 0, radius: 0.6 },
+                driver: {
+                  kind: "pendulum",
+                  amplitudeDeg: 90,
+                  cyclesPerUnit: 0.5,
+                  swingPhaseDeg: 90
+                }
+              }
+            }
+          ]
+        }
+      }
+    };
+
+    const result = compileAuthoredDocument(document);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error(JSON.stringify(result.errors));
+
+    const segment = result.sequence.rigs[0].sequence.segments[0];
+    expect(segment.hand.driver).toMatchObject({
+      kind: "pendulum",
+      amplitudeRad: Math.PI / 4,
+      cyclesPerUnit: 0.5,
+      swingPhaseRad: 0
+    });
+    expect(segment.head.driver).toMatchObject({
+      kind: "pendulum",
+      amplitudeRad: Math.PI / 2,
+      cyclesPerUnit: 0.5,
+      swingPhaseRad: Math.PI / 2
+    });
+    expect(prepareMultiRigSequence(result.sequence).ok).toBe(true);
+  });
+
+  it("rejects a head pendulum that is not centred on local down", () => {
+    const document: AuthoredSequenceDocument = {
+      name: "Off-centre pendulum",
+      description: null,
+      tracks: {
+        left: {
+          segments: [
+            {
+              kind: "first",
+              durationUnits: 1,
+              planeId: "wall",
+              hand: {
+                startPose: { phaseDeg: 0, radius: 0 },
+                driver: { kind: "circle", omega: 0, omegaUnit: "radians-per-unit" }
+              },
+              head: {
+                startPose: { phaseDeg: 0, radius: 1 },
+                driver: {
+                  kind: "pendulum",
+                  amplitudeDeg: 45,
+                  cyclesPerUnit: 0.5,
+                  swingPhaseDeg: 0
+                }
+              }
+            }
+          ]
+        }
+      }
+    };
+
+    const result = compileAuthoredDocument(document);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContainEqual({
+        code: "PENDULUM_HEAD_CENTER_NOT_DOWN",
+        trackId: "left",
+        segmentIndex: 0,
+        node: "head"
+      });
+    }
+  });
+
   it("propagates later segment start poses from the previous segment end", () => {
     const document: AuthoredSequenceDocument = {
       name: "Continuity",
@@ -531,6 +688,60 @@ describe("compileAuthoredDocument", () => {
 });
 
 describe("authoredDocumentFromMultiRigSequence", () => {
+  it("round-trips serializable pendulum drivers", () => {
+    const sequence: MultiRigSequence = {
+      rigs: [
+        {
+          rigId: "left",
+          sequence: {
+            segments: [
+              {
+                durationUnits: 1,
+                planeId: "wall",
+                hand: {
+                  startPose: { phaseAbs: -Math.PI / 2, radius: 0.4 },
+                  driver: {
+                    kind: "pendulum",
+                    amplitudeRad: Math.PI / 4,
+                    cyclesPerUnit: 0.5,
+                    swingPhaseRad: 0
+                  }
+                },
+                head: {
+                  startPose: { phaseAbs: -Math.PI / 2, radius: 0.6 },
+                  driver: {
+                    kind: "pendulum",
+                    amplitudeRad: Math.PI / 2,
+                    cyclesPerUnit: 0.5,
+                    swingPhaseRad: 0
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    };
+
+    const document = authoredDocumentFromMultiRigSequence(sequence, {
+      name: "Pendulum round trip",
+      description: null
+    });
+    expect(document.tracks.left?.segments[0].hand.driver).toEqual({
+      kind: "pendulum",
+      amplitudeDeg: 45,
+      cyclesPerUnit: 0.5,
+      swingPhaseDeg: 0
+    });
+    expect(document.tracks.left?.segments[0].head.driver).toEqual({
+      kind: "pendulum",
+      amplitudeDeg: 90,
+      cyclesPerUnit: 0.5,
+      swingPhaseDeg: 0
+    });
+    expect(compileAuthoredDocument(document).ok).toBe(true);
+  });
+
   it("round-trips explicit plane sides and preserves legacy omission", () => {
     const segment = makeStaticSegment();
     const sequence: MultiRigSequence = {
@@ -659,6 +870,6 @@ describe("authoredDocumentFromMultiRigSequence", () => {
         name: "Point-to-point",
         description: null
       })
-    ).toThrow(/cannot be represented as an authored circle driver/);
+    ).toThrow(/cannot be represented as an authored driver/);
   });
 });

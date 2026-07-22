@@ -7,6 +7,8 @@ import type {
   Vec2
 } from "@/engine/types";
 
+const TAU = Math.PI * 2;
+
 const ORIGIN_EPSILON = 1e-12;
 
 function clamp01(value: number): number {
@@ -74,6 +76,16 @@ export function evalDriver(
         phaseAbs: startPose.phaseAbs + driver.omega * context.tLocal,
         radius: evalRadiusProfile(driver.radiusProfile, startPose.radius, context.tLocal)
       };
+    case "pendulum": {
+      const phaseAtStart = Math.sin(driver.swingPhaseRad);
+      const phaseAtTime = Math.sin(
+        driver.swingPhaseRad + TAU * driver.cyclesPerUnit * context.tLocal
+      );
+      return {
+        phaseAbs: startPose.phaseAbs + driver.amplitudeRad * (phaseAtTime - phaseAtStart),
+        radius: startPose.radius
+      };
+    }
     case "point-to-point": {
       const progress = clamp01(context.tLocal / context.durationUnits);
       if (progress <= 0) return startPose;
