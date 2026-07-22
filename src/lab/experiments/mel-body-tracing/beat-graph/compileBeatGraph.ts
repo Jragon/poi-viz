@@ -115,7 +115,8 @@ type CenterMediatedTransferKind =
   | "direct-transfer"
   | "repeated-center-transfer"
   | "cosmo-bounce"
-  | "setup-plus-bounce";
+  | "setup-plus-bounce"
+  | "bounce-plus-setup";
 
 interface CenterMediatedTransferWindow {
   readonly kind: CenterMediatedTransferKind;
@@ -298,6 +299,14 @@ function classifyCenterMediatedTransfer(
     return "setup-plus-bounce";
   }
 
+  if (
+    sideSequence.length === 3 &&
+    sideSequence[0] !== sideSequence[1] &&
+    sideSequence[1] === sideSequence[2]
+  ) {
+    return "bounce-plus-setup";
+  }
+
   return null;
 }
 
@@ -386,6 +395,15 @@ function detectCenterMediatedTransferWindow(
       ) {
         continue;
       }
+      if (
+        kind === "bounce-plus-setup" &&
+        (centerIntervals[0]?.laneMotion !== "same-lane" ||
+          !intervalChangesSide(centerIntervals[0]) ||
+          centerIntervals[1]?.laneMotion !== "same-lane" ||
+          intervalChangesSide(centerIntervals[1]))
+      ) {
+        continue;
+      }
 
       const localOffset = getWindowLocalOffset(intervals, coveredIntervalIndices, intervalIndex);
       if (localOffset === null) continue;
@@ -453,13 +471,15 @@ function makeSetupPlusBouncePathWindow(
   window: CenterMediatedTransferWindow,
   options: PoiBeatCompilerOptions
 ): HandPathWindow | null {
-  if (!deriveRowIsBTB(window.destinationRow) || !window.setupDuration) return null;
+  if (!deriveRowIsBTB(window.destinationRow) || window.setupDuration === undefined) return null;
 
   const setupLaneId = mirrorPoiBeatLane(window.destinationRow.laneId);
   if (!setupLaneId) return null;
 
-  const continuationMidpoint =
-    window.setupDuration + (window.totalDuration - window.setupDuration) / 2;
+  const sideSwitchInterval = window.coveredIntervals[2];
+  if (!sideSwitchInterval || !intervalChangesSide(sideSwitchInterval)) return null;
+
+  const transferStart = window.setupDuration + sideSwitchInterval.durationUnits / 2;
 
   return {
     localOffset: window.localOffset,
@@ -467,7 +487,38 @@ function makeSetupPlusBouncePathWindow(
     keys: [
       { tOffset: 0, point: laneToHandPoint(window.sourceRow.laneId, options) },
       { tOffset: window.setupDuration, point: laneToHandPoint(setupLaneId, options) },
-      { tOffset: continuationMidpoint, point: laneToHandPoint(setupLaneId, options) },
+      { tOffset: transferStart, point: laneToHandPoint(setupLaneId, options) },
+      {
+        tOffset: window.totalDuration,
+        point: laneToHandPoint(window.destinationRow.laneId, options)
+      }
+    ]
+  };
+}
+
+function makeBouncePlusSetupPathWindow(
+  window: CenterMediatedTransferWindow,
+  options: PoiBeatCompilerOptions
+): HandPathWindow | null {
+  if (!deriveRowIsBTB(window.sourceRow)) return null;
+
+  const bounceLaneId = mirrorPoiBeatLane(window.sourceRow.laneId);
+  if (!bounceLaneId) return null;
+
+  const sideSwitchInterval = window.coveredIntervals[1];
+  if (!sideSwitchInterval || !intervalChangesSide(sideSwitchInterval)) return null;
+
+  const transferEnd =
+    window.entryInterval.durationUnits + sideSwitchInterval.durationUnits / 2;
+  const holdEnd = window.entryInterval.durationUnits + sideSwitchInterval.durationUnits;
+
+  return {
+    localOffset: window.localOffset,
+    label: `center bounce setup ${window.sourceRow.laneId} through ${bounceLaneId} to ${window.destinationRow.laneId}`,
+    keys: [
+      { tOffset: 0, point: laneToHandPoint(window.sourceRow.laneId, options) },
+      { tOffset: transferEnd, point: laneToHandPoint(bounceLaneId, options) },
+      { tOffset: holdEnd, point: laneToHandPoint(bounceLaneId, options) },
       {
         tOffset: window.totalDuration,
         point: laneToHandPoint(window.destinationRow.laneId, options)
@@ -515,6 +566,8 @@ function makeCenterMediatedHandPathWindow(
       return makeCosmoBouncePathWindow(window, options);
     case "setup-plus-bounce":
       return makeSetupPlusBouncePathWindow(window, options);
+    case "bounce-plus-setup":
+      return makeBouncePlusSetupPathWindow(window, options);
   }
 }
 

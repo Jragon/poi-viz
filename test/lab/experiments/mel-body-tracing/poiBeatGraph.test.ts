@@ -1132,7 +1132,8 @@ describe("compilePoiBeatGraph", () => {
     const source = handPointAt(prepared, 3.5, "left");
     const setupApproach = handPointAt(prepared, 4, "left");
     const setup = handPointAt(prepared, 4.5, "left");
-    const continuationMidpoint = handPointAt(prepared, 5, "left");
+    const sideSwitchCrosspoint = handPointAt(prepared, 4.75, "left");
+    const exitApproach = handPointAt(prepared, 5, "left");
     const destination = handPointAt(prepared, 5.5, "left");
 
     expect(source.x).toBeCloseTo(-DEFAULT_POI_BEAT_COMPILER_OPTIONS.handHorizontalOffset);
@@ -1141,12 +1142,17 @@ describe("compilePoiBeatGraph", () => {
     expect(setupApproach.y).toBeCloseTo(0);
     expect(setup.x).toBeCloseTo(-DEFAULT_POI_BEAT_COMPILER_OPTIONS.handHorizontalOffset);
     expect(setup.y).toBeCloseTo(-DEFAULT_POI_BEAT_COMPILER_OPTIONS.handVerticalOffset);
-    expect(continuationMidpoint.x).toBeCloseTo(
+    expect(sideSwitchCrosspoint.x).toBeCloseTo(
       -DEFAULT_POI_BEAT_COMPILER_OPTIONS.handHorizontalOffset
     );
-    expect(continuationMidpoint.y).toBeCloseTo(
+    expect(sideSwitchCrosspoint.y).toBeCloseTo(
       -DEFAULT_POI_BEAT_COMPILER_OPTIONS.handVerticalOffset
     );
+    expect(exitApproach.x).toBeGreaterThan(
+      -DEFAULT_POI_BEAT_COMPILER_OPTIONS.handHorizontalOffset
+    );
+    expect(exitApproach.x).toBeLessThan(0);
+    expect(exitApproach.y).toBeCloseTo(-DEFAULT_POI_BEAT_COMPILER_OPTIONS.handVerticalOffset);
     expect(destination.x).toBeCloseTo(DEFAULT_POI_BEAT_COMPILER_OPTIONS.handHorizontalOffset);
     expect(destination.y).toBeCloseTo(-DEFAULT_POI_BEAT_COMPILER_OPTIONS.handVerticalOffset);
   });

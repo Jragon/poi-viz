@@ -15,6 +15,10 @@ interface CosmoCrosspointOracleCase {
   readonly pair: CosmoPositionPair;
   readonly left: readonly string[];
   readonly right: readonly string[];
+  readonly outwards?: {
+    readonly left: readonly string[];
+    readonly right: readonly string[];
+  };
 }
 
 const COSMO_CROSSPOINT_ORACLE: readonly CosmoCrosspointOracleCase[] = [
@@ -97,6 +101,66 @@ const COSMO_CROSSPOINT_ORACLE: readonly CosmoCrosspointOracleCase[] = [
       "6:B→A:right:low:right",
       "7:A→B:left:high:left"
     ]
+  },
+  {
+    name: "vertical high-to-low",
+    pair: { a: "high-native", b: "low-back" },
+    left: [
+      "1:A→B:left:low:left",
+      "2:B→A:right:low:right",
+      "4:A→B:right:low:right",
+      "7:B→A:left:high:left"
+    ],
+    right: [
+      "1:A→B:right:low:right",
+      "2:B→A:left:low:left",
+      "4:A→B:left:low:left",
+      "7:B→A:right:high:right"
+    ],
+    outwards: {
+      left: [
+        "1:A→B:left:high:left",
+        "4:B→A:right:low:right",
+        "6:A→B:right:low:right",
+        "7:B→A:left:low:left"
+      ],
+      right: [
+        "1:A→B:right:high:right",
+        "4:B→A:left:low:left",
+        "6:A→B:left:low:left",
+        "7:B→A:right:low:right"
+      ]
+    }
+  },
+  {
+    name: "vertical low-to-high",
+    pair: { a: "low-native", b: "high-back" },
+    left: [
+      "1:A→B:left:low:left",
+      "4:B→A:right:high:right",
+      "6:A→B:right:high:right",
+      "7:B→A:left:high:left"
+    ],
+    right: [
+      "1:A→B:right:low:right",
+      "4:B→A:left:high:left",
+      "6:A→B:left:high:left",
+      "7:B→A:right:high:right"
+    ],
+    outwards: {
+      left: [
+        "1:A→B:left:high:left",
+        "2:B→A:right:high:right",
+        "4:A→B:right:high:right",
+        "7:B→A:left:low:left"
+      ],
+      right: [
+        "1:A→B:right:high:right",
+        "2:B→A:left:high:left",
+        "4:A→B:left:high:left",
+        "7:B→A:right:low:right"
+      ]
+    }
   }
 ];
 
@@ -126,11 +190,13 @@ function compileHandCase(pair: CosmoPositionPair, flow: Flow, hand: PoiBeatHand)
 describe("single-hand cosmo crosspoint oracle", () => {
   it.each(COSMO_CROSSPOINT_ORACLE)(
     "matches $name for inward and outward flow",
-    ({ pair, left, right }) => {
+    ({ pair, left, right, outwards }) => {
       for (const flow of ["inwards", "outwards"] as const) {
+        const expectedByHand = flow === "outwards" && outwards ? outwards : { left, right };
+
         for (const [hand, expected] of [
-          ["left", left],
-          ["right", right]
+          ["left", expectedByHand.left],
+          ["right", expectedByHand.right]
         ] as const) {
           const result = compileHandCase(pair, flow, hand);
           const track = result.analysis.tracks[0];
