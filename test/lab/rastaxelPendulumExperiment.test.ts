@@ -2,6 +2,7 @@ import { evalPreparedMultiRigSequenceAt, prepareMultiRigSequence } from "@/engin
 import {
   buildRastaxelPendulumExperiment,
   createDefaultRastaxelPendulumExperiment,
+  resolveRastaxelDirection,
   sampleRastaxelPendulumMotion
 } from "@/lab/experiments/pendulum/rastaxelPendulumExperiment";
 import { describe, expect, it } from "vitest";
@@ -38,7 +39,10 @@ describe("Rastaxel pendulum motif", () => {
       for (const rigId of ["left", "right"] as const) {
         const beforePhase = before.poses[rigId]?.pose.headPose.phaseAbs ?? 0;
         const afterPhase = after.poses[rigId]?.pose.headPose.phaseAbs ?? 0;
-        const phaseDelta = Math.atan2(Math.sin(afterPhase - beforePhase), Math.cos(afterPhase - beforePhase));
+        const phaseDelta = Math.atan2(
+          Math.sin(afterPhase - beforePhase),
+          Math.cos(afterPhase - beforePhase)
+        );
         expect(Math.abs(phaseDelta)).toBeLessThan(1e-5);
       }
     }
@@ -76,26 +80,55 @@ describe("Rastaxel pendulum motif", () => {
     );
   });
 
-  it("uses the same global direction for the pendulum and circle", () => {
-    const inward = createDefaultRastaxelPendulumExperiment();
-    const outward = { ...inward, direction: 1 as const };
+  it("maps anatomical flow to handed phase directions", () => {
+    expect(resolveRastaxelDirection("left", "inwards")).toBe(-1);
+    expect(resolveRastaxelDirection("left", "outwards")).toBe(1);
+    expect(resolveRastaxelDirection("right", "inwards")).toBe(1);
+    expect(resolveRastaxelDirection("right", "outwards")).toBe(-1);
+  });
 
-    const inwardBefore = sampleRastaxelPendulumMotion(inward, 1 - 1e-8);
-    const inwardAfter = sampleRastaxelPendulumMotion(inward, 1);
-    const outwardBefore = sampleRastaxelPendulumMotion(outward, 1 - 1e-8);
-    const outwardAfter = sampleRastaxelPendulumMotion(outward, 1);
+  it("keeps each hand's pendulum and circle direction aligned", () => {
+    const config = createDefaultRastaxelPendulumExperiment();
+    const leftBefore = sampleRastaxelPendulumMotion(config, 1 - 1e-8, 0, "left");
+    const leftAfter = sampleRastaxelPendulumMotion(config, 1, 0, "left");
+    const rightBefore = sampleRastaxelPendulumMotion(config, 1 - 1e-8, 0, "right");
+    const rightAfter = sampleRastaxelPendulumMotion(config, 1, 0, "right");
 
-    expect(Math.sign(inwardBefore.angularVelocity)).toBe(-1);
-    expect(Math.sign(inwardAfter.angularVelocity)).toBe(-1);
-    expect(Math.sign(outwardBefore.angularVelocity)).toBe(1);
-    expect(Math.sign(outwardAfter.angularVelocity)).toBe(1);
+    expect(Math.sign(leftBefore.angularVelocity)).toBe(-1);
+    expect(Math.sign(leftAfter.angularVelocity)).toBe(-1);
+    expect(Math.sign(rightBefore.angularVelocity)).toBe(1);
+    expect(Math.sign(rightAfter.angularVelocity)).toBe(1);
+    expect(Math.sign(leftAfter.angularVelocity)).not.toBe(Math.sign(rightAfter.angularVelocity));
+  });
+
+  it.each([
+    ["inwards", "inwards", -1, 1],
+    ["outwards", "outwards", 1, -1],
+    ["inwards", "outwards", -1, -1],
+    ["outwards", "inwards", 1, 1]
+  ] as const)("supports %s left / %s right flow", (leftFlow, rightFlow, leftSign, rightSign) => {
+    const config = {
+      ...createDefaultRastaxelPendulumExperiment(),
+      leftFlow,
+      rightFlow
+    };
+    expect(Math.sign(sampleRastaxelPendulumMotion(config, 1.5, 0, "left").angularVelocity)).toBe(
+      leftSign
+    );
+    expect(Math.sign(sampleRastaxelPendulumMotion(config, 1.5, 0, "right").angularVelocity)).toBe(
+      rightSign
+    );
   });
 
   it("applies right-track offsets in quarter-unit steps", () => {
     const config = createDefaultRastaxelPendulumExperiment();
     const sequence = buildRastaxelPendulumExperiment(config);
-    const leftLabels = sequence.rigs[0]?.sequence.segments.map((segment) => segment.head.driver.kind === "runtime" ? segment.head.driver.label : "");
-    const rightLabels = sequence.rigs[1]?.sequence.segments.map((segment) => segment.head.driver.kind === "runtime" ? segment.head.driver.label : "");
+    const leftLabels = sequence.rigs[0]?.sequence.segments.map((segment) =>
+      segment.head.driver.kind === "runtime" ? segment.head.driver.label : ""
+    );
+    const rightLabels = sequence.rigs[1]?.sequence.segments.map((segment) =>
+      segment.head.driver.kind === "runtime" ? segment.head.driver.label : ""
+    );
     expect(leftLabels).toEqual([
       "rastaxel-pendulum-step-0",
       "rastaxel-pendulum-step-1",
@@ -117,18 +150,26 @@ describe("Rastaxel pendulum motif", () => {
       "rastaxel-pendulum-step-3"
     ]);
 
-    const halfMotif = sampleRastaxelPendulumMotion(config, 0.5);
-    const shifted = sampleRastaxelPendulumMotion(config, 0, 2);
+    const halfMotif = sampleRastaxelPendulumMotion(config, 0.5, 0, "left");
+    const shifted = sampleRastaxelPendulumMotion(config, 0, 2, "left");
     expect(shifted.phaseAbs).toBeCloseTo(halfMotif.phaseAbs, 8);
     expect(shifted.speedInExtensions).toBeCloseTo(halfMotif.speedInExtensions, 8);
 
-    const wrapped = sampleRastaxelPendulumMotion(config, 2, 0);
-    expect(wrapped.phaseAbs).toBeCloseTo(sampleRastaxelPendulumMotion(config, 0).phaseAbs, 8);
+    const wrapped = sampleRastaxelPendulumMotion(config, 2, 0, "left");
+    expect(wrapped.phaseAbs).toBeCloseTo(
+      sampleRastaxelPendulumMotion(config, 0, 0, "left").phaseAbs,
+      8
+    );
   });
 
   it("keeps circle speed normalized to one extension per unit", () => {
     const config = createDefaultRastaxelPendulumExperiment();
-    expect(Math.abs(sampleRastaxelPendulumMotion(config, 1.5).angularVelocity)).toBeCloseTo(TAU, 8);
-    expect(sampleRastaxelPendulumMotion(config, 1.5).speedInExtensions).toBeCloseTo(1, 8);
+    expect(
+      Math.abs(sampleRastaxelPendulumMotion(config, 1.5, 0, "left").angularVelocity)
+    ).toBeCloseTo(TAU, 8);
+    expect(sampleRastaxelPendulumMotion(config, 1.5, 0, "right").speedInExtensions).toBeCloseTo(
+      1,
+      8
+    );
   });
 });

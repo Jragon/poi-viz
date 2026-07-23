@@ -19,10 +19,14 @@ export const RASTAXEL_DURATION_UNITS = 2;
 export const RASTAXEL_STEP_COUNT = 8;
 export const RASTAXEL_STEP_DURATION = RASTAXEL_DURATION_UNITS / RASTAXEL_STEP_COUNT;
 
+export type RastaxelHand = "left" | "right";
+export type RastaxelFlow = "inwards" | "outwards";
+
 export interface RastaxelPendulumExperimentConfig {
   readonly amplitudeRad: number;
-  /** One global phase direction for both pendulum swings and the circle handoff. */
-  readonly direction: MotionDirection;
+  /** Anatomical flow for each hand; each flow resolves to a handed phase direction. */
+  readonly leftFlow: RastaxelFlow;
+  readonly rightFlow: RastaxelFlow;
   readonly curve: PendulumCurveKind;
   readonly rightOffsetSteps: number;
 }
@@ -42,13 +46,21 @@ function wrapMotifTime(value: number): number {
   return ((value % RASTAXEL_DURATION_UNITS) + RASTAXEL_DURATION_UNITS) % RASTAXEL_DURATION_UNITS;
 }
 
-function normalizedConfig(config: RastaxelPendulumExperimentConfig) {
+export function resolveRastaxelDirection(hand: RastaxelHand, flow: RastaxelFlow): MotionDirection {
+  const inwardDirection: MotionDirection = hand === "left" ? -1 : 1;
+  if (flow === "inwards") return inwardDirection;
+  return inwardDirection === 1 ? -1 : 1;
+}
+
+function normalizedConfig(config: RastaxelPendulumExperimentConfig, hand: RastaxelHand) {
+  const flow = hand === "left" ? config.leftFlow : config.rightFlow;
+  const direction = resolveRastaxelDirection(hand, flow);
   return {
     amplitudeRad: config.amplitudeRad,
     circleCyclesPerUnit: 1,
     pendulumCyclesPerUnit: 1,
-    circleDirection: config.direction,
-    pendulumDirection: config.direction,
+    circleDirection: direction,
+    pendulumDirection: direction,
     curve: config.curve
   };
 }
@@ -56,12 +68,17 @@ function normalizedConfig(config: RastaxelPendulumExperimentConfig) {
 export function sampleRastaxelPendulumMotion(
   config: RastaxelPendulumExperimentConfig,
   time: number,
-  offsetSteps = 0
+  offsetSteps = 0,
+  hand: RastaxelHand = "left"
 ): RastaxelMotionSample {
   const motifTime = wrapMotifTime(time + offsetSteps * RASTAXEL_STEP_DURATION);
+  const direction = resolveRastaxelDirection(
+    hand,
+    hand === "left" ? config.leftFlow : config.rightFlow
+  );
 
   if (motifTime < 1) {
-    const sample = sampleCirclePendulumMotion(normalizedConfig(config), motifTime);
+    const sample = sampleCirclePendulumMotion(normalizedConfig(config, hand), motifTime);
     const angularVelocity = sample.pendulumAngularVelocity;
     return {
       time,
@@ -74,7 +91,7 @@ export function sampleRastaxelPendulumMotion(
   }
 
   const circleTime = motifTime - 1;
-  const angularVelocity = config.direction * TAU;
+  const angularVelocity = direction * TAU;
   return {
     time,
     motifTime,
@@ -88,9 +105,10 @@ export function sampleRastaxelPendulumMotion(
 function createRastaxelRuntimeDriver(
   config: RastaxelPendulumExperimentConfig,
   offsetSteps: number,
-  segmentStartTime: number
+  segmentStartTime: number,
+  hand: RastaxelHand
 ): RuntimeDriver {
-  const segmentStart = sampleRastaxelPendulumMotion(config, segmentStartTime, offsetSteps);
+  const segmentStart = sampleRastaxelPendulumMotion(config, segmentStartTime, offsetSteps, hand);
 
   return {
     kind: "runtime",
@@ -99,7 +117,8 @@ function createRastaxelRuntimeDriver(
       const sample = sampleRastaxelPendulumMotion(
         config,
         segmentStartTime + context.tLocal,
-        offsetSteps
+        offsetSteps,
+        hand
       );
       return {
         phaseAbs: startPose.phaseAbs + sample.phaseAbs - segmentStart.phaseAbs,
@@ -112,7 +131,7 @@ function createRastaxelRuntimeDriver(
 export function buildRastaxelPendulumExperiment(
   config: RastaxelPendulumExperimentConfig
 ): MultiRigSequence {
-  const makeRig = (rigId: string, offsetSteps: number) => ({
+  const makeRig = (rigId: RastaxelHand, offsetSteps: number) => ({
     rigId,
     sequence: {
       segments: Array.from({ length: RASTAXEL_STEP_COUNT }, (_, index) => {
@@ -120,7 +139,8 @@ export function buildRastaxelPendulumExperiment(
         const startSample = sampleRastaxelPendulumMotion(
           config,
           segmentStartTime,
-          offsetSteps
+          offsetSteps,
+          rigId
         );
 
         return {
@@ -132,7 +152,7 @@ export function buildRastaxelPendulumExperiment(
           },
           head: {
             startPose: { phaseAbs: startSample.phaseAbs, radius: 1 },
-            driver: createRastaxelRuntimeDriver(config, offsetSteps, segmentStartTime)
+            driver: createRastaxelRuntimeDriver(config, offsetSteps, segmentStartTime, rigId)
           }
         };
       })
@@ -148,7 +168,8 @@ export function createDefaultRastaxelPendulumExperiment(): RastaxelPendulumExper
   const defaults = createDefaultCirclePendulumExperiment();
   return {
     amplitudeRad: defaults.amplitudeRad,
-    direction: defaults.circleDirection,
+    leftFlow: "inwards",
+    rightFlow: "inwards",
     curve: defaults.curve,
     rightOffsetSteps: 4
   };
