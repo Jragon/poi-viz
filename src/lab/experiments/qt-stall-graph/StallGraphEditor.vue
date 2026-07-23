@@ -125,6 +125,13 @@ function deleteBeat(): void {
   if (draft.value) updateDraft(deleteLastStallPatternBeat(draft.value));
 }
 
+function startNewPattern(): void {
+  reset();
+  loadedPatternId.value = null;
+  savedBaseline.value = draft.value ? JSON.stringify(draft.value) : null;
+  copyStatus.value = "";
+}
+
 async function copyCodec(): Promise<void> {
   if (!codec.value) return;
   try {
@@ -172,6 +179,7 @@ onBeforeRouteLeave(() => {
             :current-source="currentSource"
             :current-name="currentName"
             :is-dirty="isDirty"
+            @new="startNewPattern"
             @open="openPattern"
             @saved="
               (entry) => {

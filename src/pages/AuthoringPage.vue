@@ -194,6 +194,24 @@ function loadSelectedPattern() {
   lastValidCompiled.value = nextCompiled;
 }
 
+function startNewPattern() {
+  const nextDocument = createDefaultAuthoringDocument();
+  const nextCompiled = compileAuthoredDocument(nextDocument);
+  if (!nextCompiled.ok) {
+    compileErrorMessage.value = formatAuthoredDocumentErrors(nextCompiled.errors);
+    return;
+  }
+
+  workingPatternId.value = null;
+  workingDocument.value = nextDocument;
+  savedBaseline.value = JSON.stringify(nextDocument);
+  metaDrafts.name = null;
+  metaDrafts.description = null;
+  selectedSegment.value = null;
+  compileErrorMessage.value = null;
+  lastValidCompiled.value = nextCompiled;
+}
+
 watch(registry.selectedPatternId, loadSelectedPattern, { immediate: true });
 
 onBeforeRouteLeave(() => {
@@ -236,7 +254,7 @@ onBeforeRouteLeave(() => {
           </label>
         </section>
 
-        <section class="grid items-start gap-5 2xl:grid-cols-2">
+        <section class="grid items-start gap-5 xl:grid-cols-2">
           <article
             v-for="view in trackViews"
             :key="view.trackId"
@@ -365,6 +383,7 @@ onBeforeRouteLeave(() => {
             :current-source="currentPatternSource"
             :current-name="selectedDocument.name"
             :is-dirty="isDirty"
+            @new="startNewPattern"
             @saved="
               (entry) => {
                 workingDocument.name = entry.name;

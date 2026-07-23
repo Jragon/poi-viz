@@ -199,15 +199,17 @@ function addInitialRadiusProfileKey() {
 
 <template>
   <div
-    class="grid min-w-0 content-start gap-3 rounded-2xl border border-ui-border-subtle bg-ui-surface p-3"
+    class="grid min-w-0 content-start gap-2"
   >
-    <div class="flex items-center justify-between gap-2">
-      <p class="text-xs uppercase tracking-[0.2em] text-ui-text-muted">{{ node }}</p>
-      <div class="flex items-center gap-2">
+    <p class="px-1 text-xs uppercase tracking-[0.2em] text-ui-text-muted">{{ node }}</p>
+    <div
+      class="grid min-w-0 content-start gap-3 rounded-2xl border border-ui-border-subtle bg-ui-surface p-3"
+    >
+      <div class="flex items-center justify-between gap-2">
         <label>
           <span class="sr-only">{{ node }} driver</span>
           <select
-            class="rounded-lg border border-ui-border-strong bg-ui-input px-2 py-1 text-xs text-ui-text transition focus:border-sky-400"
+            class="order-2 rounded-lg border border-ui-border-strong bg-ui-input px-2 py-1 text-xs text-ui-text transition focus:border-sky-400"
             :value="driverKind"
             @click.stop
             @change="onDriverKindChange"
@@ -219,7 +221,7 @@ function addInitialRadiusProfileKey() {
         <button
           v-if="driverKind === 'circle' && !hasRadiusProfileKeys"
           type="button"
-          class="rounded-lg border border-ui-border-strong bg-ui-surface px-2 py-1 text-xs text-ui-text-secondary transition hover:border-sky-400 hover:bg-ui-surface-raised hover:text-ui-text disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted"
+          class="order-1 rounded-lg border border-ui-border-strong bg-ui-surface px-2 py-1 text-xs text-ui-text-secondary transition hover:border-sky-400 hover:bg-ui-surface-raised hover:text-ui-text disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-surface-raised disabled:text-ui-text-muted"
           :disabled="!canAddRadiusProfileKey"
           aria-label="Add radius keys"
           title="Add radius keys"
@@ -228,7 +230,6 @@ function addInitialRadiusProfileKey() {
           +
         </button>
       </div>
-    </div>
 
     <p v-if="driverKind === 'circle' && !canUsePendulum" class="text-xs text-ui-text-muted">
       Pendulum requires wall or wheel; a head must start in the lower half.
@@ -317,14 +318,42 @@ function addInitialRadiusProfileKey() {
           @blur="onSwingPhaseBlur"
         />
       </label>
-      <p class="text-xs leading-5 text-ui-text-muted">
-        Oscillator position: 0° crosses the centre toward increasing angle, 90° is one dead
-        point, 180° crosses back, and 270° is the other dead point.
-      </p>
-      <p v-if="node === 'head'" class="text-xs leading-5 text-ui-text-muted">
-        Head pendulums are centred straight down. Start phase, amplitude, and swing phase must
-        describe that same oscillator position.
-      </p>
+      <div class="group relative flex items-center gap-2 text-xs text-ui-text-muted">
+        <span>Oscillator position</span>
+        <button
+          type="button"
+          class="flex h-5 w-5 items-center justify-center rounded-full border border-ui-border-strong text-[11px] font-semibold text-ui-text-secondary transition hover:border-sky-400 hover:text-ui-text focus-visible:border-sky-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
+          aria-label="Oscillator position help"
+          title="Oscillator position help"
+        >
+          i
+        </button>
+        <span
+          role="tooltip"
+          class="pointer-events-none absolute bottom-full left-0 z-20 mb-2 w-64 rounded-xl border border-ui-border-strong bg-slate-950 px-3 py-2 text-xs leading-5 text-ui-text-secondary opacity-0 shadow-xl transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+        >
+          0° crosses the centre toward increasing angle, 90° is one dead point, 180° crosses back,
+          and 270° is the other dead point.
+        </span>
+      </div>
+      <div v-if="node === 'head'" class="group relative flex items-center gap-2 text-xs text-ui-text-muted">
+        <span>Head pendulum</span>
+        <button
+          type="button"
+          class="flex h-5 w-5 items-center justify-center rounded-full border border-ui-border-strong text-[11px] font-semibold text-ui-text-secondary transition hover:border-sky-400 hover:text-ui-text focus-visible:border-sky-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
+          aria-label="Head pendulum help"
+          title="Head pendulum help"
+        >
+          i
+        </button>
+        <span
+          role="tooltip"
+          class="pointer-events-none absolute bottom-full left-0 z-20 mb-2 w-64 rounded-xl border border-ui-border-strong bg-slate-950 px-3 py-2 text-xs leading-5 text-ui-text-secondary opacity-0 shadow-xl transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+        >
+          Head pendulums are centred straight down. Start phase, amplitude, and swing phase must
+          describe that same oscillator position.
+        </span>
+      </div>
     </template>
 
     <AuthoringRadiusProfileFields
@@ -338,5 +367,6 @@ function addInitialRadiusProfileKey() {
       @update:key="(payload) => emit('update:radius-profile-key', payload)"
       @delete:key="(keyIndex) => emit('delete:radius-profile-key', keyIndex)"
     />
+    </div>
   </div>
 </template>

@@ -268,6 +268,10 @@ Pendulum motion is represented by a serializable deterministic built-in driver r
 
 Validation: engine tests cover deterministic landmarks, exact segment starts, dead-point behavior, numeric domains, head centre, and plane restrictions. Lab tests prepare every preset on wall, verify the isolated preset's fixed tether midpoint, require extended timing pairs, and assert the extendulum frequency ratio.
 
+## 2026-07-23: Pendulum Lab Starts with Normalized Circle-vs-Pendulum Calibration
+
+The first new pendulum experiment compares one fixed-hand circle against one fixed-hand pendulum over a one-unit interval. One unit is defined as one circle or one complete pendulum cycle; at 90° amplitude both paths cover one revolution-equivalent of total angular travel. The experiment exposes circle and pendulum rates, directions, amplitude, gravity as the default working curve, deterministic sine/constant-speed comparison curves, cardinal checkpoints, and sampled angular-speed diagnostics. The gravity reference is intentionally a lab-only runtime driver; it does not change the built-in pendulum contract. Rastaxel motif slicing and time-warped circle matching remain follow-up experiments after this calibration surface is understood.
+
 ## 2026-07-22: Beat-Graph Crosspoints Are Derived Interval Semantics
 
 Beat-graph rows remain the authored source of truth. A plane-side crosspoint is derived by the

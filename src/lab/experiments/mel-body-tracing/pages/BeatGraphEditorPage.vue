@@ -185,6 +185,10 @@ function loadGraph(graphValue: PoiBeatGraphData, patternId: string | null): void
   savedBaseline.value = JSON.stringify(graphValue);
 }
 
+function startNewPattern(): void {
+  loadGraph(createLowCommonCosmoBeatGraph(), null);
+}
+
 function loadSelectedPattern(): void {
   if (route.query.s !== undefined || route.query.lt !== undefined || route.query.rt !== undefined) {
     return;
@@ -281,6 +285,7 @@ onBeforeRouteLeave(() => {
               :current-source="currentSource"
               :current-name="currentName"
               :is-dirty="isDirty"
+              @new="startNewPattern"
               @open="openPattern"
               @saved="
                 (entry) => {

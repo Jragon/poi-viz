@@ -112,6 +112,8 @@ Authoring stores pendulum amplitude and swing phase in degrees plus frequency in
 
 Swing phase is the phase of the oscillator, not the node's spatial angle. At 0° the oscillator crosses its centre toward increasing spatial angle; 90° is one dead point; 180° crosses the centre in the opposite direction; and 270° is the other dead point. For a head pendulum, the centre is local down, so its explicit segment-start angle must satisfy `start = -90° + amplitude × sin(swing phase)` modulo full turns.
 
+The pendulum lab uses a normalized calibration experiment: one time unit is one full circle or one full pendulum cycle. Gravity is the default working curve. At 90° amplitude, both paths cover one revolution-equivalent of total angular travel. Their average absolute angular speeds therefore match, while the pendulum's instantaneous speed is zero at dead points and greater than the circle's baseline speed at the bottom. Sine and constant-speed curves are deterministic lab-only comparison shapes. This is a lab comparison contract, not an engine requirement that circle and pendulum tangent speeds match at segment boundaries.
+
 ### Runtime Driver
 
 A runtime driver defines its own phase behavior through `evalPose`. Preparation validates the callback's shape but does not run it or inspect its output. Finite phase, continuity, monotonicity, purity, exceptions, and determinism are caller-owned. A consumer must not infer circle semantics from a runtime driver's output, even when its label describes circular motion.

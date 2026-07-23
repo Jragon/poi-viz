@@ -28,6 +28,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   open: [entry: PatternEntry];
+  new: [];
   saved: [entry: PatternEntry];
 }>();
 
@@ -221,6 +222,21 @@ function saveAs() {
   }
 }
 
+function startNewPattern() {
+  if (
+    props.isDirty &&
+    typeof window !== "undefined" &&
+    !window.confirm("Discard unsaved changes and start a new pattern?")
+  ) {
+    return;
+  }
+
+  panelOpen.value = false;
+  clearMenu();
+  feedback.value = null;
+  emit("new");
+}
+
 function beginNewFolder(parentId: string | null) {
   clearMenu();
   newFolderParentId.value = parentId;
@@ -335,8 +351,8 @@ function deleteFolder(folder: PatternFolder) {
   <div
     class="min-w-0"
     :class="
-      props.variant === 'panel'
-        ? 'grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center'
+        props.variant === 'panel'
+          ? 'grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto] sm:items-center'
         : 'flex flex-wrap items-center gap-1.5'
     "
   >
@@ -381,6 +397,19 @@ function deleteFolder(folder: PatternFolder) {
       @click="beginSaveAs"
     >
       Save As…
+    </button>
+    <button
+      v-if="props.editorKind"
+      type="button"
+      class="rounded-md text-ui-text-secondary transition hover:bg-slate-800 hover:text-ui-text"
+      :class="
+        props.variant === 'panel'
+          ? 'min-h-11 rounded-xl border border-ui-border-strong bg-ui-surface px-4 py-2.5 text-sm font-medium hover:border-ui-focus hover:bg-ui-surface-raised'
+          : 'px-2 py-1 text-[11px]'
+      "
+      @click="startNewPattern"
+    >
+      New
     </button>
 
     <Teleport to="body">
