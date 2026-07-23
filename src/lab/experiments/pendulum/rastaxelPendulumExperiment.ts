@@ -22,11 +22,20 @@ export const RASTAXEL_STEP_DURATION = RASTAXEL_DURATION_UNITS / RASTAXEL_STEP_CO
 export type RastaxelHand = "left" | "right";
 export type RastaxelFlow = "inwards" | "outwards";
 
+export interface RastaxelHandDriverConfig {
+  readonly radius: number;
+  readonly startPhaseDeg: number;
+  /** Authored circle speed: 1 is one full circle per time unit. */
+  readonly omega: number;
+}
+
 export interface RastaxelPendulumExperimentConfig {
   readonly amplitudeRad: number;
   /** Anatomical flow for each hand; each flow resolves to a handed phase direction. */
   readonly leftFlow: RastaxelFlow;
   readonly rightFlow: RastaxelFlow;
+  readonly leftHandDriver: RastaxelHandDriverConfig;
+  readonly rightHandDriver: RastaxelHandDriverConfig;
   readonly curve: PendulumCurveKind;
   readonly rightOffsetSteps: number;
 }
@@ -42,6 +51,12 @@ export interface RastaxelMotionSample {
   readonly segment: RastaxelMotionSegment;
 }
 
+export interface RastaxelHandMotionSample {
+  readonly phaseAbs: number;
+  readonly radius: number;
+  readonly omegaRadPerUnit: number;
+}
+
 function wrapMotifTime(value: number): number {
   return ((value % RASTAXEL_DURATION_UNITS) + RASTAXEL_DURATION_UNITS) % RASTAXEL_DURATION_UNITS;
 }
@@ -50,6 +65,30 @@ export function resolveRastaxelDirection(hand: RastaxelHand, flow: RastaxelFlow)
   const inwardDirection: MotionDirection = hand === "left" ? -1 : 1;
   if (flow === "inwards") return inwardDirection;
   return inwardDirection === 1 ? -1 : 1;
+}
+
+function handDriverFor(
+  config: RastaxelPendulumExperimentConfig,
+  hand: RastaxelHand
+): RastaxelHandDriverConfig {
+  return hand === "left" ? config.leftHandDriver : config.rightHandDriver;
+}
+
+export function sampleRastaxelHandMotion(
+  config: RastaxelPendulumExperimentConfig,
+  hand: RastaxelHand,
+  time: number,
+  offsetSteps = 0
+): RastaxelHandMotionSample {
+  const driver = handDriverFor(config, hand);
+  const omegaRadPerUnit = driver.omega * TAU;
+  const phaseTime = time + offsetSteps * RASTAXEL_STEP_DURATION;
+
+  return {
+    phaseAbs: (driver.startPhaseDeg * Math.PI) / 180 + omegaRadPerUnit * phaseTime,
+    radius: driver.radius,
+    omegaRadPerUnit
+  };
 }
 
 function normalizedConfig(config: RastaxelPendulumExperimentConfig, hand: RastaxelHand) {
@@ -142,13 +181,14 @@ export function buildRastaxelPendulumExperiment(
           offsetSteps,
           rigId
         );
+        const handSample = sampleRastaxelHandMotion(config, rigId, segmentStartTime, offsetSteps);
 
         return {
           durationUnits: RASTAXEL_STEP_DURATION,
           planeId: "wall" as const,
           hand: {
-            startPose: { phaseAbs: DOWN_PHASE, radius: 0.5 },
-            driver: { kind: "circle" as const, omega: 0 }
+            startPose: { phaseAbs: handSample.phaseAbs, radius: handSample.radius },
+            driver: { kind: "circle" as const, omega: handSample.omegaRadPerUnit }
           },
           head: {
             startPose: { phaseAbs: startSample.phaseAbs, radius: 1 },
@@ -170,6 +210,16 @@ export function createDefaultRastaxelPendulumExperiment(): RastaxelPendulumExper
     amplitudeRad: defaults.amplitudeRad,
     leftFlow: "inwards",
     rightFlow: "inwards",
+    leftHandDriver: {
+      radius: 0.5,
+      startPhaseDeg: -90,
+      omega: 0
+    },
+    rightHandDriver: {
+      radius: 0.5,
+      startPhaseDeg: -90,
+      omega: 0
+    },
     curve: defaults.curve,
     rightOffsetSteps: 4
   };

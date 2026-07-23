@@ -3,6 +3,7 @@ import {
   buildRastaxelPendulumExperiment,
   createDefaultRastaxelPendulumExperiment,
   resolveRastaxelDirection,
+  sampleRastaxelHandMotion,
   sampleRastaxelPendulumMotion
 } from "@/lab/experiments/pendulum/rastaxelPendulumExperiment";
 import { describe, expect, it } from "vitest";
@@ -46,6 +47,59 @@ describe("Rastaxel pendulum motif", () => {
         expect(Math.abs(phaseDelta)).toBeLessThan(1e-5);
       }
     }
+  });
+
+  it("supports independent hand drivers with continuous circle motion", () => {
+    const config = {
+      ...createDefaultRastaxelPendulumExperiment(),
+      leftHandDriver: {
+        radius: 0.7,
+        startPhaseDeg: 15,
+        omega: 1
+      },
+      rightHandDriver: {
+        radius: 0.4,
+        startPhaseDeg: -45,
+        omega: -0.5
+      }
+    };
+    const sequence = buildRastaxelPendulumExperiment(config);
+    const prepared = prepareMultiRigSequence(sequence);
+    if (!prepared.ok) throw new Error("Expected Rastaxel sequence to prepare");
+
+    expect(sequence.rigs[0]?.sequence.segments[0]?.hand).toMatchObject({
+      startPose: { phaseAbs: (15 * Math.PI) / 180, radius: 0.7 },
+      driver: { kind: "circle", omega: TAU }
+    });
+    expect(sequence.rigs[1]?.sequence.segments[0]?.hand).toMatchObject({
+      startPose: { phaseAbs: (-45 * Math.PI) / 180 - TAU / 2, radius: 0.4 },
+      driver: { kind: "circle", omega: -TAU / 2 }
+    });
+
+    for (const boundary of [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75]) {
+      const before = evalPreparedMultiRigSequenceAt(prepared.prepared, boundary - 1e-7);
+      const after = evalPreparedMultiRigSequenceAt(prepared.prepared, boundary);
+      if (!before.ok || !after.ok) throw new Error("Expected hand boundary samples to evaluate");
+
+      for (const rigId of ["left", "right"] as const) {
+        const beforePhase = before.poses[rigId]?.pose.handPose.phaseAbs ?? 0;
+        const afterPhase = after.poses[rigId]?.pose.handPose.phaseAbs ?? 0;
+        const phaseDelta = Math.atan2(
+          Math.sin(afterPhase - beforePhase),
+          Math.cos(afterPhase - beforePhase)
+        );
+        expect(Math.abs(phaseDelta)).toBeLessThan(1e-5);
+      }
+    }
+  });
+
+  it("keeps static hand drivers at their configured phase", () => {
+    const config = createDefaultRastaxelPendulumExperiment();
+    const left = sampleRastaxelHandMotion(config, "left", 1.25, 0);
+    const right = sampleRastaxelHandMotion(config, "right", 1.25, 4);
+
+    expect(left).toEqual({ phaseAbs: -Math.PI / 2, radius: 0.5, omegaRadPerUnit: 0 });
+    expect(right).toEqual({ phaseAbs: -Math.PI / 2, radius: 0.5, omegaRadPerUnit: 0 });
   });
 
   it("uses a pendulum for the first unit and a circle for the second", () => {

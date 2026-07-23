@@ -9,7 +9,6 @@ import {
   RASTAXEL_STEP_COUNT,
   RASTAXEL_STEP_DURATION,
   sampleRastaxelPendulumMotion,
-  resolveRastaxelDirection,
   type RastaxelFlow,
   type RastaxelMotionSegment
 } from "./rastaxelPendulumExperiment";
@@ -27,12 +26,28 @@ const rightOffsetSteps = ref(defaults.rightOffsetSteps);
 const amplitudeDeg = ref((defaults.amplitudeRad * 180) / Math.PI);
 const leftFlow = ref<RastaxelFlow>(defaults.leftFlow);
 const rightFlow = ref<RastaxelFlow>(defaults.rightFlow);
+const leftHandRadius = ref(defaults.leftHandDriver.radius);
+const rightHandRadius = ref(defaults.rightHandDriver.radius);
+const leftHandStartPhaseDeg = ref(defaults.leftHandDriver.startPhaseDeg);
+const rightHandStartPhaseDeg = ref(defaults.rightHandDriver.startPhaseDeg);
+const leftHandOmega = ref(defaults.leftHandDriver.omega);
+const rightHandOmega = ref(defaults.rightHandDriver.omega);
 const tracksCoincident = computed(() => rightOffsetSteps.value === 0);
 
 const config = computed(() => ({
   amplitudeRad: (amplitudeDeg.value * Math.PI) / 180,
   leftFlow: leftFlow.value,
   rightFlow: rightFlow.value,
+  leftHandDriver: {
+    radius: leftHandRadius.value,
+    startPhaseDeg: leftHandStartPhaseDeg.value,
+    omega: leftHandOmega.value
+  },
+  rightHandDriver: {
+    radius: rightHandRadius.value,
+    startPhaseDeg: rightHandStartPhaseDeg.value,
+    omega: rightHandOmega.value
+  },
   curve: defaults.curve,
   rightOffsetSteps: rightOffsetSteps.value
 }));
@@ -215,53 +230,81 @@ function flowButtonClass(current: RastaxelFlow, option: RastaxelFlow): string {
           <input v-model.number="amplitudeDeg" type="range" min="30" max="90" step="1" />
         </label>
 
-        <fieldset class="grid gap-2 text-sm text-slate-300">
-          <legend>Left-hand direction</legend>
-          <p class="text-xs leading-5 text-slate-500">
-            Inward means the circle travels toward the centreline for the left hand.
-          </p>
-          <div class="grid grid-cols-2 gap-2">
-            <button
-              v-for="option in flowOptions"
-              :key="option"
-              type="button"
-              class="rounded-md border px-3 py-2 text-left transition"
-              :class="flowButtonClass(leftFlow, option)"
-              :aria-pressed="leftFlow === option"
-              @click="leftFlow = option"
-            >
-              {{ flowLabel(option) }}
-            </button>
-          </div>
-        </fieldset>
+        <details class="rounded-lg border border-ui-border-subtle bg-ui-input">
+          <summary
+            class="cursor-pointer px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-ui-text-muted transition hover:text-ui-text"
+          >
+            Hand driver controls
+          </summary>
+          <div class="grid gap-4 border-t border-ui-border-subtle p-3">
+            <fieldset class="grid gap-2 text-sm text-slate-300">
+              <legend>Left hand</legend>
+              <label class="grid gap-1">
+                <span class="text-xs text-slate-500">Radius</span>
+                <input v-model.number="leftHandRadius" type="number" min="0" step="0.05" />
+              </label>
+              <label class="grid gap-1">
+                <span class="text-xs text-slate-500">Start phase (degrees)</span>
+                <input v-model.number="leftHandStartPhaseDeg" type="number" step="1" />
+              </label>
+              <label class="grid gap-1">
+                <span class="text-xs text-slate-500">ω (circles/unit)</span>
+                <input v-model.number="leftHandOmega" type="number" step="0.01" />
+              </label>
+            </fieldset>
 
-        <fieldset class="grid gap-2 text-sm text-slate-300">
-          <legend>Right-hand direction</legend>
-          <p class="text-xs leading-5 text-slate-500">
-            Inward means the circle travels toward the centreline for the right hand.
-          </p>
-          <div class="grid grid-cols-2 gap-2">
-            <button
-              v-for="option in flowOptions"
-              :key="option"
-              type="button"
-              class="rounded-md border px-3 py-2 text-left transition"
-              :class="flowButtonClass(rightFlow, option)"
-              :aria-pressed="rightFlow === option"
-              @click="rightFlow = option"
-            >
-              {{ flowLabel(option) }}
-            </button>
+            <fieldset class="grid gap-2 text-sm text-slate-300">
+              <legend>Right hand</legend>
+              <label class="grid gap-1">
+                <span class="text-xs text-slate-500">Radius</span>
+                <input v-model.number="rightHandRadius" type="number" min="0" step="0.05" />
+              </label>
+              <label class="grid gap-1">
+                <span class="text-xs text-slate-500">Start phase (degrees)</span>
+                <input v-model.number="rightHandStartPhaseDeg" type="number" step="1" />
+              </label>
+              <label class="grid gap-1">
+                <span class="text-xs text-slate-500">ω (circles/unit)</span>
+                <input v-model.number="rightHandOmega" type="number" step="0.01" />
+              </label>
+            </fieldset>
           </div>
-        </fieldset>
+        </details>
 
-        <p
-          class="rounded-md border border-ui-border-subtle bg-ui-input px-3 py-2 font-mono text-xs leading-5 text-ui-text-secondary"
-        >
-          Left {{ flowLabel(leftFlow) }} · {{ resolveRastaxelDirection("left", leftFlow) }} / Right
-          {{ flowLabel(rightFlow) }} · {{ resolveRastaxelDirection("right", rightFlow) }}
-          <span class="text-slate-500">(phase direction)</span>
-        </p>
+        <div class="grid gap-2 text-sm text-slate-300">
+          <div class="grid grid-cols-[3.5rem_minmax(0,1fr)] items-center gap-2">
+            <span>Left</span>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                v-for="option in flowOptions"
+                :key="option"
+                type="button"
+                class="rounded-md border px-3 py-2 text-left transition"
+                :class="flowButtonClass(leftFlow, option)"
+                :aria-pressed="leftFlow === option"
+                @click="leftFlow = option"
+              >
+                {{ flowLabel(option) }}
+              </button>
+            </div>
+          </div>
+          <div class="grid grid-cols-[3.5rem_minmax(0,1fr)] items-center gap-2">
+            <span>Right</span>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                v-for="option in flowOptions"
+                :key="option"
+                type="button"
+                class="rounded-md border px-3 py-2 text-left transition"
+                :class="flowButtonClass(rightFlow, option)"
+                :aria-pressed="rightFlow === option"
+                @click="rightFlow = option"
+              >
+                {{ flowLabel(option) }}
+              </button>
+            </div>
+          </div>
+        </div>
 
         <div class="grid gap-2 text-xs leading-5 text-slate-400">
           <p v-if="tracksCoincident">
