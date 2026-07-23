@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import CirclePendulumExperiment from "./CirclePendulumExperiment.vue";
 import PendulumDriverPreview from "./PendulumDriverPreview.vue";
+import RastaxelPendulumExperiment from "./RastaxelPendulumExperiment.vue";
 </script>
 
 <template>
@@ -18,5 +19,7 @@ import PendulumDriverPreview from "./PendulumDriverPreview.vue";
     <PendulumDriverPreview />
 
     <CirclePendulumExperiment />
+
+    <RastaxelPendulumExperiment />
   </main>
 </template>
