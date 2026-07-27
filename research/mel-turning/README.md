@@ -18,7 +18,7 @@ Normative application decisions remain in [`../decisions.md`](../decisions.md).
 | File | Contents |
 | --- | --- |
 | `verified/low-reels-one-hand-and-together-opposite.csv` | One-hand low native, non-native, and back turns, plus together-opposite two-hand turns |
-| `verified/low-reels-split-opposite.csv` | The four verified split-opposite offset transitions for a turn to the left |
+| `verified/low-reels-split-opposite.csv` | The four verified split-opposite chasing-offset transitions for a turn to the left |
 
 ## Notation
 
@@ -32,6 +32,8 @@ Normative application decisions remain in [`../decisions.md`](../decisions.md).
 - `hold`: the poi remains on the same world plane side while the body turns.
 - `cross`: the poi changes world plane side through a crosspoint.
 - `TO`, `SO`, `TS`, `SS`: together/split timing combined with opposite/same direction.
+- `chasing-1`: SO reference row `left C a up / right C a down`.
+- `chasing-2`: SO reference row `left C a up / right R b down`.
 
 `C` is a compact front-plane equivalence class rather than a literal hand coordinate. Performer
 left/right labels remain body-relative; plane sides `a` and `b` remain observer-relative.
