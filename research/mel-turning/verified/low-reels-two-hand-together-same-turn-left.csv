@@ -1,8 +1,8 @@
-TOGETHER-SAME LOW-NATIVE TURN-LEFT CASES — CANDIDATES,,,,
-Status,UNVERIFIED — physically test and correct every bridge.,,,
+TOGETHER-SAME LOW-NATIVE TURN-LEFT CASES — VERIFIED,,,,
+Status,VERIFIED — all four bridges were physically checked.,Interesting that plane side a and plane side b change. Ie if we think about the top of the circle are hands on the same plane or are they on the same plane at the bottom. That’s the sync. ,,
 Assumptions,Low native; both poi clockwise in the observer frame; facing 0 → 180; turn left over one halfbeat; timing never pauses.,,,
 Scope,Reference direction only: the both-counterclockwise / turn-right mirror is not included in this batch.,,,
-Hypothesis,Structural hypothesis: the verified SO chasing bridge matrix also applies to TS because the horizontal midpoint is together.,,,
+Finding,Keeping the same chasing offset preserves the same diagonal A/B circle in world space. The two offsets meet at different top/bottom points relative to the performer; that performer-relative meeting point swaps after the turn while the diagonal remains fixed.,,,
 ,,,,
 Chasing-1 reference,,C a up,C a up,Facing 180 reference: C b up / R a up.
 Chasing-2 reference,,C a up,R b up,Facing 180 reference: C b up / C b up.
@@ -67,4 +67,3 @@ t,facing,left,right,Body edge
 10,180,L a up,R a up,
 11,180,C b down,R a down,
 12,180,C b up,C b up,
-,,,,

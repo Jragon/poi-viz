@@ -1,8 +1,8 @@
-SPLIT-SAME LOW-NATIVE TURN-LEFT CASES — CANDIDATES,,,,
-Status,UNVERIFIED — physically test and correct every bridge.,,,
+SPLIT-SAME LOW-NATIVE TURN-LEFT CASES — VERIFIED,,,,
+Status,VERIFIED — all four bridges were physically checked.,,,
 Assumptions,Low native; both poi clockwise in the observer frame; facing 0 → 180; turn left over one halfbeat; timing never pauses.,,,
 Scope,Reference direction only: the both-counterclockwise / turn-right mirror is not included in this batch.,,,
-Hypothesis,Structural hypothesis: the verified TO unison/counter bridge matrix also applies to SS because the horizontal midpoint is apart.,,,
+Finding,"The C shorthand is laterally flexible within a front wall plane, but it cannot make simultaneous C a / C b positions freely equivalent. In both unison cases the left turn-source must be L b up, not C b up.",,,
 ,,,,
 Unison reference,,C a up,C a down,Facing 180 reference: C b down / C b up.
 Counter reference,,C a up,R b down,Facing 180 reference: C b down / R a up.
@@ -16,7 +16,7 @@ t,facing,left,right,Body edge
 4,0,C a down,C a up,
 5,0,L b up,R b down,
 6,0,L b down,R b up,
-7,0,C b up,C a down,"Turn happens between 7 and 8. Left was prepared onto B during the preceding halfbeat, then holds B; right crosses A→B."
+7,0,L b up,C a down,"Turn happens between 7 and 8. Left was prepared onto B during the preceding halfbeat, then holds B; right crosses A→B. Corrected source: left must be L b up, not C b up; simultaneous C a / C b is not a valid use of the C equivalence."
 8,180,C b down,C b up,
 9,180,C b up,C b down,
 10,180,L a down,R a up,
@@ -31,7 +31,7 @@ t,facing,left,right,Body edge
 4,0,C a down,C a up,
 5,0,L b up,R b down,
 6,0,L b down,R b up,
-7,0,C b up,C a down,"Turn happens between 7 and 8. Left was prepared onto B during the preceding halfbeat, then holds B; right holds A. Open BA configuration."
+7,0,L b up,C a down,"Turn happens between 7 and 8. Left was prepared onto B during the preceding halfbeat, then holds B; right holds A. Open BA configuration. Corrected source: left must be L b up, not C b up; simultaneous C a / C b is not a valid use of the C equivalence."
 8,180,C b down,R a up,
 9,180,C b up,R a down,
 10,180,L a down,C b up,
@@ -46,7 +46,7 @@ t,facing,left,right,Body edge
 4,0,L b down,C a up,
 5,0,C a up,R b down,
 6,0,C a down,R b up,
-7,0,L b up,C a down,Turn happens between 7 and 8. Left crosses B→A; right holds A.
+7,0,L b up,C a down,"Turn happens between 7 and 8. Left crosses B→A; right holds A. Corrected source: left must be L b up, not C b up; simultaneous C a / C b is not a valid use of the C equivalence."
 8,180,L a down,R a up,
 9,180,L a up,R a down,
 10,180,C b down,C b up,
@@ -61,10 +61,9 @@ t,facing,left,right,Body edge
 4,0,L b down,C a up,
 5,0,C a up,R b down,
 6,0,C a down,R b up,
-7,0,L b up,C a down,Turn happens between 7 and 8. Left holds B; right holds A. Open BA configuration.
+7,0,L b up,C a down,Turn happens between 7 and 8. Left holds B; right holds A. Open BA configuration. Physically verified; this felt like the most natural SS turn.
 8,180,C b down,R a up,
 9,180,C b up,R a down,
 10,180,L a down,C b up,
 11,180,L a up,C b down,
 12,180,C b down,R a up,
-,,,,

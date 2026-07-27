@@ -19,23 +19,36 @@ Normative application decisions remain in [`../decisions.md`](../decisions.md).
 | --- | --- |
 | `verified/low-reels-one-hand-and-together-opposite.csv` | One-hand low native, non-native, and back turns, plus together-opposite two-hand turns |
 | `verified/low-reels-split-opposite.csv` | The four verified split-opposite chasing-offset transitions for a turn to the left |
+| `verified/low-reels-two-hand-together-same-turn-left.csv` | Four verified low-native TS chasing-offset transitions; both poi clockwise; turn left |
+| `verified/low-reels-two-hand-split-same-turn-left.csv` | Four verified low-native SS unison/counter transitions; both poi clockwise; turn left |
 
 ## Candidate sets
 
 | File | Contents |
 | --- | --- |
-| `candidates/low-reels-two-hand-together-same-turn-left.csv` | Four low-native TS chasing-offset transitions; both poi clockwise; turn left |
-| `candidates/low-reels-two-hand-split-same-turn-left.csv` | Four low-native SS unison/counter transitions; both poi clockwise; turn left |
 | `candidates/low-reels-two-hand-together-opposite-non-native-turn-left.csv` | Four low-non-native TO unison/counter transitions; inward to outward |
 | `candidates/low-reels-two-hand-split-opposite-non-native-turn-left.csv` | Four low-non-native SO chasing-offset transitions; inward to outward |
 
-The same-direction files deliberately cover one reference direction only. Both poi move clockwise in
-the observer frame while the performer turns left. The both-counterclockwise / turn-right mirror
-remains a separate verification batch.
+The verified same-direction files cover one reference direction only. Both poi move clockwise in the
+observer frame while the performer turns left. Same-direction turns to the right are not assumed to
+be symmetric and remain a separate derivation and verification batch.
 
 The non-native files test a topology hypothesis rather than assuming native hand roles survive
 unchanged. Because the hands occupy opposite body sides, their proposed turn-left setup is `A/B` by
 hand columns: the left hand is on body-right `A`, while the right hand is on body-left `B`.
+
+## Verified findings
+
+- All four proposed TS bridge combinations were physically valid. Keeping the same chasing offset
+  preserves the same diagonal `A/B` circle in world space; what changes after the turn is which
+  top/bottom meeting point is perceived as being in front of the performer.
+- The SS bridge matrix was valid, but both unison-source preparations exposed a limit in the `C`
+  shorthand. `C` is laterally flexible within a chosen front wall plane; it cannot make simultaneous
+  `C a` and `C b` positions freely equivalent. The corrected B-side source is `L b up`, not
+  `C b up`.
+- The verified left-turn results do not establish the clockwise turn-right matrix. With both poi
+  travelling in the same direction, reversing only the body turn changes both hands' relationship
+  to the poi, so this needs its own candidate set.
 
 ## Notation
 
@@ -76,6 +89,8 @@ left/right labels remain body-relative; plane sides `a` and `b` remain observer-
 
 Suggested future names:
 
+- `candidates/low-reels-two-hand-together-same-turn-right.csv`
+- `candidates/low-reels-two-hand-split-same-turn-right.csv`
 - `candidates/low-back-two-hand-turn-left.csv`
 - `candidates/weave-two-hand-turn-left.csv`
 
