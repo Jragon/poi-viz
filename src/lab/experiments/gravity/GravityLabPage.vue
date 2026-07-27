@@ -56,7 +56,9 @@ import MovingHandExperiment from "./MovingHandExperiment.vue";
       <p class="max-w-4xl text-sm leading-6 text-slate-400">
         A constant-speed circle remains a target curve, not a claim about an available actuator. It
         needs signed energy exchange: gravity helps on one half and resists on the other. The moving
-        hand experiment asks how much of that modulation a small pivot motion can provide.
+        hand experiment asks how much of that modulation a small pivot motion can provide. Its
+        ellipse, circle, and line modes are scored over the first complete poi loop so phase can be
+        compared as a timing relationship rather than judged only by eye.
       </p>
     </section>
 

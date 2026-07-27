@@ -3,8 +3,15 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 import GravityCanvas from "./GravityCanvas.vue";
 import GravityComparisonPlot from "./GravityComparisonPlot.vue";
+import GravityPhaseScanPlot from "./GravityPhaseScanPlot.vue";
 import MathEquation from "./MathEquation.vue";
-import { createCircularHandPath } from "./physics/handPaths";
+import { analyzeFirstLoop, type LoopDiagnostics } from "./physics/diagnostics";
+import {
+  createCircularHandPath,
+  createEllipseHandPath,
+  createLineHandPath,
+  type LineHandPathAxis
+} from "./physics/handPaths";
 import {
   createDefaultLaunchConfig,
   interpolateSample,
@@ -16,7 +23,11 @@ const defaults = createDefaultLaunchConfig();
 const launchEnergy = ref(2.65);
 const gravity = ref(defaults.gravity);
 const tetherLength = ref(defaults.length);
-const handAmplitude = ref(0.08);
+type HandPathShape = "circle" | "ellipse" | "line";
+const pathShape = ref<HandPathShape>("ellipse");
+const handAmplitudeX = ref(0.08);
+const handAmplitudeY = ref(0.05);
+const lineAxis = ref<LineHandPathAxis>("horizontal");
 const handRate = ref(2.2);
 const handPhaseDeg = ref(0);
 const handDirection = ref<1 | -1>(1);
@@ -33,11 +44,36 @@ const initialAngularVelocity = computed(() =>
 const handAngularVelocity = computed(() =>
   handDirection.value * handRate.value * Math.sqrt(gravity.value / tetherLength.value)
 );
-const handPath = computed(() => createCircularHandPath({
-  amplitude: handAmplitude.value * tetherLength.value,
-  angularVelocity: handAngularVelocity.value,
-  phase: handPhaseDeg.value * Math.PI / 180
-}));
+
+function createConfiguredHandPath(phaseDeg: number) {
+  const phase = phaseDeg * Math.PI / 180;
+  const angularVelocity = handAngularVelocity.value;
+  const amplitudeX = handAmplitudeX.value * tetherLength.value;
+  const amplitudeY = handAmplitudeY.value * tetherLength.value;
+  if (pathShape.value === "line") {
+    return createLineHandPath({
+      amplitude: handAmplitudeX.value * tetherLength.value,
+      angularVelocity,
+      phase,
+      axis: lineAxis.value
+    });
+  }
+  if (pathShape.value === "circle") {
+    return createCircularHandPath({
+      amplitude: amplitudeX,
+      angularVelocity,
+      phase
+    });
+  }
+  return createEllipseHandPath({
+    radiusX: amplitudeX,
+    radiusY: amplitudeY,
+    angularVelocity,
+    phase
+  });
+}
+
+const handPath = computed(() => createConfiguredHandPath(handPhaseDeg.value));
 
 const baseConfig = computed<IdealTetherConfig>(() => ({
   ...defaults,
@@ -57,6 +93,22 @@ const fixedSamples = computed(() => fixedTrace.value?.samples ?? []);
 const movingSamples = computed(() => movingTrace.value?.samples ?? []);
 const fixedSample = computed(() => fixedTrace.value ? interpolateSample(fixedTrace.value.samples, currentTime.value) : null);
 const movingSample = computed(() => movingTrace.value ? interpolateSample(movingTrace.value.samples, currentTime.value) : null);
+const fixedLoop = computed<LoopDiagnostics | null>(() => fixedTrace.value ? analyzeFirstLoop(fixedTrace.value) : null);
+const movingLoop = computed<LoopDiagnostics | null>(() => movingTrace.value ? analyzeFirstLoop(movingTrace.value) : null);
+const phaseScan = computed(() => Array.from({ length: 25 }, (_, index) => {
+  const phaseDeg = index * 15;
+  const result = simulateIdealTether({
+    ...baseConfig.value,
+    handPath: createConfiguredHandPath(phaseDeg)
+  });
+  if (!result.ok) return { phaseDeg, speedRipple: null, minimumTension: null };
+  const loop = analyzeFirstLoop(result.trace);
+  return {
+    phaseDeg,
+    speedRipple: loop.complete ? loop.speedRipple : null,
+    minimumTension: loop.complete ? loop.minimumTension : null
+  };
+}));
 const simulationError = computed(() => {
   if (!fixedResult.value.ok) return fixedResult.value.error;
   if (!movingResult.value.ok) return movingResult.value.error;
@@ -92,7 +144,7 @@ function format(value: number, digits = 2): string {
   return Number.isFinite(value) ? value.toFixed(digits) : "—";
 }
 
-watch([launchEnergy, gravity, tetherLength, handAmplitude, handRate, handPhaseDeg, handDirection, duration], resetPlayback);
+watch([launchEnergy, gravity, tetherLength, pathShape, handAmplitudeX, handAmplitudeY, lineAxis, handRate, handPhaseDeg, handDirection, duration], resetPlayback);
 
 onMounted(() => {
   frameHandle = requestAnimationFrame(tick);
@@ -108,7 +160,7 @@ onBeforeUnmount(() => {
     <header class="grid gap-2">
       <p class="text-xs font-medium uppercase tracking-[0.2em] text-amber-300">Experiment 2</p>
       <div class="flex flex-wrap items-baseline justify-between gap-3">
-        <h2 class="text-2xl font-semibold text-slate-100">Can a small hand circle flatten the speed curve?</h2>
+        <h2 class="text-2xl font-semibold text-slate-100">Can a small hand path flatten the speed curve?</h2>
         <p class="font-mono text-xs text-slate-400">fixed hand versus moving pivot</p>
       </div>
       <p class="max-w-4xl text-sm leading-6 text-slate-400">
@@ -134,7 +186,7 @@ onBeforeUnmount(() => {
         <div class="grid min-w-0 gap-3 overflow-hidden rounded-lg border border-ui-border-subtle bg-slate-950">
           <div class="px-4 pt-4">
             <p class="text-xs uppercase tracking-[0.14em] text-slate-500">Moving hand</p>
-            <p class="font-mono text-sm text-slate-300">small circular pivot</p>
+            <p class="font-mono text-sm text-slate-300">prescribed moving pivot</p>
           </div>
           <GravityCanvas :sample="movingSample" :trail="movingSamples.filter((sample) => sample.time <= currentTime)" :tether-length="tetherLength" aria-label="Moving-hand gravity experiment" />
         </div>
@@ -157,10 +209,29 @@ onBeforeUnmount(() => {
           </label>
         </fieldset>
         <fieldset class="grid gap-3">
-          <legend class="text-sm font-semibold text-slate-100">Hand circle</legend>
+          <legend class="text-sm font-semibold text-slate-100">Hand path</legend>
           <label class="grid gap-1 text-sm text-slate-300">
-            <span class="flex justify-between gap-3"><span>Amplitude / L</span><strong>{{ handAmplitude.toFixed(2) }}</strong></span>
-            <input v-model.number="handAmplitude" type="range" min="0" max="0.3" step="0.005" class="accent-emerald-400" />
+            <span class="flex justify-between gap-3"><span>Shape</span><strong>{{ pathShape }}</strong></span>
+            <select v-model="pathShape" class="rounded-md border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text">
+              <option value="ellipse">ellipse</option>
+              <option value="circle">circle</option>
+              <option value="line">line</option>
+            </select>
+          </label>
+          <label class="grid gap-1 text-sm text-slate-300">
+            <span class="flex justify-between gap-3"><span>{{ pathShape === "line" ? "Amplitude / L" : "Horizontal radius / L" }}</span><strong>{{ handAmplitudeX.toFixed(2) }}</strong></span>
+            <input v-model.number="handAmplitudeX" type="range" min="0" max="0.3" step="0.005" class="accent-emerald-400" />
+          </label>
+          <label v-if="pathShape === 'ellipse'" class="grid gap-1 text-sm text-slate-300">
+            <span class="flex justify-between gap-3"><span>Vertical radius / L</span><strong>{{ handAmplitudeY.toFixed(2) }}</strong></span>
+            <input v-model.number="handAmplitudeY" type="range" min="0" max="0.3" step="0.005" class="accent-emerald-400" />
+          </label>
+          <label v-if="pathShape === 'line'" class="grid gap-1 text-sm text-slate-300">
+            <span class="flex justify-between gap-3"><span>Line axis</span><strong>{{ lineAxis }}</strong></span>
+            <select v-model="lineAxis" class="rounded-md border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text">
+              <option value="horizontal">horizontal</option>
+              <option value="vertical">vertical</option>
+            </select>
           </label>
           <label class="grid gap-1 text-sm text-slate-300">
             <span class="flex justify-between gap-3"><span>Hand rate / √(g/L)</span><strong>{{ handRate.toFixed(2) }}</strong></span>
@@ -190,25 +261,29 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="grid gap-3 lg:grid-cols-2">
-        <GravityComparisonPlot :fixed-samples="fixedSamples" :moving-samples="movingSamples" :current-time="currentTime" value="normalizedWorldSpeed" title="World speed / √gL" :min="0" />
-        <GravityComparisonPlot :fixed-samples="fixedSamples" :moving-samples="movingSamples" :current-time="currentTime" value="normalizedRelativeSpeed" title="Hand-relative poi speed / √gL" :min="0" />
-        <GravityComparisonPlot :fixed-samples="fixedSamples" :moving-samples="movingSamples" :current-time="currentTime" value="normalizedTension" title="Tension / mg" />
+        <GravityComparisonPlot :fixed-samples="fixedSamples" :moving-samples="movingSamples" :current-time="currentTime" :markers="movingLoop?.markers ?? []" value="normalizedWorldSpeed" title="World speed / √gL" :min="0" />
+        <GravityComparisonPlot :fixed-samples="fixedSamples" :moving-samples="movingSamples" :current-time="currentTime" :markers="movingLoop?.markers ?? []" value="normalizedRelativeSpeed" title="Hand-relative poi speed / √gL" :min="0" />
+        <GravityComparisonPlot :fixed-samples="fixedSamples" :moving-samples="movingSamples" :current-time="currentTime" :markers="movingLoop?.markers ?? []" value="normalizedTension" title="Tension / mg" />
         <GravityComparisonPlot :fixed-samples="fixedSamples" :moving-samples="movingSamples" :current-time="currentTime" value="normalizedHandPower" title="Hand power / (mgL√(g/L))" :min="-1" :max="1" />
         <GravityComparisonPlot :fixed-samples="fixedSamples" :moving-samples="movingSamples" :current-time="currentTime" value="normalizedRadialHandVelocity" title="Radial hand velocity / √gL" :min="-0.5" :max="0.5" />
-        <GravityComparisonPlot :fixed-samples="fixedSamples" :moving-samples="movingSamples" :current-time="currentTime" value="normalizedEnergy" title="Mechanical energy / mgL" />
+        <GravityComparisonPlot :fixed-samples="fixedSamples" :moving-samples="movingSamples" :current-time="currentTime" :markers="movingLoop?.markers ?? []" value="normalizedEnergy" title="Mechanical energy / mgL" />
       </div>
+
+      <GravityPhaseScanPlot :points="phaseScan" :selected-phase="handPhaseDeg" />
 
       <div class="grid gap-3 md:grid-cols-2">
         <div class="grid gap-2 rounded-lg border border-ui-border-subtle bg-slate-950/60 p-4 text-sm">
           <p class="font-semibold text-slate-100">Fixed hand</p>
-          <p class="text-slate-400">{{ fixedTrace.metrics.classification }} · minimum tension {{ format(fixedTrace.metrics.minimumTension) }}</p>
-          <p class="text-slate-400">Energy residual {{ format(fixedTrace.metrics.energyBalanceResidual, 4) }}</p>
+          <p class="text-slate-400">{{ fixedTrace.metrics.classification }} · first-loop minimum tension {{ format(fixedLoop?.minimumTension ?? fixedTrace.metrics.minimumTension) }}</p>
+          <p v-if="fixedLoop?.complete" class="text-slate-400">First loop {{ format(fixedLoop.duration) }} units · ripple {{ format(fixedLoop.speedRipple * 100, 1) }}%</p>
+          <p class="text-slate-400">Energy residual {{ format(fixedLoop?.energyBalanceResidual ?? fixedTrace.metrics.energyBalanceResidual, 4) }}</p>
         </div>
         <div class="grid gap-2 rounded-lg border border-emerald-900/60 bg-emerald-950/20 p-4 text-sm">
           <p class="font-semibold text-emerald-100">Moving hand</p>
-          <p class="text-slate-300">{{ movingTrace.metrics.classification }} · minimum tension {{ format(movingTrace.metrics.minimumTension) }}</p>
-          <p class="text-slate-300">Hand work +{{ format(movingTrace.metrics.positiveHandWork, 3) }} / {{ format(movingTrace.metrics.negativeHandWork, 3) }}</p>
-          <p class="text-slate-300">Energy residual {{ format(movingTrace.metrics.energyBalanceResidual, 4) }}</p>
+          <p class="text-slate-300">{{ movingTrace.metrics.classification }} · first-loop minimum tension {{ format(movingLoop?.minimumTension ?? movingTrace.metrics.minimumTension) }}</p>
+          <p v-if="movingLoop?.complete" class="text-slate-300">First loop {{ format(movingLoop.duration) }} units · ripple {{ format(movingLoop.speedRipple * 100, 1) }}%</p>
+          <p class="text-slate-300">Hand work +{{ format(movingLoop?.positiveHandWork ?? movingTrace.metrics.positiveHandWork, 3) }} / {{ format(movingLoop?.negativeHandWork ?? movingTrace.metrics.negativeHandWork, 3) }}</p>
+          <p class="text-slate-300">Energy residual {{ format(movingLoop?.energyBalanceResidual ?? movingTrace.metrics.energyBalanceResidual, 4) }}</p>
         </div>
       </div>
 

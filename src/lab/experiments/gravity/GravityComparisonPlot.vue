@@ -3,6 +3,12 @@ import { computed } from "vue";
 
 import type { GravityTracePoint } from "./physics/types";
 
+interface PlotMarker {
+  readonly time: number;
+  readonly label: string;
+  readonly kind: "cardinal" | "event";
+}
+
 type ComparisonKey =
   | "normalizedWorldSpeed"
   | "normalizedRelativeSpeed"
@@ -25,6 +31,7 @@ const props = withDefaults(
     currentTime: number;
     value: ComparisonKey;
     title: string;
+    markers?: readonly PlotMarker[];
     fixedColor?: string;
     movingColor?: string;
     min?: number;
@@ -94,6 +101,18 @@ const currentX = computed(() => xFor(props.currentTime));
       <line :x1="PAD_X" :x2="WIDTH - PAD_X" :y1="yFor(0)" :y2="yFor(0)" class="stroke-slate-700" />
       <path :d="fixedPath" fill="none" :stroke="props.fixedColor" stroke-width="2" stroke-linecap="round" />
       <path :d="movingPath" fill="none" :stroke="props.movingColor" stroke-width="2.5" stroke-linecap="round" />
+      <g v-for="marker in props.markers ?? []" :key="`${marker.kind}-${marker.label}-${marker.time}`">
+        <line
+          :x1="xFor(marker.time)"
+          :x2="xFor(marker.time)"
+          y1="0"
+          :y2="HEIGHT"
+          :stroke="marker.kind === 'event' ? '#fb7185' : '#fbbf24'"
+          :stroke-dasharray="marker.kind === 'event' ? '2 3' : '5 5'"
+          opacity="0.55"
+        />
+        <text :x="xFor(marker.time) + 3" y="12" fill="currentColor" opacity="0.62" font-size="10">{{ marker.label }}</text>
+      </g>
       <line :x1="currentX" :x2="currentX" y1="0" :y2="HEIGHT" class="stroke-slate-200/70" stroke-dasharray="3 4" />
     </svg>
   </section>

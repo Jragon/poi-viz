@@ -321,3 +321,16 @@ elasticity, drag, collisions, and 3D effects remain later experiments.
 This supersedes the earlier placement of the gravity-led taut-circle surface in the Pendulum lab.
 The duplicate runtime-driver experiment is removed; the Pendulum lab retains authored timing and
 composition experiments, while stateful gravity simulation lives only in the Gravity lab.
+
+## 2026-07-27: Gravity Experiment 2 Uses Prescribed Paths and First-Loop Scans
+
+The moving-pivot experiment defaults to an ellipse because it separates horizontal and vertical
+hand travel while retaining circle and sinusoidal line modes as isolating cases. Every path returns
+analytic position, velocity, and acceleration; no path is treated as a hidden actuator or optimized
+inside the solver.
+
+Experiment 2 is evaluated over the first complete poi revolution. The lab marks bottom, side, top,
+and release/catch events, reports speed ripple, minimum tension, signed hand work, and an energy
+residual, and scans hand phase at fixed path parameters. The scan is deliberately diagnostic rather
+than an optimizer: it identifies promising timing relationships before adding more degrees of
+freedom or a control objective.

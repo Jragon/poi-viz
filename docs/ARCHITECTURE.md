@@ -55,7 +55,8 @@ precomputes fixed-timestep traces with explicit taut, slack, release, and catch 
 canvas plays those traces without treating physics as a stateless engine driver. It separates
 world and hand-relative speed, physical tension, gravity/hand/drive power, boundary work, catch
 dissipation, and energy-balance residuals. Prescribed hand paths provide analytic position,
-velocity, and acceleration. These models remain lab-only and do not redefine the engine's
+velocity, and acceleration; the first moving-pivot experiment compares ellipse, circle, and line
+paths over the first complete poi loop and scans hand phase as a diagnostic. These models remain lab-only and do not redefine the engine's
 kinematic pendulum or circle semantics.
 
 The VRM standing-rig experiment is a replaceable consumer of `BodySkeletonFrame`: it maps the existing

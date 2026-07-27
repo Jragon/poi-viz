@@ -520,16 +520,17 @@ to one cycle has a bottom speed about \(1.669\times\) a uniform one-circle-per-u
 though its average absolute angular travel can match. The constant-speed taut circle is an analytic
 target/reference, not a claim about a positive-only actuator.
 
-Compare the fixed-hand gravity trace with a deterministic small circular hand path. Start with one
-circle path so amplitude, phase, and direction are easy to interpret; add ellipses and arbitrary
-paths only after the energy channels are validated.
+Compare the fixed-hand gravity trace with a deterministic prescribed hand path. Start with an
+ellipse as the default because it can separate horizontal and vertical hand travel; retain circle
+and horizontal/vertical line modes so each geometric ingredient can be isolated.
 
 Controls:
 
 - shared launch energy, gravity, and tether length;
-- hand-circle amplitude as a fraction of \(L\);
-- hand-circle frequency and phase;
-- hand-circle direction;
+- path shape: ellipse, circle, or line;
+- horizontal and vertical amplitudes as fractions of \(L\);
+- line axis;
+- path frequency, phase, and direction;
 - playback and scrub.
 
 Outputs:
@@ -542,11 +543,14 @@ Outputs:
 - tangential and radial hand acceleration retained in the trace for later inspection;
 - positive and negative hand work;
 - energy-balance residual;
+- one-loop speed ripple and phase scan;
+- cardinal and release/catch markers;
 - the constant-speed analytic reference retained for tests and a later target overlay.
 
-The hand path must return analytic position, velocity, and acceleration. The first experiment should
-not include an optimizer or an abstract drive: it is a measurement surface for how a small pivot
-motion changes the natural gravity curve.
+The hand path must return analytic position, velocity, and acceleration. The phase scan reruns one
+complete poi loop for each phase and reports speed ripple, minimum tension, hand work, and ledger
+residual. It is a measurement surface, not an optimizer: it shows which timing relationships are
+promising before we search over more path parameters.
 
 ## Experiment 3: Abstract drive
 
@@ -583,13 +587,14 @@ H_x(t)=A_x\sin(\omega_ht+\phi_x),
 H_y(t)=A_y\sin(\omega_ht+\phi_y).
 \]
 
-This supports:
+The first implementation now supports:
 
 - fixed hand;
 - horizontal line;
 - vertical line;
 - ellipse;
-- circle.
+- circle;
+- horizontal or vertical sinusoidal line.
 
 Controls:
 
@@ -682,6 +687,7 @@ src/lab/experiments/gravity/
   GravityCanvas.vue
   GravityTracePlot.vue
   GravityComparisonPlot.vue
+  GravityPhaseScanPlot.vue
   MathEquation.vue
   LaunchEnergyExperiment.vue
   MovingHandExperiment.vue
@@ -689,6 +695,7 @@ src/lab/experiments/gravity/
     vector2.ts
     types.ts
     handPaths.ts
+    diagnostics.ts
     idealTether.ts
     analyticReferences.ts
     constantSpeedCircle.ts
@@ -868,16 +875,16 @@ Completed:
 2. Pure analytic-reference module and tests.
 3. Ideal tether hybrid solver and energy ledger.
 4. Launch-energy experiment with canvas and graphs.
-5. Small circular moving-hand comparison with signed hand-work metrics.
-6. Physical pendulum/circle timing calibration copy.
+5. Ellipse, circle, and line moving-hand paths with exact derivatives.
+6. One-loop diagnostics, cardinal/event markers, phase scan, and convergence tests.
+7. Physical pendulum/circle timing calibration copy.
 
 Next:
 
 1. Add an abstract-drive experiment only if direct actuator limits remain a useful teaching question.
-2. Generalize the moving pivot to line and ellipse paths.
-3. Add analytic velocity to the built-in kinematic drivers for calibrated comparisons.
-4. Compare the Gravity trace with measured hand and poi trajectories.
-5. Add the optional XPBD rope only when string mass or elasticity becomes the question.
+2. Add analytic velocity to the built-in kinematic drivers for calibrated comparisons.
+3. Compare the Gravity trace with measured hand and poi trajectories.
+4. Add the optional XPBD rope only when string mass or elasticity becomes the question.
 
 The XPBD comparison remains deliberately optional: it is valuable, but it should not delay
 validation of the ideal-tether and moving-pivot experiments.

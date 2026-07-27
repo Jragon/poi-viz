@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { circularHandPeriod, createCircularHandPath } from "@/lab/experiments/gravity/physics/handPaths";
+import {
+  circularHandPeriod,
+  createCircularHandPath,
+  createEllipseHandPath,
+  createLineHandPath
+} from "@/lab/experiments/gravity/physics/handPaths";
 
 describe("circular hand paths", () => {
   it("starts at the fixed-hand origin and returns after one period", () => {
@@ -25,5 +30,31 @@ describe("circular hand paths", () => {
     expect(sample.velocity.y).toBeCloseTo(amplitude * angularVelocity * Math.cos(currentPhase), 10);
     expect(sample.acceleration.x).toBeCloseTo(-amplitude * angularVelocity ** 2 * Math.cos(currentPhase), 10);
     expect(sample.acceleration.y).toBeCloseTo(-amplitude * angularVelocity ** 2 * Math.sin(currentPhase), 10);
+  });
+
+  it("supports elliptical and line paths with exact derivatives", () => {
+    const ellipse = createEllipseHandPath({
+      radiusX: 0.2,
+      radiusY: 0.1,
+      angularVelocity: 2,
+      phase: 0.3
+    });
+    const ellipseSample = ellipse.sample(0.4);
+    const phase = 0.3 + 2 * 0.4;
+    expect(ellipseSample.velocity.x).toBeCloseTo(-0.2 * 2 * Math.sin(phase), 10);
+    expect(ellipseSample.velocity.y).toBeCloseTo(0.1 * 2 * Math.cos(phase), 10);
+    expect(ellipseSample.acceleration.x).toBeCloseTo(-0.2 * 4 * Math.cos(phase), 10);
+    expect(ellipseSample.acceleration.y).toBeCloseTo(-0.1 * 4 * Math.sin(phase), 10);
+
+    const line = createLineHandPath({
+      amplitude: 0.2,
+      angularVelocity: 2,
+      phase: 0,
+      axis: "vertical"
+    });
+    const lineSample = line.sample(0.4);
+    expect(lineSample.position.x).toBeCloseTo(0, 10);
+    expect(lineSample.velocity.x).toBeCloseTo(0, 10);
+    expect(lineSample.acceleration.x).toBeCloseTo(0, 10);
   });
 });

@@ -9,12 +9,37 @@ export interface CircularHandPathConfig {
   readonly phase: number;
 }
 
+export type LineHandPathAxis = "horizontal" | "vertical";
+
+export interface LineHandPathConfig {
+  readonly amplitude: number;
+  readonly angularVelocity: number;
+  readonly phase: number;
+  readonly axis: LineHandPathAxis;
+}
+
+export interface EllipseHandPathConfig {
+  readonly radiusX: number;
+  readonly radiusY: number;
+  readonly angularVelocity: number;
+  readonly phase: number;
+}
+
 /**
  * A small circular wrist path whose origin is the hand's exact starting point.
  * The offset circle keeps the authored initial hand position at (0, 0), which
  * makes it easy to compare against the fixed-hand trace.
  */
 export function createCircularHandPath(config: CircularHandPathConfig): HandPath {
+  return createEllipseHandPath({
+    radiusX: config.amplitude,
+    radiusY: config.amplitude,
+    angularVelocity: config.angularVelocity,
+    phase: config.phase
+  });
+}
+
+export function createEllipseHandPath(config: EllipseHandPathConfig): HandPath {
   const initialPhase = config.phase;
   const initialCosine = Math.cos(initialPhase);
   const initialSine = Math.sin(initialPhase);
@@ -23,23 +48,35 @@ export function createCircularHandPath(config: CircularHandPathConfig): HandPath
       const phase = initialPhase + config.angularVelocity * time;
       const cosine = Math.cos(phase);
       const sine = Math.sin(phase);
-      const velocityScale = config.amplitude * config.angularVelocity;
-      const accelerationScale = config.amplitude * config.angularVelocity ** 2;
+      const velocityScaleX = config.radiusX * config.angularVelocity;
+      const velocityScaleY = config.radiusY * config.angularVelocity;
+      const accelerationScaleX = config.radiusX * config.angularVelocity ** 2;
+      const accelerationScaleY = config.radiusY * config.angularVelocity ** 2;
       const position: Vec2 = {
-        x: config.amplitude * (cosine - initialCosine),
-        y: config.amplitude * (sine - initialSine)
+        x: config.radiusX * (cosine - initialCosine),
+        y: config.radiusY * (sine - initialSine)
       };
       const velocity: Vec2 = {
-        x: -velocityScale * sine,
-        y: velocityScale * cosine
+        x: -velocityScaleX * sine,
+        y: velocityScaleY * cosine
       };
       const acceleration: Vec2 = {
-        x: -accelerationScale * cosine,
-        y: -accelerationScale * sine
+        x: -accelerationScaleX * cosine,
+        y: -accelerationScaleY * sine
       };
       return { position, velocity, acceleration };
     }
   };
+}
+
+export function createLineHandPath(config: LineHandPathConfig): HandPath {
+  const ellipse = createEllipseHandPath({
+    radiusX: config.axis === "horizontal" ? config.amplitude : 0,
+    radiusY: config.axis === "vertical" ? config.amplitude : 0,
+    angularVelocity: config.angularVelocity,
+    phase: config.phase
+  });
+  return ellipse;
 }
 
 export function circularHandPeriod(angularVelocity: number): number {
