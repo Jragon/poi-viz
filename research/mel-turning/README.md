@@ -20,6 +20,23 @@ Normative application decisions remain in [`../decisions.md`](../decisions.md).
 | `verified/low-reels-one-hand-and-together-opposite.csv` | One-hand low native, non-native, and back turns, plus together-opposite two-hand turns |
 | `verified/low-reels-split-opposite.csv` | The four verified split-opposite chasing-offset transitions for a turn to the left |
 
+## Candidate sets
+
+| File | Contents |
+| --- | --- |
+| `candidates/low-reels-two-hand-together-same-turn-left.csv` | Four low-native TS chasing-offset transitions; both poi clockwise; turn left |
+| `candidates/low-reels-two-hand-split-same-turn-left.csv` | Four low-native SS unison/counter transitions; both poi clockwise; turn left |
+| `candidates/low-reels-two-hand-together-opposite-non-native-turn-left.csv` | Four low-non-native TO unison/counter transitions; inward to outward |
+| `candidates/low-reels-two-hand-split-opposite-non-native-turn-left.csv` | Four low-non-native SO chasing-offset transitions; inward to outward |
+
+The same-direction files deliberately cover one reference direction only. Both poi move clockwise in
+the observer frame while the performer turns left. The both-counterclockwise / turn-right mirror
+remains a separate verification batch.
+
+The non-native files test a topology hypothesis rather than assuming native hand roles survive
+unchanged. Because the hands occupy opposite body sides, their proposed turn-left setup is `A/B` by
+hand columns: the left hand is on body-right `A`, while the right hand is on body-left `B`.
+
 ## Notation
 
 - `facing`: `0` before the turn and `180` after it.
@@ -59,8 +76,6 @@ left/right labels remain body-relative; plane sides `a` and `b` remain observer-
 
 Suggested future names:
 
-- `candidates/low-reels-two-hand-ts-turn-left.csv`
-- `candidates/low-reels-two-hand-ss-turn-left.csv`
 - `candidates/low-back-two-hand-turn-left.csv`
 - `candidates/weave-two-hand-turn-left.csv`
 
