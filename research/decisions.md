@@ -302,3 +302,22 @@ fixup, or visualizer geometry.
 - Reel legality follows the same single-hand policy. Native, non-native, and back positions are
   checked at high and low for both flows; flow changes rotation direction while phase keeps the
   crosspoint orientation outward.
+
+## 2026-07-25: Gravity Lab Uses a Physical Tether Ledger and Moving-Pivot Comparison
+
+The gravity lab keeps physics experimental and separate from the production kinematic drivers.
+Its ideal tether model uses physical `g`, tether length, and mass, and reports relative tether
+motion separately from world motion. Tension, gravity power, hand power, drive power, mechanical
+energy, boundary work, and catch dissipation are tracked as distinct channels so a simulation can
+be checked with an energy-balance residual instead of relying on visual plausibility.
+
+The first moving-pivot comparison is a deterministic circular hand path with exact position,
+velocity, and acceleration. It is shown beside the fixed-hand reference and exposes radial hand
+velocity, hand work, tension, relative/world speed, and energy. The analytic constant-speed circle
+remains an internal target curve rather than a claimed actuator: a real hand can add or absorb
+energy, while the lab should make that signed exchange visible. General hand paths, string mass,
+elasticity, drag, collisions, and 3D effects remain later experiments.
+
+This supersedes the earlier placement of the gravity-led taut-circle surface in the Pendulum lab.
+The duplicate runtime-driver experiment is removed; the Pendulum lab retains authored timing and
+composition experiments, while stateful gravity simulation lives only in the Gravity lab.

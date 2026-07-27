@@ -3,4 +3,5 @@ dist
 coverage
 .DS_Store
 .pnpm-store
+.worktrees/
 research/mel-turning/local/

@@ -80,6 +80,13 @@ export function evaluateRouterModule(
         loadPendulumLabPage: () => Promise.resolve({ default: { name: "PendulumLabPage" } })
       }
     ],
+    [
+      "@/lab/experiments/gravity/routeMeta",
+      {
+        GRAVITY_LAB_ROUTE: { path: "/lab/gravity", name: "gravity-lab" },
+        loadGravityLabPage: () => Promise.resolve({ default: { name: "GravityLabPage" } })
+      }
+    ],
     ...additionalStubs
   ]);
 
