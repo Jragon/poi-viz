@@ -360,6 +360,8 @@ still being established.
   reels, a hand is marked as prepared when its turn-source graph position differs from the same
   phase four halfbeats earlier. Missing combinations remain unverified rather than being inferred
   illegal.
+- Midpoint poi direction is diagnostic data, not a crosspoint-gate oracle. Verified B→A, back, and
+  non-native examples show that the horizontal poi arrow can oppose the named turn side.
 - The static Mel crosspoint oracle is not reused as a body-turn verdict. Compact center nodes can
   realize a side-gate crossing while the body rotates, which the static wall-plane compiler cannot
   represent without a hidden hand-path witness.

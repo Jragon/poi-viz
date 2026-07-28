@@ -73,6 +73,23 @@ This prevents low-back evidence from being flattened into front-wall `C`, `L`, a
 - All four SO non-native bridges were valid, though physically difficult. Their plane topology is
   effectively the same as back reels; what changes is where the hand is and which path the sequence
   allows it to take.
+- Midpoint poi direction is not the same thing as crosspoint gate side. Across the normalized
+  corpus, 36 hand edges cross plane side and five verified crossings have a midpoint arrow opposite
+  the body-turn direction. This occurs in B→A, back, and non-native examples. A future gate solver
+  must use lane, placement, plane transition, rotation, and turn context rather than treating the
+  midpoint arrow as a gate oracle.
+
+## Adversarial findings
+
+Seven deterministic mutations probe the current turn-edge boundary:
+
+- phase reset, missing synchronized target, and unchanged facing are structurally rejected;
+- moving the turn earlier, flipping one target plane side, reversing only the body turn, and
+  removing a known preparation remain structurally coherent but physically unresolved.
+
+Every mutation is stripped of verified status before analysis. This demonstrates the intended
+boundary: the current contract can enforce shared timing and representation integrity, but it
+cannot yet decide anatomical gate legality.
 
 ## Notation
 

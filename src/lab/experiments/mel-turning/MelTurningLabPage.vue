@@ -3,6 +3,8 @@ import { computed, ref } from "vue";
 
 import MelTurningGraph from "@/lab/experiments/mel-turning/components/MelTurningGraph.vue";
 import TurnLegalityMatrix from "@/lab/experiments/mel-turning/components/TurnLegalityMatrix.vue";
+import AdversarialTurningProbePanel from "@/lab/experiments/mel-turning/components/AdversarialTurningProbePanel.vue";
+import { evaluateAdversarialTurningProbes } from "@/lab/experiments/mel-turning/fixtures/adversarialTurningProbes";
 import { VERIFIED_ONE_HAND_TURNS } from "@/lab/experiments/mel-turning/fixtures/verifiedOneHandTurns";
 import { VERIFIED_TWO_HAND_TURNS } from "@/lab/experiments/mel-turning/fixtures/verifiedTwoHandTurns";
 import {
@@ -27,6 +29,7 @@ const legalityMatrix = buildTurnLegalityMatrix([
   ...VERIFIED_ONE_HAND_TURNS,
   ...VERIFIED_TWO_HAND_TURNS
 ]);
+const adversarialProbeResults = evaluateAdversarialTurningProbes();
 const selectedMobileFrame = ref<TurningDisplayFrame>("body-relative");
 const displayFrames: readonly TurningDisplayFrame[] = [
   "body-relative",
@@ -202,6 +205,8 @@ function midpointArrow(handEdge: TurningHandTurnEdge): string {
     </section>
 
     <TurnLegalityMatrix :rows="legalityMatrix" />
+
+    <AdversarialTurningProbePanel :results="adversarialProbeResults" />
 
     <aside
       class="grid gap-4 rounded-2xl border border-slate-700/80 bg-slate-900/70 p-5 lg:grid-cols-3"

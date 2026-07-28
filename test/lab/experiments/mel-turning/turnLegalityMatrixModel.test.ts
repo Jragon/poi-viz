@@ -66,6 +66,19 @@ describe("turn legality matrix model", () => {
     });
   });
 
+  it("does not confuse midpoint poi direction with crosspoint gate side", () => {
+    const counterToUnison = MATRIX.find(
+      (row) => row.fixtureId === "to-left-counter-to-unison"
+    );
+
+    expect(counterToUnison?.hands[0]).toMatchObject({
+      hand: "left",
+      mechanism: "cross",
+      gate: "left",
+      midpointPoiDirection: "right"
+    });
+  });
+
   it("rejects duplicate ids instead of silently merging evidence", () => {
     const fixture = VERIFIED_ONE_HAND_TURNS[0];
     if (!fixture) throw new Error("Fixture invariant failed");
