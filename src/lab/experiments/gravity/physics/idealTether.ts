@@ -479,6 +479,11 @@ export function simulateIdealTether(input: IdealTetherConfig): SimulationResult 
   if (validationError) return { ok: false, error: validationError };
 
   const config = { ...input, handPath: input.handPath ?? FIXED_HAND_PATH };
+  const controller = input.handController;
+  let controllerState = controller?.initialize(
+    config.initialTheta,
+    config.initialAngularVelocity
+  );
   const events: IdealTetherEvent[] = [];
   const work: WorkState = { handPositive: 0, handNegative: 0, drivePositive: 0, driveNegative: 0 };
   let state: InternalState = {
@@ -487,16 +492,22 @@ export function simulateIdealTether(input: IdealTetherConfig): SimulationResult 
     omega: config.initialAngularVelocity
   };
   let time = 0;
-  let previousSample = sampleState(config, state, time, work);
+  const initialConfig = controller && controllerState
+    ? { ...config, handPath: controller.pathForStep(controllerState, time) }
+    : config;
+  let previousSample = sampleState(initialConfig, state, time, work);
   const samples: IdealTetherSample[] = [previousSample];
   const stepCount = Math.ceil(config.duration / config.timestep);
 
   for (let step = 0; step < stepCount; step += 1) {
     const duration = Math.min(config.timestep, config.duration - time);
     if (duration <= EPSILON) break;
-    state = advanceStep(config, state, time, duration, events);
+    const stepConfig = controller && controllerState
+      ? { ...config, handPath: controller.pathForStep(controllerState, time) }
+      : config;
+    state = advanceStep(stepConfig, state, time, duration, events);
     time += duration;
-    const rawSample = sampleState(config, state, time, work);
+    const rawSample = sampleState(stepConfig, state, time, work);
     const averageHandPower = (previousSample.handPower + rawSample.handPower) * 0.5;
     const averageDrivePower = (previousSample.drivePower + rawSample.drivePower) * 0.5;
     if (averageHandPower >= 0) work.handPositive += averageHandPower * duration;
@@ -513,6 +524,13 @@ export function simulateIdealTether(input: IdealTetherConfig): SimulationResult 
     };
     samples.push(nextSample);
     previousSample = nextSample;
+    if (controller && controllerState) {
+      controllerState = controller.advance(controllerState, {
+        theta: nextSample.theta,
+        angularVelocity: nextSample.angularVelocity,
+        mode: nextSample.mode
+      }, duration);
+    }
   }
 
   const trace: IdealTetherTrace = {

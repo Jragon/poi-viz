@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   circularHandPeriod,
   createCircularHandPath,
+  createConstantSpeedEllipseController,
   createEllipseHandPath,
-  createLineHandPath
+  createLineHandPath,
+  createPhaseLockedEllipseController
 } from "@/lab/experiments/gravity/physics/handPaths";
 
 describe("circular hand paths", () => {
@@ -56,5 +58,54 @@ describe("circular hand paths", () => {
     expect(lineSample.position.x).toBeCloseTo(0, 10);
     expect(lineSample.velocity.x).toBeCloseTo(0, 10);
     expect(lineSample.acceleration.x).toBeCloseTo(0, 10);
+  });
+
+  it("keeps a phase-locked ellipse continuous across controller steps", () => {
+    const controller = createPhaseLockedEllipseController({
+      radiusX: 0.2,
+      radiusY: 0.1,
+      baseAngularVelocity: 2,
+      initialPhase: 0.4,
+      phaseOffset: 0,
+      phaseGain: 1.5,
+      maxRateCorrection: 0.5,
+      maxRateAcceleration: 20
+    });
+    let state = controller.initialize(0, 2);
+    const first = controller.pathForStep(state, 0);
+    const firstEnd = first.sample(0.01);
+    state = controller.advance(state, { theta: 0.6, angularVelocity: 2, mode: "taut" }, 0.01);
+    const second = controller.pathForStep(state, 0.01);
+    const secondStart = second.sample(0.01);
+    expect(secondStart.position.x).toBeCloseTo(firstEnd.position.x, 10);
+    expect(secondStart.position.y).toBeCloseTo(firstEnd.position.y, 10);
+    expect(state.angularVelocity).toBe(2);
+    expect(state.angularAcceleration).toBeGreaterThan(0);
+  });
+
+  it("uses gravity feed-forward and PI correction for constant speed", () => {
+    const controller = createConstantSpeedEllipseController({
+      radiusX: 0.2,
+      radiusY: 0.1,
+      gravity: 1,
+      tetherLength: 1,
+      targetAngularVelocity: 2,
+      baseAngularVelocity: 2,
+      initialPhase: 0,
+      speedGain: 1,
+      integralGain: 0.5,
+      integralLimit: 2,
+      maxRateCorrection: 1,
+      maxPhaseAcceleration: 20
+    });
+    let state = controller.initialize(0, 2);
+    state = controller.advance(state, {
+      theta: Math.PI / 2,
+      angularVelocity: 1.5,
+      mode: "taut"
+    }, 0.01);
+    expect(state.integralError).toBeGreaterThan(0);
+    expect(Number.isFinite(state.angularAcceleration)).toBe(true);
+    expect(Math.abs(state.angularAcceleration)).toBeLessThanOrEqual(20);
   });
 });

@@ -10,6 +10,34 @@ export interface HandPath {
   readonly sample: (time: number) => HandKinematics;
 }
 
+export interface HandControllerState {
+  readonly phase: number;
+  readonly angularVelocity: number;
+  readonly angularAcceleration: number;
+  readonly integralError?: number;
+}
+
+export interface HandControllerObservation {
+  readonly theta: number;
+  readonly angularVelocity: number;
+  readonly mode: TetherMode;
+}
+
+/**
+ * A deterministic, sampled controller for a moving hand. The simulator asks
+ * the controller for one analytic hand path per physics step, then advances
+ * the controller from the resulting poi observation.
+ */
+export interface HandController {
+  readonly initialize: (initialTheta: number, initialAngularVelocity: number) => HandControllerState;
+  readonly pathForStep: (state: HandControllerState, time: number) => HandPath;
+  readonly advance: (
+    state: HandControllerState,
+    observation: HandControllerObservation,
+    duration: number
+  ) => HandControllerState;
+}
+
 export interface IdealTetherConfig {
   readonly length: number;
   readonly mass: number;
@@ -20,6 +48,7 @@ export interface IdealTetherConfig {
   readonly initialAngularVelocity: number;
   readonly catchRestitution: number;
   readonly handPath?: HandPath;
+  readonly handController?: HandController;
   readonly driveTorque?: (time: number, theta: number, omega: number) => number;
 }
 

@@ -36,6 +36,7 @@ const props = withDefaults(
     movingColor?: string;
     min?: number;
     max?: number;
+    target?: number | undefined;
   }>(),
   {
     fixedColor: "#64748b",
@@ -82,6 +83,7 @@ function pathFor(samples: readonly GravityTracePoint[]): string {
 const fixedPath = computed(() => pathFor(props.fixedSamples));
 const movingPath = computed(() => pathFor(props.movingSamples));
 const currentX = computed(() => xFor(props.currentTime));
+const targetY = computed(() => props.target === undefined ? null : yFor(props.target));
 </script>
 
 <template>
@@ -91,6 +93,7 @@ const currentX = computed(() => xFor(props.currentTime));
       <span class="flex gap-3 font-mono text-[11px] text-slate-500">
         <span><i class="mr-1 inline-block h-2 w-2 rounded-full" :style="{ backgroundColor: props.fixedColor }"></i>fixed</span>
         <span><i class="mr-1 inline-block h-2 w-2 rounded-full" :style="{ backgroundColor: props.movingColor }"></i>hand circle</span>
+        <span v-if="props.target !== undefined" class="text-violet-300">target</span>
       </span>
     </div>
     <div class="flex justify-between font-mono text-[11px] text-slate-500">
@@ -101,6 +104,17 @@ const currentX = computed(() => xFor(props.currentTime));
       <line :x1="PAD_X" :x2="WIDTH - PAD_X" :y1="yFor(0)" :y2="yFor(0)" class="stroke-slate-700" />
       <path :d="fixedPath" fill="none" :stroke="props.fixedColor" stroke-width="2" stroke-linecap="round" />
       <path :d="movingPath" fill="none" :stroke="props.movingColor" stroke-width="2.5" stroke-linecap="round" />
+      <line
+        v-if="targetY !== null"
+        :x1="PAD_X"
+        :x2="WIDTH - PAD_X"
+        :y1="targetY"
+        :y2="targetY"
+        stroke="#a78bfa"
+        stroke-width="1.5"
+        stroke-dasharray="7 5"
+        opacity="0.85"
+      />
       <g v-for="marker in props.markers ?? []" :key="`${marker.kind}-${marker.label}-${marker.time}`">
         <line
           :x1="xFor(marker.time)"
