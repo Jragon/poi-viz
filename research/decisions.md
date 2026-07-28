@@ -356,6 +356,10 @@ still being established.
   target nodes, a facing flip, and uninterrupted half-beat phase. Its analysis derives per-hand
   hold/cross motion and midpoint poi direction. Physical status is `verified` only when supplied by
   a physically checked fixture; structurally valid unverified edges remain explicitly unresolved.
+- The legality matrix is a derived positive-evidence index, not a closed-world rule table. For low
+  reels, a hand is marked as prepared when its turn-source graph position differs from the same
+  phase four halfbeats earlier. Missing combinations remain unverified rather than being inferred
+  illegal.
 - The static Mel crosspoint oracle is not reused as a body-turn verdict. Compact center nodes can
   realize a side-gate crossing while the body rotates, which the static wall-plane compiler cannot
   represent without a hidden hand-path witness.

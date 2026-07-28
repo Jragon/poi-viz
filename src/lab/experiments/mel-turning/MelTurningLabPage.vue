@@ -2,6 +2,9 @@
 import { computed, ref } from "vue";
 
 import MelTurningGraph from "@/lab/experiments/mel-turning/components/MelTurningGraph.vue";
+import TurnLegalityMatrix from "@/lab/experiments/mel-turning/components/TurnLegalityMatrix.vue";
+import { VERIFIED_ONE_HAND_TURNS } from "@/lab/experiments/mel-turning/fixtures/verifiedOneHandTurns";
+import { VERIFIED_TWO_HAND_TURNS } from "@/lab/experiments/mel-turning/fixtures/verifiedTwoHandTurns";
 import {
   VERIFIED_TURNING_TRACES,
   getVerifiedTurningTrace
@@ -14,11 +17,16 @@ import {
   analyzeTurningTraceTurn,
   type TurningHandTurnEdge
 } from "@/lab/experiments/mel-turning/model/turnEdgeAnalysis";
+import { buildTurnLegalityMatrix } from "@/lab/experiments/mel-turning/model/turnLegalityMatrix";
 import type { TurningLaneId, TurningNode } from "@/lab/experiments/mel-turning/model/turningTypes";
 
 const selectedTraceId = ref(VERIFIED_TURNING_TRACES[0]?.id ?? "");
 const selectedTrace = computed(() => getVerifiedTurningTrace(selectedTraceId.value));
 const selectedTurnAnalysis = computed(() => analyzeTurningTraceTurn(selectedTrace.value));
+const legalityMatrix = buildTurnLegalityMatrix([
+  ...VERIFIED_ONE_HAND_TURNS,
+  ...VERIFIED_TWO_HAND_TURNS
+]);
 const selectedMobileFrame = ref<TurningDisplayFrame>("body-relative");
 const displayFrames: readonly TurningDisplayFrame[] = [
   "body-relative",
@@ -192,6 +200,8 @@ function midpointArrow(handEdge: TurningHandTurnEdge): string {
         applied to unverified candidates.
       </p>
     </section>
+
+    <TurnLegalityMatrix :rows="legalityMatrix" />
 
     <aside
       class="grid gap-4 rounded-2xl border border-slate-700/80 bg-slate-900/70 p-5 lg:grid-cols-3"
