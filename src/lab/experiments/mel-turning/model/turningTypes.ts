@@ -14,6 +14,10 @@ export type BodyFacing = 0 | 180;
 
 export type TurningVerificationStatus = "physically-verified" | "unverified";
 
+export type TurningHandPlacement = "wall" | "behind-body";
+
+export type TurningTiming = "ONE" | "TO" | "SO" | "TS" | "SS";
+
 export interface TurningLane {
   readonly id: TurningLaneId;
   readonly label: string;
@@ -23,6 +27,7 @@ export interface TurningTrackRowDraft {
   readonly step: number;
   readonly laneId: TurningLaneId;
   readonly planeSide: TurningPlaneSide;
+  readonly handPlacement?: TurningHandPlacement;
 }
 
 export interface TurningTrackDraft {
@@ -58,7 +63,7 @@ export interface BodyTurnEvent {
 export interface TurningTrace {
   readonly id: string;
   readonly label: string;
-  readonly timing: "TO" | "SO" | "TS" | "SS";
+  readonly timing: TurningTiming;
   readonly summary: string;
   readonly source: string;
   readonly verificationStatus: TurningVerificationStatus;

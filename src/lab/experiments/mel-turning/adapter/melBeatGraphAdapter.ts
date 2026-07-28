@@ -23,6 +23,7 @@ export function getMelTurningLanes(): readonly TurningLane[] {
 }
 
 export function deriveTurningTrackFromMel(draft: TurningTrackDraft): TurningTrack {
+  const draftRowsByStep = new Map(draft.rows.map((row) => [row.step, row] as const));
   const melTrack: PoiBeatTrack = {
     id: draft.id,
     hand: draft.hand,
@@ -40,11 +41,19 @@ export function deriveTurningTrackFromMel(draft: TurningTrackDraft): TurningTrac
     hand: draft.hand,
     poiDirection: draft.poiDirection,
     initialPhase: draft.initialPhase,
-    nodes: deriveRowStates(melTrack).map((state) => ({
-      step: state.row.step,
-      laneId: state.row.laneId as TurningLaneId,
-      planeSide: state.planeSide,
-      phase: state.phaseLabel
-    }))
+    nodes: deriveRowStates(melTrack).map((state) => {
+      const draftRow = draftRowsByStep.get(state.row.step);
+      if (!draftRow) {
+        throw new Error(`Turning adapter lost draft row at t${state.row.step}.`);
+      }
+
+      return {
+        step: state.row.step,
+        laneId: state.row.laneId as TurningLaneId,
+        planeSide: state.planeSide,
+        phase: state.phaseLabel,
+        ...(draftRow.handPlacement ? { handPlacement: draftRow.handPlacement } : {})
+      };
+    })
   };
 }
