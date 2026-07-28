@@ -1,8 +1,8 @@
-SPLIT-OPPOSITE LOW-NON-NATIVE TURN-LEFT CASES — CANDIDATES,,,,
-Status,UNVERIFIED — physically test and correct every bridge.,,,
+SPLIT-OPPOSITE LOW-NON-NATIVE TURN-LEFT CASES — VERIFIED,,,,
+Status,VERIFIED — all four bridges were physically checked.,,,
 Assumptions,Low non-native; start inward at facing 0; finish outward at facing 180; turn left over one halfbeat; timing never pauses.,,,
 Scope,Chasing-2 tests an explicit early setup: the right poi remains on B for one extra halfbeat before the shared body turn.,,,
-Hypothesis,Lower-confidence topology hypothesis: use the non-native one-hand bridges while preserving the two chasing offsets.,,,
+Finding,All four bridges are valid but physically difficult. Non-native and back reels share the same plane topology; the practical difference is the hand placement and the sequence-constrained path available to the crossed or behind hand.,,,
 ,,,,
 Chasing-1 reference,,C a down,C a up,Facing 180 reference: C b up / C b down.
 Chasing-2 reference,,C a down,L b up,Facing 180 reference: C b down / C b up.
@@ -16,7 +16,7 @@ t,facing,left,right,Body edge
 4,0,C a up,L b down,
 5,0,R b down,L b up,
 6,0,R b up,C a down,
-7,0,C a down,C a up,Turn happens between 7 and 8. Both cross A→B through the same left gate.
+7,0,C a down,C a up,Turn happens between 7 and 8. Both cross A→B through the same left gate. Physically verified; this route is difficult.
 8,180,C b up,C b down,
 9,180,C b down,L a up,
 10,180,R a up,L a down,
@@ -31,7 +31,7 @@ t,facing,left,right,Body edge
 4,0,C a up,L b down,
 5,0,R b down,L b up,
 6,0,R b up,C a down,
-7,0,C a down,C a up,Turn happens between 7 and 8. Left holds A; right crosses A→B.
+7,0,C a down,C a up,Turn happens between 7 and 8. Left holds A; right crosses A→B. Physically verified; this route is difficult.
 8,180,R a up,C b down,
 9,180,R a down,L a up,
 10,180,C b up,L a down,
@@ -46,7 +46,7 @@ t,facing,left,right,Body edge
 4,0,R b down,C a up,
 5,0,R b up,L b down,
 6,0,C a down,L b up,
-7,0,C a up,L b down,"Turn happens between 7 and 8. Right remains on B for one extra halfbeat, then left holds A and right holds B through the body turn."
+7,0,C a up,L b down,"Turn happens between 7 and 8. Right remains on B for one extra halfbeat, then left holds A and right holds B through the body turn. Physically verified; this route is difficult."
 8,180,R a down,C b up,
 9,180,C b up,C b down,
 10,180,C b down,L a up,
@@ -61,10 +61,9 @@ t,facing,left,right,Body edge
 4,0,R b down,C a up,
 5,0,R b up,L b down,
 6,0,C a down,L b up,
-7,0,C a up,L b down,Turn happens between 7 and 8. Right remains on B for one extra halfbeat; left crosses A→B while right holds B through the body turn.
+7,0,C a up,L b down,Turn happens between 7 and 8. Right remains on B for one extra halfbeat; left crosses A→B while right holds B through the body turn. Physically verified; this route is difficult.
 8,180,C b down,C b up,
 9,180,R a up,C b down,
 10,180,R a down,L a up,
 11,180,C b up,L a down,
 12,180,C b down,C b up,
-,,,,

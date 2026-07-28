@@ -19,23 +19,25 @@ Normative application decisions remain in [`../decisions.md`](../decisions.md).
 | --- | --- |
 | `verified/low-reels-one-hand-and-together-opposite.csv` | One-hand low native, non-native, and back turns, plus together-opposite two-hand turns |
 | `verified/low-reels-split-opposite.csv` | The four verified split-opposite chasing-offset transitions for a turn to the left |
+| `verified/low-reels-two-hand-split-opposite-non-native-turn-left.csv` | Four verified low-non-native SO chasing-offset transitions; inward to outward |
 | `verified/low-reels-two-hand-together-same-turn-left.csv` | Four verified low-native TS chasing-offset transitions; both poi clockwise; turn left |
 | `verified/low-reels-two-hand-split-same-turn-left.csv` | Four verified low-native SS unison/counter transitions; both poi clockwise; turn left |
+| `verified/low-reels-two-hand-together-same-turn-right.csv` | Four verified low-native TS chasing-offset transitions; both poi clockwise; turn right |
+| `verified/low-reels-two-hand-split-same-turn-right.csv` | Four verified low-native SS unison/counter transitions; both poi clockwise; turn right |
 
 ## Candidate sets
 
 | File | Contents |
 | --- | --- |
 | `candidates/low-reels-two-hand-together-opposite-non-native-turn-left.csv` | Four low-non-native TO unison/counter transitions; inward to outward |
-| `candidates/low-reels-two-hand-split-opposite-non-native-turn-left.csv` | Four low-non-native SO chasing-offset transitions; inward to outward |
 
-The verified same-direction files cover one reference direction only. Both poi move clockwise in the
-observer frame while the performer turns left. Same-direction turns to the right are not assumed to
-be symmetric and remain a separate derivation and verification batch.
+The verified same-direction files cover both left and right body turns while both poi move clockwise
+in the observer frame. The turn-right routes were derived and checked independently rather than
+being assumed to mirror the turn-left routes. The both-counterclockwise cases remain unverified.
 
-The non-native files test a topology hypothesis rather than assuming native hand roles survive
-unchanged. Because the hands occupy opposite body sides, their proposed turn-left setup is `A/B` by
-hand columns: the left hand is on body-right `A`, while the right hand is on body-left `B`.
+The remaining TO non-native file still tests a topology hypothesis. Non-native and back reels use
+the same plane topology, but they are not interchangeable movement rows: hand placement and the
+path allowed by the surrounding sequence still matter.
 
 ## Verified findings
 
@@ -46,9 +48,15 @@ hand columns: the left hand is on body-right `A`, while the right hand is on bod
   shorthand. `C` is laterally flexible within a chosen front wall plane; it cannot make simultaneous
   `C a` and `C b` positions freely equivalent. The corrected B-side source is `L b up`, not
   `C b up`.
-- The verified left-turn results do not establish the clockwise turn-right matrix. With both poi
-  travelling in the same direction, reversing only the body turn changes both hands' relationship
-  to the poi, so this needs its own candidate set.
+- All eight clockwise turn-right TS/SS bridges were physically valid. The common SS route is
+  `counter → counter`; the other SS transitions work but feel less natural.
+- TS `chasing-2 → chasing-1` on the right turn is legal because it first changes into the
+  chasing-1 node and then uses the familiar turn bridge. A graph should represent this as a
+  preparation edge followed by a body-turn edge, allowing minimum-path search to distinguish it
+  from a direct bridge.
+- All four SO non-native bridges were valid, though physically difficult. Their plane topology is
+  effectively the same as back reels; what changes is where the hand is and which path the sequence
+  allows it to take.
 
 ## Notation
 
@@ -65,8 +73,11 @@ hand columns: the left hand is on body-right `A`, while the right hand is on bod
 - `chasing-1`: SO reference row `left C a up / right C a down`.
 - `chasing-2`: SO reference row `left C a up / right R b down`.
 
-`C` is a compact front-plane equivalence class rather than a literal hand coordinate. Performer
-left/right labels remain body-relative; plane sides `a` and `b` remain observer-relative.
+`C` is a compact front-plane equivalence class rather than a literal hand coordinate, but it is not
+permission to move the hand arbitrarily. Lateral freedom is constrained by the surrounding
+sequence. In reels, keep the hand on its existing path unless a bridge explicitly moves it; this is
+especially important for non-native reels, where the hands are crossed. Performer left/right labels
+remain body-relative; plane sides `a` and `b` remain observer-relative.
 
 ## Invariants
 
@@ -89,8 +100,6 @@ left/right labels remain body-relative; plane sides `a` and `b` remain observer-
 
 Suggested future names:
 
-- `candidates/low-reels-two-hand-together-same-turn-right.csv`
-- `candidates/low-reels-two-hand-split-same-turn-right.csv`
 - `candidates/low-back-two-hand-turn-left.csv`
 - `candidates/weave-two-hand-turn-left.csv`
 
