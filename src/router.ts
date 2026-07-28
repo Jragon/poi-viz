@@ -5,6 +5,10 @@ import BodyTracingJournalPage from "@/lab/experiments/body-tracing/BodyTracingJo
 import BodyTracingPlaneExperimentsPage from "@/lab/experiments/body-tracing/BodyTracingPlaneExperimentsPage.vue";
 import BeatGraphEditorPage from "@/lab/experiments/mel-body-tracing/pages/BeatGraphEditorPage.vue";
 import BodyTracingExplorerPage from "@/lab/experiments/mel-body-tracing/pages/BodyTracingExplorerPage.vue";
+import {
+  MEL_TURNING_LAB_ROUTE,
+  loadMelTurningLabPage
+} from "@/lab/experiments/mel-turning/routeMeta";
 import { GRAVITY_LAB_ROUTE, loadGravityLabPage } from "@/lab/experiments/gravity/routeMeta";
 import { PENDULUM_LAB_ROUTE, loadPendulumLabPage } from "@/lab/experiments/pendulum/routeMeta";
 import QuarterTimingDirectionJournalPage from "@/lab/experiments/qt-stall-graph/QuarterTimingDirectionJournalPage.vue";
@@ -76,6 +80,10 @@ export const router = createRouter({
       path: "/lab/beat-graph",
       name: "beat-graph-editor",
       component: BeatGraphEditorPage
+    },
+    {
+      ...MEL_TURNING_LAB_ROUTE,
+      component: loadMelTurningLabPage
     },
     {
       ...PENDULUM_LAB_ROUTE,

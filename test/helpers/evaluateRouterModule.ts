@@ -87,6 +87,13 @@ export function evaluateRouterModule(
         loadGravityLabPage: () => Promise.resolve({ default: { name: "GravityLabPage" } })
       }
     ],
+    [
+      "@/lab/experiments/mel-turning/routeMeta",
+      {
+        MEL_TURNING_LAB_ROUTE: { path: "/lab/mel-turning", name: "mel-turning-lab" },
+        loadMelTurningLabPage: () => Promise.resolve({ default: { name: "MelTurningLabPage" } })
+      }
+    ],
     ...additionalStubs
   ]);
 

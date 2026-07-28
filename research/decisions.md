@@ -334,3 +334,33 @@ and release/catch events, reports speed ripple, minimum tension, signed hand wor
 residual, and scans hand phase at fixed path parameters. The scan is deliberately diagnostic rather
 than an optimizer: it identifies promising timing relationships before adding more degrees of
 freedom or a control objective.
+
+## 2026-07-28: Mel Turning Is an Isolated Coupled Beat-Graph Extension
+
+Mel turning remains a lab experiment layered over the existing Mel body-tracing beat graph. The
+original experiment does not gain body-turn state or coupled-hand semantics while the model is
+still being established.
+
+- Turning owns a separate trace model and renderer under `src/lab/experiments/mel-turning`.
+- One adapter is the only permitted dependency from turning into Mel body tracing. It reuses Mel's
+  five lane definitions and phase derivation without exposing turning concepts back into Mel.
+- Each hand remains a vertical beat-graph track, but a 180-degree body turn is one shared event
+  spanning both tracks. The turn consumes one half-beat and never pauses or resets poi phase.
+- Body-relative rendering keeps anatomical left/right lanes fixed. Observer-relative rendering is a
+  pure view projection that mirrors left/right lanes and hand annotation sides after facing reaches
+  180 degrees. Center, A/B, timing, phase, events, and the underlying trace remain unchanged.
+- Coincident hand nodes retain the same lane coordinate. Each hand's A/B and phase annotation sits
+  on its own side, ordered node → chevron → plane-side letter. Verified research tables are compiled
+  into deterministic fixtures rather than parsed from CSV at runtime.
+- A shared turn-edge contract requires exactly one track per hand, aligned consecutive source and
+  target nodes, a facing flip, and uninterrupted half-beat phase. Its analysis derives per-hand
+  hold/cross motion and midpoint poi direction. Physical status is `verified` only when supplied by
+  a physically checked fixture; structurally valid unverified edges remain explicitly unresolved.
+- The static Mel crosspoint oracle is not reused as a body-turn verdict. Compact center nodes can
+  realize a side-gate crossing while the body rotates, which the static wall-plane compiler cannot
+  represent without a hidden hand-path witness.
+- Turn generation, crosspoint legality solving, editing, wraps, weaves, and production body-rig
+  integration remain deferred until the static representation is physically checked.
+
+Validation requires fixture timing invariants, shared-event rendering, route integration, and source
+boundary tests that prevent reverse or bypass imports.

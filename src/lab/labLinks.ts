@@ -1,6 +1,7 @@
 import { THREE_D_DEBUG_LAB_LINK } from "@/lab/experiments/three-d-debug/routeMeta";
 import { VRM_RIG_LAB_LINK } from "@/lab/experiments/vrm-rig/routeMeta";
 import { GRAVITY_LAB_LINK } from "@/lab/experiments/gravity/routeMeta";
+import { MEL_TURNING_LAB_LINK } from "@/lab/experiments/mel-turning/routeMeta";
 import { PENDULUM_LAB_LINK } from "@/lab/experiments/pendulum/routeMeta";
 
 export const labLinks = [
@@ -42,6 +43,7 @@ export const labLinks = [
     label: "Beat Graph Editor",
     to: "/lab/beat-graph"
   },
+  MEL_TURNING_LAB_LINK,
   THREE_D_DEBUG_LAB_LINK,
   VRM_RIG_LAB_LINK
 ] as const;
