@@ -39,6 +39,22 @@ The remaining TO non-native file still tests a topology hypothesis. Non-native a
 the same plane topology, but they are not interchangeable movement rows: hand placement and the
 path allowed by the surrounding sequence still matter.
 
+## Runtime normalization
+
+The isolated Mel-turning lab contains a typed, deterministic normalization of the verified evidence:
+
+- 24 one-hand turns and 2 non-turning one-hand reference cycles;
+- 28 two-hand turns across TO, SO, TS, and SS timing;
+- 52 verified turn cases in total.
+
+Each normalized fixture retains its CSV filename, exact case label, original first step, and original
+turn step. Runtime code does not parse the CSVs. Source comparison is a manual audit step rather than
+a CSV-conformance test.
+
+Back notation remains explicit during normalization: `Cb`, `Lb`, and `Rb` carry
+`behind-body` hand placement in addition to the ordinary five-column lane and A/B plane-side data.
+This prevents low-back evidence from being flattened into front-wall `C`, `L`, and `R` shorthand.
+
 ## Verified findings
 
 - All four proposed TS bridge combinations were physically valid. Keeping the same chasing offset

@@ -6,6 +6,11 @@ import {
 } from "@/lab/experiments/mel-turning/fixtures/verifiedTurningTraces";
 
 describe("verified Mel turning traces", () => {
+  it("contains all 28 physically verified two-hand reel turns", () => {
+    expect(VERIFIED_TURNING_TRACES).toHaveLength(28);
+    expect(new Set(VERIFIED_TURNING_TRACES.map((trace) => trace.id)).size).toBe(28);
+  });
+
   it("keeps the five Mel lanes in body-relative column order", () => {
     expect(VERIFIED_TURNING_TRACES[0]?.lanes.map((lane) => lane.id)).toEqual([
       "left-high",
