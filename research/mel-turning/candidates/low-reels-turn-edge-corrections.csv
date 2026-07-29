@@ -3,7 +3,7 @@ Purpose,Recheck five sequences whose movement rows may be sound but whose shared
 Invariant,Whenever a poi changes plane side at a body-side crosspoint it must point outward at the horizontal midpoint.,,,
 Status,CANDIDATES — edit facing and Body edge notes directly while physically checking.,,,
 ,,,,
-CASE 1A — RIGHT LOW-BACK INWARD TURN LEFT — USER CORRECTION; CONTINUE ON Lb B,,,,
+CASE 1A — RIGHT LOW-BACK INWARD TURN LEFT — USER CORRECTION; CONTINUE ON Lb B,verified,,,
 t,facing,left,right,Body edge / verification note
 0,0,,Cb b down,
 1,0,,Cb b up,
@@ -15,7 +15,7 @@ t,facing,left,right,Body edge / verification note
 7,180,,Cb a up,
 8,180,,Lb b down,
 ,,,,
-CASE 1B — RIGHT LOW-BACK INWARD TURN LEFT — USER CORRECTION; IMMEDIATE SECOND CROSS,,,,
+CASE 1B — RIGHT LOW-BACK INWARD TURN LEFT — USER CORRECTION; IMMEDIATE SECOND CROSS,verified,,,
 t,facing,left,right,Body edge / verification note
 0,0,,Cb b down,
 1,0,,Cb b up,
@@ -27,7 +27,7 @@ t,facing,left,right,Body edge / verification note
 7,180,,Lb b up,
 8,180,,Lb b down,
 ,,,,
-CASE 2A — RIGHT LOW-BACK OUTWARD TURN LEFT — TURN ON FIRST LEFT CROSS,,,,
+CASE 2A — RIGHT LOW-BACK OUTWARD TURN LEFT — TURN ON FIRST LEFT CROSS,verified,,,
 t,facing,left,right,Body edge / verification note
 0,0,,Cb b up,
 1,0,,Cb b down,
@@ -39,20 +39,20 @@ t,facing,left,right,Body edge / verification note
 7,180,,Cb a down,
 8,180,,Lb b up,
 ,,,,
-CASE 2B — RIGHT LOW-BACK OUTWARD TURN LEFT — NORMAL LEFT CROSS THEN TURN ON RIGHT-BACK CROSS,,,,
+CASE 2B — RIGHT LOW-BACK OUTWARD TURN LEFT — NORMAL LEFT CROSS THEN TURN ON RIGHT-BACK CROSS,verified,,,
 t,facing,left,right,Body edge / verification note
 0,0,,Cb b up,
 1,0,,Cb b down,
 2,0,,Lb a up,
 3,0,,Lb a down,Normal A→B crossing through performer-left occurs between 3 and 4; body has not turned yet.
 4,0,,Cb b up,"Turn happens between 4 and 5. Cross B→A through performer-right while the hand is behind the body/on the B-side topology. This is the previously verified route; confirm the gate description."
-5,180,,Cb a down,
+5,180,,Cb a down,"This is correct and verified. If the poi is on Cb b up, and we turn to the left, the poi can cross through the right cross point since that's now open and then hold plane side a. I guess you can think of the idea of if you're turning to the left and hand is in front of body then the left turning gate is opening, but if the hand / poi is behind the body then the right is opening."
 6,180,,Cb a up,
 7,180,,Lb b down,
 8,180,,Lb b up,
 9,180,,Cb a down,
 ,,,,
-CASE 3 — TO COUNTER→UNISON TURN LEFT — USER-PROPOSED CORRECTION,,,,
+CASE 3 — TO COUNTER→UNISON TURN LEFT — USER-PROPOSED CORRECTION,verified,,,
 t,facing,left,right,Body edge / verification note
 0,0,L b up,C a up,
 1,0,L b down,C a down,
@@ -64,7 +64,7 @@ t,facing,left,right,Body edge / verification note
 7,180,L a down,R a down,
 8,180,L a up,R a up,
 ,,,,
-CASE 4 — SO NON-NATIVE CHASING-2→CHASING-2 TURN LEFT — CANDIDATE EARLIER OPEN TURN,,,,
+CASE 4 — SO NON-NATIVE CHASING-2→CHASING-2 TURN LEFT — CANDIDATE EARLIER OPEN TURN,Corrected.,,,"Originally you have C a up and L b down with facing 180 degrees. this isn't possible, as C means center, if if C is on plane side a then the performer must be faacing 0 degree, if C is on plane side b then the pefromer must be facing 0 degrees. If it's instead Cb, this is reveres. Cb a means 180 degrees, Cb b means 0 degrees. So I've corrected this one. If the right hand is C a, and a turn occurs and it holds plane side, then the right hand would convert to L a or where ever it is. Likewise is the performer is facing 0 degrees, L a or R a isn't posssible. Left / right can only happen when the poi is behind the back, ie on the plane behind the performer. So when facing 0 degrees, side A is infront, side B is behind. So C a, L b, R b, Cb b, Lb a, Rb a, then when facing 180 degrees, C b, L a, R a, Cb a, Lb b, Rb b."
 t,facing,left,right,Body edge / verification note
 0,0,R b down,C a up,
 1,0,R b up,L b down,
@@ -72,15 +72,15 @@ t,facing,left,right,Body edge / verification note
 3,0,C a up,C a down,
 4,0,R b down,C a up,
 5,0,R b up,L b down,
-6,0,C a down,L b up,Proposed turn happens between 6 and 7. Both hands hold the open A/B configuration through the turn.
-7,180,C a up,L b down,The right hand remains on B. Verify body-relative lane labels at the completed turn.
-8,180,C b down,C b up,Left A→B crossing now occurs after the body turn; verify its body-side gate.
+6,0,C a down,L b up,"turn happens 6 to 7. Left hand cross, right hand holds plane side b. "
+7,180,C b up,C b down,
+8,180,C b down,C b up,
 9,180,R a up,C b down,
 10,180,R a down,L a up,
 11,180,C b up,L a down,
 12,180,C b down,C b up,
 ,,,,
-CASE 5 — SS COUNTER→UNISON TURN LEFT — CANDIDATE EARLIER COUNTER/WHEEL TURN,,,,
+CASE 5 — SS COUNTER→UNISON TURN LEFT — CANDIDATE EARLIER COUNTER/WHEEL TURN,corrected,,,
 t,facing,left,right,Body edge / verification note
 0,0,L b down,C a up,
 1,0,C a up,R b down,
@@ -88,10 +88,10 @@ t,facing,left,right,Body edge / verification note
 3,0,L b up,C a down,
 4,0,L b down,C a up,
 5,0,C a up,R b down,
-6,0,C a down,R b up,Proposed turn happens between 6 and 7. Left crosses A→B outward-left; right crosses B→A outward-right through the ordinary counter/wheel-plane passage.
-7,180,L b up,C a down,Verify these body-relative lane labels immediately after the completed turn.
-8,180,L a down,R a up,
-9,180,L a up,R a down,
-10,180,C b down,C b up,
-11,180,C b up,C b down,
-12,180,L a down,R a up,
+6,0,C a down,R b up,
+7,0,L b up,C a down,"Turn happens 7 - 8, left holds b, right cross c a to c b. "
+8,180,C b down,C b up,
+9,180,C b up,C b down,
+10,180,L a down,R a up,
+11,180,L a up,R a down,
+12,180,C b down,C b up,
