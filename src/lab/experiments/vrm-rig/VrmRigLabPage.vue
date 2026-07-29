@@ -2,6 +2,7 @@
 import { computed, ref, shallowRef, watch } from "vue";
 
 import { BodyRigMotionSolver, buildBodyRigDimensionsForCanonicalUnitRadius } from "@/body-rig";
+import FrameStableSelect from "@/components/FrameStableSelect.vue";
 import type { RigId } from "@/engine/types";
 import { buildBodyHumanoidScene } from "@/lab/experiments/three-d-debug/bodyHumanoidScene";
 import { buildThreeDDebugSceneState } from "@/lab/experiments/three-d-debug/worldPoseScene";
@@ -70,6 +71,10 @@ const vrmRigProfile = shallowRef<VrmRigProfile | null>(null);
 const vrmPoseDiagnostics = shallowRef<VrmPoseDiagnostics | null>(null);
 const canonicalBodyDimensions = buildBodyRigDimensionsForCanonicalUnitRadius(1);
 const poseCases = buildVrmRigPoseCases(canonicalBodyDimensions);
+const poseSourceOptions = [
+  { value: "live", label: "Live POI playback" },
+  ...poseCases.map((poseCase) => ({ value: poseCase.id, label: poseCase.label }))
+];
 const bodyRigMotionSolver = new BodyRigMotionSolver();
 
 function resolveBodyRigIds(rigOrder: readonly RigId[]) {
@@ -224,6 +229,12 @@ function resetView() {
 function setPlaybackSpeed(speed: number) {
   core.transport.setSpeed(speed);
 }
+
+function setPoseSource(value: string | number) {
+  if (value === "live" || poseCases.some((poseCase) => poseCase.id === value)) {
+    poseSource.value = value as "live" | VrmRigPoseCaseId;
+  }
+}
 </script>
 
 <template>
@@ -318,15 +329,12 @@ function setPlaybackSpeed(speed: number) {
 
           <label class="grid gap-1 text-slate-400">
             <span>Pose source</span>
-            <select
-              v-model="poseSource"
+            <FrameStableSelect
+              :model-value="poseSource"
+              :options="poseSourceOptions"
               class="rounded-lg border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text"
-            >
-              <option value="live">Live POI playback</option>
-              <option v-for="poseCase in poseCases" :key="poseCase.id" :value="poseCase.id">
-                {{ poseCase.label }}
-              </option>
-            </select>
+              @update:model-value="setPoseSource"
+            />
           </label>
 
           <label class="flex items-center justify-between gap-3">

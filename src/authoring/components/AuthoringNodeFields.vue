@@ -3,6 +3,7 @@ import { computed, ref, watch } from "vue";
 
 import AuthoringRadiusProfileFields from "@/authoring/components/AuthoringRadiusProfileFields.vue";
 import type { AuthoredDriverKind, AuthoredRadiusProfileKey } from "@/authoring/types";
+import FrameStableSelect from "@/components/FrameStableSelect.vue";
 
 const props = defineProps<{
   node: "hand" | "head";
@@ -56,6 +57,10 @@ const hasRadiusProfileKeys = computed(() => props.radiusProfileKeys.length > 0);
 const canAddRadiusProfileKey = computed(
   () => Number.isFinite(props.durationUnits) && props.durationUnits > 0
 );
+const driverOptions = computed(() => [
+  { value: "circle", label: "Circle" },
+  { value: "pendulum", label: "Pendulum", disabled: !props.canUsePendulum }
+]);
 
 watch(
   () => props.driverKind,
@@ -184,8 +189,8 @@ function onSwingPhaseBlur() {
   );
 }
 
-function onDriverKindChange(event: Event) {
-  emit("update:driver-kind", (event.target as HTMLSelectElement).value as AuthoredDriverKind);
+function onDriverKindChange(value: string | number) {
+  emit("update:driver-kind", String(value) as AuthoredDriverKind);
 }
 
 function addInitialRadiusProfileKey() {
@@ -208,15 +213,13 @@ function addInitialRadiusProfileKey() {
       <div class="flex items-center justify-between gap-2">
         <label>
           <span class="sr-only">{{ node }} driver</span>
-          <select
+          <FrameStableSelect
             class="order-2 rounded-lg border border-ui-border-strong bg-ui-input px-2 py-1 text-xs text-ui-text transition focus:border-sky-400"
-            :value="driverKind"
+            :model-value="driverKind"
+            :options="driverOptions"
             @click.stop
-            @change="onDriverKindChange"
-          >
-            <option value="circle">Circle</option>
-            <option value="pendulum" :disabled="!canUsePendulum">Pendulum</option>
-          </select>
+            @update:model-value="onDriverKindChange"
+          />
         </label>
         <button
           v-if="driverKind === 'circle' && !hasRadiusProfileKeys"

@@ -2,6 +2,8 @@
 import { computed, ref, watch } from "vue";
 
 import { compileAuthoredDocument } from "@/authoring/compile";
+import FrameStableNumberInput from "@/components/FrameStableNumberInput.vue";
+import FrameStableSelect from "@/components/FrameStableSelect.vue";
 import type { MultiRigSequence } from "@/engine/types";
 import { usePatternRegistry } from "@/patterns/usePatternRegistry";
 import { demoSequence } from "@/visualizer/demoSequence";
@@ -33,6 +35,11 @@ import {
 type HorizonMode = "auto" | "custom";
 type OffsetSnapMode = "free" | "shared" | "left" | "right";
 
+const HORIZON_OPTIONS = [
+  { value: "auto", label: "Automatic" },
+  { value: "custom", label: "Custom" }
+] as const;
+
 const registry = usePatternRegistry();
 const leftQuantization = ref(TIMING_ORBIT_DEFAULT_LEFT_QUANTIZATION);
 const rightQuantization = ref(TIMING_ORBIT_DEFAULT_RIGHT_QUANTIZATION);
@@ -45,6 +52,11 @@ const authoredEntries = computed(() =>
   registry.entries.value
     .filter((entry) => entry.source.kind === "authoring")
     .sort((left, right) => left.name.localeCompare(right.name))
+);
+const authoredPatternOptions = computed(() =>
+  authoredEntries.value.length === 0
+    ? [{ value: "", label: "No authored patterns", disabled: true }]
+    : authoredEntries.value.map((entry) => ({ value: entry.id, label: entry.name }))
 );
 
 const activeEntry = computed(() => {
@@ -141,6 +153,12 @@ const sharedSnapStep = computed(() =>
       )
     : null
 );
+const offsetSnapOptions = computed(() => [
+  { value: "free", label: "Free" },
+  { value: "shared", label: "Shared grid", disabled: sharedSnapStep.value === null },
+  { value: "left", label: "Left landmarks" },
+  { value: "right", label: "Right landmarks" }
+]);
 const activeSnapStep = computed(() => {
   if (!periods.value) return null;
   switch (offsetSnapMode.value) {
@@ -258,12 +276,11 @@ watch(
   { immediate: true }
 );
 
-function selectPattern(event: Event) {
-  registry.select((event.target as HTMLSelectElement).value);
+function selectPattern(value: string | number) {
+  registry.select(String(value));
 }
 
-function setQuantization(side: "left" | "right", event: Event) {
-  const raw = Number((event.target as HTMLInputElement).value);
+function setQuantization(side: "left" | "right", raw: number) {
   if (!Number.isFinite(raw)) return;
   const value = Math.min(
     Math.max(Math.round(raw), TIMING_ORBIT_MIN_QUANTIZATION),
@@ -273,16 +290,16 @@ function setQuantization(side: "left" | "right", event: Event) {
   else rightQuantization.value = value;
 }
 
-function setHorizonMode(event: Event) {
-  const mode = (event.target as HTMLSelectElement).value as HorizonMode;
+function setHorizonMode(value: string | number) {
+  const mode = String(value) as HorizonMode;
   horizonMode.value = mode === "custom" ? "custom" : "auto";
   if (horizonMode.value === "custom" && automaticHorizon.value) {
     customHorizon.value = automaticHorizon.value.duration;
   }
 }
 
-function setOffsetSnapMode(event: Event) {
-  offsetSnapMode.value = (event.target as HTMLSelectElement).value as OffsetSnapMode;
+function setOffsetSnapMode(value: string | number) {
+  offsetSnapMode.value = String(value) as OffsetSnapMode;
 }
 
 function applyOffset(value: number) {
@@ -355,41 +372,35 @@ function formatPosition(
       >
         <label class="grid min-w-0 gap-1.5 text-sm text-ui-text-secondary">
           Authored pattern
-          <select
-            :value="activeEntry?.id ?? ''"
+          <FrameStableSelect
+            :model-value="activeEntry?.id ?? ''"
+            :options="authoredPatternOptions"
             class="min-h-11 min-w-0 max-w-full rounded-md border border-ui-border-strong bg-ui-input px-3 text-ui-text"
-            @change="selectPattern"
-          >
-            <option v-if="authoredEntries.length === 0" value="">No authored patterns</option>
-            <option v-for="entry in authoredEntries" :key="entry.id" :value="entry.id">
-              {{ entry.name }}
-            </option>
-          </select>
+            @update:model-value="selectPattern"
+          />
         </label>
 
         <label class="grid min-w-0 gap-1.5 text-sm text-ui-text-secondary">
           Left landmarks
-          <input
-            :value="leftQuantization"
-            type="number"
+          <FrameStableNumberInput
+            :model-value="leftQuantization"
             :min="TIMING_ORBIT_MIN_QUANTIZATION"
             :max="TIMING_ORBIT_MAX_QUANTIZATION"
             step="1"
             class="min-h-11 rounded-md border border-ui-border-strong bg-ui-input px-3 text-ui-text"
-            @change="setQuantization('left', $event)"
+            @update:model-value="setQuantization('left', $event)"
           />
         </label>
 
         <label class="grid min-w-0 gap-1.5 text-sm text-ui-text-secondary">
           Right landmarks
-          <input
-            :value="rightQuantization"
-            type="number"
+          <FrameStableNumberInput
+            :model-value="rightQuantization"
             :min="TIMING_ORBIT_MIN_QUANTIZATION"
             :max="TIMING_ORBIT_MAX_QUANTIZATION"
             step="1"
             class="min-h-11 rounded-md border border-ui-border-strong bg-ui-input px-3 text-ui-text"
-            @change="setQuantization('right', $event)"
+            @update:model-value="setQuantization('right', $event)"
           />
         </label>
       </div>
@@ -499,16 +510,12 @@ function formatPosition(
             <div class="flex items-end gap-2">
               <label class="grid min-w-0 flex-1 gap-1.5 text-xs text-ui-text-secondary">
                 Snap
-                <select
-                  :value="offsetSnapMode"
+                <FrameStableSelect
+                  :model-value="offsetSnapMode"
+                  :options="offsetSnapOptions"
                   class="min-h-10 rounded-md border border-ui-border-strong bg-ui-input px-2 text-sm text-ui-text"
-                  @change="setOffsetSnapMode"
-                >
-                  <option value="free">Free</option>
-                  <option value="shared" :disabled="sharedSnapStep === null">Shared grid</option>
-                  <option value="left">Left landmarks</option>
-                  <option value="right">Right landmarks</option>
-                </select>
+                  @update:model-value="setOffsetSnapMode"
+                />
               </label>
               <output class="pb-2 font-mono text-sm text-fuchsia-200">
                 {{ formatNumber(rightOffset, 3) }}
@@ -574,24 +581,22 @@ function formatPosition(
             <legend class="text-sm font-medium text-slate-200">Observation horizon</legend>
             <label class="grid gap-1.5 text-xs text-ui-text-secondary">
               Mode
-              <select
-                :value="horizonMode"
+              <FrameStableSelect
+                :model-value="horizonMode"
+                :options="HORIZON_OPTIONS"
                 class="min-h-10 rounded-md border border-ui-border-strong bg-ui-input px-2 text-sm text-ui-text"
-                @change="setHorizonMode"
-              >
-                <option value="auto">Automatic</option>
-                <option value="custom">Custom</option>
-              </select>
+                @update:model-value="setHorizonMode"
+              />
             </label>
             <label v-if="horizonMode === 'custom'" class="grid gap-1.5 text-xs text-ui-text-secondary">
               Units
-              <input
-                v-model.number="customHorizon"
-                type="number"
+              <FrameStableNumberInput
+                :model-value="customHorizon"
                 min="0.01"
                 :max="TIMING_ORBIT_MAX_AUTO_HORIZON"
                 step="0.01"
                 class="min-h-10 rounded-md border border-ui-border-strong bg-ui-input px-2 text-sm text-ui-text"
+                @update:model-value="customHorizon = $event"
               />
             </label>
           </fieldset>

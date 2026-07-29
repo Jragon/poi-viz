@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
+import FrameStableSelect from "@/components/FrameStableSelect.vue";
 import type { ProjectionModePreference } from "@/engine/planeProjection";
 import {
   DISPLAY_SCALE_SETTING,
@@ -12,6 +13,12 @@ import {
 } from "@/visualizer/useDisplaySettings";
 import type { TrailLoopMode } from "@/visualizer/useMultiRigPlayback";
 import { useVisualizerWorkspace } from "@/visualizer/visualizerWorkspace";
+
+const PROJECTION_MODE_OPTIONS = [
+  { value: "auto", label: "Auto" },
+  { value: "orthographic", label: "Flat" },
+  { value: "tilted", label: "Tilted" }
+] as const;
 
 const props = withDefaults(
   defineProps<{
@@ -62,8 +69,7 @@ function trailLoopModeValue(event: Event): TrailLoopMode {
   return checkboxValue(event) ? "auto" : "off";
 }
 
-function projectionModeValue(event: Event): ProjectionModePreference {
-  const value = (event.target as HTMLSelectElement).value;
+function projectionModeValue(value: string | number): ProjectionModePreference {
   return value === "orthographic" || value === "tilted" ? value : "auto";
 }
 </script>
@@ -248,15 +254,14 @@ function projectionModeValue(event: Event): ProjectionModePreference {
           <span class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted"
             >Mode</span
           >
-          <select
+          <FrameStableSelect
             class="w-full rounded-lg border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text transition focus:border-amber-400"
-            :value="display.external.projectionMode.value.value"
-            @change="display.external.projectionMode.set(projectionModeValue($event))"
-          >
-            <option value="auto">Auto</option>
-            <option value="orthographic">Flat</option>
-            <option value="tilted">Tilted</option>
-          </select>
+            :model-value="display.external.projectionMode.value.value"
+            :options="PROJECTION_MODE_OPTIONS"
+            @update:model-value="
+              display.external.projectionMode.set(projectionModeValue($event))
+            "
+          />
         </label>
 
         <label

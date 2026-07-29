@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 
+import FrameStableSelect from "@/components/FrameStableSelect.vue";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
 import {
   createVisualizerWorkspace,
@@ -28,6 +29,10 @@ const CURVE_OPTIONS = [
   { value: "gravity", label: "Gravity reference" },
   { value: "sine", label: "Sine reference" },
   { value: "constant", label: "Constant speed" }
+] as const;
+const DIRECTION_OPTIONS = [
+  { value: -1, label: "negative" },
+  { value: 1, label: "positive" }
 ] as const;
 
 const defaults = createDefaultCirclePendulumExperiment();
@@ -64,6 +69,15 @@ const currentTimeLabel = computed(() => transport.currentTime.value.toFixed(2));
 const currentSample = computed(() =>
   sampleCirclePendulumMotion(config.value, transport.currentTime.value)
 );
+
+function setDirection(target: "circle" | "pendulum", value: string | number) {
+  const direction: MotionDirection = Number(value) === -1 ? -1 : 1;
+  if (target === "circle") {
+    circleDirection.value = direction;
+  } else {
+    pendulumDirection.value = direction;
+  }
+}
 
 function wrapDegrees(value: number): number {
   return ((value % 360) + 360) % 360;
@@ -272,24 +286,22 @@ function onScrub(event: Event) {
 
         <label class="grid gap-1 text-sm text-slate-300">
           <span>Circle direction</span>
-          <select
-            v-model.number="circleDirection"
+          <FrameStableSelect
+            :model-value="circleDirection"
+            :options="DIRECTION_OPTIONS"
             class="rounded-md border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text"
-          >
-            <option :value="-1">negative</option>
-            <option :value="1">positive</option>
-          </select>
+            @update:model-value="setDirection('circle', $event)"
+          />
         </label>
 
         <label class="grid gap-1 text-sm text-slate-300">
           <span>Pendulum direction</span>
-          <select
-            v-model.number="pendulumDirection"
+          <FrameStableSelect
+            :model-value="pendulumDirection"
+            :options="DIRECTION_OPTIONS"
             class="rounded-md border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text"
-          >
-            <option :value="-1">negative</option>
-            <option :value="1">positive</option>
-          </select>
+            @update:model-value="setDirection('pendulum', $event)"
+          />
         </label>
 
         <div class="grid gap-1 border-t border-ui-border-subtle pt-3 text-xs text-slate-400">

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 
 import AuthoringNodeFields from "@/authoring/components/AuthoringNodeFields.vue";
 import type {
@@ -9,6 +9,7 @@ import type {
   AuthoredSegment,
   DerivedAuthoredSegmentBoundary
 } from "@/authoring/types";
+import FrameStableSelect from "@/components/FrameStableSelect.vue";
 import { PI } from "@/engine/constants";
 import type { PlaneId, PlaneSide, RelativeRigPose } from "@/engine/types";
 
@@ -26,6 +27,17 @@ const props = defineProps<{
   canDelete: boolean;
   showBoundaryRow: boolean;
 }>();
+const planeSelectOptions = computed(() =>
+  PLANE_OPTIONS.map((plane) => ({
+    value: plane,
+    label: plane,
+    disabled: plane === "floor" && segmentHasPendulum()
+  }))
+);
+const planeSideSelectOptions = PLANE_SIDE_OPTIONS.map((side) => ({
+  value: side,
+  label: side.toUpperCase()
+}));
 
 const emit = defineEmits<{
   (event: "select"): void;
@@ -179,12 +191,12 @@ function onUpdateOmega(node: EditableNode, displayValue: number) {
   emit("update:omega", { node, value: toRadiansPerUnit(displayValue, props.omegaUnit) });
 }
 
-function onPlaneChange(event: Event) {
-  emit("update:plane", (event.target as HTMLSelectElement).value as PlaneId);
+function onPlaneChange(value: string | number) {
+  emit("update:plane", String(value) as PlaneId);
 }
 
-function onPlaneSideChange(event: Event) {
-  emit("update:plane-side", (event.target as HTMLSelectElement).value as PlaneSide);
+function onPlaneSideChange(value: string | number) {
+  emit("update:plane-side", String(value) as PlaneSide);
 }
 </script>
 
@@ -257,37 +269,26 @@ function onPlaneSideChange(event: Event) {
           <span class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted"
             >Plane</span
           >
-          <select
+          <FrameStableSelect
             class="w-full min-w-0 rounded-2xl border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text transition focus:border-sky-400"
-            :value="segment.planeId ?? 'wall'"
+            :model-value="segment.planeId ?? 'wall'"
+            :options="planeSelectOptions"
             @click.stop
-            @change="onPlaneChange"
-          >
-            <option
-              v-for="plane in PLANE_OPTIONS"
-              :key="plane"
-              :value="plane"
-              :disabled="plane === 'floor' && segmentHasPendulum()"
-            >
-              {{ plane }}
-            </option>
-          </select>
+            @update:model-value="onPlaneChange"
+          />
         </label>
 
         <label class="grid min-w-0 gap-1 text-sm text-ui-text-secondary">
           <span class="text-xs font-medium uppercase tracking-[0.14em] text-ui-text-muted"
             >Plane side</span
           >
-          <select
+          <FrameStableSelect
             class="w-full min-w-0 rounded-2xl border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text transition focus:border-sky-400"
-            :value="segment.planeSide ?? 'a'"
+            :model-value="segment.planeSide ?? 'a'"
+            :options="planeSideSelectOptions"
             @click.stop
-            @change="onPlaneSideChange"
-          >
-            <option v-for="side in PLANE_SIDE_OPTIONS" :key="side" :value="side">
-              {{ side.toUpperCase() }}
-            </option>
-          </select>
+            @update:model-value="onPlaneSideChange"
+          />
         </label>
 
         <label class="grid min-w-0 gap-1 text-sm text-ui-text-secondary">

@@ -3,6 +3,7 @@ import { computed, ref, watch } from "vue";
 
 import { compileAuthoredDocument } from "@/authoring/compile";
 import type { AuthoredDocumentEntry } from "@/authoring/types";
+import FrameStableSelect from "@/components/FrameStableSelect.vue";
 import type { MultiRigSequence } from "@/engine/types";
 import { usePatternRegistry } from "@/patterns/usePatternRegistry";
 import PoiCanvasViewport from "@/visualizer/PoiCanvasViewport.vue";
@@ -23,7 +24,15 @@ const authoredDocuments = computed<AuthoredDocumentEntry[]>(() =>
     entry.source.kind === "authoring" ? [{ id: entry.id, document: entry.source.document }] : []
   )
 );
-const selectedSequenceId = ref(
+const authoredDocumentOptions = computed(() =>
+  authoredDocuments.value.length === 0
+    ? [{ value: "", label: "No authored sequences", disabled: true }]
+    : authoredDocuments.value.map((entry) => ({
+        value: entry.id,
+        label: entry.document.name
+      }))
+);
+const selectedSequenceId = ref<string | null>(
   registry.selectedPattern.value?.source.kind === "authoring"
     ? registry.selectedPattern.value.id
     : (authoredDocuments.value[0]?.id ?? null)
@@ -97,6 +106,10 @@ function resetPlayback() {
   transport.reset();
 }
 
+function selectSequence(value: string | number) {
+  selectedSequenceId.value = String(value) || null;
+}
+
 watch(selectedSequenceId, () => {
   if (selectedSequenceId.value) registry.select(selectedSequenceId.value);
   transport.reset();
@@ -138,17 +151,12 @@ watch(
             class="grid gap-1 text-xs font-medium uppercase tracking-[0.16em] text-ui-text-muted"
           >
             Sequence
-            <select
-              v-model="selectedSequenceId"
+            <FrameStableSelect
+              :model-value="selectedSequenceId ?? ''"
+              :options="authoredDocumentOptions"
               class="rounded-md border border-ui-border-strong bg-ui-input px-3 py-2 text-sm font-medium normal-case tracking-normal text-ui-text transition hover:border-ui-focus focus:border-teal-300"
-            >
-              <option v-if="authoredDocuments.length === 0" value="" disabled>
-                No authored sequences
-              </option>
-              <option v-for="entry in authoredDocuments" :key="entry.id" :value="entry.id">
-                {{ entry.document.name }}
-              </option>
-            </select>
+              @update:model-value="selectSequence"
+            />
           </label>
           <p
             class="rounded-md border border-ui-border-subtle bg-slate-900/80 px-3 py-1 text-xs tracking-[0.12em] text-slate-400 uppercase"

@@ -79,6 +79,12 @@ Runtime drivers are deliberately unsafe. Preparation validates only that a runti
 
 `src/pages/`, `src/components/`, `src/App.vue`, and `src/router.ts` compose production and experimental surfaces. Route availability is an application concern, not an engine capability declaration.
 
+Native selects and editable numeric fields that can appear beneath animation-driven parents are
+isolated behind frame-stable components in `src/components/`. Playback clocks may invalidate a page
+at animation frequency, but they must not repeatedly patch a control's transient browser state while
+the user is opening a select or editing an incomplete number. Select option arrays must therefore
+remain stable unless their actual choices change.
+
 ## Preparation Trust Boundary
 
 `prepareSequence(input: unknown)` and `prepareMultiRigSequence(input: unknown)` are defensive trust boundaries. They:

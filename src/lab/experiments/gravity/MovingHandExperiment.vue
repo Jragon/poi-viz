@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
+import FrameStableSelect from "@/components/FrameStableSelect.vue";
+
 import GravityCanvas from "./GravityCanvas.vue";
 import GravityComparisonPlot from "./GravityComparisonPlot.vue";
 import GravityPhaseScanPlot from "./GravityPhaseScanPlot.vue";
@@ -27,6 +29,21 @@ const gravity = ref(defaults.gravity);
 const tetherLength = ref(defaults.length);
 type HandPathShape = "circle" | "ellipse" | "line";
 type HandControlMode = "open-loop" | "phase-locked" | "constant-speed" | "reference";
+const HAND_PATH_OPTIONS = [
+  { value: "ellipse", label: "ellipse" },
+  { value: "circle", label: "circle" },
+  { value: "line", label: "line" }
+] as const;
+const HAND_CONTROL_OPTIONS = [
+  { value: "phase-locked", label: "phase-locked ellipse" },
+  { value: "constant-speed", label: "constant angular speed" },
+  { value: "reference", label: "ideal constant-speed reference" },
+  { value: "open-loop", label: "open-loop path" }
+] as const;
+const LINE_AXIS_OPTIONS = [
+  { value: "horizontal", label: "horizontal" },
+  { value: "vertical", label: "vertical" }
+] as const;
 const pathShape = ref<HandPathShape>("ellipse");
 const handControlMode = ref<HandControlMode>("phase-locked");
 const handAmplitudeX = ref(0.08);
@@ -168,6 +185,29 @@ const simulationError = computed(() => {
   return null;
 });
 
+function setPathShape(value: string | number) {
+  if (value === "circle" || value === "ellipse" || value === "line") {
+    pathShape.value = value;
+  }
+}
+
+function setHandControlMode(value: string | number) {
+  if (
+    value === "open-loop" ||
+    value === "phase-locked" ||
+    value === "constant-speed" ||
+    value === "reference"
+  ) {
+    handControlMode.value = value;
+  }
+}
+
+function setLineAxis(value: string | number) {
+  if (value === "horizontal" || value === "vertical") {
+    lineAxis.value = value;
+  }
+}
+
 function resetPlayback() {
   currentTime.value = 0;
   previousFrameTime = null;
@@ -294,20 +334,22 @@ onBeforeUnmount(() => {
           <legend class="text-sm font-semibold text-slate-100">Hand path</legend>
           <label class="grid gap-1 text-sm text-slate-300">
             <span class="flex justify-between gap-3"><span>Shape</span><strong>{{ pathShape }}</strong></span>
-            <select v-model="pathShape" :disabled="handControlMode !== 'open-loop'" class="rounded-md border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text disabled:cursor-not-allowed disabled:opacity-60">
-              <option value="ellipse">ellipse</option>
-              <option value="circle">circle</option>
-              <option value="line">line</option>
-            </select>
+            <FrameStableSelect
+              :model-value="pathShape"
+              :options="HAND_PATH_OPTIONS"
+              :disabled="handControlMode !== 'open-loop'"
+              class="rounded-md border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text disabled:cursor-not-allowed disabled:opacity-60"
+              @update:model-value="setPathShape"
+            />
           </label>
           <label class="grid gap-1 text-sm text-slate-300">
             <span class="flex justify-between gap-3"><span>Control</span><strong>{{ handControlMode }}</strong></span>
-            <select v-model="handControlMode" class="rounded-md border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text">
-              <option value="phase-locked">phase-locked ellipse</option>
-              <option value="constant-speed">constant angular speed</option>
-              <option value="reference">ideal constant-speed reference</option>
-              <option value="open-loop">open-loop path</option>
-            </select>
+            <FrameStableSelect
+              :model-value="handControlMode"
+              :options="HAND_CONTROL_OPTIONS"
+              class="rounded-md border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text"
+              @update:model-value="setHandControlMode"
+            />
           </label>
           <label class="grid gap-1 text-sm text-slate-300">
             <span class="flex justify-between gap-3"><span>{{ pathShape === "line" ? "Amplitude / L" : "Horizontal radius / L" }}</span><strong>{{ handAmplitudeX.toFixed(2) }}</strong></span>
@@ -319,10 +361,12 @@ onBeforeUnmount(() => {
           </label>
           <label v-if="pathShape === 'line'" class="grid gap-1 text-sm text-slate-300">
             <span class="flex justify-between gap-3"><span>Line axis</span><strong>{{ lineAxis }}</strong></span>
-            <select v-model="lineAxis" class="rounded-md border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text">
-              <option value="horizontal">horizontal</option>
-              <option value="vertical">vertical</option>
-            </select>
+            <FrameStableSelect
+              :model-value="lineAxis"
+              :options="LINE_AXIS_OPTIONS"
+              class="rounded-md border border-ui-border-strong bg-ui-input px-3 py-2 text-ui-text"
+              @update:model-value="setLineAxis"
+            />
           </label>
           <label class="grid gap-1 text-sm text-slate-300">
             <span class="flex justify-between gap-3"><span>Hand rate / √(g/L)</span><strong>{{ handRate.toFixed(2) }}</strong></span>

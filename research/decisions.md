@@ -455,3 +455,25 @@ the engine or authoring document.
 Validation covers unequal 3- and 5-unit cycles, 3- and 10-part landmark trains, the 15-unit joint
 period, continuous and snapped offsets, source immutability, bounded-period fallback, route
 integration, Vue type checking, and the normal repository quality gates.
+
+## 2026-07-29: Animation-Driven Pages Isolate Native Editable Controls
+
+Playback clocks update reactive time at animation frequency. A page that reads that clock can render
+roughly once per frame, and Vue deliberately patches dynamic native `value` properties even when the
+rendered value appears unchanged. That can overwrite an in-progress number edit and, in Firefox,
+cancel a native select's transient popup selection before its change event commits.
+
+- Native selects are owned by a frame-stable child component with option data passed as stable
+  arrays. Parent playback renders do not update the child unless its value, options, disabled state,
+  or other actual attributes change.
+- Editable number fields that coexist directly with a playback clock use a local draft component.
+  Finite values publish on `input`; incomplete text remains local until it becomes valid or the
+  field loses focus.
+- Pausing playback on focus is rejected because it changes transport semantics and still leaves
+  browser behavior dependent on event ordering.
+- The application routes all native selects through the shared boundary, including currently
+  isolated authoring and display controls, so moving them under a frame-driven parent cannot
+  reintroduce the bug.
+
+Validation requires a source-level ownership invariant for native selects, Vue type checking, live
+editing while playback runs, and the normal lint, test, and build gates.
