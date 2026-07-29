@@ -31,7 +31,8 @@ Normative application decisions remain in [`../decisions.md`](../decisions.md).
 | --- | --- |
 | `candidates/low-reels-two-hand-together-opposite-non-native-turn-left.csv` | Four low-non-native TO unison/counter transitions; inward to outward |
 | `candidates/low-reels-turn-edge-corrections.csv` | Full-context recheck of five suspect turn edges, including two alternative routes for each ambiguous low-back case |
-| `candidates/low-weaves-same-clockwise-natural-side-turns.csv` | Four first-pass mixed native/non-native low-weave turns: offset 0/1 on the left and right body sides |
+| `candidates/unresolved-turning-issues.csv` | Consolidated register of the eight remaining rule/notation questions, with full routes for the unresolved low-back, SO, SS, and TO cases |
+| `candidates/low-weaves-same-clockwise-natural-side-turns.csv` | Four re-derived mixed native/non-native low-weave routes plus the 12 per-hand topology-valid target pairs at their chosen turn edges |
 
 The verified same-direction files cover both left and right body turns while both poi move clockwise
 in the observer frame. The turn-right routes were derived and checked independently rather than
@@ -47,9 +48,15 @@ candidates until their corrected rows are physically checked. The older right-ha
 right crossing is also downgraded because its midpoint direction conflicts with the newly stated
 rear-circle gate rule.
 
+The unresolved-issues file is the current physical-review queue. It distinguishes ordinary
+`C b` from center-back `Cb b`, keeps the rejected low-back edge beside two gate-valid alternatives,
+and separates per-hand topology validity from joint two-arm performability.
+
 The weave file deliberately starts with same-clockwise turns toward the side occupied by both
 hands. It combines one low-native and one low-non-native reel, keeps front `C` as one equivalence
-class, and checks only offset 0 and offset 1 before expanding the matrix.
+class, and checks offset 0 and offset 1 on both body sides. Its branch matrix is exhaustive only
+under the current per-hand low-reel rules: the listed pairs still require physical verification as
+two-hand movements.
 
 ## Runtime normalization
 

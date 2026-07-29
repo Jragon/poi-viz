@@ -1,16 +1,16 @@
 LOW-WEAVE SAME-CLOCKWISE NATURAL-SIDE TURN CANDIDATES,,,,
-Status,CANDIDATES — generated from mixed low-native / low-non-native Mel reel cycles; not physically verified.,,,
-Scope,"Four deliberately small first-pass cases: left-side and right-side weaves, offset 0 and offset 1, turning toward the occupied body side.",,,
-Assumptions,Both poi remain clockwise in the observer-fixed frame; body turns 0→180 over one halfbeat; phase never pauses; front C remains one equivalence class.,,,
-Midpoint rule,A plane-side crossing during the turn must point outward through the occupied body-side gate. Holds are allowed when the paired configuration remains anatomically open.,,,
+Status,"CANDIDATES — re-derived from the current facing, front/rear circle, crossing-gate, and known-hold rules; not physically verified.",,,
+Scope,"Four small low-weave routes plus every per-hand topology-valid target pair at their chosen turn edge.",,,
+Assumptions,"Both poi remain clockwise in the observer-fixed frame; body turns 0→180 over one halfbeat; phase never pauses; front C remains one equivalence class.",,,
+Reading note,"A listed branch is legal for each hand separately. It is not yet proof that the two hands are jointly open, collision-free, or comfortable.",,,
 ,,,,
 CASE W1 — LEFT-SIDE LOW WEAVE OFFSET 0 — TURN LEFT — BOTH CROSS TOGETHER,,,,
-Configuration,Left hand low native; right hand low non-native; both tracks occupy performer-left.,,,
+Configuration,Left hand low native; right hand low non-native; both tracks occupy performer-left and are together at the horizontal midpoint.,,,
 t,facing,left,right,Body edge / verification note
 0,0,L b up,L b up,
 1,0,L b down,L b down,
 2,0,C a up,C a up,
-3,0,C a down,C a down,Turn happens between 3 and 4. Both cross A→B through performer-left; clockwise down→up points outward-left. Poi are together at the gate.
+3,0,C a down,C a down,Turn happens between 3 and 4. Both cross A→B through performer-left; clockwise down→up points left.
 4,180,C b up,C b up,
 5,180,L a down,L a down,
 6,180,L a up,L a up,
@@ -23,20 +23,20 @@ t,facing,left,right,Body edge / verification note
 0,0,L b up,C a down,
 1,0,L b down,L b up,
 2,0,C a up,L b down,
-3,0,C a down,C a up,Turn happens between 3 and 4. Left crosses A→B outward-left; right holds A. Verify arm openness and whether the right target should remain L A.
-4,180,C b up,L a down,
-5,180,L a down,L a up,
+3,0,C a down,C a up,Turn happens between 3 and 4. Left crosses A→B through performer-left. Right cannot cross here because clockwise up→down points right; it holds A and becomes body-right R a.
+4,180,C b up,R a down,
+5,180,L a down,C b up,
 6,180,L a up,C b down,
-7,180,C b down,C b up,
-8,180,C b up,L a down,
+7,180,C b down,R a up,
+8,180,C b up,R a down,
 ,,,,
 CASE W3 — RIGHT-SIDE LOW WEAVE OFFSET 0 — TURN RIGHT — BOTH CROSS TOGETHER,,,,
-Configuration,Left hand low non-native; right hand low native; both tracks occupy performer-right.,,,
+Configuration,Left hand low non-native; right hand low native; both tracks occupy performer-right and are together at the horizontal midpoint.,,,
 t,facing,left,right,Body edge / verification note
 0,0,R b down,R b down,
 1,0,R b up,R b up,
 2,0,C a down,C a down,
-3,0,C a up,C a up,Turn happens between 3 and 4. Both cross A→B through performer-right; clockwise up→down points outward-right. Poi are together at the gate.
+3,0,C a up,C a up,Turn happens between 3 and 4. Both cross A→B through performer-right; clockwise up→down points right.
 4,180,C b down,C b down,
 5,180,R a up,R a up,
 6,180,R a down,R a down,
@@ -49,9 +49,24 @@ t,facing,left,right,Body edge / verification note
 0,0,R b down,C a up,
 1,0,R b up,R b down,
 2,0,C a down,R b up,
-3,0,C a up,C a down,Turn happens between 3 and 4. Left crosses A→B outward-right; right holds A. Verify arm openness and whether the right target should remain R A.
-4,180,C b down,R a up,
-5,180,R a up,R a down,
+3,0,C a up,C a down,Turn happens between 3 and 4. Left crosses A→B through performer-right. Right cannot cross here because clockwise down→up points left; it holds A and becomes body-left L a.
+4,180,C b down,L a up,
+5,180,R a up,C b down,
 6,180,R a down,C b up,
-7,180,C b up,C b down,
-8,180,C b down,R a up,
+7,180,C b up,L a down,
+8,180,C b down,L a up,
+,,,,
+TURN-EDGE BRANCH MATRIX — PER-HAND TOPOLOGY ONLY,,,,
+ID,Source at facing 0,Turn,Topology-valid target pair at facing 180,Physical question
+W1-A,"left C a down / right C a down",left,"left C b up / right C b up","Both cross together. Baseline route above."
+W1-B,"left C a down / right C a down",left,"left C b up / right R a up","Left crosses; right holds A. Is the mixed pair jointly open?"
+W1-C,"left C a down / right C a down",left,"left R a up / right C b up","Left holds A; right crosses. Is the mixed pair jointly open?"
+W1-D,"left C a down / right C a down",left,"left R a up / right R a up","Both hold A. Is this jointly possible or do the arms collapse/collide?"
+W2-A,"left C a down / right C a up",left,"left C b up / right R a down","Left crosses; right holds A. Baseline route above."
+W2-B,"left C a down / right C a up",left,"left R a up / right R a down","Both hold A at opposite phases. Is this jointly possible?"
+W3-A,"left C a up / right C a up",right,"left C b down / right C b down","Both cross together. Baseline route above."
+W3-B,"left C a up / right C a up",right,"left C b down / right L a down","Left crosses; right holds A. Is the mixed pair jointly open?"
+W3-C,"left C a up / right C a up",right,"left L a down / right C b down","Left holds A; right crosses. Is the mixed pair jointly open?"
+W3-D,"left C a up / right C a up",right,"left L a down / right L a down","Both hold A. Is this jointly possible or do the arms collapse/collide?"
+W4-A,"left C a up / right C a down",right,"left C b down / right L a up","Left crosses; right holds A. Baseline route above."
+W4-B,"left C a up / right C a down",right,"left L a down / right L a up","Both hold A at opposite phases. Is this jointly possible?"
