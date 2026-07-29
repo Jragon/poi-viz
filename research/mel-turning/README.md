@@ -32,7 +32,7 @@ Normative application decisions remain in [`../decisions.md`](../decisions.md).
 | `candidates/low-reels-two-hand-together-opposite-non-native-turn-left.csv` | Four low-non-native TO unison/counter transitions; inward to outward |
 | `candidates/low-reels-turn-edge-corrections.csv` | Full-context recheck of five suspect turn edges, including two alternative routes for each ambiguous low-back case |
 | `candidates/unresolved-turning-issues.csv` | Consolidated register of the eight remaining rule/notation questions, with full routes for the unresolved low-back, SO, SS, and TO cases |
-| `candidates/low-weaves-same-clockwise-natural-side-turns.csv` | Four re-derived mixed native/non-native low-weave routes plus the 12 per-hand topology-valid target pairs at their chosen turn edges |
+| `candidates/low-weaves-same-clockwise-natural-side-turns.csv` | Four re-derived TS/SS clockwise mixed native/non-native low-weave routes plus the 12 per-hand topology-valid target pairs at their chosen turn edges |
 
 The verified same-direction files cover both left and right body turns while both poi move clockwise
 in the observer frame. The turn-right routes were derived and checked independently rather than
@@ -54,9 +54,10 @@ and separates per-hand topology validity from joint two-arm performability.
 
 The weave file deliberately starts with same-clockwise turns toward the side occupied by both
 hands. It combines one low-native and one low-non-native reel, keeps front `C` as one equivalence
-class, and checks offset 0 and offset 1 on both body sides. Its branch matrix is exhaustive only
-under the current per-hand low-reel rules: the listed pairs still require physical verification as
-two-hand movements.
+class, and checks TS and SS clockwise on both body sides. Its branch matrix is exhaustive only under
+the current per-hand low-reel rules: the listed pairs still require physical verification as
+two-hand movements. TO/SO inwards/outwards and TS/SS counterclockwise weaves have not yet been
+derived.
 
 ## Runtime normalization
 

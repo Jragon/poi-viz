@@ -2,9 +2,11 @@ LOW-WEAVE SAME-CLOCKWISE NATURAL-SIDE TURN CANDIDATES,,,,
 Status,"CANDIDATES — re-derived from the current facing, front/rear circle, crossing-gate, and known-hold rules; not physically verified.",,,
 Scope,"Four small low-weave routes plus every per-hand topology-valid target pair at their chosen turn edge.",,,
 Assumptions,"Both poi remain clockwise in the observer-fixed frame; body turns 0→180 over one halfbeat; phase never pauses; front C remains one equivalence class.",,,
+Beat-graph notation,"Together/split timing is combined with direction mode: TS and SS use clockwise/counterclockwise; TO and SO use inwards/outwards. This file currently covers TS clockwise and SS clockwise only.",,,
 Reading note,"A listed branch is legal for each hand separately. It is not yet proof that the two hands are jointly open, collision-free, or comfortable.",,,
 ,,,,
-CASE W1 — LEFT-SIDE LOW WEAVE OFFSET 0 — TURN LEFT — BOTH CROSS TOGETHER,,,,
+CASE W1 — TS CLOCKWISE — LEFT-SIDE LOW WEAVE — TURN LEFT — BOTH CROSS TOGETHER,,,,
+Pattern,"TS clockwise: together timing, same direction. Both poi remain clockwise in the observer-fixed beat graph.",,,
 Configuration,Left hand low native; right hand low non-native; both tracks occupy performer-left and are together at the horizontal midpoint.,,,
 t,facing,left,right,Body edge / verification note
 0,0,L b up,L b up,
@@ -17,8 +19,9 @@ t,facing,left,right,Body edge / verification note
 7,180,C b down,C b down,
 8,180,C b up,C b up,
 ,,,,
-CASE W2 — LEFT-SIDE LOW WEAVE OFFSET 1 — TURN LEFT — LEFT CROSSES / RIGHT HOLDS A,,,,
-Configuration,Left hand low native; right hand low non-native; both tracks occupy performer-left; right track is offset by one halfbeat.,,,
+CASE W2 — SS CLOCKWISE — LEFT-SIDE LOW WEAVE — TURN LEFT — LEFT CROSSES / RIGHT HOLDS A,,,,
+Pattern,"SS clockwise: split timing, same direction. Both poi remain clockwise in the observer-fixed beat graph.",,,
+Configuration,Left hand low native; right hand low non-native; both tracks occupy performer-left and are split by one halfbeat.,,,
 t,facing,left,right,Body edge / verification note
 0,0,L b up,C a down,
 1,0,L b down,L b up,
@@ -30,7 +33,8 @@ t,facing,left,right,Body edge / verification note
 7,180,C b down,R a up,
 8,180,C b up,R a down,
 ,,,,
-CASE W3 — RIGHT-SIDE LOW WEAVE OFFSET 0 — TURN RIGHT — BOTH CROSS TOGETHER,,,,
+CASE W3 — TS CLOCKWISE — RIGHT-SIDE LOW WEAVE — TURN RIGHT — BOTH CROSS TOGETHER,,,,
+Pattern,"TS clockwise: together timing, same direction. Both poi remain clockwise in the observer-fixed beat graph.",,,
 Configuration,Left hand low non-native; right hand low native; both tracks occupy performer-right and are together at the horizontal midpoint.,,,
 t,facing,left,right,Body edge / verification note
 0,0,R b down,R b down,
@@ -43,8 +47,9 @@ t,facing,left,right,Body edge / verification note
 7,180,C b up,C b up,
 8,180,C b down,C b down,
 ,,,,
-CASE W4 — RIGHT-SIDE LOW WEAVE OFFSET 1 — TURN RIGHT — LEFT CROSSES / RIGHT HOLDS A,,,,
-Configuration,Left hand low non-native; right hand low native; both tracks occupy performer-right; right track is offset by one halfbeat.,,,
+CASE W4 — SS CLOCKWISE — RIGHT-SIDE LOW WEAVE — TURN RIGHT — LEFT CROSSES / RIGHT HOLDS A,,,,
+Pattern,"SS clockwise: split timing, same direction. Both poi remain clockwise in the observer-fixed beat graph.",,,
+Configuration,Left hand low non-native; right hand low native; both tracks occupy performer-right and are split by one halfbeat.,,,
 t,facing,left,right,Body edge / verification note
 0,0,R b down,C a up,
 1,0,R b up,R b down,
@@ -56,17 +61,17 @@ t,facing,left,right,Body edge / verification note
 7,180,C b up,L a down,
 8,180,C b down,L a up,
 ,,,,
-TURN-EDGE BRANCH MATRIX — PER-HAND TOPOLOGY ONLY,,,,
-ID,Source at facing 0,Turn,Topology-valid target pair at facing 180,Physical question
-W1-A,"left C a down / right C a down",left,"left C b up / right C b up","Both cross together. Baseline route above."
-W1-B,"left C a down / right C a down",left,"left C b up / right R a up","Left crosses; right holds A. Is the mixed pair jointly open?"
-W1-C,"left C a down / right C a down",left,"left R a up / right C b up","Left holds A; right crosses. Is the mixed pair jointly open?"
-W1-D,"left C a down / right C a down",left,"left R a up / right R a up","Both hold A. Is this jointly possible or do the arms collapse/collide?"
-W2-A,"left C a down / right C a up",left,"left C b up / right R a down","Left crosses; right holds A. Baseline route above."
-W2-B,"left C a down / right C a up",left,"left R a up / right R a down","Both hold A at opposite phases. Is this jointly possible?"
-W3-A,"left C a up / right C a up",right,"left C b down / right C b down","Both cross together. Baseline route above."
-W3-B,"left C a up / right C a up",right,"left C b down / right L a down","Left crosses; right holds A. Is the mixed pair jointly open?"
-W3-C,"left C a up / right C a up",right,"left L a down / right C b down","Left holds A; right crosses. Is the mixed pair jointly open?"
-W3-D,"left C a up / right C a up",right,"left L a down / right L a down","Both hold A. Is this jointly possible or do the arms collapse/collide?"
-W4-A,"left C a up / right C a down",right,"left C b down / right L a up","Left crosses; right holds A. Baseline route above."
-W4-B,"left C a up / right C a down",right,"left L a down / right L a up","Both hold A at opposite phases. Is this jointly possible?"
+TURN-EDGE BRANCH MATRIX — PER-HAND TOPOLOGY ONLY,,,,,,
+ID,Timing,Direction,Source at facing 0,Turn,Topology-valid target pair at facing 180,Physical question
+W1-A,TS,clockwise,"left C a down / right C a down",left,"left C b up / right C b up","Both cross together. Baseline route above."
+W1-B,TS,clockwise,"left C a down / right C a down",left,"left C b up / right R a up","Left crosses; right holds A. Is the mixed pair jointly open?"
+W1-C,TS,clockwise,"left C a down / right C a down",left,"left R a up / right C b up","Left holds A; right crosses. Is the mixed pair jointly open?"
+W1-D,TS,clockwise,"left C a down / right C a down",left,"left R a up / right R a up","Both hold A. Is this jointly possible or do the arms collapse/collide?"
+W2-A,SS,clockwise,"left C a down / right C a up",left,"left C b up / right R a down","Left crosses; right holds A. Baseline route above."
+W2-B,SS,clockwise,"left C a down / right C a up",left,"left R a up / right R a down","Both hold A at opposite phases. Is this jointly possible?"
+W3-A,TS,clockwise,"left C a up / right C a up",right,"left C b down / right C b down","Both cross together. Baseline route above."
+W3-B,TS,clockwise,"left C a up / right C a up",right,"left C b down / right L a down","Left crosses; right holds A. Is the mixed pair jointly open?"
+W3-C,TS,clockwise,"left C a up / right C a up",right,"left L a down / right C b down","Left holds A; right crosses. Is the mixed pair jointly open?"
+W3-D,TS,clockwise,"left C a up / right C a up",right,"left L a down / right L a down","Both hold A. Is this jointly possible or do the arms collapse/collide?"
+W4-A,SS,clockwise,"left C a up / right C a down",right,"left C b down / right L a up","Left crosses; right holds A. Baseline route above."
+W4-B,SS,clockwise,"left C a up / right C a down",right,"left L a down / right L a up","Both hold A at opposite phases. Is this jointly possible?"
