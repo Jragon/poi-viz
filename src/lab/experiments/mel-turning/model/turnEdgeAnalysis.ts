@@ -5,9 +5,17 @@ import type {
   TurningNode,
   TurningPhase,
   TurningPlaneSide,
+  TurningRelativeCircle,
+  TurningGateSide,
+  TurnTopologyStatus,
   TurningTrace,
   TurningTrack
 } from "@/lab/experiments/mel-turning/model/turningTypes";
+import {
+  derivePoiMidpointHorizontalDirection,
+  validateHandTurnTopology,
+  type TurnTopologyDiagnosticCode
+} from "@/lab/experiments/mel-turning/model/turnTopology";
 
 export type TurnEdgeDiagnosticCode =
   | "TURN_EVENT_MISSING"
@@ -19,13 +27,14 @@ export type TurnEdgeDiagnosticCode =
   | "TURN_SOURCE_NODE_DUPLICATE"
   | "TURN_TARGET_NODE_MISSING"
   | "TURN_TARGET_NODE_DUPLICATE"
-  | "TURN_PHASE_DISCONTINUITY";
+  | "TURN_PHASE_DISCONTINUITY"
+  | TurnTopologyDiagnosticCode;
 
 export type TurnEdgeContractStatus = "valid" | "invalid";
 
 export type TurnEdgePhysicalStatus = "verified" | "unresolved" | "not-assessed";
 
-export type PoiMidpointHorizontalDirection = "left" | "right";
+export type PoiMidpointHorizontalDirection = TurningGateSide;
 
 export type TurnEdgeSideMotion =
   | {
@@ -52,6 +61,11 @@ export interface TurningHandTurnEdge {
   readonly from: TurningNode;
   readonly to: TurningNode;
   readonly midpointPoiDirection: PoiMidpointHorizontalDirection;
+  readonly gate: TurningGateSide | null;
+  readonly expectedGate: TurningGateSide | null;
+  readonly fromRelativeCircle: TurningRelativeCircle | null;
+  readonly toRelativeCircle: TurningRelativeCircle | null;
+  readonly topologyStatus: TurnTopologyStatus;
   readonly sideMotion: TurnEdgeSideMotion;
 }
 
@@ -65,6 +79,7 @@ export interface SharedTurningEdge {
 
 export interface TurnEdgeAnalysis {
   readonly contractStatus: TurnEdgeContractStatus;
+  readonly topologyStatus: TurnTopologyStatus;
   readonly physicalStatus: TurnEdgePhysicalStatus;
   readonly edge: SharedTurningEdge | null;
   readonly diagnostics: readonly TurnEdgeDiagnostic[];
@@ -74,15 +89,7 @@ function oppositePhase(phase: TurningPhase): TurningPhase {
   return phase === "up" ? "down" : "up";
 }
 
-export function derivePoiMidpointHorizontalDirection(
-  sourcePhase: TurningPhase,
-  poiDirection: TurningDirection
-): PoiMidpointHorizontalDirection {
-  if (sourcePhase === "up") {
-    return poiDirection === "clockwise" ? "right" : "left";
-  }
-  return poiDirection === "clockwise" ? "left" : "right";
-}
+export { derivePoiMidpointHorizontalDirection };
 
 function deriveSideMotion(
   from: TurningNode,
@@ -177,6 +184,22 @@ function buildHandEdge(
     });
   }
 
+  const topology = validateHandTurnTopology({
+    hand,
+    poiDirection: track.poiDirection,
+    from,
+    to,
+    turnDirection: event.direction,
+    fromFacing: event.fromFacing,
+    toFacing: event.toFacing
+  });
+  diagnostics.push(
+    ...topology.diagnostics.map((diagnostic) => ({
+      ...diagnostic,
+      hand
+    }))
+  );
+
   return {
     hand,
     trackId: track.id,
@@ -184,8 +207,22 @@ function buildHandEdge(
     from,
     to,
     midpointPoiDirection: derivePoiMidpointHorizontalDirection(from.phase, track.poiDirection),
+    gate: topology.actualGate,
+    expectedGate: topology.expectedGate,
+    fromRelativeCircle: topology.fromRelativeCircle,
+    toRelativeCircle: topology.toRelativeCircle,
+    topologyStatus: topology.status,
     sideMotion: deriveSideMotion(from, to, event)
   };
+}
+
+function aggregateTopologyStatus(
+  hands: Readonly<Record<TurningHand, TurningHandTurnEdge>>
+): TurnTopologyStatus {
+  const statuses = Object.values(hands).map((hand) => hand.topologyStatus);
+  if (statuses.includes("invalid")) return "invalid";
+  if (statuses.includes("unresolved")) return "unresolved";
+  return "valid";
 }
 
 export function analyzeTurningTraceTurn(trace: TurningTrace, eventIndex = 0): TurnEdgeAnalysis {
@@ -195,6 +232,7 @@ export function analyzeTurningTraceTurn(trace: TurningTrace, eventIndex = 0): Tu
   if (!event) {
     return {
       contractStatus: "invalid",
+      topologyStatus: "unresolved",
       physicalStatus: "not-assessed",
       edge: null,
       diagnostics: [
@@ -221,11 +259,28 @@ export function analyzeTurningTraceTurn(trace: TurningTrace, eventIndex = 0): Tu
 
   const left = buildHandEdge(trace, event, "left", diagnostics);
   const right = buildHandEdge(trace, event, "right", diagnostics);
-  const contractStatus = diagnostics.length === 0 ? "valid" : "invalid";
+  const structuralDiagnosticCodes = new Set<TurnEdgeDiagnosticCode>([
+    "TURN_EVENT_MISSING",
+    "TURN_DEGREES_NOT_180",
+    "TURN_FACING_NOT_FLIPPED",
+    "TURN_HAND_TRACK_MISSING",
+    "TURN_HAND_TRACK_DUPLICATE",
+    "TURN_SOURCE_NODE_MISSING",
+    "TURN_SOURCE_NODE_DUPLICATE",
+    "TURN_TARGET_NODE_MISSING",
+    "TURN_TARGET_NODE_DUPLICATE",
+    "TURN_PHASE_DISCONTINUITY"
+  ]);
+  const contractStatus = diagnostics.some((diagnostic) =>
+    structuralDiagnosticCodes.has(diagnostic.code)
+  )
+    ? "invalid"
+    : "valid";
 
   if (contractStatus === "invalid" || !left || !right) {
     return {
       contractStatus,
+      topologyStatus: "unresolved",
       physicalStatus: "not-assessed",
       edge: null,
       diagnostics
@@ -233,6 +288,7 @@ export function analyzeTurningTraceTurn(trace: TurningTrace, eventIndex = 0): Tu
   }
 
   const hands = { left, right } as const;
+  const topologyStatus = aggregateTopologyStatus(hands);
   const edge: SharedTurningEdge = {
     event,
     sourceStep: event.afterStep,
@@ -244,7 +300,13 @@ export function analyzeTurningTraceTurn(trace: TurningTrace, eventIndex = 0): Tu
 
   return {
     contractStatus,
-    physicalStatus: trace.verificationStatus === "physically-verified" ? "verified" : "unresolved",
+    topologyStatus,
+    physicalStatus:
+      topologyStatus === "invalid"
+        ? "not-assessed"
+        : trace.verificationStatus === "physically-verified"
+          ? "verified"
+          : "unresolved",
     edge,
     diagnostics
   };

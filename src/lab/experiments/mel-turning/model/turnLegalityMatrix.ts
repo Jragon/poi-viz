@@ -1,14 +1,21 @@
 import type { VerifiedTurningFixture } from "@/lab/experiments/mel-turning/fixtures/verifiedTurningFixture";
 import {
-  derivePoiMidpointHorizontalDirection,
   type PoiMidpointHorizontalDirection
 } from "@/lab/experiments/mel-turning/model/turnEdgeAnalysis";
+import {
+  derivePoiMidpointHorizontalDirection,
+  validateHandTurnTopology
+} from "@/lab/experiments/mel-turning/model/turnTopology";
 import type {
   BodyTurnDirection,
+  LowReelLocation,
+  TurnTopologyStatus,
+  TurningGateSide,
   TurningHand,
   TurningHandPlacement,
   TurningLaneId,
   TurningPlaneSide,
+  TurningRelativeCircle,
   TurningTiming,
   TurningVerificationStatus
 } from "@/lab/experiments/mel-turning/model/turningTypes";
@@ -23,10 +30,16 @@ export interface TurnLegalityHandEntry {
   readonly toPlaneSide: TurningPlaneSide;
   readonly fromHandPlacement: TurningHandPlacement;
   readonly toHandPlacement: TurningHandPlacement;
+  readonly fromLocation: LowReelLocation | null;
+  readonly toLocation: LowReelLocation | null;
+  readonly fromRelativeCircle: TurningRelativeCircle | null;
+  readonly toRelativeCircle: TurningRelativeCircle | null;
   readonly mechanism: TurnLegalityMechanism;
-  readonly gate: BodyTurnDirection | null;
+  readonly gate: TurningGateSide | null;
+  readonly expectedGate: TurningGateSide | null;
   readonly midpointPoiDirection: PoiMidpointHorizontalDirection;
-  readonly preparedBeforeTurn: boolean;
+  readonly sourceDiffersFromPriorCycle: boolean;
+  readonly topologyStatus: TurnTopologyStatus;
 }
 
 export interface TurnLegalityMatrixRow {
@@ -43,6 +56,7 @@ export interface TurnLegalityMatrixRow {
   readonly planeConfigurationBefore: string;
   readonly planeConfigurationAfter: string;
   readonly crossingCount: number;
+  readonly topologyStatus: TurnTopologyStatus;
   readonly hands: readonly TurnLegalityHandEntry[];
   readonly verificationStatus: TurningVerificationStatus;
 }
@@ -72,6 +86,14 @@ function handOrder(hand: TurningHand): number {
   return hand === "left" ? 0 : 1;
 }
 
+function aggregateTopologyStatus(
+  hands: readonly TurnLegalityHandEntry[]
+): TurnTopologyStatus {
+  if (hands.some((hand) => hand.topologyStatus === "invalid")) return "invalid";
+  if (hands.some((hand) => hand.topologyStatus === "unresolved")) return "unresolved";
+  return "valid";
+}
+
 export function buildTurnLegalityMatrixRow(
   fixture: VerifiedTurningFixture
 ): TurnLegalityMatrixRow {
@@ -92,7 +114,15 @@ export function buildTurnLegalityMatrixRow(
       const cycleReference = track.nodes.find(
         (node) => node.step === event.afterStep - REEL_CYCLE_STEPS
       );
-      const mechanism = from.planeSide === to.planeSide ? "hold" : "cross";
+      const topology = validateHandTurnTopology({
+        hand: track.hand,
+        poiDirection: track.poiDirection,
+        from,
+        to,
+        turnDirection: event.direction,
+        fromFacing: event.fromFacing,
+        toFacing: event.toFacing
+      });
 
       return {
         hand: track.hand,
@@ -102,15 +132,25 @@ export function buildTurnLegalityMatrixRow(
         toPlaneSide: to.planeSide,
         fromHandPlacement: from.handPlacement ?? "wall",
         toHandPlacement: to.handPlacement ?? "wall",
-        mechanism,
-        gate: mechanism === "cross" ? event.direction : null,
+        fromLocation: topology.fromLocation,
+        toLocation: topology.toLocation,
+        fromRelativeCircle: topology.fromRelativeCircle,
+        toRelativeCircle: topology.toRelativeCircle,
+        mechanism: topology.mechanism,
+        gate: topology.actualGate,
+        expectedGate: topology.expectedGate,
         midpointPoiDirection: derivePoiMidpointHorizontalDirection(
           from.phase,
           track.poiDirection
         ),
-        preparedBeforeTurn: cycleReference ? !sameGraphPosition(from, cycleReference) : false
+        sourceDiffersFromPriorCycle: cycleReference
+          ? !sameGraphPosition(from, cycleReference)
+          : false,
+        topologyStatus: topology.status
       };
     });
+
+  const topologyStatus = aggregateTopologyStatus(hands);
 
   return {
     fixtureId: fixture.trace.id,
@@ -128,6 +168,7 @@ export function buildTurnLegalityMatrixRow(
       .join(""),
     planeConfigurationAfter: hands.map((hand) => hand.toPlaneSide.toUpperCase()).join(""),
     crossingCount: hands.filter((hand) => hand.mechanism === "cross").length,
+    topologyStatus,
     hands,
     verificationStatus: fixture.trace.verificationStatus
   };

@@ -16,9 +16,9 @@ describe("TurnLegalityMatrix", () => {
     const fixture = defineComponent(() => () => h(TurnLegalityMatrix, { rows }));
     const html = await renderToString(createSSRApp(fixture));
 
-    expect(html.match(/data-legality-row=/g)).toHaveLength(52);
+    expect(html.match(/data-legality-row=/g)).toHaveLength(50);
     expect(html).toContain("ONE · low-native");
     expect(html).toContain("Cb B");
-    expect(html).toContain("Verified legality matrix · 52 turns");
+    expect(html).toContain("Verified legality matrix · 50 turns");
   });
 });

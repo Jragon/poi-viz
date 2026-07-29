@@ -12,7 +12,8 @@ import type {
   TurningPlaneSide,
   TurningTiming,
   TurningTrace,
-  TurningTrack
+  TurningTrack,
+  TurningVerificationStatus
 } from "@/lab/experiments/mel-turning/model/turningTypes";
 
 export type TurningReelPosition = "low-native" | "low-non-native" | "low-back";
@@ -74,6 +75,7 @@ interface VerifiedTurningFixtureDraft {
   readonly relationToPoi?: TurningPoiRelation;
   readonly patternBefore: TurningPattern;
   readonly patternAfter: TurningPattern;
+  readonly verificationStatus?: TurningVerificationStatus;
   readonly source: TurningFixtureSource;
   readonly tracks: readonly FixtureTrackDraft[];
 }
@@ -192,7 +194,7 @@ export function defineVerifiedTurningFixture(
       timing: draft.timing,
       summary: draft.summary,
       source: `${draft.source.file} — ${draft.source.caseLabel}`,
-      verificationStatus: "physically-verified",
+      verificationStatus: draft.verificationStatus ?? "physically-verified",
       lanes: getMelTurningLanes(),
       tracks,
       events: [

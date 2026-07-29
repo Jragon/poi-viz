@@ -13,10 +13,11 @@ const MATRIX = buildTurnLegalityMatrix([
 ]);
 
 describe("turn legality matrix model", () => {
-  it("derives one row for each of the 52 verified turns", () => {
-    expect(MATRIX).toHaveLength(52);
-    expect(new Set(MATRIX.map((row) => row.fixtureId)).size).toBe(52);
+  it("derives one row for each of the 50 currently verified turns", () => {
+    expect(MATRIX).toHaveLength(50);
+    expect(new Set(MATRIX.map((row) => row.fixtureId)).size).toBe(50);
     expect(MATRIX.every((row) => row.verificationStatus === "physically-verified")).toBe(true);
+    expect(MATRIX.every((row) => row.topologyStatus !== "invalid")).toBe(true);
   });
 
   it("keeps one-hand and coupled plane configurations distinct", () => {
@@ -43,19 +44,19 @@ describe("turn legality matrix model", () => {
   it("derives preparation by comparing the turn source with the previous reel cycle", () => {
     const prepared = MATRIX.find((row) => row.fixtureId === "ts-right-chasing-2-to-1");
     expect(prepared?.hands).toMatchObject([
-      { hand: "left", preparedBeforeTurn: true },
-      { hand: "right", preparedBeforeTurn: false }
+      { hand: "left", sourceDiffersFromPriorCycle: true },
+      { hand: "right", sourceDiffersFromPriorCycle: false }
     ]);
 
     const direct = MATRIX.find((row) => row.fixtureId === "ts-left-chasing-1-to-2");
     expect(direct?.hands).toMatchObject([
-      { hand: "left", preparedBeforeTurn: false },
-      { hand: "right", preparedBeforeTurn: false }
+      { hand: "left", sourceDiffersFromPriorCycle: false },
+      { hand: "right", sourceDiffersFromPriorCycle: false }
     ]);
   });
 
   it("retains low-back hand placement independently from lane and plane side", () => {
-    const lowBack = MATRIX.find((row) => row.fixtureId === "one-back-in-right-cross");
+    const lowBack = MATRIX.find((row) => row.fixtureId === "one-back-out-left-cross");
     expect(lowBack?.hands[0]).toMatchObject({
       fromLane: "center",
       toLane: "center",
@@ -66,16 +67,18 @@ describe("turn legality matrix model", () => {
     });
   });
 
-  it("does not confuse midpoint poi direction with crosspoint gate side", () => {
+  it("derives the gate from the crossing poi's outward midpoint direction", () => {
     const counterToUnison = MATRIX.find(
       (row) => row.fixtureId === "to-left-counter-to-unison"
     );
 
-    expect(counterToUnison?.hands[0]).toMatchObject({
-      hand: "left",
+    expect(counterToUnison?.hands[1]).toMatchObject({
+      hand: "right",
       mechanism: "cross",
       gate: "left",
-      midpointPoiDirection: "right"
+      expectedGate: "left",
+      midpointPoiDirection: "left",
+      topologyStatus: "valid"
     });
   });
 

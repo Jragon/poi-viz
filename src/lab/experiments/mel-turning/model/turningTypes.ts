@@ -12,6 +12,14 @@ export type BodyTurnDirection = "left" | "right";
 
 export type BodyFacing = 0 | 180;
 
+export type TurningGateSide = "left" | "right";
+
+export type TurningRelativeCircle = "front" | "back";
+
+export type LowReelLocation = "C" | "L" | "R" | "Cb" | "Lb" | "Rb";
+
+export type TurnTopologyStatus = "valid" | "invalid" | "unresolved";
+
 export type TurningVerificationStatus = "physically-verified" | "unverified";
 
 export type TurningHandPlacement = "wall" | "behind-body";

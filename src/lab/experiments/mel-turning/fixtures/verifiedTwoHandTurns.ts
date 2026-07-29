@@ -7,7 +7,8 @@ import {
 import type {
   BodyTurnDirection,
   TurningDirection,
-  TurningTiming
+  TurningTiming,
+  TurningVerificationStatus
 } from "@/lab/experiments/mel-turning/model/turningTypes";
 
 interface TwoHandDraft {
@@ -19,6 +20,7 @@ interface TwoHandDraft {
   readonly turnDirection: BodyTurnDirection;
   readonly patternBefore: TurningPattern;
   readonly patternAfter: TurningPattern;
+  readonly verificationStatus?: TurningVerificationStatus;
   readonly sourceFile: string;
   readonly sourceCase: string;
   readonly turnAfterStep: number;
@@ -39,6 +41,9 @@ function twoHand(draft: TwoHandDraft): VerifiedTurningFixture {
     turnDirection: draft.turnDirection,
     patternBefore: draft.patternBefore,
     patternAfter: draft.patternAfter,
+    ...(draft.verificationStatus
+      ? { verificationStatus: draft.verificationStatus }
+      : {}),
     source: {
       file: draft.sourceFile,
       caseLabel: draft.sourceCase,
@@ -65,6 +70,8 @@ const TO_SOURCE =
 const SO_SOURCE = "research/mel-turning/verified/low-reels-split-opposite.csv";
 const SO_NON_NATIVE_SOURCE =
   "research/mel-turning/verified/low-reels-two-hand-split-opposite-non-native-turn-left.csv";
+const TURN_EDGE_CORRECTIONS_SOURCE =
+  "research/mel-turning/candidates/low-reels-turn-edge-corrections.csv";
 const TS_LEFT_SOURCE =
   "research/mel-turning/verified/low-reels-two-hand-together-same-turn-left.csv";
 const TS_RIGHT_SOURCE =
@@ -99,7 +106,7 @@ const togetherOpposite: readonly VerifiedTurningFixture[] = [
     turnAfterStep: 4,
     ...oppositeDirections,
     leftPath:
-      "C a up | C a down | L b up | L b down | C b up | C b down | C b up | L a down | L a up",
+      "C a up | C a down | L b up | L b down | L b up | C b down | C b up | L a down | L a up",
     rightPath:
       "C a up | C a down | R b up | R b down | C a up | C b down | C b up | R a down | R a up"
   }),
@@ -117,7 +124,7 @@ const togetherOpposite: readonly VerifiedTurningFixture[] = [
     turnAfterStep: 4,
     ...oppositeDirections,
     leftPath:
-      "C a up | C a down | L b up | L b down | C b up | C b down | C b up | L a down | L a up",
+      "C a up | C a down | L b up | L b down | L b up | C b down | C b up | L a down | L a up",
     rightPath:
       "C a up | C a down | R b up | R b down | C a up | R a down | R a up | C b down | C b up"
   }),
@@ -125,19 +132,19 @@ const togetherOpposite: readonly VerifiedTurningFixture[] = [
     id: "to-left-counter-to-unison",
     label: "TO counter → unison · turn left",
     timing: "TO",
-    summary: "Left crosses B→A while right holds A.",
+    summary: "Left holds B while right crosses A→B; both meet at center B.",
     reelPosition: "low-native",
     turnDirection: "left",
     patternBefore: "counter",
     patternAfter: "unison",
-    sourceFile: TO_SOURCE,
-    sourceCase: "TO counter → unison, turn left",
+    sourceFile: TURN_EDGE_CORRECTIONS_SOURCE,
+    sourceCase: "CASE 3 — TO COUNTER→UNISON TURN LEFT — USER-PROPOSED CORRECTION",
     turnAfterStep: 4,
     ...oppositeDirections,
     leftPath:
-      "L b up | L b down | C a up | C a down | L b up | L a down | L a up | C b down | C b up",
+      "L b up | L b down | C a up | C a down | L b up | C b down | C b up | L a down | L a up",
     rightPath:
-      "C a up | C a down | R b up | R b down | C a up | R a down | R a up | C b down | C b up"
+      "C a up | C a down | R b up | R b down | C a up | C b down | C b up | R a down | R a up"
   }),
   twoHand({
     id: "to-left-counter-to-counter",
@@ -304,15 +311,16 @@ const splitOppositeNonNative: readonly VerifiedTurningFixture[] = [
     turnDirection: "left",
     patternBefore: "chasing-2",
     patternAfter: "chasing-2",
-    sourceFile: SO_NON_NATIVE_SOURCE,
+    verificationStatus: "unverified",
+    sourceFile: TURN_EDGE_CORRECTIONS_SOURCE,
     sourceCase:
-      "SO non-native chasing-2 → chasing-2, turn left — left crosses A→B / right prepares and holds B",
-    turnAfterStep: 7,
+      "CASE 4 — SO NON-NATIVE CHASING-2→CHASING-2 TURN LEFT — CANDIDATE EARLIER OPEN TURN",
+    turnAfterStep: 6,
     ...oppositeDirections,
     leftPath:
-      "R b down | R b up | C a down | C a up | R b down | R b up | C a down | C a up | C b down | R a up | R a down | C b up | C b down",
+      "R b down | R b up | C a down | C a up | R b down | R b up | C a down | C b up | C b down | R a up | R a down | C b up | C b down",
     rightPath:
-      "C a up | L b down | L b up | C a down | C a up | L b down | L b up | L b down | C b up | C b down | L a up | L a down | C b up"
+      "C a up | L b down | L b up | C a down | C a up | L b down | L b up | C b down | C b up | C b down | L a up | L a down | C b up"
   })
 ] as const;
 
@@ -515,20 +523,21 @@ const splitSameLeft: readonly VerifiedTurningFixture[] = [
     id: "ss-left-counter-to-unison",
     label: "SS counter → unison · turn left",
     timing: "SS",
-    summary: "Left crosses B→A while right holds A.",
+    summary: "Left holds B while right crosses A→B; both meet at center B.",
     reelPosition: "low-native",
     turnDirection: "left",
     patternBefore: "counter",
     patternAfter: "unison",
-    sourceFile: SS_LEFT_SOURCE,
+    verificationStatus: "unverified",
+    sourceFile: TURN_EDGE_CORRECTIONS_SOURCE,
     sourceCase:
-      "SS counter → unison, turn left — left crosses B→A / right holds A",
+      "CASE 5 — SS COUNTER→UNISON TURN LEFT — CANDIDATE EARLIER COUNTER/WHEEL TURN",
     turnAfterStep: 7,
     ...sameClockwiseDirections,
     leftPath:
-      "L b down | C a up | C a down | L b up | L b down | C a up | C a down | L b up | L a down | L a up | C b down | C b up | L a down",
+      "L b down | C a up | C a down | L b up | L b down | C a up | C a down | L b up | C b down | C b up | L a down | L a up | C b down",
     rightPath:
-      "C a up | R b down | R b up | C a down | C a up | R b down | R b up | C a down | R a up | R a down | C b up | C b down | R a up"
+      "C a up | R b down | R b up | C a down | C a up | R b down | R b up | C a down | C b up | C b down | R a up | R a down | C b up"
   }),
   twoHand({
     id: "ss-left-counter-to-counter",
@@ -630,7 +639,7 @@ const splitSameRight: readonly VerifiedTurningFixture[] = [
   })
 ] as const;
 
-export const VERIFIED_TWO_HAND_TURNS: readonly VerifiedTurningFixture[] = [
+const ALL_TWO_HAND_TURNS: readonly VerifiedTurningFixture[] = [
   ...togetherOpposite,
   ...splitOppositeNative,
   ...splitOppositeNonNative,
@@ -639,3 +648,11 @@ export const VERIFIED_TWO_HAND_TURNS: readonly VerifiedTurningFixture[] = [
   ...splitSameLeft,
   ...splitSameRight
 ] as const;
+
+export const VERIFIED_TWO_HAND_TURNS: readonly VerifiedTurningFixture[] =
+  ALL_TWO_HAND_TURNS.filter(
+    (fixture) => fixture.trace.verificationStatus === "physically-verified"
+  );
+
+export const UNVERIFIED_TWO_HAND_TURN_CANDIDATES: readonly VerifiedTurningFixture[] =
+  ALL_TWO_HAND_TURNS.filter((fixture) => fixture.trace.verificationStatus === "unverified");

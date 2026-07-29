@@ -12,7 +12,10 @@ import type {
   TurningTrace
 } from "@/lab/experiments/mel-turning/model/turningTypes";
 
-export type AdversarialProbeExpectation = "structurally-invalid" | "structurally-valid-unresolved";
+export type AdversarialProbeExpectation =
+  | "structurally-invalid"
+  | "topologically-invalid"
+  | "structurally-valid-unresolved";
 
 export interface AdversarialTurningProbe {
   readonly id: string;
@@ -153,9 +156,10 @@ export const ADVERSARIAL_TURNING_PROBES: readonly AdversarialTurningProbe[] = [
     id: "turn-halfbeat-earlier",
     label: "Move the shared turn earlier",
     mutation: "The same tracks turn at t6→t7 instead of the verified t7→t8 edge.",
-    lesson: "Timing remains structurally sound, but the new body/plane relationship is unverified.",
-    expectation: "structurally-valid-unresolved",
-    expectedDiagnostics: [],
+    lesson:
+      "Timing remains structurally sound, but unchanged targets are invalid at the earlier facing transition.",
+    expectation: "topologically-invalid",
+    expectedDiagnostics: ["TURN_TARGET_NODE_FACING_INVALID"],
     trace: cloneAsUnverified(
       directLeft,
       "probe-turn-halfbeat-earlier",
@@ -171,9 +175,10 @@ export const ADVERSARIAL_TURNING_PROBES: readonly AdversarialTurningProbe[] = [
     id: "flip-right-target-plane",
     label: "Flip one destination plane side",
     mutation: "Right target changes from B to A while every other node stays fixed.",
-    lesson: "Alternating phase still works; gate and anatomy are needed to decide physical legality.",
-    expectation: "structurally-valid-unresolved",
-    expectedDiagnostics: [],
+    lesson:
+      "Alternating phase still works, but the held target is invalid for the completed facing.",
+    expectation: "topologically-invalid",
+    expectedDiagnostics: ["TURN_TARGET_NODE_FACING_INVALID"],
     trace: cloneAsUnverified(
       directLeft,
       "probe-flip-right-target-plane",
@@ -192,9 +197,10 @@ export const ADVERSARIAL_TURNING_PROBES: readonly AdversarialTurningProbe[] = [
     id: "reverse-body-turn",
     label: "Reverse only the body turn",
     mutation: "The verified left-turn tracks are relabeled as a right turn.",
-    lesson: "The compact structural contract does not yet contain anatomical gate legality.",
-    expectation: "structurally-valid-unresolved",
-    expectedDiagnostics: [],
+    lesson:
+      "The reversed turn conflicts with both the known hold relation and the crossing gate.",
+    expectation: "topologically-invalid",
+    expectedDiagnostics: ["TURN_CROSS_GATE_MISMATCH"],
     trace: cloneAsUnverified(
       directLeft,
       "probe-reverse-body-turn",
@@ -212,9 +218,9 @@ export const ADVERSARIAL_TURNING_PROBES: readonly AdversarialTurningProbe[] = [
     mutation:
       "TS right chasing-2→1 restores the left t7 node to its t3 source-cycle position.",
     lesson:
-      "The resulting direct bridge is structurally coherent but loses the physical verification carried by the prepared route.",
-    expectation: "structurally-valid-unresolved",
-    expectedDiagnostics: [],
+      "The resulting direct bridge is structurally coherent but violates the known hand-specific hold relation.",
+    expectation: "topologically-invalid",
+    expectedDiagnostics: ["TURN_HOLD_LOCATION_INVALID"],
     trace: cloneAsUnverified(
       preparedRight,
       "probe-remove-preparation",
@@ -245,10 +251,13 @@ export function evaluateAdversarialTurningProbes(): readonly AdversarialTurningP
   return ADVERSARIAL_TURNING_PROBES.map((probe) => {
     const analysis = analyzeTurningTraceTurn(probe.trace);
     const diagnosticCodes = analysis.diagnostics.map((diagnostic) => diagnostic.code);
+    const expectedTopologyStatus =
+      probe.expectation === "topologically-invalid" ? "invalid" : "unresolved";
     const expectedPhysicalStatus =
-      probe.expectation === "structurally-invalid" ? "not-assessed" : "unresolved";
+      probe.expectation === "structurally-valid-unresolved" ? "unresolved" : "not-assessed";
     const matchedExpectation =
       analysis.contractStatus === expectedContract(probe.expectation) &&
+      analysis.topologyStatus === expectedTopologyStatus &&
       analysis.physicalStatus === expectedPhysicalStatus &&
       probe.expectedDiagnostics.every((code) => diagnosticCodes.includes(code));
 

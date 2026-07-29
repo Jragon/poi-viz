@@ -7,6 +7,8 @@ import {
 
 const SOURCE =
   "research/mel-turning/verified/low-reels-one-hand-and-together-opposite.csv";
+const TURN_EDGE_CORRECTIONS_SOURCE =
+  "research/mel-turning/candidates/low-reels-turn-edge-corrections.csv";
 
 const rightInwardReference = defineVerifiedTurningReference({
   id: "one-right-inward-reference",
@@ -63,7 +65,7 @@ function oneHand(
   });
 }
 
-export const VERIFIED_ONE_HAND_TURNS: readonly VerifiedTurningFixture[] = [
+const ALL_ONE_HAND_TURNS: readonly VerifiedTurningFixture[] = [
   oneHand({
     id: "one-native-in-left-cross",
     label: "Right low native · inward · turn left · cross",
@@ -205,6 +207,7 @@ export const VERIFIED_ONE_HAND_TURNS: readonly VerifiedTurningFixture[] = [
     flowBefore: "inwards",
     turnDirection: "right",
     relationToPoi: "against",
+    verificationStatus: "unverified",
     source: {
       file: SOURCE,
       caseLabel: "Right hand, low back, inwards, turning right, against poi, crosses",
@@ -256,12 +259,13 @@ export const VERIFIED_ONE_HAND_TURNS: readonly VerifiedTurningFixture[] = [
     turnDirection: "left",
     relationToPoi: "with",
     source: {
-      file: SOURCE,
-      caseLabel: "Right hand, low back, inwards, turning left, with poi, crosses",
-      firstStep: 1,
+      file: TURN_EDGE_CORRECTIONS_SOURCE,
+      caseLabel:
+        "CASE 1A — RIGHT LOW-BACK INWARD TURN LEFT — USER CORRECTION; CONTINUE ON Lb B",
+      firstStep: 0,
       turnAfterStep: 3
     },
-    path: "Cb b down | Cb b up | Lb a down | Lb b up | Lb b down | Cb a up | Cb a down"
+    path: "Cb b down | Cb b up | Lb a down | Lb a up | Lb b down | Lb b up | Cb a down | Cb a up | Lb b down"
   }),
   oneHand({
     id: "one-native-out-right-cross",
@@ -397,16 +401,34 @@ export const VERIFIED_ONE_HAND_TURNS: readonly VerifiedTurningFixture[] = [
     path: "C a down | L b up | L b down | C a up | C a down | L b up | C b down | C b up | L a down | L a up | C b down"
   }),
   oneHand({
-    id: "one-back-out-left-cross",
-    label: "Right low back · outward · turn left · cross",
-    summary: "Turns against the poi and crosses B→A with the hand behind the body.",
+    id: "one-back-out-left-cross-first-left",
+    label: "Right low back · outward · turn left · cross at first left gate",
+    summary: "Turns against the poi and crosses A→B through the front-circle left gate.",
     reelPosition: "low-back",
     flowBefore: "outwards",
     turnDirection: "left",
     relationToPoi: "against",
     source: {
-      file: SOURCE,
-      caseLabel: "Right hand, low back, outwards, turning left, against poi, crosses",
+      file: TURN_EDGE_CORRECTIONS_SOURCE,
+      caseLabel:
+        "CASE 2A — RIGHT LOW-BACK OUTWARD TURN LEFT — TURN ON FIRST LEFT CROSS",
+      firstStep: 0,
+      turnAfterStep: 3
+    },
+    path: "Cb b up | Cb b down | Lb a up | Lb a down | Lb b up | Lb b down | Cb a up | Cb a down | Lb b up"
+  }),
+  oneHand({
+    id: "one-back-out-left-cross",
+    label: "Right low back · outward · turn left · cross at rear right gate",
+    summary: "Prepares through the left gate, then turns and crosses B→A through the rear-circle right gate.",
+    reelPosition: "low-back",
+    flowBefore: "outwards",
+    turnDirection: "left",
+    relationToPoi: "against",
+    source: {
+      file: TURN_EDGE_CORRECTIONS_SOURCE,
+      caseLabel:
+        "CASE 2B — RIGHT LOW-BACK OUTWARD TURN LEFT — NORMAL LEFT CROSS THEN TURN ON RIGHT-BACK CROSS",
       firstStep: 0,
       turnAfterStep: 4
     },
@@ -463,3 +485,11 @@ export const VERIFIED_ONE_HAND_TURNS: readonly VerifiedTurningFixture[] = [
     path: "Cb b up | Cb b down | Lb a up | Lb a down | Cb b up | Cb b down | Lb a up | Lb b down | Lb b up | Cb a down | Cb a up | Lb b down"
   })
 ] as const;
+
+export const VERIFIED_ONE_HAND_TURNS: readonly VerifiedTurningFixture[] =
+  ALL_ONE_HAND_TURNS.filter(
+    (fixture) => fixture.trace.verificationStatus === "physically-verified"
+  );
+
+export const UNVERIFIED_ONE_HAND_TURN_CANDIDATES: readonly VerifiedTurningFixture[] =
+  ALL_ONE_HAND_TURNS.filter((fixture) => fixture.trace.verificationStatus === "unverified");

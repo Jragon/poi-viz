@@ -19,7 +19,7 @@ Normative application decisions remain in [`../decisions.md`](../decisions.md).
 | --- | --- |
 | `verified/low-reels-one-hand-and-together-opposite.csv` | One-hand low native, non-native, and back turns, plus together-opposite two-hand turns |
 | `verified/low-reels-split-opposite.csv` | The four verified split-opposite chasing-offset transitions for a turn to the left |
-| `verified/low-reels-two-hand-split-opposite-non-native-turn-left.csv` | Four verified low-non-native SO chasing-offset transitions; inward to outward |
+| `verified/low-reels-two-hand-split-opposite-non-native-turn-left.csv` | Original four low-non-native SO transitions; three remain normalized as verified and chasing-2→2 is superseded by the correction candidate |
 | `verified/low-reels-two-hand-together-same-turn-left.csv` | Four verified low-native TS chasing-offset transitions; both poi clockwise; turn left |
 | `verified/low-reels-two-hand-split-same-turn-left.csv` | Four verified low-native SS unison/counter transitions; both poi clockwise; turn left |
 | `verified/low-reels-two-hand-together-same-turn-right.csv` | Four verified low-native TS chasing-offset transitions; both poi clockwise; turn right |
@@ -41,10 +41,11 @@ The remaining TO non-native file still tests a topology hypothesis. Non-native a
 the same plane topology, but they are not interchangeable movement rows: hand placement and the
 path allowed by the surrounding sequence still matter.
 
-The turn-edge correction file does not supersede the verified corpus yet. Its movement sequences
-are based on physically accepted patterns, but the exact halfbeat carrying the body-facing change
-is being rechecked. Runtime fixtures must remain unchanged until those edge annotations are
-physically verified.
+The turn-edge correction file now supersedes the normalized rows for the five cases it rechecks.
+Cases 1A, 1B, 2A, 2B, and 3 are marked verified. Cases 4 and 5 are normalized as unverified
+candidates until their corrected rows are physically checked. The older right-hand low-back inward
+right crossing is also downgraded because its midpoint direction conflicts with the newly stated
+rear-circle gate rule.
 
 The weave file deliberately starts with same-clockwise turns toward the side occupied by both
 hands. It combines one low-native and one low-non-native reel, keeps front `C` as one equivalence
@@ -54,9 +55,10 @@ class, and checks only offset 0 and offset 1 before expanding the matrix.
 
 The isolated Mel-turning lab contains a typed, deterministic normalization of the verified evidence:
 
-- 24 one-hand turns and 2 non-turning one-hand reference cycles;
-- 28 two-hand turns across TO, SO, TS, and SS timing;
-- 52 verified turn cases in total.
+- 24 verified one-hand turns and 2 non-turning one-hand reference cycles;
+- 26 verified two-hand turns across TO, SO, TS, and SS timing;
+- 50 verified turn cases in total;
+- 1 one-hand and 2 two-hand corrected or contradicted candidates kept explicitly unverified.
 
 Each normalized fixture retains its CSV filename, exact case label, original first step, and original
 turn step. Runtime code does not parse the CSVs. Source comparison is a manual audit step rather than
@@ -64,7 +66,8 @@ a CSV-conformance test.
 
 Back notation remains explicit during normalization: `Cb`, `Lb`, and `Rb` carry
 `behind-body` hand placement in addition to the ordinary five-column lane and A/B plane-side data.
-This prevents low-back evidence from being flattened into front-wall `C`, `L`, and `R` shorthand.
+Hand placement is not the same thing as the poi's performer-relative circle. `C`, `Lb`, and `Rb`
+place the poi in front of the performer; `L`, `R`, and `Cb` place it behind.
 
 ## Verified findings
 
@@ -81,26 +84,30 @@ This prevents low-back evidence from being flattened into front-wall `C`, `L`, a
   chasing-1 node and then uses the familiar turn bridge. A graph should represent this as a
   preparation edge followed by a body-turn edge, allowing minimum-path search to distinguish it
   from a direct bridge.
-- All four SO non-native bridges were valid, though physically difficult. Their plane topology is
-  effectively the same as back reels; what changes is where the hand is and which path the sequence
-  allows it to take.
-- Midpoint poi direction is not the same thing as crosspoint gate side. Across the normalized
-  corpus, 36 hand edges cross plane side and five verified crossings have a midpoint arrow opposite
-  the body-turn direction. This occurs in B→A, back, and non-native examples. A future gate solver
-  must use lane, placement, plane transition, rotation, and turn context rather than treating the
-  midpoint arrow as a gate oracle.
+- Three SO non-native bridges remain physically verified. The corrected chasing-2→2 bridge is kept
+  as an unverified candidate with its turn on t6→t7.
+- Midpoint poi direction identifies the crosspoint gate because every crossing must point outward:
+  left arrow means left gate and right arrow means right gate. This can oppose the body-turn side.
+  A front-circle crossing uses the turn-side gate; a rear-circle crossing uses the opposite gate.
+- Holds are hand-specific anatomical transitions. For example, a right hand can hold B through
+  `R → Lb` on a left turn, while the corresponding non-native `L` source cannot hold through a
+  right turn. Unknown `Cb`, `Lb`, and `Rb` hold sources remain unresolved rather than inferred.
+- A source state may have more than one legal shared turn edge. The corrected SO non-native source
+  `left C a down / right L b up` can use left-cross/right-hold or hold/hold. Ergonomic preference
+  for crossing during the turn is not part of legality.
 
 ## Adversarial findings
 
 Seven deterministic mutations probe the current turn-edge boundary:
 
 - phase reset, missing synchronized target, and unchanged facing are structurally rejected;
-- moving the turn earlier, flipping one target plane side, reversing only the body turn, and
-  removing a known preparation remain structurally coherent but physically unresolved.
+- moving the turn earlier without relabelling its targets, flipping one target plane side, reversing
+  only the body turn, and removing a known preparation remain structurally coherent but are rejected
+  by facing, hold, or crossing-gate topology.
 
 Every mutation is stripped of verified status before analysis. This demonstrates the intended
-boundary: the current contract can enforce shared timing and representation integrity, but it
-cannot yet decide anatomical gate legality.
+boundary: the shared contract enforces timing and representation integrity; the partial low-reel
+topology decides known crossings and holds while leaving unmodelled hold sources unresolved.
 
 ## Notation
 
@@ -123,12 +130,27 @@ sequence. In reels, keep the hand on its existing path unless a bridge explicitl
 especially important for non-native reels, where the hands are crossed. Performer left/right labels
 remain body-relative; plane sides `a` and `b` remain observer-relative.
 
+The performer-relative poi-circle classes are:
+
+- front: `C`, `Lb`, `Rb`;
+- back: `L`, `R`, `Cb`.
+
+Facing 0 places the front class on A and the back class on B. Facing 180 reverses that relation.
+Location labels do not name the crossing gate: an `L b → L a` rear-circle crossing can use the
+right gate when its midpoint arrow points right.
+
 ## Invariants
 
 - Poi timing and speed continue unchanged through a turn.
 - Every hand continues alternating `up` and `down` on consecutive rows.
 - A 180-degree body turn changes the body-relative inward/outward interpretation.
 - A hold preserves plane side; a cross changes plane side.
+- A crossing preserves the compact low-reel location while facing and plane side both flip.
+- A crossing gate is the outward horizontal midpoint direction.
+- A front-circle crossing uses the body-turn-side gate; a rear-circle crossing uses the opposite
+  gate.
+- Known holds are validated by hand, source location, and body-turn direction. Missing hold-table
+  entries are unresolved, not automatically illegal.
 - Two-hand patterns share one body-facing transition even when their individual plane changes need
   preparation on different halfbeats.
 

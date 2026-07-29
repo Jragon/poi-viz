@@ -1,14 +1,16 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  UNVERIFIED_ONE_HAND_TURN_CANDIDATES,
   VERIFIED_ONE_HAND_REFERENCES,
   VERIFIED_ONE_HAND_TURNS
 } from "@/lab/experiments/mel-turning/fixtures/verifiedOneHandTurns";
 
 describe("verified one-hand turning fixtures", () => {
-  it("normalizes the two phase references and all 24 verified turns", () => {
+  it("normalizes the two phase references, 24 verified turns, and one downgraded candidate", () => {
     expect(VERIFIED_ONE_HAND_REFERENCES).toHaveLength(2);
     expect(VERIFIED_ONE_HAND_TURNS).toHaveLength(24);
+    expect(UNVERIFIED_ONE_HAND_TURN_CANDIDATES).toHaveLength(1);
     expect(new Set(VERIFIED_ONE_HAND_TURNS.map((fixture) => fixture.trace.id)).size).toBe(24);
   });
 
@@ -50,8 +52,8 @@ describe("verified one-hand turning fixtures", () => {
       (fixture) => fixture.flowBefore === "outwards"
     );
 
-    expect(inward).toHaveLength(12);
-    expect(outward).toHaveLength(12);
+    expect(inward).toHaveLength(11);
+    expect(outward).toHaveLength(13);
     expect(
       inward.every(
         (fixture) => fixture.trace.tracks[0]?.poiDirection === "counterclockwise"

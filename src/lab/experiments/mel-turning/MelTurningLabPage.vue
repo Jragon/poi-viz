@@ -151,6 +151,11 @@ function midpointArrow(handEdge: TurningHandTurnEdge): string {
           >
             Physical {{ selectedTurnAnalysis.physicalStatus }}
           </span>
+          <span
+            class="rounded-full border border-violet-400/25 bg-violet-400/10 px-2.5 py-1 text-violet-300"
+          >
+            Topology {{ selectedTurnAnalysis.topologyStatus }}
+          </span>
         </div>
       </header>
 
@@ -185,7 +190,10 @@ function midpointArrow(handEdge: TurningHandTurnEdge): string {
               {{ nodeLabel(handEdge.from) }} → {{ nodeLabel(handEdge.to) }}
             </p>
             <p class="mt-2 text-xs text-slate-500">
-              Midpoint poi {{ midpointArrow(handEdge) }} · {{ handEdge.poiDirection }}
+              Midpoint poi {{ midpointArrow(handEdge) }} · {{ handEdge.poiDirection }} ·
+              {{ handEdge.fromRelativeCircle ?? "unknown" }}→{{
+                handEdge.toRelativeCircle ?? "unknown"
+              }}
             </p>
           </article>
         </div>
@@ -198,9 +206,9 @@ function midpointArrow(handEdge: TurningHandTurnEdge): string {
       </ul>
 
       <p class="border-t border-slate-800 pt-3 text-xs leading-5 text-slate-500">
-        This proves the shared timing and classifies each hand’s hold/cross mechanism. Physical
-        status currently comes from the verified fixture; gate and anatomical rules are not yet
-        applied to unverified candidates.
+        The contract proves shared timing. Topology additionally checks facing-valid nodes,
+        outward cross gates, and the currently known hand-specific hold transitions. “Unresolved”
+        means that the partial hold table lacks evidence; it does not mean impossible.
       </p>
     </section>
 

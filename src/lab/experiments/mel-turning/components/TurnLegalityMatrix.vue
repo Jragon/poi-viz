@@ -34,9 +34,13 @@ function handSummary(hand: TurnLegalityHandEntry): string {
   const mechanism =
     hand.mechanism === "hold"
       ? `hold ${hand.fromPlaneSide.toUpperCase()}`
-      : `cross ${hand.fromPlaneSide.toUpperCase()}→${hand.toPlaneSide.toUpperCase()} ${hand.gate ?? ""} gate`;
-  const preparation = hand.preparedBeforeTurn ? " · prep" : "";
-  return `${from} → ${to} · ${mechanism} · ${arrow(hand.midpointPoiDirection)}${preparation}`;
+      : `cross ${hand.fromPlaneSide.toUpperCase()}→${hand.toPlaneSide.toUpperCase()} ${hand.gate ?? "?"} gate`;
+  const preparation = hand.sourceDiffersFromPriorCycle ? " · changed source" : "";
+  const circle =
+    hand.fromRelativeCircle && hand.toRelativeCircle
+      ? ` · ${hand.fromRelativeCircle}→${hand.toRelativeCircle}`
+      : "";
+  return `${from} → ${to} · ${mechanism} · ${arrow(hand.midpointPoiDirection)}${circle} · ${hand.topologyStatus}${preparation}`;
 }
 
 function handEntry(row: TurnLegalityMatrixRow, hand: "left" | "right") {
@@ -66,6 +70,7 @@ function handEntry(row: TurnLegalityMatrixRow, hand: "left" | "right") {
             <th class="px-3 py-2 font-semibold">Form</th>
             <th class="px-3 py-2 font-semibold">Turn</th>
             <th class="px-3 py-2 font-semibold">Planes</th>
+            <th class="px-3 py-2 font-semibold">Topology</th>
             <th class="px-3 py-2 font-semibold">Left hand</th>
             <th class="px-3 py-2 font-semibold">Right hand</th>
             <th class="px-3 py-2 font-semibold">Evidence</th>
@@ -92,6 +97,9 @@ function handEntry(row: TurnLegalityMatrixRow, hand: "left" | "right") {
               {{ row.planeConfigurationBefore }}→{{ row.planeConfigurationAfter }}
               · {{ row.crossingCount }}x
             </td>
+            <td class="whitespace-nowrap px-3 py-2 align-top font-mono">
+              {{ row.topologyStatus }}
+            </td>
             <td class="px-3 py-2 align-top font-mono">
               <span v-if="handEntry(row, 'left')">
                 {{ handSummary(handEntry(row, "left")!) }}
@@ -113,9 +121,11 @@ function handEntry(row: TurnLegalityMatrixRow, hand: "left" | "right") {
     </div>
 
     <p class="border-t border-slate-800 px-5 py-3 text-xs leading-5 text-slate-500">
-      “Prep” means the turn-source node differs from the same phase one four-half-beat reel cycle
-      earlier. Cross gates are named by the shared body-turn direction. This matrix records positive
-      verified evidence; absence from it does not prove a transition impossible.
+      “Changed source” means the turn-source node differs from the same phase one four-half-beat
+      reel cycle earlier; it is a comparison, not a complete preparation model. A cross gate is
+      identified by the poi’s outward midpoint direction. Rear-circle crossings use the gate
+      opposite the body-turn side. Unresolved topology means that the anatomical hold table does not
+      yet cover that location.
     </p>
   </details>
 </template>

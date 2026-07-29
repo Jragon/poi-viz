@@ -370,3 +370,33 @@ still being established.
 
 Validation requires fixture timing invariants, shared-event rendering, route integration, and source
 boundary tests that prevent reverse or bypass imports.
+
+## 2026-07-29: Low-Reel Turn Topology Separates Poi Circle, Hand Placement, and Gate
+
+Mel turning now applies a partial low-reel topology after the shared timing contract. It remains
+isolated under `src/lab/experiments/mel-turning`; the original Mel body-tracing graph and engine are
+unchanged.
+
+- `C`, `Lb`, and `Rb` place the poi on the performer-front circle. `L`, `R`, and `Cb` place it on
+  the performer-back circle. This classification is distinct from the normalized `wall` versus
+  `behind-body` hand placement.
+- Facing 0 maps the front circle to plane A and the back circle to B. Facing 180 reverses that
+  mapping. Source and target nodes are checked against their event endpoint facing.
+- A crossing flips A/B and facing while preserving its compact low-reel location. Its gate is the
+  poi's outward horizontal midpoint direction. Front-circle crossings use the body-turn-side gate;
+  back-circle crossings use the opposite gate.
+- A hold preserves A/B while its performer-relative circle changes. Known hold targets are stored
+  as a hand-, source-location-, and turn-direction relation. Missing `Cb`, `Lb`, and `Rb` source
+  rules remain explicitly unresolved.
+- Legality is a relation rather than a deterministic target function. The same shared source can
+  have both cross-and-turn and open-and-hold targets. Ergonomic preference is not encoded as
+  legality.
+- Structural, topology, and evidence status remain separate. Known-invalid topology is rejected;
+  partial-table gaps do not erase physically verified evidence.
+- Corrected but not reverified fixtures are removed from the verified selectors and retained as
+  unverified candidates. The current normalized evidence has 24 verified one-hand and 26 verified
+  two-hand turns.
+
+Validation covers the complete facing/location table, front- and back-circle gate selection,
+hand-specific holds, branching cross/hold targets, corrected fixtures, and adversarial topology
+mutations.

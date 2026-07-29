@@ -28,15 +28,16 @@ describe("adversarial turning probes", () => {
     );
   });
 
-  it("leaves physical mutations unresolved instead of inventing a verdict", () => {
+  it("rejects structurally coherent mutations when topology now decides them", () => {
     const results = evaluateAdversarialTurningProbes();
-    const unresolved = results.filter(
-      (result) => result.probe.expectation === "structurally-valid-unresolved"
+    const rejected = results.filter(
+      (result) => result.probe.expectation === "topologically-invalid"
     );
 
-    expect(unresolved).toHaveLength(4);
-    expect(unresolved.every((result) => result.analysis.contractStatus === "valid")).toBe(true);
-    expect(unresolved.every((result) => result.analysis.physicalStatus === "unresolved")).toBe(
+    expect(rejected).toHaveLength(4);
+    expect(rejected.every((result) => result.analysis.contractStatus === "valid")).toBe(true);
+    expect(rejected.every((result) => result.analysis.topologyStatus === "invalid")).toBe(true);
+    expect(rejected.every((result) => result.analysis.physicalStatus === "not-assessed")).toBe(
       true
     );
   });

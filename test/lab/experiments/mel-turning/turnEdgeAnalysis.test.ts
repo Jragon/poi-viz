@@ -23,6 +23,7 @@ describe("turn-edge analysis", () => {
       const result = analyzeTurningTraceTurn(trace);
 
       expect(result.contractStatus, trace.id).toBe("valid");
+      expect(result.topologyStatus, trace.id).toBe("valid");
       expect(result.physicalStatus, trace.id).toBe("verified");
       expect(result.diagnostics, trace.id).toEqual([]);
       expect(result.edge?.hands.left.from.step).toBe(result.edge?.sourceStep);

@@ -6,9 +6,9 @@ import {
 } from "@/lab/experiments/mel-turning/fixtures/verifiedTurningTraces";
 
 describe("verified Mel turning traces", () => {
-  it("contains all 28 physically verified two-hand reel turns", () => {
-    expect(VERIFIED_TURNING_TRACES).toHaveLength(28);
-    expect(new Set(VERIFIED_TURNING_TRACES.map((trace) => trace.id)).size).toBe(28);
+  it("contains the 26 currently physically verified two-hand reel turns", () => {
+    expect(VERIFIED_TURNING_TRACES).toHaveLength(26);
+    expect(new Set(VERIFIED_TURNING_TRACES.map((trace) => trace.id)).size).toBe(26);
   });
 
   it("keeps the five Mel lanes in body-relative column order", () => {
