@@ -32,7 +32,7 @@ Normative application decisions remain in [`../decisions.md`](../decisions.md).
 | `candidates/low-reels-two-hand-together-opposite-non-native-turn-left.csv` | Four low-non-native TO unison/counter transitions; inward to outward |
 | `candidates/low-reels-turn-edge-corrections.csv` | Full-context recheck of five suspect turn edges, including two alternative routes for each ambiguous low-back case |
 | `candidates/unresolved-turning-issues.csv` | Consolidated register of the eight remaining rule/notation questions, with full routes for the unresolved low-back, SO, SS, and TO cases |
-| `candidates/low-weaves-same-clockwise-natural-side-turns.csv` | Four re-derived TS/SS clockwise mixed native/non-native low-weave routes plus the 12 per-hand topology-valid target pairs at their chosen turn edges |
+| `candidates/low-weaves-left-clockwise-fixed-targets.csv` | Eight fixed source/target searches for the left low weave: TS offset 0→0/2 and SS offset 1→1/3, each turning left/right; includes every equal-shortest candidate from the partial topology |
 
 The verified same-direction files cover both left and right body turns while both poi move clockwise
 in the observer frame. The turn-right routes were derived and checked independently rather than
@@ -52,12 +52,17 @@ The unresolved-issues file is the current physical-review queue. It distinguishe
 `C b` from center-back `Cb b`, keeps the rejected low-back edge beside two gate-valid alternatives,
 and separates per-hand topology validity from joint two-arm performability.
 
-The weave file deliberately starts with same-clockwise turns toward the side occupied by both
-hands. It combines one low-native and one low-non-native reel, keeps front `C` as one equivalence
-class, and checks TS and SS clockwise on both body sides. Its branch matrix is exhaustive only under
-the current per-hand low-reel rules: the listed pairs still require physical verification as
-two-hand movements. TO/SO inwards/outwards and TS/SS counterclockwise weaves have not yet been
-derived.
+The current weave experiment fixes both endpoints before deriving a bridge. It starts with a
+body-left low weave (`left low-native / right low-non-native`) and uses Mel's internal offsets:
+source 0 (TS) targets 0/2, and source 1 (SS) targets 1/3. Every pair is searched independently for
+left and right body turns. The endpoint cycles come directly from Mel; the target is compiled in
+the performer-relative counterclockwise frame at facing 180 while observer-fixed poi motion remains
+clockwise.
+
+The partial topology predicts a one-halfbeat direct bridge for all eight endpoint pairs, with 20
+equal-shortest candidates in total. These are candidates, not conclusions: the model validates each
+hand separately and does not yet prove simultaneous two-arm anatomy. TO/SO inwards/outwards,
+counterclockwise source weaves, right-side weaves, and longer fallback bridges remain untested.
 
 ## Runtime normalization
 
@@ -184,3 +189,4 @@ Suggested future names:
 | `archive/initial-one-hand-derivations.csv` | Initial handwritten one-hand reel derivations |
 | `archive/early-two-hand-derivations.csv` | Early TO and SO two-hand tables |
 | `archive/generated-outward-and-to-candidates.csv` | Generated verification set before physical corrections |
+| `archive/incorrect-low-weave-first-pass.csv` | Superseded local-edge weave derivation; its SS continuation entered a reel because no exact target cycle was enforced |

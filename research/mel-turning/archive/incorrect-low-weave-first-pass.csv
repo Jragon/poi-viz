@@ -1,11 +1,11 @@
-LOW-WEAVE SAME-CLOCKWISE NATURAL-SIDE TURN CANDIDATES,,,,
-Status,"CANDIDATES — re-derived from the current facing, front/rear circle, crossing-gate, and known-hold rules; not physically verified.",,,
+SUPERSEDED LOW-WEAVE SAME-CLOCKWISE FIRST PASS,,,,
+Status,"ARCHIVED — the TS cases were plausible, but the SS continuation entered a reel because this derivation checked only local turn-edge legality and did not require entry into an exact target weave cycle.",,,
 Scope,"Four small low-weave routes plus every per-hand topology-valid target pair at their chosen turn edge.",,,
 Assumptions,"Both poi remain clockwise in the observer-fixed frame; body turns 0→180 over one halfbeat; phase never pauses; front C remains one equivalence class.",,,
 Beat-graph notation,"Together/split timing is combined with direction mode: TS and SS use clockwise/counterclockwise; TO and SO use inwards/outwards. This file currently covers TS clockwise and SS clockwise only.",,,
 Reading note,"A listed branch is legal for each hand separately. It is not yet proof that the two hands are jointly open, collision-free, or comfortable.",,,
 ,,,,
-CASE W1 — TS CLOCKWISE — LEFT-SIDE LOW WEAVE — TURN LEFT — BOTH CROSS TOGETHER,,,,
+CASE W1 — TS CLOCKWISE — LEFT-SIDE LOW WEAVE — TURN LEFT — BOTH CROSS TOGETHER,Verified,,,
 Pattern,"TS clockwise: together timing, same direction. Both poi remain clockwise in the observer-fixed beat graph.",,,
 Configuration,Left hand low native; right hand low non-native; both tracks occupy performer-left and are together at the horizontal midpoint.,,,
 t,facing,left,right,Body edge / verification note
@@ -19,7 +19,7 @@ t,facing,left,right,Body edge / verification note
 7,180,C b down,C b down,
 8,180,C b up,C b up,
 ,,,,
-CASE W2 — SS CLOCKWISE — LEFT-SIDE LOW WEAVE — TURN LEFT — LEFT CROSSES / RIGHT HOLDS A,,,,
+CASE W2 — SS CLOCKWISE — LEFT-SIDE LOW WEAVE — TURN LEFT — LEFT CROSSES / RIGHT HOLDS A,this is incorrect. firstly it's holding and ends up on right side instead of staying on the body left weave. ,,,
 Pattern,"SS clockwise: split timing, same direction. Both poi remain clockwise in the observer-fixed beat graph.",,,
 Configuration,Left hand low native; right hand low non-native; both tracks occupy performer-left and are split by one halfbeat.,,,
 t,facing,left,right,Body edge / verification note
@@ -33,7 +33,7 @@ t,facing,left,right,Body edge / verification note
 7,180,C b down,R a up,
 8,180,C b up,R a down,
 ,,,,
-CASE W3 — TS CLOCKWISE — RIGHT-SIDE LOW WEAVE — TURN RIGHT — BOTH CROSS TOGETHER,,,,
+CASE W3 — TS CLOCKWISE — RIGHT-SIDE LOW WEAVE — TURN RIGHT — BOTH CROSS TOGETHER,verified,,,
 Pattern,"TS clockwise: together timing, same direction. Both poi remain clockwise in the observer-fixed beat graph.",,,
 Configuration,Left hand low non-native; right hand low native; both tracks occupy performer-right and are together at the horizontal midpoint.,,,
 t,facing,left,right,Body edge / verification note
@@ -47,7 +47,7 @@ t,facing,left,right,Body edge / verification note
 7,180,C b up,C b up,
 8,180,C b down,C b down,
 ,,,,
-CASE W4 — SS CLOCKWISE — RIGHT-SIDE LOW WEAVE — TURN RIGHT — LEFT CROSSES / RIGHT HOLDS A,,,,
+CASE W4 — SS CLOCKWISE — RIGHT-SIDE LOW WEAVE — TURN RIGHT — LEFT CROSSES / RIGHT HOLDS A,This is also incorrected. ,,,
 Pattern,"SS clockwise: split timing, same direction. Both poi remain clockwise in the observer-fixed beat graph.",,,
 Configuration,Left hand low non-native; right hand low native; both tracks occupy performer-right and are split by one halfbeat.,,,
 t,facing,left,right,Body edge / verification note
