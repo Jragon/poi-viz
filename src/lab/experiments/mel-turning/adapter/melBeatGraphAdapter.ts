@@ -3,12 +3,47 @@ import {
   deriveRowStates
 } from "@/lab/experiments/mel-body-tracing/beat-graph/graphHelpers";
 import type { PoiBeatTrack } from "@/lab/experiments/mel-body-tracing/beat-graph/types";
+import {
+  buildReelBeatGraph,
+  deriveReelState
+} from "@/lab/experiments/mel-body-tracing/explorers/reelRules";
+import type {
+  ReelConfig,
+  ReelDirection,
+  ReelOffset,
+  ReelPatternType,
+  ReelPosition,
+  ReelTimingLabel
+} from "@/lab/experiments/mel-body-tracing/explorers/reelTypes";
 import type {
   TurningLane,
   TurningLaneId,
   TurningTrack,
   TurningTrackDraft
 } from "@/lab/experiments/mel-turning/model/turningTypes";
+
+export type TurningReelOffset = ReelOffset;
+
+export type TurningReelDirection = ReelDirection;
+
+export type TurningReelPosition = Extract<
+  ReelPosition,
+  "low-native" | "low-non-native"
+>;
+
+export interface TurningReelConfig {
+  readonly left: TurningReelPosition;
+  readonly right: TurningReelPosition;
+  readonly direction: TurningReelDirection;
+  readonly offset: TurningReelOffset;
+}
+
+export interface TurningReelCycle {
+  readonly cycleSteps: number;
+  readonly timing: ReelTimingLabel;
+  readonly patternType: ReelPatternType;
+  readonly tracks: readonly TurningTrack[];
+}
 
 /**
  * This is the only dependency seam from Mel Turning into Mel Body Tracing.
@@ -55,5 +90,35 @@ export function deriveTurningTrackFromMel(draft: TurningTrackDraft): TurningTrac
         ...(draftRow.handPlacement ? { handPlacement: draftRow.handPlacement } : {})
       };
     })
+  };
+}
+
+export function buildTurningReelCycle(config: TurningReelConfig): TurningReelCycle {
+  const melConfig: ReelConfig = config;
+  const graph = buildReelBeatGraph(melConfig);
+  const state = deriveReelState(melConfig);
+
+  return {
+    cycleSteps: graph.cycleSteps,
+    timing: state.timing,
+    patternType: state.patternType,
+    tracks: graph.tracks.map((track) =>
+      deriveTurningTrackFromMel({
+        id: track.id,
+        hand: track.hand,
+        poiDirection: track.poiDirection,
+        initialPhase: track.initialPhase,
+        rows: track.rows.map((row) => {
+          if (!row.planeSide) {
+            throw new Error(`Mel reel row t${row.step} has no plane side.`);
+          }
+          return {
+            step: row.step,
+            laneId: row.laneId as TurningLaneId,
+            planeSide: row.planeSide
+          };
+        })
+      })
+    )
   };
 }

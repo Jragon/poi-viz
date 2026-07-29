@@ -24,6 +24,7 @@ Normative application decisions remain in [`../decisions.md`](../decisions.md).
 | `verified/low-reels-two-hand-split-same-turn-left.csv` | Four verified low-native SS unison/counter transitions; both poi clockwise; turn left |
 | `verified/low-reels-two-hand-together-same-turn-right.csv` | Four verified low-native TS chasing-offset transitions; both poi clockwise; turn right |
 | `verified/low-reels-two-hand-split-same-turn-right.csv` | Four verified low-native SS unison/counter transitions; both poi clockwise; turn right |
+| `verified/low-weaves-left-ss-cw-3-to-ccw-1.csv` | Four verified natural-to-natural left low-weave turns: SS clockwise offset 3 → SS counterclockwise offset 1, turning left/right |
 
 ## Candidate sets
 
@@ -33,7 +34,7 @@ Normative application decisions remain in [`../decisions.md`](../decisions.md).
 | `candidates/low-reels-turn-edge-corrections.csv` | Full-context recheck of five suspect turn edges, including two alternative routes for each ambiguous low-back case |
 | `candidates/unresolved-turning-issues.csv` | Consolidated register of the eight remaining rule/notation questions, with full routes for the unresolved low-back, SO, SS, and TO cases |
 | `candidates/low-weaves-left-clockwise-fixed-targets.csv` | Eight fixed source/target searches for the left low weave: TS offset 0→0/2 and SS offset 1→1/3, each turning left/right; includes every equal-shortest candidate from the partial topology |
-| `candidates/low-weaves-left-ss-cw-3-to-ccw-1.csv` | Focused natural-to-natural left low-weave search: SS clockwise offset 3 → SS counterclockwise offset 1, turning left/right |
+| `candidates/low-weaves-left-opposite-fixed-targets.csv` | Eight fixed source/target searches for the left low weave: SO inward offset 0→outward 0/2 and TO inward offset 1→outward 1/3, each turning left/right |
 
 The verified same-direction files cover both left and right body turns while both poi move clockwise
 in the observer frame. The turn-right routes were derived and checked independently rather than
@@ -68,10 +69,19 @@ marked assumed rather than fully verified in the CSV.
 The partial topology predicts a one-halfbeat direct bridge for all eight original endpoint pairs,
 with 20 equal-shortest candidates in total. The focused natural-to-natural offset 3 clockwise →
 offset 1 counterclockwise search also predicts one-halfbeat direct bridges: two candidates for each
-body-turn direction, all using left-cross/right-hold. These are candidates, not conclusions: the
-model validates each hand separately and does not yet prove simultaneous two-arm anatomy. TO/SO
-inwards/outwards, counterclockwise source weaves, right-side weaves, and longer fallback bridges
-remain untested.
+body-turn direction, all using left-cross/right-hold. All four focused candidates are physically
+verified.
+
+The two legal departure phases should remain distinct in the graph even when they feel almost
+identical in performance. The halfbeat edge is a discrete notation boundary; a performer can begin
+turning roughly a quarter-beat before it and finish roughly a quarter-beat after it. The continuous
+body-turn windows can therefore overlap without making either discrete phase annotation wrong.
+
+The first opposite-direction experiment uses the same fixed-endpoint matrix: SO inward offset 0
+targets SO outward 0/2, and TO inward offset 1 targets TO outward 1/3, each for left/right body
+turns. The partial topology again predicts 20 one-halfbeat candidates. These are candidates, not
+conclusions: the model validates each hand separately and does not yet prove simultaneous two-arm
+anatomy. Right-side weaves and longer fallback bridges remain untested.
 
 ## Runtime normalization
 
@@ -85,6 +95,12 @@ The isolated Mel-turning lab contains a typed, deterministic normalization of th
 Each normalized fixture retains its CSV filename, exact case label, original first step, and original
 turn step. Runtime code does not parse the CSVs. Source comparison is a manual audit step rather than
 a CSV-conformance test.
+
+The deterministic fixed-target search now lives in
+`src/lab/experiments/mel-turning/model/lowWeaveTurnSearch.ts`. It compiles exact source and target
+cycles through the existing Mel adapter, searches the synchronized two-hand product graph, requires
+one shared turn and observer-fixed direction preservation, and returns every equal-shortest path.
+CSV formatting remains a research workflow rather than a runtime dependency.
 
 Back notation remains explicit during normalization: `Cb`, `Lb`, and `Rb` carry
 `behind-body` hand placement in addition to the ordinary five-column lane and A/B plane-side data.

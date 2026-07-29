@@ -400,3 +400,28 @@ unchanged.
 Validation covers the complete facing/location table, front- and back-circle gate selection,
 hand-specific holds, branching cross/hold targets, corrected fixtures, and adversarial topology
 mutations.
+
+## 2026-07-29: Low-Weave Turns Use Exact-Target Product-Graph Search
+
+Low-weave turn generation is a deterministic Mel-turning lab operation, not a change to Mel body
+tracing or the engine.
+
+- A search state is the synchronized pair of left/right low-weave nodes plus body facing and
+  whether the shared 180-degree turn has occurred.
+- Source and target are exact Mel reel configurations, including direction and internal offset.
+  The search may start on any source-cycle phase and stops on first entry into the fixed target
+  cycle.
+- Each path contains exactly one shared turn edge. Poi directions must reverse in the
+  performer-relative target configuration so observer-fixed rotation remains unchanged after the
+  body turns.
+- Normal edges come from Mel's native/non-native low-reel cycles. Turn targets come from the partial
+  hand topology. The product search returns every equal-shortest path rather than choosing an
+  ergonomic winner.
+- Adjacent legal turn-edge phases are retained. A discrete halfbeat annotation does not imply an
+  instantaneous torso rotation; continuous performance may centre the turn across that edge and
+  overlap the neighbouring phase's turn window.
+- Joint arm openness, collisions, comfort, and naturalness remain physical verification data. A
+  pair of individually legal hand edges is not treated as proof of two-arm performability.
+
+The reusable search stays under `src/lab/experiments/mel-turning`; Mel body tracing remains
+unchanged and is accessed only through the existing turning adapter.
