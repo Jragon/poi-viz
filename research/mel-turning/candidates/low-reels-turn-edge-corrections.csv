@@ -1,0 +1,97 @@
+LOW-REEL TURN-EDGE CORRECTIONS — FOR PHYSICAL VERIFICATION,,,,
+Purpose,Recheck five sequences whose movement rows may be sound but whose shared body-turn edge was misplaced. Low-back cases include the alternate routes described on 2026-07-29.,,,
+Invariant,Whenever a poi changes plane side at a body-side crosspoint it must point outward at the horizontal midpoint.,,,
+Status,CANDIDATES — edit facing and Body edge notes directly while physically checking.,,,
+,,,,
+CASE 1A — RIGHT LOW-BACK INWARD TURN LEFT — USER CORRECTION; CONTINUE ON Lb B,,,,
+t,facing,left,right,Body edge / verification note
+0,0,,Cb b down,
+1,0,,Cb b up,
+2,0,,Lb a down,
+3,0,,Lb a up,Turn happens between 3 and 4. Cross A→B through performer-left; counterclockwise up→down points outward-left.
+4,180,,Lb b down,
+5,180,,Lb b up,Continuation option A: stay on the Lb B circle.
+6,180,,Cb a down,
+7,180,,Cb a up,
+8,180,,Lb b down,
+,,,,
+CASE 1B — RIGHT LOW-BACK INWARD TURN LEFT — USER CORRECTION; IMMEDIATE SECOND CROSS,,,,
+t,facing,left,right,Body edge / verification note
+0,0,,Cb b down,
+1,0,,Cb b up,
+2,0,,Lb a down,
+3,0,,Lb a up,Turn happens between 3 and 4. Cross A→B through performer-left; counterclockwise up→down points outward-left.
+4,180,,Lb b down,
+5,180,,Cb a up,Continuation option B: cross again after the turn. User says this can use performer-left again; verify exact hand route and gate.
+6,180,,Cb a down,
+7,180,,Lb b up,
+8,180,,Lb b down,
+,,,,
+CASE 2A — RIGHT LOW-BACK OUTWARD TURN LEFT — TURN ON FIRST LEFT CROSS,,,,
+t,facing,left,right,Body edge / verification note
+0,0,,Cb b up,
+1,0,,Cb b down,
+2,0,,Lb a up,
+3,0,,Lb a down,Turn happens between 3 and 4. Cross A→B through performer-left; clockwise down→up points outward-left.
+4,180,,Lb b up,
+5,180,,Lb b down,
+6,180,,Cb a up,
+7,180,,Cb a down,
+8,180,,Lb b up,
+,,,,
+CASE 2B — RIGHT LOW-BACK OUTWARD TURN LEFT — NORMAL LEFT CROSS THEN TURN ON RIGHT-BACK CROSS,,,,
+t,facing,left,right,Body edge / verification note
+0,0,,Cb b up,
+1,0,,Cb b down,
+2,0,,Lb a up,
+3,0,,Lb a down,Normal A→B crossing through performer-left occurs between 3 and 4; body has not turned yet.
+4,0,,Cb b up,"Turn happens between 4 and 5. Cross B→A through performer-right while the hand is behind the body/on the B-side topology. This is the previously verified route; confirm the gate description."
+5,180,,Cb a down,
+6,180,,Cb a up,
+7,180,,Lb b down,
+8,180,,Lb b up,
+9,180,,Cb a down,
+,,,,
+CASE 3 — TO COUNTER→UNISON TURN LEFT — USER-PROPOSED CORRECTION,,,,
+t,facing,left,right,Body edge / verification note
+0,0,L b up,C a up,
+1,0,L b down,C a down,
+2,0,C a up,R b up,
+3,0,C a down,R b down,
+4,0,L b up,C a up,Turn happens between 4 and 5. Left holds B; right crosses A→B and meets left at C B. Verify that the right crossing points outward through performer-left.
+5,180,C b down,C b down,
+6,180,C b up,C b up,
+7,180,L a down,R a down,
+8,180,L a up,R a up,
+,,,,
+CASE 4 — SO NON-NATIVE CHASING-2→CHASING-2 TURN LEFT — CANDIDATE EARLIER OPEN TURN,,,,
+t,facing,left,right,Body edge / verification note
+0,0,R b down,C a up,
+1,0,R b up,L b down,
+2,0,C a down,L b up,
+3,0,C a up,C a down,
+4,0,R b down,C a up,
+5,0,R b up,L b down,
+6,0,C a down,L b up,Proposed turn happens between 6 and 7. Both hands hold the open A/B configuration through the turn.
+7,180,C a up,L b down,The right hand remains on B. Verify body-relative lane labels at the completed turn.
+8,180,C b down,C b up,Left A→B crossing now occurs after the body turn; verify its body-side gate.
+9,180,R a up,C b down,
+10,180,R a down,L a up,
+11,180,C b up,L a down,
+12,180,C b down,C b up,
+,,,,
+CASE 5 — SS COUNTER→UNISON TURN LEFT — CANDIDATE EARLIER COUNTER/WHEEL TURN,,,,
+t,facing,left,right,Body edge / verification note
+0,0,L b down,C a up,
+1,0,C a up,R b down,
+2,0,C a down,R b up,
+3,0,L b up,C a down,
+4,0,L b down,C a up,
+5,0,C a up,R b down,
+6,0,C a down,R b up,Proposed turn happens between 6 and 7. Left crosses A→B outward-left; right crosses B→A outward-right through the ordinary counter/wheel-plane passage.
+7,180,L b up,C a down,Verify these body-relative lane labels immediately after the completed turn.
+8,180,L a down,R a up,
+9,180,L a up,R a down,
+10,180,C b down,C b up,
+11,180,C b up,C b down,
+12,180,L a down,R a up,

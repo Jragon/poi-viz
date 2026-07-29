@@ -30,6 +30,8 @@ Normative application decisions remain in [`../decisions.md`](../decisions.md).
 | File | Contents |
 | --- | --- |
 | `candidates/low-reels-two-hand-together-opposite-non-native-turn-left.csv` | Four low-non-native TO unison/counter transitions; inward to outward |
+| `candidates/low-reels-turn-edge-corrections.csv` | Full-context recheck of five suspect turn edges, including two alternative routes for each ambiguous low-back case |
+| `candidates/low-weaves-same-clockwise-natural-side-turns.csv` | Four first-pass mixed native/non-native low-weave turns: offset 0/1 on the left and right body sides |
 
 The verified same-direction files cover both left and right body turns while both poi move clockwise
 in the observer frame. The turn-right routes were derived and checked independently rather than
@@ -38,6 +40,15 @@ being assumed to mirror the turn-left routes. The both-counterclockwise cases re
 The remaining TO non-native file still tests a topology hypothesis. Non-native and back reels use
 the same plane topology, but they are not interchangeable movement rows: hand placement and the
 path allowed by the surrounding sequence still matter.
+
+The turn-edge correction file does not supersede the verified corpus yet. Its movement sequences
+are based on physically accepted patterns, but the exact halfbeat carrying the body-facing change
+is being rechecked. Runtime fixtures must remain unchanged until those edge annotations are
+physically verified.
+
+The weave file deliberately starts with same-clockwise turns toward the side occupied by both
+hands. It combines one low-native and one low-non-native reel, keeps front `C` as one equivalence
+class, and checks only offset 0 and offset 1 before expanding the matrix.
 
 ## Runtime normalization
 
