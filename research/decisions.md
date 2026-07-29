@@ -425,3 +425,33 @@ tracing or the engine.
 
 The reusable search stays under `src/lab/experiments/mel-turning`; Mel body tracing remains
 unchanged and is accessed only through the existing turning adapter.
+
+## 2026-07-29: Timing Orbit Quantization Is a Lab-Owned Analysis Lens
+
+Timing Orbit compares two normally authored tracks without adding quantization or hybrid theory to
+the engine or authoring document.
+
+- The selected source must be an authoring document with `left` and `right` tracks. Each track's
+  total authored duration is its independent cycle period, and engine-style per-track looping is
+  retained.
+- Each track owns an integer uniform-time landmark count. Landmark widths may differ; the lab
+  overlays the resulting event trains on one real-time axis instead of forcing both tracks onto one
+  source grid.
+- When a small rational relationship exists, the observation horizon is the least joint track
+  period. Search is bounded by repeat count and duration; an explicit bounded window is used rather
+  than manufacturing a very large or numerically unreliable common period.
+- Right-track offset is canonical time displacement modulo the right period. It shifts the whole
+  right motion and its landmark train. The UI supports continuous displacement plus snapping to
+  left, right, or derived shared intervals.
+- The shared interval is derived only when the joint period produces a bounded integer grid. It is
+  a convenience for stepping offsets, not a prerequisite for evaluating or displaying the two
+  independent event trains.
+- The saved source is never mutated. A lab-only observation sequence samples the prepared authored
+  tracks through explicit runtime callbacks, splits at original source boundaries, preserves plane
+  metadata, and extends transport to the chosen observation horizon.
+- Semantic landmarks such as petal tips, crossings, cardinals, and pendulum downbeats; arbitrary
+  landmark mappings; quantized playback; and saved lab configurations remain deferred.
+
+Validation covers unequal 3- and 5-unit cycles, 3- and 10-part landmark trains, the 15-unit joint
+period, continuous and snapped offsets, source immutability, bounded-period fallback, route
+integration, Vue type checking, and the normal repository quality gates.

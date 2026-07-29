@@ -4,9 +4,14 @@ import { THREE_D_DEBUG_LAB_LINK } from "@/lab/experiments/three-d-debug/routeMet
 import { VRM_RIG_LAB_LINK } from "@/lab/experiments/vrm-rig/routeMeta";
 import { MEL_TURNING_LAB_LINK } from "@/lab/experiments/mel-turning/routeMeta";
 import { PENDULUM_LAB_LINK } from "@/lab/experiments/pendulum/routeMeta";
+import { TIMING_ORBIT_LAB_LINK } from "@/lab/experiments/timing-orbit/routeMeta";
 import { labLinks } from "@/lab/labLinks";
 
 describe("labLinks", () => {
+  it("includes the timing orbit lab link", () => {
+    expect(labLinks).toContain(TIMING_ORBIT_LAB_LINK);
+  });
+
   it("includes the pendulum lab link", () => {
     expect(labLinks).toContain(PENDULUM_LAB_LINK);
   });

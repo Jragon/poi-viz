@@ -11,6 +11,10 @@ import {
 } from "@/lab/experiments/mel-turning/routeMeta";
 import { GRAVITY_LAB_ROUTE, loadGravityLabPage } from "@/lab/experiments/gravity/routeMeta";
 import { PENDULUM_LAB_ROUTE, loadPendulumLabPage } from "@/lab/experiments/pendulum/routeMeta";
+import {
+  TIMING_ORBIT_LAB_ROUTE,
+  loadTimingOrbitLabPage
+} from "@/lab/experiments/timing-orbit/routeMeta";
 import QuarterTimingDirectionJournalPage from "@/lab/experiments/qt-stall-graph/QuarterTimingDirectionJournalPage.vue";
 import StallGraphJournalPage from "@/lab/experiments/qt-stall-graph/StallGraphJournalPage.vue";
 import StallGraphLayoutPage from "@/lab/experiments/qt-stall-graph/StallGraphLayoutPage.vue";
@@ -88,6 +92,10 @@ export const router = createRouter({
     {
       ...PENDULUM_LAB_ROUTE,
       component: loadPendulumLabPage
+    },
+    {
+      ...TIMING_ORBIT_LAB_ROUTE,
+      component: loadTimingOrbitLabPage
     },
     {
       ...GRAVITY_LAB_ROUTE,

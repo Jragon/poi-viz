@@ -50,6 +50,15 @@ Authoring Vue components may embed visualizer components for previews. Core auth
 
 The pendulum lab owns the calibration surface as well as the compositions: its circle-versus-pendulum experiment defines one unit as one circle or one complete pendulum cycle, compares cardinal checkpoints, and displays derived speed curves. Gravity is the default working curve; sine and constant-speed curves are deterministic comparison shapes. It also provides normalized gravity-reference motion as a lab-only runtime driver. The Rastaxel experiment composes one pendulum cycle and one circle into a two-unit motif, emits eight explicit quarter-unit segments per track with boundary poses, resolves independent left/right inward-outward flows using the beat-graph handedness convention, shares each hand's resolved direction across its oscillator and circle handoff, and phase-shifts the right track by an integer step offset while plotting instantaneous speed. Its optional hand-driver controls are separate from poi flow: each hand has its own radius, start phase, and signed omega in authored circles-per-unit (zero is static, one is one full circle per time unit); the right-track offset phase-shifts those hand drivers as part of the track. Ordinary, extended, isolated, paired-timing, mirrored, and extendulum compositions remain lab presets rather than new engine motion laws. Production authoring exposes circle and pendulum as explicit per-node driver choices and does not add hidden segment-level composition rules. The application-level pattern registry also converts the lab compositions into bundled, editable authored documents so they can be inspected as saved examples without making authoring core depend on lab code.
 
+The Timing Orbit lab compiles a selected two-track authoring document, treats each track's authored
+duration as an independent cycle, and overlays a separate uniform-time landmark train on each
+cycle. It derives a bounded joint observation period when the track periods have a small rational
+relationship; otherwise it uses an explicit bounded window. A right-track offset phase-shifts the
+whole track while leaving the saved source unchanged. The lab builds an observation-only sequence
+whose runtime callbacks sample the frozen compiled source across original segment and plane
+boundaries. Quantization is therefore a display and analysis lens, not a new motion driver, authored
+property, or stop-motion transformation.
+
 The Gravity lab owns stateful physical experiments. Its deterministic ideal-tether simulator
 precomputes fixed-timestep traces with explicit taut, slack, release, and catch states; a dedicated
 canvas plays those traces without treating physics as a stateless engine driver. It separates

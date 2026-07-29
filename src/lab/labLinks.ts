@@ -3,8 +3,10 @@ import { VRM_RIG_LAB_LINK } from "@/lab/experiments/vrm-rig/routeMeta";
 import { GRAVITY_LAB_LINK } from "@/lab/experiments/gravity/routeMeta";
 import { MEL_TURNING_LAB_LINK } from "@/lab/experiments/mel-turning/routeMeta";
 import { PENDULUM_LAB_LINK } from "@/lab/experiments/pendulum/routeMeta";
+import { TIMING_ORBIT_LAB_LINK } from "@/lab/experiments/timing-orbit/routeMeta";
 
 export const labLinks = [
+  TIMING_ORBIT_LAB_LINK,
   PENDULUM_LAB_LINK,
   GRAVITY_LAB_LINK,
   {

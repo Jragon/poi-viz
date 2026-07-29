@@ -88,6 +88,17 @@ export function evaluateRouterModule(
       }
     ],
     [
+      "@/lab/experiments/timing-orbit/routeMeta",
+      {
+        TIMING_ORBIT_LAB_ROUTE: {
+          path: "/lab/timing-orbit",
+          name: "timing-orbit-lab"
+        },
+        loadTimingOrbitLabPage: () =>
+          Promise.resolve({ default: { name: "TimingOrbitLabPage" } })
+      }
+    ],
+    [
       "@/lab/experiments/mel-turning/routeMeta",
       {
         MEL_TURNING_LAB_ROUTE: { path: "/lab/mel-turning", name: "mel-turning-lab" },
