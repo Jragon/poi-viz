@@ -519,3 +519,60 @@ cancel a native select's transient popup selection before its change event commi
 
 Validation requires a source-level ownership invariant for native selects, Vue type checking, live
 editing while playback runs, and the normal lint, test, and build gates.
+
+## 2026-07-30: Low-Reel Route Search Is a Review-First Research Model
+
+The direct turning explorer gains physically resolved context without making the new multi-edge
+grammar an established movement law.
+
+- Endpoint compatibility is a shared turning-lab invariant. Source and target timing must match.
+  Same clockwise targets same counterclockwise and vice versa; opposite inwards targets opposite
+  outwards and vice versa. Observer-fixed poi rotation therefore continues and the two poi remain
+  either same-direction or opposite-direction. The model does not synthesize stalls or reversals.
+- For a chosen target hand-position pair, exactly two Mel offsets preserve source timing. Offset
+  parity matches for mill→mill or weave→weave and flips for mill↔weave. The explorer derives and
+  locks target direction, enables only those two offsets, normalizes URL state, and retains
+  defensive compatibility diagnostics at model entry points.
+- Turning's existing adapter asks Mel's cyclic compiler for each reel row's resolved hand point.
+  Playback uses those points instead of treating compact `C` as a literal torso-centre coordinate.
+  The original Mel Body Tracing Explorer remains unchanged.
+- A selected direct bridge is displayed with one closed four-halfbeat source cycle before it and
+  one closed four-halfbeat target cycle after it. Reset and repeat remain finite transport behavior;
+  they do not assert that one 180-degree turn closes a physical movement cycle.
+
+A separate deterministic low-reel solver is introduced for candidate generation:
+
+- Its route grammar is `preparation* → one halfbeat body turn → recovery*`.
+- State identity includes facing, timing, both hands' compact notation, hand placement,
+  Mel-compiler-resolved boundary point, and observer-fixed poi direction. Exact Mel
+  configuration/step occurrences remain as provenance. Compact-node equality alone cannot join
+  paths.
+- Exact synchronized Mel reel intervals are model-valid continuation edges. The only generated
+  normal edge is a same-anchor circle extension: at least one hand stays on its resolved anchor,
+  side, lane, placement, and direction while phase advances one halfbeat. A second hand may use
+  another extension or an exact Mel continuation.
+- Every generated circle extension is an unresolved research hypothesis unless an exact physically
+  reviewed complete route supplies stronger evidence. Known-invalid turn topology is excluded;
+  missing hold knowledge remains optionally searchable as unresolved.
+- Search starts on any row of the exact source cycle, stops on first entry into the exact target
+  cycle, and uses deterministic breadth-first distance. It counts all shortest paths and
+  materializes a capped, stable prefix; research calls may also request simple alternatives up to
+  two halfbeats longer.
+- Structural/model status, exact-route evidence, and physical naturalness are separate. A shortest
+  model route is not automatically a legal or preferred two-arm movement.
+
+The direct-turn search remains the interactive explorer's route source while the wider solver
+generates deterministic CSV review packs. Physical review must record corrections explicitly, then
+pass through normalization before changing runtime evidence or expanding the explorer. This
+supersedes only the earlier deferral of all multi-edge modelling; it does not supersede the
+isolation, coordinate-frame, finite-transport, or evidence boundaries of the 2026-07-29 Model
+Explorer decision.
+
+The solver currently stores Mel-resolved interval endpoints and provenance, not complete continuous
+compiler drivers. Collision, joint limits, comfort, naturalness, direction changes, a second closing
+turn, wraps, cosmos, and arbitrary Mel graphs remain outside this decision.
+
+Validation requires exhaustive endpoint-compatibility coverage, deterministic route identity and
+ordering, exactly one turn per route, known direct and prepared verified controls, latent centre
+anchors that remain distinct, full source/bridge/target playback, unchanged original Mel behavior,
+and the normal repository quality gates.

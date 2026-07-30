@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { getVerifiedTurningTrace } from "@/lab/experiments/mel-turning/fixtures/verifiedTurningTraces";
 import {
   getTurningFacingAtStep,
+  projectTurningHandPoint,
   projectTurningHandSide,
   projectTurningLaneId
 } from "@/lab/experiments/mel-turning/model/turningDisplayFrame";
@@ -43,6 +44,17 @@ describe("turning display frames", () => {
     expect(projectTurningHandSide("left", 180, "observer-relative")).toBe("right");
     expect(projectTurningHandSide("right", 180, "observer-relative")).toBe("left");
     expect(projectTurningHandSide("left", 180, "body-relative")).toBe("left");
+  });
+
+  it("keeps resolved hand points body-relative and mirrors them only for observer display", () => {
+    const point = { x: -0.5, y: -0.35 };
+
+    expect(projectTurningHandPoint(point, 180, "body-relative")).toBe(point);
+    expect(projectTurningHandPoint(point, 0, "observer-relative")).toBe(point);
+    expect(projectTurningHandPoint(point, 180, "observer-relative")).toEqual({
+      x: 0.5,
+      y: -0.35
+    });
   });
 
   it("changes facing only after the shared turn interval", () => {

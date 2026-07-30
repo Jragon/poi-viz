@@ -1,6 +1,7 @@
 import type {
   BodyFacing,
   TurningHand,
+  TurningHandPoint,
   TurningLaneId,
   TurningTrace
 } from "@/lab/experiments/mel-turning/model/turningTypes";
@@ -37,6 +38,15 @@ export function projectTurningLaneId(
 ): TurningLaneId {
   if (frame === "body-relative" || facing === 0) return laneId;
   return MIRRORED_LANE[laneId];
+}
+
+export function projectTurningHandPoint(
+  point: TurningHandPoint,
+  facing: BodyFacing,
+  frame: TurningDisplayFrame
+): TurningHandPoint {
+  if (frame === "body-relative" || facing === 0) return point;
+  return { x: -point.x, y: point.y };
 }
 
 export function projectTurningHandSide(

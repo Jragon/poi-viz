@@ -14,5 +14,7 @@
   "javascript.updateImportsOnFileMove.enabled": "always",
   "typescript.preferences.importModuleSpecifier": "non-relative",
   "javascript.preferences.importModuleSpecifier": "non-relative",
-  "editor.tabSize": 2
+  "editor.tabSize": 2,
+  "csv.columnColorMode": "theme",
+  "csv.columnColorPalette": "cool"
 }

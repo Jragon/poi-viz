@@ -4,6 +4,7 @@ import type {
   TurningReelOffset,
   TurningReelPosition
 } from "@/lab/experiments/mel-turning/adapter/melBeatGraphAdapter";
+import { constrainTurningTarget } from "@/lab/experiments/mel-turning/model/turningEndpointCompatibility";
 import type { BodyTurnDirection } from "@/lab/experiments/mel-turning/model/turningTypes";
 
 export interface TurningExplorerState {
@@ -72,6 +73,10 @@ function encodeDirection(direction: TurningReelDirection): string {
   return direction.flow === "inwards" ? "opp-in" : "opp-out";
 }
 
+function cloneDirection(direction: TurningReelDirection): TurningReelDirection {
+  return { ...direction };
+}
+
 function parseOffset(value: unknown, fallback: TurningReelOffset): TurningReelOffset {
   const candidate = Number(firstQueryValue(value));
   return REEL_OFFSETS.has(candidate as TurningReelOffset)
@@ -93,11 +98,11 @@ function parseConfig(
 }
 
 export function parseTurningExplorerState(query: Record<string, unknown>): TurningExplorerState {
-  return {
+  return normalizeTurningExplorerState({
     source: parseConfig(query, "s", DEFAULT_TURNING_EXPLORER_STATE.source),
     target: parseConfig(query, "t", DEFAULT_TURNING_EXPLORER_STATE.target),
     turnDirection: firstQueryValue(query.turn) === "right" ? "right" : "left"
-  };
+  });
 }
 
 function serializeConfig(
@@ -112,25 +117,25 @@ function serializeConfig(
 }
 
 export function serializeTurningExplorerState(state: TurningExplorerState): TurningExplorerQuery {
+  const normalized = normalizeTurningExplorerState(state);
   const query: TurningExplorerQuery = {};
-  serializeConfig(query, "s", state.source);
-  serializeConfig(query, "t", state.target);
-  query.turn = state.turnDirection;
+  serializeConfig(query, "s", normalized.source);
+  serializeConfig(query, "t", normalized.target);
+  query.turn = normalized.turnDirection;
   return query;
 }
 
-export function getObserverPreservingTargetDirection(
-  source: TurningReelDirection
-): TurningReelDirection {
-  if (source.mode === "same") {
-    return {
-      mode: "same",
-      direction: source.direction === "clockwise" ? "counterclockwise" : "clockwise"
-    };
-  }
+export function normalizeTurningExplorerState(state: TurningExplorerState): TurningExplorerState {
+  const constrained = constrainTurningTarget(state.source, state.target);
 
   return {
-    mode: "opposite",
-    flow: source.flow === "inwards" ? "outwards" : "inwards"
+    source: {
+      left: state.source.left,
+      right: state.source.right,
+      direction: cloneDirection(state.source.direction),
+      offset: state.source.offset
+    },
+    target: constrained.target,
+    turnDirection: state.turnDirection
   };
 }

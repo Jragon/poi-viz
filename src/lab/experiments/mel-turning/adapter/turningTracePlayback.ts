@@ -8,7 +8,7 @@ import type {
 } from "@/engine/types";
 import {
   getTurningFacingAtStep,
-  projectTurningLaneId
+  projectTurningHandPoint
 } from "@/lab/experiments/mel-turning/model/turningDisplayFrame";
 import type {
   BodyTurnDirection,
@@ -88,13 +88,10 @@ function observerHandPoint(
   node: TurningNode,
   options: TurningTracePlaybackOptions
 ): Vec2 {
-  return lanePoint(
-    projectTurningLaneId(
-      node.laneId,
-      getTurningFacingAtStep(trace, node.step),
-      "observer-relative"
-    ),
-    options
+  return projectTurningHandPoint(
+    node.handPoint ?? lanePoint(node.laneId, options),
+    getTurningFacingAtStep(trace, node.step),
+    "observer-relative"
   );
 }
 

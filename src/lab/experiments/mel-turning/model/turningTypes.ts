@@ -26,6 +26,16 @@ export type TurningHandPlacement = "wall" | "behind-body";
 
 export type TurningTiming = "ONE" | "TO" | "SO" | "TS" | "SS";
 
+/**
+ * A hand point in the performer's body-relative wall plane. The turning
+ * playback mirrors its x coordinate when the performer faces away from the
+ * observer.
+ */
+export interface TurningHandPoint {
+  readonly x: number;
+  readonly y: number;
+}
+
 export interface TurningLane {
   readonly id: TurningLaneId;
   readonly label: string;
@@ -48,6 +58,12 @@ export interface TurningTrackDraft {
 
 export interface TurningNode extends TurningTrackRowDraft {
   readonly phase: TurningPhase;
+  /**
+   * The physical hand point resolved from the source graph's movement
+   * semantics. It is optional because research fixtures may contain only
+   * symbolic graph nodes.
+   */
+  readonly handPoint?: TurningHandPoint;
 }
 
 export interface TurningTrack {

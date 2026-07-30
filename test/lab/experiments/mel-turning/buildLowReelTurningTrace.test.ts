@@ -32,18 +32,37 @@ describe("generated low-reel turning trace", () => {
     expect(trace.verificationStatus).toBe("unverified");
     expect(trace.tracks).toHaveLength(2);
     expect(
-      trace.tracks.every((track) => track.nodes.map((node) => node.step).join() === "0,1,2,3")
+      trace.tracks.every(
+        (track) => track.nodes.map((node) => node.step).join() === "0,1,2,3,4,5,6,7,8,9"
+      )
     ).toBe(true);
     expect(trace.events).toEqual([
       expect.objectContaining({
-        afterStep: 1,
+        afterStep: 4,
         direction: "left",
         degrees: 180
       })
     ]);
 
     for (const track of trace.tracks) {
-      expect(track.nodes[1]?.phase).not.toBe(track.nodes[2]?.phase);
+      expect(track.nodes[0]).toMatchObject({
+        laneId: track.nodes[4]?.laneId,
+        planeSide: track.nodes[4]?.planeSide,
+        phase: track.nodes[4]?.phase,
+        handPoint: track.nodes[4]?.handPoint
+      });
+      expect(track.nodes[5]).toMatchObject({
+        laneId: track.nodes[9]?.laneId,
+        planeSide: track.nodes[9]?.planeSide,
+        phase: track.nodes[9]?.phase,
+        handPoint: track.nodes[9]?.handPoint
+      });
+      expect(track.nodes[4]?.phase).not.toBe(track.nodes[5]?.phase);
+
+      for (const node of track.nodes) {
+        expect(Math.abs(node.handPoint?.x ?? 0)).toBeCloseTo(0.5);
+        expect(node.handPoint?.y).toBeCloseTo(-0.35);
+      }
     }
   });
 

@@ -53,6 +53,11 @@ interface GraphConnector {
   readonly to: GraphPoint;
 }
 
+interface GraphRegionLabel {
+  readonly step: number;
+  readonly label: "SOURCE" | "TARGET";
+}
+
 const steps = computed(() => {
   const allSteps = props.trace.tracks.flatMap((track) => track.nodes.map((node) => node.step));
   return [...new Set(allSteps)].sort((a, b) => a - b);
@@ -92,6 +97,18 @@ const connectors = computed<readonly GraphConnector[]>(() =>
     })
   )
 );
+
+const regionLabels = computed<readonly GraphRegionLabel[]>(() => {
+  const firstStep = steps.value[0];
+  const turn = [...props.trace.events].sort((a, b) => a.afterStep - b.afterStep)[0];
+  if (firstStep === undefined || !turn) return [];
+
+  const targetStep = steps.value.find((step) => step > turn.afterStep);
+  return [
+    { step: firstStep, label: "SOURCE" },
+    ...(targetStep === undefined ? [] : [{ step: targetStep, label: "TARGET" as const }])
+  ];
+});
 
 function xForLane(laneId: TurningLaneId): number {
   const index = laneIndex.value.get(laneId);
@@ -255,6 +272,21 @@ function isActivePoint(point: GraphPoint): boolean {
               {{ facingAtStep(step) }}°
             </text>
           </g>
+
+          <text
+            v-for="region in regionLabels"
+            :key="`region-${region.label}`"
+            data-trace-region
+            :x="layout.leftPad + layout.laneGap * 4 + 30"
+            :y="yForStep(region.step) + 4"
+            :fill="region.label === 'SOURCE' ? '#7dd3fc' : '#86efac'"
+            font-size="9.5"
+            font-weight="700"
+            letter-spacing="0.8"
+            text-anchor="start"
+          >
+            {{ region.label }}
+          </text>
         </g>
 
         <g aria-hidden="true">

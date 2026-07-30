@@ -13,6 +13,7 @@ import type {
   TurnTopologyStatus,
   TurningDirection,
   TurningHand,
+  TurningHandPoint,
   TurningHandPlacement,
   TurningNode,
   TurningPhase,
@@ -30,6 +31,8 @@ export interface LowReelSearchNode {
   readonly planeSide: TurningPlaneSide;
   readonly phase: TurningPhase;
   readonly handPlacement: TurningHandPlacement;
+  /** Mel-compiler-resolved point in the performer's body-relative frame. */
+  readonly handPoint: TurningHandPoint;
 }
 
 export interface LowReelCycleState {
@@ -104,11 +107,16 @@ function endpointSignature(config: TurningReelConfig): string {
 }
 
 function compactNode(node: TurningNode, facing: BodyFacing): LowReelSearchNode {
+  if (!node.handPoint) {
+    throw new Error(`Low-reel node at t${node.step} has no resolved Mel hand point.`);
+  }
+
   return {
     laneId: node.laneId,
     planeSide: facing === 180 ? swapPlaneSide(node.planeSide) : node.planeSide,
     phase: node.phase,
-    handPlacement: node.handPlacement ?? "wall"
+    handPlacement: node.handPlacement ?? "wall",
+    handPoint: node.handPoint
   };
 }
 

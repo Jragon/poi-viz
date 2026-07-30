@@ -18,6 +18,9 @@ describe("MelTurningGraph", () => {
     }
 
     expect(html.match(/data-turn-band/g)).toHaveLength(1);
+    expect(html.match(/data-trace-region/g)).toHaveLength(2);
+    expect(html).toContain("SOURCE");
+    expect(html).toContain("TARGET");
     expect(html).toContain("TURN LEFT");
     expect(html).not.toContain("TURN LEFT · 180°");
     expect(html).toContain("0°");

@@ -6,6 +6,8 @@ import {
   compileTurningTracePlayback,
   getTurningRootFacingDeg
 } from "@/lab/experiments/mel-turning/adapter/turningTracePlayback";
+import { buildLowReelTurningTrace } from "@/lab/experiments/mel-turning/model/buildLowReelTurningTrace";
+import { searchLowReelDirectTurns } from "@/lab/experiments/mel-turning/model/lowReelDirectTurnSearch";
 import type { TurningTrace } from "@/lab/experiments/mel-turning/model/turningTypes";
 import { applyPlaneSideTransitionOffsets } from "@/visualizer/planeSideDisplay";
 
@@ -134,6 +136,44 @@ describe("turning trace playback adapter", () => {
 
     expect(displayed.left.handPosition.z).toBeCloseTo(-0.2);
     expect(displayed.right.handPosition.z).toBeCloseTo(-0.2);
+  });
+
+  it("keeps symbolic low-reel center rows at their Mel-resolved peripheral hand anchors", () => {
+    const result = searchLowReelDirectTurns({
+      source: {
+        left: "low-native",
+        right: "low-non-native",
+        direction: { mode: "same", direction: "clockwise" },
+        offset: 3
+      },
+      target: {
+        left: "low-native",
+        right: "low-non-native",
+        direction: { mode: "same", direction: "counterclockwise" },
+        offset: 1
+      },
+      turnDirection: "left"
+    });
+    const candidate = result.candidates.find((entry) => entry.topologyStatus === "valid");
+    if (!candidate) throw new Error("Expected a valid low-reel turn candidate.");
+
+    const trace = buildLowReelTurningTrace(result, candidate);
+    expect(trace.tracks.some((track) => track.nodes.some((node) => node.laneId === "center"))).toBe(
+      true
+    );
+
+    const sequence = compileTurningTracePlayback(trace);
+    for (const rig of sequence.rigs) {
+      expect(rig.sequence.segments).toHaveLength(9);
+      for (const segment of rig.sequence.segments) {
+        const point = {
+          x: Math.cos(segment.hand.startPose.phaseAbs) * segment.hand.startPose.radius,
+          y: Math.sin(segment.hand.startPose.phaseAbs) * segment.hand.startPose.radius
+        };
+        expect(Math.abs(point.x)).toBeCloseTo(0.5);
+        expect(point.y).toBeCloseTo(-0.35);
+      }
+    }
   });
 
   it("interpolates an unwrapped deterministic body-root turn over the turn halfbeat", () => {

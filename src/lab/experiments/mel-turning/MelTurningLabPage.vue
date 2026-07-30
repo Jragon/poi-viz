@@ -19,9 +19,10 @@ import {
   type LowReelDirectTurnCandidate
 } from "@/lab/experiments/mel-turning/model/lowReelDirectTurnSearch";
 import {
-  DEFAULT_TURNING_EXPLORER_STATE,
-  getObserverPreservingTargetDirection
-} from "@/lab/experiments/mel-turning/model/turningExplorerState";
+  constrainTurningTarget,
+  type ConstrainedTurningTarget
+} from "@/lab/experiments/mel-turning/model/turningEndpointCompatibility";
+import { DEFAULT_TURNING_EXPLORER_STATE } from "@/lab/experiments/mel-turning/model/turningExplorerState";
 import type { TurningDisplayFrame } from "@/lab/experiments/mel-turning/model/turningDisplayFrame";
 import { useTurningExplorerUrlState } from "@/lab/experiments/mel-turning/model/useTurningExplorerUrlState";
 import type { TurnTopologyStatus } from "@/lab/experiments/mel-turning/model/turningTypes";
@@ -36,6 +37,28 @@ import {
 const { source, target, turnDirection } = useTurningExplorerUrlState();
 const graphFrame = ref<TurningDisplayFrame>("observer-relative");
 const selectedCandidateId = ref("");
+const targetAdjustmentMessage = ref("");
+
+const sourceModel = computed({
+  get: () => source.value,
+  set: (nextSource) => {
+    source.value = nextSource;
+    applyTargetConstraint(nextSource, target.value);
+  }
+});
+const targetModel = computed({
+  get: () => target.value,
+  set: (requestedTarget) => {
+    applyTargetConstraint(source.value, requestedTarget);
+  }
+});
+const targetConstraint = computed(() => constrainTurningTarget(source.value, target.value));
+const targetConstraintMessage = computed(
+  () =>
+    `${formatDirectionMode(target.value.direction)} is fixed by the source. Offsets ${targetConstraint.value.compatibleOffsets.join(
+      " and "
+    )} preserve ${targetConstraint.value.sourceTiming} timing for this ${targetConstraint.value.sourcePatternType} → ${targetConstraint.value.targetPatternType} pairing.`
+);
 
 const searchResult = computed(() =>
   searchLowReelDirectTurns({
@@ -110,11 +133,6 @@ const activeStep = computed(() => {
   return Math.min(Math.floor(transport.currentTime.value / halfBeatDuration), lastStep);
 });
 const scrubMaximum = computed(() => Math.max(transport.duration.value - 0.0001, 0));
-const hasDirectionMismatch = computed(() =>
-  searchResult.value.diagnostics.some(
-    (diagnostic) => diagnostic.code === "TARGET_POI_DIRECTION_MISMATCH"
-  )
-);
 const candidateSummary = computed(() => {
   const validCount = searchResult.value.candidates.filter(
     (candidate) => candidate.topologyStatus === "valid"
@@ -193,17 +211,40 @@ function candidateNodes(candidate: LowReelDirectTurnCandidate): string {
   )}`;
 }
 
-function useObserverPreservingDirection(): void {
-  target.value = {
-    ...target.value,
-    direction: getObserverPreservingTargetDirection(source.value.direction)
-  };
+function formatDirectionMode(direction: ConstrainedTurningTarget["target"]["direction"]): string {
+  if (direction.mode === "same") {
+    return direction.direction === "clockwise" ? "Same · CW" : "Same · CCW";
+  }
+  return direction.flow === "inwards" ? "Opposite · Inwards" : "Opposite · Outwards";
+}
+
+function applyTargetConstraint(
+  nextSource: ConstrainedTurningTarget["target"],
+  requestedTarget: ConstrainedTurningTarget["target"]
+): void {
+  const constrained = constrainTurningTarget(nextSource, requestedTarget);
+  const adjustments: string[] = [];
+
+  if (constrained.directionAdjusted) {
+    adjustments.push(
+      `Target direction changed to ${formatDirectionMode(constrained.target.direction)}.`
+    );
+  }
+  if (constrained.offsetAdjusted) {
+    adjustments.push(
+      `Offset ${requestedTarget.offset} changed to ${constrained.target.offset} to preserve ${constrained.sourceTiming} timing.`
+    );
+  }
+
+  targetAdjustmentMessage.value = adjustments.join(" ");
+  target.value = constrained.target;
 }
 
 function swapEndpoints(): void {
   const previousSource = source.value;
-  source.value = target.value;
-  target.value = previousSource;
+  const nextSource = target.value;
+  source.value = nextSource;
+  applyTargetConstraint(nextSource, previousSource);
 }
 
 function resetEndpoints(): void {
@@ -215,6 +256,7 @@ function resetEndpoints(): void {
     ...DEFAULT_TURNING_EXPLORER_STATE.target,
     direction: { ...DEFAULT_TURNING_EXPLORER_STATE.target.direction }
   };
+  targetAdjustmentMessage.value = "";
   turnDirection.value = DEFAULT_TURNING_EXPLORER_STATE.turnDirection;
 }
 
@@ -245,9 +287,10 @@ function toggleRepeat(): void {
         </div>
         <h1 class="text-2xl font-semibold text-slate-50">Low-Reel Turning Explorer</h1>
         <p class="text-sm leading-6 text-ui-text-secondary">
-          Choose exact source and target reels using the same hand positions, direction, and offset
-          model as Mel’s Body Tracing Explorer. The search compares every next-halfbeat phase
-          alignment, then plays one shared 180° turn in the existing poi visualizer.
+          Choose an exact source reel, then explore target hand positions using Mel’s Body Tracing
+          model. Target direction is derived and only offsets that preserve the source timing stay
+          available. The search compares every next-halfbeat phase alignment, then plays one shared
+          180° turn in the existing poi visualizer.
         </p>
         <RouterLink
           :to="{ name: 'body-tracing-explorer' }"
@@ -260,8 +303,15 @@ function toggleRepeat(): void {
       <section class="grid items-start gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(30rem,1fr)]">
         <div class="grid min-w-0 gap-4">
           <div class="grid gap-4 md:grid-cols-2">
-            <LowReelEndpointCard v-model="source" title="Source graph" />
-            <LowReelEndpointCard v-model="target" title="Target graph" />
+            <LowReelEndpointCard v-model="sourceModel" title="Source graph" />
+            <LowReelEndpointCard
+              v-model="targetModel"
+              title="Target graph"
+              direction-locked
+              :allowed-offsets="targetConstraint.compatibleOffsets"
+              :constraint-message="targetConstraintMessage"
+              :adjustment-message="targetAdjustmentMessage"
+            />
           </div>
 
           <section class="overflow-hidden rounded-lg border border-ui-border bg-ui-surface">
@@ -348,14 +398,6 @@ function toggleRepeat(): void {
               >
                 {{ diagnostic.message }}
               </p>
-              <button
-                v-if="hasDirectionMismatch"
-                type="button"
-                class="w-fit rounded-md border border-amber-500/60 bg-amber-950/40 px-3 py-1.5 text-xs font-semibold text-amber-100 transition hover:border-amber-300"
-                @click="useObserverPreservingDirection"
-              >
-                Set observer-preserving target direction
-              </button>
             </div>
 
             <div v-if="playableCandidates.length > 0" class="grid gap-2 p-3 sm:grid-cols-2">

@@ -29,6 +29,33 @@ describe("Mel turning explorer components", () => {
     expect(html).toContain("0 half-beats · Unison");
   });
 
+  it("makes derived target direction and timing-compatible offsets explicit", async () => {
+    const config: TurningReelConfig = {
+      left: "low-native",
+      right: "low-non-native",
+      direction: { mode: "same", direction: "counterclockwise" },
+      offset: 1
+    };
+    const fixture = defineComponent(
+      () => () =>
+        h(LowReelEndpointCard, {
+          modelValue: config,
+          title: "Target graph",
+          directionLocked: true,
+          allowedOffsets: [1, 3],
+          constraintMessage:
+            "Same · CCW is fixed by the source. Offsets 1 and 3 preserve SS timing.",
+          adjustmentMessage: "Offset 0 changed to 1 to preserve SS timing."
+        })
+    );
+    const html = await renderToString(createSSRApp(fixture));
+
+    expect(html).toContain("Derived from source");
+    expect(html).toContain("Same · CCW is fixed by the source.");
+    expect(html).toContain("Offset 0 changed to 1");
+    expect(html).toContain('aria-disabled="true"');
+  });
+
   it("keeps established rules and unresolved physical claims separate in the article", async () => {
     const fixture = defineComponent(() => () => h(TurningResearchArticle));
     const html = await renderToString(createSSRApp(fixture));

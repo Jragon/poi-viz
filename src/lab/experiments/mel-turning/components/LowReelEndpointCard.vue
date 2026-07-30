@@ -5,6 +5,7 @@ import {
   buildTurningReelCycle,
   type TurningReelConfig,
   type TurningReelDirection,
+  type TurningReelOffset,
   type TurningReelPosition
 } from "@/lab/experiments/mel-turning/adapter/melBeatGraphAdapter";
 import type {
@@ -26,8 +27,12 @@ const props = withDefaults(
     modelValue: TurningReelConfig;
     title: string;
     disabled?: boolean;
+    directionLocked?: boolean;
+    allowedOffsets?: readonly TurningReelOffset[];
+    constraintMessage?: string;
+    adjustmentMessage?: string;
   }>(),
-  { disabled: false }
+  { disabled: false, directionLocked: false }
 );
 
 const emit = defineEmits<{
@@ -112,11 +117,17 @@ function setPosition(hand: TurningHand, position: TurningReelPosition): void {
 }
 
 function setDirection(direction: TurningReelDirection): void {
+  if (props.directionLocked) return;
   emit("update:modelValue", { ...props.modelValue, direction });
 }
 
 function setOffset(offset: TurningReelConfig["offset"]): void {
+  if (!isOffsetAllowed(offset)) return;
   emit("update:modelValue", { ...props.modelValue, offset });
+}
+
+function isOffsetAllowed(offset: TurningReelOffset): boolean {
+  return props.allowedOffsets?.includes(offset) ?? true;
 }
 
 function directionsEqual(left: TurningReelDirection, right: TurningReelDirection): boolean {
@@ -143,12 +154,18 @@ function directionButtonClass(direction: TurningReelDirection): string {
   if (directionsEqual(props.modelValue.direction, direction)) {
     return "border-sky-300 bg-ui-selected text-ui-selected-text";
   }
+  if (props.directionLocked) {
+    return "cursor-not-allowed border-ui-border-subtle bg-ui-input text-ui-text-muted opacity-45";
+  }
   return "border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised";
 }
 
 function offsetButtonClass(offset: TurningReelConfig["offset"]): string {
   if (props.modelValue.offset === offset) {
     return "border-sky-300 bg-sky-950/70 text-sky-100";
+  }
+  if (!isOffsetAllowed(offset)) {
+    return "cursor-not-allowed border-ui-border-subtle bg-ui-input text-ui-text-muted opacity-40";
   }
   return "border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised";
 }
@@ -218,10 +235,18 @@ function offsetButtonClass(offset: TurningReelConfig["offset"]): string {
     </section>
 
     <section class="border-b border-ui-border-subtle">
-      <div class="border-b border-ui-border-subtle px-3 py-2">
+      <div
+        class="flex items-center justify-between gap-2 border-b border-ui-border-subtle px-3 py-2"
+      >
         <h3 class="text-xs font-semibold uppercase tracking-[0.14em] text-ui-text-muted">
           Direction
         </h3>
+        <span
+          v-if="directionLocked"
+          class="rounded-full border border-sky-500/40 bg-sky-950/45 px-2 py-0.5 text-[0.5625rem] font-semibold uppercase tracking-[0.12em] text-sky-200"
+        >
+          Derived from source
+        </span>
       </div>
       <div class="grid gap-1.5 p-2.5 sm:grid-cols-2">
         <button
@@ -231,12 +256,18 @@ function offsetButtonClass(offset: TurningReelConfig["offset"]): string {
           class="min-h-10 rounded-md border px-2.5 py-1.5 text-left transition"
           :class="directionButtonClass(option.value)"
           :aria-pressed="directionsEqual(modelValue.direction, option.value)"
-          :disabled="disabled"
+          :disabled="disabled || directionLocked"
           @click="setDirection(option.value)"
         >
           <span class="block text-xs font-semibold">{{ option.label }}</span>
           <span class="mt-0.5 block text-[0.625rem] opacity-75">{{ option.detail }}</span>
         </button>
+        <p
+          v-if="constraintMessage"
+          class="rounded-md border border-sky-500/30 bg-sky-950/25 px-2.5 py-2 text-[0.6875rem] leading-5 text-sky-100 sm:col-span-2"
+        >
+          {{ constraintMessage }}
+        </p>
       </div>
     </section>
 
@@ -258,13 +289,20 @@ function offsetButtonClass(offset: TurningReelConfig["offset"]): string {
           :class="offsetButtonClass(offset)"
           :aria-label="`Set ${title} right-hand offset to ${offset} half-beats, ${OFFSET_LABELS[offset]}`"
           :aria-pressed="modelValue.offset === offset"
-          :disabled="disabled"
+          :aria-disabled="!isOffsetAllowed(offset)"
+          :disabled="disabled || !isOffsetAllowed(offset)"
           @click="setOffset(offset)"
         >
           <span class="block font-mono text-xs font-semibold">{{ offset }}</span>
           <span class="mt-0.5 block truncate text-[0.5625rem]">{{ OFFSET_LABELS[offset] }}</span>
         </button>
       </div>
+      <p
+        v-if="adjustmentMessage"
+        class="border-t border-amber-500/20 bg-amber-950/20 px-3 py-2 text-[0.6875rem] leading-5 text-amber-100"
+      >
+        {{ adjustmentMessage }}
+      </p>
     </section>
 
     <footer class="grid gap-2 bg-ui-surface-raised px-3 py-2.5">

@@ -15,6 +15,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "typecheck": "vue-tsc --noEmit",
+    "generate:mel-turning-review": "node --import tsx experiments/generate_mel_turning_review.ts",
     "clean": "rimraf dist"
   },
   "devDependencies": {

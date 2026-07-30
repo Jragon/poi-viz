@@ -2,6 +2,7 @@ import {
   POI_BEAT_LANES,
   deriveRowStates
 } from "@/lab/experiments/mel-body-tracing/beat-graph/graphHelpers";
+import { compilePoiBeatGraph } from "@/lab/experiments/mel-body-tracing/beat-graph/compileBeatGraph";
 import type { PoiBeatTrack } from "@/lab/experiments/mel-body-tracing/beat-graph/types";
 import {
   buildReelBeatGraph,
@@ -18,6 +19,8 @@ import type {
 import type {
   TurningLane,
   TurningLaneId,
+  TurningHandPoint,
+  TurningNode,
   TurningTrack,
   TurningTrackDraft
 } from "@/lab/experiments/mel-turning/model/turningTypes";
@@ -42,7 +45,20 @@ export interface TurningReelCycle {
   readonly cycleSteps: number;
   readonly timing: ReelTimingLabel;
   readonly patternType: ReelPatternType;
-  readonly tracks: readonly TurningTrack[];
+  readonly tracks: readonly TurningResolvedReelTrack[];
+}
+
+/**
+ * A reel row with its hand point resolved by Mel's existing cyclic compiler.
+ * `handPoint` remains in the performer's body-relative wall plane, including
+ * for a target graph that will later be displayed at 180 degrees.
+ */
+export interface TurningResolvedReelNode extends TurningNode {
+  readonly handPoint: TurningHandPoint;
+}
+
+export interface TurningResolvedReelTrack extends Omit<TurningTrack, "nodes"> {
+  readonly nodes: readonly TurningResolvedReelNode[];
 }
 
 /**
@@ -97,13 +113,17 @@ export function buildTurningReelCycle(config: TurningReelConfig): TurningReelCyc
   const melConfig: ReelConfig = config;
   const graph = buildReelBeatGraph(melConfig);
   const state = deriveReelState(melConfig);
+  const compiled = compilePoiBeatGraph(graph);
+  const compiledRigById = new Map(
+    compiled.sequence.rigs.map((rig) => [rig.rigId, rig.sequence] as const)
+  );
 
   return {
     cycleSteps: graph.cycleSteps,
     timing: state.timing,
     patternType: state.patternType,
-    tracks: graph.tracks.map((track) =>
-      deriveTurningTrackFromMel({
+    tracks: graph.tracks.map((track) => {
+      const symbolicTrack = deriveTurningTrackFromMel({
         id: track.id,
         hand: track.hand,
         poiDirection: track.poiDirection,
@@ -118,7 +138,29 @@ export function buildTurningReelCycle(config: TurningReelConfig): TurningReelCyc
             planeSide: row.planeSide
           };
         })
-      })
-    )
+      });
+      const compiledTrack = compiledRigById.get(track.id);
+      if (!compiledTrack) {
+        throw new Error(`Mel compiler returned no ${track.id} reel track.`);
+      }
+
+      return {
+        ...symbolicTrack,
+        nodes: symbolicTrack.nodes.map((node) => {
+          const segment = compiledTrack.segments[node.step];
+          if (!segment) {
+            throw new Error(`Mel compiler returned no ${track.id} segment at t${node.step}.`);
+          }
+
+          return {
+            ...node,
+            handPoint: {
+              x: Math.cos(segment.hand.startPose.phaseAbs) * segment.hand.startPose.radius,
+              y: Math.sin(segment.hand.startPose.phaseAbs) * segment.hand.startPose.radius
+            }
+          };
+        })
+      };
+    })
   };
 }

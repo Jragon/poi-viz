@@ -4,6 +4,11 @@ This directory contains the working evidence for extending Mel's body-tracing be
 180-degree body turns. The CSV files are research fixtures, not production engine semantics.
 Normative application decisions remain in [`../decisions.md`](../decisions.md).
 
+The current multi-edge candidate grammar, compatibility rules, search boundary, and review loop are
+documented in
+[`low-reel-route-solver.md`](low-reel-route-solver.md). That document is explicitly a working,
+non-normative model.
+
 ## Directory status
 
 | Directory     | Meaning                                                   |
@@ -35,6 +40,8 @@ Normative application decisions remain in [`../decisions.md`](../decisions.md).
 | `candidates/unresolved-turning-issues.csv`                                 | Consolidated register of the eight remaining rule/notation questions, with full routes for the unresolved low-back, SO, SS, and TO cases                                                   |
 | `candidates/low-weaves-left-clockwise-fixed-targets.csv`                   | Eight fixed source/target searches for the left low weave: TS offset 0→0/2 and SS offset 1→1/3, each turning left/right; includes every equal-shortest candidate from the partial topology |
 | `candidates/low-weaves-left-opposite-fixed-targets.csv`                    | Eight fixed source/target searches for the left low weave: SO inward offset 0→outward 0/2 and TO inward offset 1→outward 1/3, each turning left/right                                      |
+| `candidates/solver-review-001/cases.csv`                                   | Sixteen deterministic route-level cases: four verified controls plus six paired comparisons spanning timing, family, turn direction, and route shape                                       |
+| `candidates/solver-review-001/steps.csv`                                   | Full source cycle → bridge → target cycle rows for those cases, including resolved hand anchors, edge actions, and provenance                                                              |
 
 The verified same-direction files cover both left and right body turns while both poi move clockwise
 in the observer frame. The turn-right routes were derived and checked independently rather than
@@ -81,7 +88,53 @@ The first opposite-direction experiment uses the same fixed-endpoint matrix: SO 
 targets SO outward 0/2, and TO inward offset 1 targets TO outward 1/3, each for left/right body
 turns. The partial topology again predicts 20 one-halfbeat candidates. These are candidates, not
 conclusions: the model validates each hand separately and does not yet prove simultaneous two-arm
-anatomy. Right-side weaves and longer fallback bridges remain untested.
+anatomy. Right-side weaves were not tested in that CSV batch. Longer fallback bridges now belong to
+the separate candidate solver described below rather than being conclusions from this direct-edge
+experiment.
+
+## Endpoint compatibility and route-search status
+
+Endpoint compatibility is now a shared lab invariant. Target timing must match source timing, and
+target performer-relative direction must invert so observer-fixed poi rotation continues through a
+180-degree turn:
+
+- same clockwise ↔ same counterclockwise;
+- opposite inwards ↔ opposite outwards.
+
+Both poi therefore remain either same-direction or opposite-direction; the solver does not insert a
+stall or reversal to repair an incompatible endpoint. For a selected target hand-position pair,
+exactly two offsets preserve source timing. Offset parity stays the same for mill→mill and
+weave→weave, and flips for mill↔weave. The explorer derives target direction and disables the two
+incompatible offsets, while parsing and solver entry points still validate inputs defensively.
+
+The interactive explorer continues to select exact direct turn edges. It now presents each selected
+bridge with one full source cycle before it and one full target cycle after it. Hand positions come
+from Mel's cyclic compiler, so a compact reel `C` row retains its resolved low hand anchor rather
+than being interpreted as a literal torso-centre point.
+
+A separate deterministic research solver can search longer bridges as:
+
+```text
+preparation* → one halfbeat body turn → recovery*
+```
+
+Its normal edges are exact synchronized Mel reel continuations. Its only generated normal edge is a
+same-anchor circle extension: phase advances for one extra halfbeat while the hand remains on its
+resolved circle, optionally paired with an exact continuation by the other hand. Generated
+extensions remain explicitly unresolved except where an exact reviewed route supplies evidence.
+The solver searches all fully resolved state-equivalent low-reel occurrences, not compact labels
+alone, and can materialize shortest or bounded near-shortest candidates for physical review.
+
+The expanded solver is not yet the explorer's default route source. Its purpose is to generate
+inspectable candidate packs, compare alternative preparation/turn/recovery routes, and refine the
+movement grammar before the UI presents those routes as normal options. See the
+[working solver model](low-reel-route-solver.md) for the exact boundary and limitations.
+
+The first deterministic pack is documented in
+[`candidates/solver-review-001/README.md`](candidates/solver-review-001/README.md). Generate a
+fresh copy with `pnpm generate:mel-turning-review -- --output <directory>`. The generator refuses
+to replace existing review CSVs unless `--force` is passed explicitly, because those files may
+contain physical annotations.
 
 ## Runtime normalization
 
@@ -100,10 +153,19 @@ The current deterministic model-explorer search lives in
 `src/lab/experiments/mel-turning/model/lowReelDirectTurnSearch.ts`. It compiles exact source and
 target cycles through the existing Mel adapter, enumerates every phase-compatible direct
 source-row-to-target-row turn, requires observer-fixed direction preservation, and keeps
-topology-valid, unresolved, and rejected classifications distinct. It does not synthesize
-preparation or recovery paths. The older equal-shortest product-graph results remain research
-provenance in the candidate CSVs, but that search is no longer a runtime explorer contract. CSV
-formatting remains a research workflow rather than a runtime dependency.
+topology-valid, unresolved, and rejected classifications distinct. It remains the explorer's
+selected-bridge contract.
+
+The research path search lives separately in
+`src/lab/experiments/mel-turning/model/lowReelRouteSolver.ts`. It reuses the same endpoint
+compatibility and partial topology, adds resolved physical boundary identity, and searches exact
+Mel continuations plus explicit unresolved circle-extension hypotheses. It returns deterministic
+route identities, shortest counts, preparation/recovery lengths, provenance, model status, and
+exact-route evidence where currently normalized.
+
+The older compact-node equal-shortest product-graph results remain research provenance in the
+candidate CSVs, but compact `C` identity is no longer accepted as sufficient physical continuity.
+CSV formatting remains a research workflow rather than a runtime dependency.
 
 Back notation remains explicit during normalization: `Cb`, `Lb`, and `Rb` carry
 `behind-body` hand placement in addition to the ordinary five-column lane and A/B plane-side data.
@@ -204,6 +266,12 @@ right gate when its midpoint arrow points right.
 5. Move a completed file into `verified/` without adding `final`, a person's name, or version
    suffixes.
 6. Update the verified-set table above.
+
+Generated route-review packs should also retain the solver version or commit, seed, exact route ID,
+resolved step sequence, edge provenance, and the reason each case was sampled. Prefer deterministic
+diversity sampling and paired alternatives for the same endpoints over uniform random selection.
+Physical edits must pass through an explicit normalization/audit step before becoming runtime
+evidence.
 
 Suggested future names:
 
