@@ -2,7 +2,9 @@ import {
   BodyRigMotionSolver,
   buildBodyRigDimensionsForCanonicalUnitRadius,
   buildBodyRigFrameFromDimensions,
+  buildBodyRigRootPose,
   solveBodyRigFrame,
+  transformBodyRigRootPoint,
   type BodyRigDimensions,
   type BodyRigPose
 } from "@/body-rig";
@@ -26,6 +28,7 @@ export interface VisualizerBodyRigSolveInput {
   readonly rigIds?: Partial<VisualizerBodyRigIds>;
   readonly motionSolver?: BodyRigMotionSolver;
   readonly time?: number;
+  readonly rootFacingDeg?: number;
 }
 
 export interface VisualizerBodyRigSolveResult {
@@ -77,13 +80,14 @@ export function solveVisualizerBodyRig(
 
   const dimensions = resolveBodyRigDimensions(input.dimensions);
   const body = buildBodyRigFrameFromDimensions(dimensions);
+  const rootPose = buildBodyRigRootPose(body.shoulderGirdleCenter, input.rootFacingDeg);
   const goals = {
     leftHandTarget: leftPose
       ? anchoredHandTarget(input.layout, rigIds.left, leftPose)
-      : body.defaultLeftHandTarget,
+      : transformBodyRigRootPoint(rootPose, body.defaultLeftHandTarget),
     rightHandTarget: rightPose
       ? anchoredHandTarget(input.layout, rigIds.right, rightPose)
-      : body.defaultRightHandTarget
+      : transformBodyRigRootPoint(rootPose, body.defaultRightHandTarget)
   };
   const pose = input.motionSolver
     ? input.motionSolver.solve(
@@ -91,10 +95,18 @@ export function solveVisualizerBodyRig(
         goals,
         input.projectionSettings ?? DEFAULT_PLANE_PROJECTION_SETTINGS,
         {
-          ...(input.time === undefined ? {} : { time: input.time })
+          ...(input.time === undefined ? {} : { time: input.time }),
+          ...(input.rootFacingDeg === undefined ? {} : { rootFacingDeg: input.rootFacingDeg })
         }
       )
-    : solveBodyRigFrame(body, goals, input.projectionSettings ?? DEFAULT_PLANE_PROJECTION_SETTINGS);
+    : solveBodyRigFrame(
+        body,
+        goals,
+        input.projectionSettings ?? DEFAULT_PLANE_PROJECTION_SETTINGS,
+        {
+          ...(input.rootFacingDeg === undefined ? {} : { rootFacingDeg: input.rootFacingDeg })
+        }
+      );
 
   return {
     pose,

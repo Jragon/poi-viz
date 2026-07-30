@@ -44,9 +44,20 @@ Authoring Vue components may embed visualizer components for previews. Core auth
 
 `src/body-rig/` owns body geometry, frames, and projection helpers. `src/visualizer/` owns playback, display state, trail sampling, Canvas rendering, overlays, export, and interaction. These layers may interpret engine metadata for display, but must not silently alter engine poses or segment boundaries.
 
+Body root facing is an explicit display input. The body rig rotates the full support pose around its
+root while active hand targets remain in world space; the visualizer projects and labels that pose.
+Finite visualizer adapters may also supply each rig's initial A/B side so the first display
+transition does not inherit the engine's periodic loop seam. These inputs do not add body-facing or
+finite-path semantics to engine sequences.
+
 ### Lab
 
 `src/lab/` owns experimental generators, evaluators, journals, and Three.js debug surfaces. Lab code may combine the other layers and may use `RuntimeDriver` when a declarative built-in driver is not flexible enough.
+
+The Mel turning explorer is a separate lab extension over Mel body tracing. It obtains exact
+low-reel endpoint cycles through one adapter, enumerates direct shared-turn alignments, compiles a
+finite playback trace, and supplies explicit root facing to the existing visualizer. The original
+body-tracing explorer and the engine remain unaware of turning search and topology.
 
 The pendulum lab owns the calibration surface as well as the compositions: its circle-versus-pendulum experiment defines one unit as one circle or one complete pendulum cycle, compares cardinal checkpoints, and displays derived speed curves. Gravity is the default working curve; sine and constant-speed curves are deterministic comparison shapes. It also provides normalized gravity-reference motion as a lab-only runtime driver. The Rastaxel experiment composes one pendulum cycle and one circle into a two-unit motif, emits eight explicit quarter-unit segments per track with boundary poses, resolves independent left/right inward-outward flows using the beat-graph handedness convention, shares each hand's resolved direction across its oscillator and circle handoff, and phase-shifts the right track by an integer step offset while plotting instantaneous speed. Its optional hand-driver controls are separate from poi flow: each hand has its own radius, start phase, and signed omega in authored circles-per-unit (zero is static, one is one full circle per time unit); the right-track offset phase-shifts those hand drivers as part of the track. Ordinary, extended, isolated, paired-timing, mirrored, and extendulum compositions remain lab presets rather than new engine motion laws. Production authoring exposes circle and pendulum as explicit per-node driver choices and does not add hidden segment-level composition rules. The application-level pattern registry also converts the lab compositions into bundled, editable authored documents so they can be inspected as saved examples without making authoring core depend on lab code.
 

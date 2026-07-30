@@ -426,6 +426,48 @@ tracing or the engine.
 The reusable search stays under `src/lab/experiments/mel-turning`; Mel body tracing remains
 unchanged and is accessed only through the existing turning adapter.
 
+## 2026-07-29: Model Explorer Uses Exact Low-Reel Bridges and Explicit Root Facing
+
+This supersedes the equal-shortest product-graph search above. The first interactive turning
+surface needs inspectable visual output for an exact source and target, not synthesized multi-edge
+paths whose intermediate reel changes have not been physically established.
+
+- The model explorer is separate from the finished Mel Body Tracing Explorer and replaces the old
+  `/lab/mel-turning` surface. Its endpoint controls use the same derived Mel reel model: left and
+  right low native, low non-native, or low back position; four direction combinations; and exact
+  right-hand offsets 0 through 3. This covers all 144 low-reel endpoint configurations, including
+  weave and mill families, without copying Mel cycle semantics into turning.
+- Search enumerates exact source-row to target-row alignments for one uninterrupted halfbeat and one
+  shared 180-degree body turn. It does not splice ordinary reel edges before or after the turn and
+  does not claim a globally shortest movement path.
+- Timing and observer-fixed poi rotation are hard compatibility conditions. Target
+  performer-relative directions must reverse across 180 degrees. Known topology classifies a
+  compatible alignment as valid or invalid; missing topology stays unresolved rather than becoming
+  silently legal or illegal. Rejected alignments remain available as diagnostics.
+- Endpoint reels are closed Mel cycles, but the displayed turn is a finite contextual trace. At its
+  boundary transport resets and stops by default. Optional repeat simply replays that finite trace;
+  it does not assert that one 180-degree turn is itself a closed movement cycle. A future second
+  turn may close a repeatable 360-degree sequence.
+- Playback uses the existing engine evaluator and visualizer. A lab adapter supplies continuous
+  root facing from 0 to plus or minus 180 degrees while hand and poi targets remain in observer
+  space. The body rig turns shoulders, pelvis, hips, knees, feet, and support targets as one root
+  pose. The finite adapter also supplies each rig's initial A/B side so display depth does not infer
+  a false transition from the target-context tail back to the source-context head. Anatomical left
+  is cyan, anatomical right is red, and the facing cue makes the observer-side shoulder exchange
+  explicit at 180 degrees.
+- The research article under the explorer documents the current split between observer and
+  performer frames, compact low-reel locations, A/B hold and cross behavior, direction continuity,
+  offsets, known rules, and unresolved physical questions. It is explanatory lab material, not an
+  engine contract or a closed-world claim.
+- Multi-edge routing, continuous turn-window timing, collision and joint-limit checks, ergonomic
+  ranking, more physical verification, wraps, cosmos, and arbitrary Mel beat graphs remain later
+  work.
+
+Validation covers every low-reel adapter configuration, exact direct-search classifications,
+finite-trace compilation, reset-versus-repeat transport, root-pose geometry, fixed world-space hand
+targets, observer-side shoulder exchange, URL state, graph projection, source dependency boundaries,
+Vue type checking, live canvas inspection, and the normal repository quality gates.
+
 ## 2026-07-29: Timing Orbit Quantization Is a Lab-Owned Analysis Lens
 
 Timing Orbit compares two normally authored tracks without adding quantization or hybrid theory to

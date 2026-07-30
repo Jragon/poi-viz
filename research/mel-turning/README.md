@@ -6,35 +6,35 @@ Normative application decisions remain in [`../decisions.md`](../decisions.md).
 
 ## Directory status
 
-| Directory | Meaning |
-| --- | --- |
-| `verified/` | Patterns that have been physically reviewed and corrected |
-| `candidates/` | New patterns awaiting physical verification |
-| `archive/` | Superseded derivations retained as provenance |
-| `local/` | Numbers/XLSX working files; deliberately ignored by Git |
+| Directory     | Meaning                                                   |
+| ------------- | --------------------------------------------------------- |
+| `verified/`   | Patterns that have been physically reviewed and corrected |
+| `candidates/` | New patterns awaiting physical verification               |
+| `archive/`    | Superseded derivations retained as provenance             |
+| `local/`      | Numbers/XLSX working files; deliberately ignored by Git   |
 
 ## Verified sets
 
-| File | Contents |
-| --- | --- |
-| `verified/low-reels-one-hand-and-together-opposite.csv` | One-hand low native, non-native, and back turns, plus together-opposite two-hand turns |
-| `verified/low-reels-split-opposite.csv` | The four verified split-opposite chasing-offset transitions for a turn to the left |
+| File                                                                  | Contents                                                                                                                                   |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `verified/low-reels-one-hand-and-together-opposite.csv`               | One-hand low native, non-native, and back turns, plus together-opposite two-hand turns                                                     |
+| `verified/low-reels-split-opposite.csv`                               | The four verified split-opposite chasing-offset transitions for a turn to the left                                                         |
 | `verified/low-reels-two-hand-split-opposite-non-native-turn-left.csv` | Original four low-non-native SO transitions; three remain normalized as verified and chasing-2→2 is superseded by the correction candidate |
-| `verified/low-reels-two-hand-together-same-turn-left.csv` | Four verified low-native TS chasing-offset transitions; both poi clockwise; turn left |
-| `verified/low-reels-two-hand-split-same-turn-left.csv` | Four verified low-native SS unison/counter transitions; both poi clockwise; turn left |
-| `verified/low-reels-two-hand-together-same-turn-right.csv` | Four verified low-native TS chasing-offset transitions; both poi clockwise; turn right |
-| `verified/low-reels-two-hand-split-same-turn-right.csv` | Four verified low-native SS unison/counter transitions; both poi clockwise; turn right |
-| `verified/low-weaves-left-ss-cw-3-to-ccw-1.csv` | Four verified natural-to-natural left low-weave turns: SS clockwise offset 3 → SS counterclockwise offset 1, turning left/right |
+| `verified/low-reels-two-hand-together-same-turn-left.csv`             | Four verified low-native TS chasing-offset transitions; both poi clockwise; turn left                                                      |
+| `verified/low-reels-two-hand-split-same-turn-left.csv`                | Four verified low-native SS unison/counter transitions; both poi clockwise; turn left                                                      |
+| `verified/low-reels-two-hand-together-same-turn-right.csv`            | Four verified low-native TS chasing-offset transitions; both poi clockwise; turn right                                                     |
+| `verified/low-reels-two-hand-split-same-turn-right.csv`               | Four verified low-native SS unison/counter transitions; both poi clockwise; turn right                                                     |
+| `verified/low-weaves-left-ss-cw-3-to-ccw-1.csv`                       | Four verified natural-to-natural left low-weave turns: SS clockwise offset 3 → SS counterclockwise offset 1, turning left/right            |
 
 ## Candidate sets
 
-| File | Contents |
-| --- | --- |
-| `candidates/low-reels-two-hand-together-opposite-non-native-turn-left.csv` | Four low-non-native TO unison/counter transitions; inward to outward |
-| `candidates/low-reels-turn-edge-corrections.csv` | Full-context recheck of five suspect turn edges, including two alternative routes for each ambiguous low-back case |
-| `candidates/unresolved-turning-issues.csv` | Consolidated register of the eight remaining rule/notation questions, with full routes for the unresolved low-back, SO, SS, and TO cases |
-| `candidates/low-weaves-left-clockwise-fixed-targets.csv` | Eight fixed source/target searches for the left low weave: TS offset 0→0/2 and SS offset 1→1/3, each turning left/right; includes every equal-shortest candidate from the partial topology |
-| `candidates/low-weaves-left-opposite-fixed-targets.csv` | Eight fixed source/target searches for the left low weave: SO inward offset 0→outward 0/2 and TO inward offset 1→outward 1/3, each turning left/right |
+| File                                                                       | Contents                                                                                                                                                                                   |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `candidates/low-reels-two-hand-together-opposite-non-native-turn-left.csv` | Four low-non-native TO unison/counter transitions; inward to outward                                                                                                                       |
+| `candidates/low-reels-turn-edge-corrections.csv`                           | Full-context recheck of five suspect turn edges, including two alternative routes for each ambiguous low-back case                                                                         |
+| `candidates/unresolved-turning-issues.csv`                                 | Consolidated register of the eight remaining rule/notation questions, with full routes for the unresolved low-back, SO, SS, and TO cases                                                   |
+| `candidates/low-weaves-left-clockwise-fixed-targets.csv`                   | Eight fixed source/target searches for the left low weave: TS offset 0→0/2 and SS offset 1→1/3, each turning left/right; includes every equal-shortest candidate from the partial topology |
+| `candidates/low-weaves-left-opposite-fixed-targets.csv`                    | Eight fixed source/target searches for the left low weave: SO inward offset 0→outward 0/2 and TO inward offset 1→outward 1/3, each turning left/right                                      |
 
 The verified same-direction files cover both left and right body turns while both poi move clockwise
 in the observer frame. The turn-right routes were derived and checked independently rather than
@@ -96,11 +96,14 @@ Each normalized fixture retains its CSV filename, exact case label, original fir
 turn step. Runtime code does not parse the CSVs. Source comparison is a manual audit step rather than
 a CSV-conformance test.
 
-The deterministic fixed-target search now lives in
-`src/lab/experiments/mel-turning/model/lowWeaveTurnSearch.ts`. It compiles exact source and target
-cycles through the existing Mel adapter, searches the synchronized two-hand product graph, requires
-one shared turn and observer-fixed direction preservation, and returns every equal-shortest path.
-CSV formatting remains a research workflow rather than a runtime dependency.
+The current deterministic model-explorer search lives in
+`src/lab/experiments/mel-turning/model/lowReelDirectTurnSearch.ts`. It compiles exact source and
+target cycles through the existing Mel adapter, enumerates every phase-compatible direct
+source-row-to-target-row turn, requires observer-fixed direction preservation, and keeps
+topology-valid, unresolved, and rejected classifications distinct. It does not synthesize
+preparation or recovery paths. The older equal-shortest product-graph results remain research
+provenance in the candidate CSVs, but that search is no longer a runtime explorer contract. CSV
+formatting remains a research workflow rather than a runtime dependency.
 
 Back notation remains explicit during normalization: `Cb`, `Lb`, and `Rb` carry
 `behind-body` hand placement in addition to the ordinary five-column lane and A/B plane-side data.
@@ -209,9 +212,9 @@ Suggested future names:
 
 ## Archive provenance
 
-| File | Origin |
-| --- | --- |
-| `archive/initial-one-hand-derivations.csv` | Initial handwritten one-hand reel derivations |
-| `archive/early-two-hand-derivations.csv` | Early TO and SO two-hand tables |
-| `archive/generated-outward-and-to-candidates.csv` | Generated verification set before physical corrections |
-| `archive/incorrect-low-weave-first-pass.csv` | Superseded local-edge weave derivation; its SS continuation entered a reel because no exact target cycle was enforced |
+| File                                              | Origin                                                                                                                |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `archive/initial-one-hand-derivations.csv`        | Initial handwritten one-hand reel derivations                                                                         |
+| `archive/early-two-hand-derivations.csv`          | Early TO and SO two-hand tables                                                                                       |
+| `archive/generated-outward-and-to-candidates.csv` | Generated verification set before physical corrections                                                                |
+| `archive/incorrect-low-weave-first-pass.csv`      | Superseded local-edge weave derivation; its SS continuation entered a reel because no exact target cycle was enforced |

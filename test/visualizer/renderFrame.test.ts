@@ -3,10 +3,11 @@ import { describe, expect, it } from "vitest";
 import type { CartesianMultiRigPose } from "@/engine/types";
 import { computeBodyOverlay } from "@/visualizer/bodyOverlay";
 import {
-    DEFAULT_RENDER_FRAME_GEOMETRY,
-    WEBCAM_RENDER_FRAME_GEOMETRY,
-    renderFrame,
-    scaleBodyRigGeometry
+  DEFAULT_RENDER_FRAME_GEOMETRY,
+  WEBCAM_RENDER_FRAME_GEOMETRY,
+  getBodyFacingCueLabel,
+  renderFrame,
+  scaleBodyRigGeometry
 } from "@/visualizer/renderFrame";
 import { createSceneLayout } from "@/visualizer/sceneLayout";
 
@@ -615,6 +616,50 @@ describe("renderFrame", () => {
     expect(rightArmIndices).toHaveLength(1);
     expect(leftArmIndices[0]).toBeLessThan(trunkIndex);
     expect(rightArmIndices[0]).toBeLessThan(trunkIndex);
+  });
+
+  it("supports explorer-specific anatomical arm colors and a root-facing cue", () => {
+    const { layout, poses } = createSingleRigRenderInput();
+    const bodyOverlay = computeBodyOverlay({
+      layout,
+      worldPoses: {
+        left: {
+          handPosition: { x: -0.5, y: 0.25, z: 0 },
+          headPosition: { x: -0.25, y: 0.25, z: 0 },
+          planeId: "wall"
+        },
+        right: {
+          handPosition: { x: 0.5, y: 0.25, z: 0 },
+          headPosition: { x: 0.75, y: 0.25, z: 0 },
+          planeId: "wall"
+        }
+      },
+      rootFacingDeg: 180
+    });
+    const { ctx, operations } = createMockContext();
+
+    renderFrame(ctx, layout, poses, {
+      bodyOverlay,
+      showBodyRig: true,
+      showBodyFacingCue: true,
+      bodyAnatomicalStyles: {
+        left: { lineColor: "anatomical-left-cyan", handColor: "left-cyan-hand" },
+        right: { lineColor: "anatomical-right-red", handColor: "right-red-hand" }
+      }
+    });
+
+    expect(operations).toContain("strokeStyle:anatomical-left-cyan");
+    expect(operations).toContain("strokeStyle:anatomical-right-red");
+    expect(operations.some((operation) => operation.startsWith("fillText:BACK:"))).toBe(true);
+  });
+
+  it("labels canonical and intermediate root-facing angles deterministically", () => {
+    expect(getBodyFacingCueLabel(0)).toBe("FRONT");
+    expect(getBodyFacingCueLabel(90)).toBe("TURNING");
+    expect(getBodyFacingCueLabel(-90)).toBe("TURNING");
+    expect(getBodyFacingCueLabel(180)).toBe("BACK");
+    expect(getBodyFacingCueLabel(360)).toBe("FRONT");
+    expect(getBodyFacingCueLabel(-180)).toBe("BACK");
   });
 
   it("does not draw provided body overlay when the body layer is disabled", () => {

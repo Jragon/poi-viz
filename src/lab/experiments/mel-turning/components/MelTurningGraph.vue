@@ -20,6 +20,7 @@ import type {
 const props = defineProps<{
   trace: TurningTrace;
   frame: TurningDisplayFrame;
+  activeStep?: number | null;
 }>();
 
 const layout = {
@@ -124,7 +125,7 @@ function makePoint(track: TurningTrack, node: TurningNode): GraphPoint {
 }
 
 function trackStroke(track: TurningTrack): string {
-  return track.hand === "left" ? "#67e8f9" : "#f9a8d4";
+  return track.hand === "left" ? "#67e8f9" : "#fb7185";
 }
 
 function turnY(event: BodyTurnEvent): number {
@@ -153,6 +154,10 @@ function chevronPoints(point: GraphPoint): string {
   }
   return `${chevronX - 3},${centreY - 2.5} ${chevronX},${centreY + 2.5} ${chevronX + 3},${centreY - 2.5}`;
 }
+
+function isActivePoint(point: GraphPoint): boolean {
+  return props.activeStep === point.node.step;
+}
 </script>
 
 <template>
@@ -178,8 +183,12 @@ function chevronPoints(point: GraphPoint): string {
           Left
         </span>
         <span class="inline-flex items-center gap-2">
-          <span class="h-2.5 w-2.5 rounded-full bg-pink-300"></span>
+          <span class="h-2.5 w-2.5 rounded-full bg-rose-400"></span>
           Right
+        </span>
+        <span class="inline-flex items-center gap-2 text-slate-500">
+          <span class="h-2.5 w-2.5 rounded-full border border-dashed border-slate-400"></span>
+          Behind
         </span>
       </div>
     </div>
@@ -298,6 +307,7 @@ function chevronPoints(point: GraphPoint): string {
             :data-turning-node="`${track.hand}-${point.node.step}`"
             :data-source-lane="point.node.laneId"
             :data-display-lane="point.displayLaneId"
+            :data-hand-placement="point.node.handPlacement ?? 'wall'"
           >
             <title>
               {{ track.hand }} hand · t{{ point.node.step }} · {{ point.node.laneId }} · side
@@ -307,9 +317,10 @@ function chevronPoints(point: GraphPoint): string {
               :cx="point.x"
               :cy="point.y"
               :r="layout.nodeRadius"
-              fill="#020617"
+              :fill="isActivePoint(point) ? '#422006' : '#020617'"
               :stroke="trackStroke(track)"
-              stroke-width="2.5"
+              :stroke-width="isActivePoint(point) ? 4 : 2.5"
+              :stroke-dasharray="point.node.handPlacement === 'behind-body' ? '3 3' : undefined"
             />
             <polyline
               :points="chevronPoints(point)"

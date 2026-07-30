@@ -73,6 +73,39 @@ describe("createTransport", () => {
     expect(transport.currentTime.value).toBe(0);
   });
 
+  it("can reset and stop at the transport boundary", () => {
+    const scheduler = createScheduler();
+    const transport = createTransport({
+      initialDuration: 1,
+      initialEndBehavior: "reset",
+      requestFrame: scheduler.requestFrame,
+      cancelFrame: scheduler.cancelFrame
+    });
+
+    transport.setCurrentTime(0.98);
+    transport.play();
+
+    scheduler.runNext(1000);
+    scheduler.runNext(1100);
+
+    expect(transport.currentTime.value).toBe(0);
+    expect(transport.isPlaying.value).toBe(false);
+    expect(scheduler.pendingCount()).toBe(0);
+  });
+
+  it("switches end behavior without rebuilding the transport", () => {
+    const scheduler = createScheduler();
+    const transport = createTransport({
+      initialDuration: 1,
+      requestFrame: scheduler.requestFrame,
+      cancelFrame: scheduler.cancelFrame
+    });
+
+    expect(transport.endBehavior.value).toBe("repeat");
+    transport.setEndBehavior("reset");
+    expect(transport.endBehavior.value).toBe("reset");
+  });
+
   it("scales playback by speed", () => {
     const scheduler = createScheduler();
     const transport = createTransport({

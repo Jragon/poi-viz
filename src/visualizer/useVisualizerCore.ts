@@ -62,7 +62,10 @@ export function useVisualizerCore(
     ...(options.autoplay !== undefined ? { autoplay: options.autoplay } : {}),
     ...(options.resumeOnSequenceChange !== undefined
       ? { resumeOnSequenceChange: options.resumeOnSequenceChange }
-      : {})
+      : {}),
+    ...(options.planeSideDisplayBoundary === undefined
+      ? {}
+      : { planeSideDisplayBoundary: options.planeSideDisplayBoundary })
   };
   const session = useVisualizerSession(() => sequenceRef.value, transport, sessionOptions);
   const { currentFrame, currentTrails, playback, errorMessage, isReady } = session;

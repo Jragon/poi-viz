@@ -18,6 +18,7 @@ export const DEFAULT_BODY_RIG_YAW_CONTINUITY_WEIGHT = 64;
 export interface BodyRigMotionSolveOptions {
   readonly time?: number;
   readonly yawContinuityWeight?: number;
+  readonly rootFacingDeg?: number;
 }
 
 export class BodyRigMotionSolver {
@@ -43,6 +44,7 @@ export class BodyRigMotionSolver {
       time >= this.previousTime;
     const weight = options.yawContinuityWeight ?? DEFAULT_BODY_RIG_YAW_CONTINUITY_WEIGHT;
     const pose = solveBodyRigFrame(body, goals, projectionSettings, {
+      ...(options.rootFacingDeg === undefined ? {} : { rootFacingDeg: options.rootFacingDeg }),
       ...(isChronological && this.previousYawRad !== null
         ? {
             yawContinuity: {

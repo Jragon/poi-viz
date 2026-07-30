@@ -9,16 +9,23 @@ import type { PreparedSegment } from "@/engine/sequence";
 import type {
   CartesianMultiRigPose,
   PlaneSide,
+  RigId,
   Vec3,
   WorldMultiRigPose,
   WorldRigPose
 } from "@/engine/types";
+
+export interface PlaneSideDisplayBoundary {
+  readonly mode: "loop" | "finite";
+  readonly initialSideByRig?: Readonly<Partial<Record<RigId, PlaneSide>>>;
+}
 
 export interface PlaneSideDisplaySettings {
   readonly sideADepthWorld: number;
   readonly sideBDepthWorld: number;
   readonly defaultSide: PlaneSide | null;
   readonly transitionWindowFraction?: number;
+  readonly boundary?: PlaneSideDisplayBoundary;
 }
 
 export const DEFAULT_PLANE_SIDE_DISPLAY_SETTINGS: PlaneSideDisplaySettings = {
@@ -125,11 +132,10 @@ export function applyPlaneSideTransitionOffsets(
 
       if (segments && pose.segmentIndex !== undefined && pose.tLocal !== undefined) {
         const currentSegment = segments[pose.segmentIndex];
-        const previousSide = lookupAdjacentPlaneSide(
-          segments,
-          pose.segmentIndex,
-          settings.defaultSide
-        );
+        const previousSide =
+          pose.segmentIndex === 0 && settings.boundary?.mode === "finite"
+            ? settings.boundary.initialSideByRig?.[rigId]
+            : lookupAdjacentPlaneSide(segments, pose.segmentIndex, settings.defaultSide);
         const progress =
           currentSegment && currentSegment.durationUnits > 0
             ? pose.tLocal / currentSegment.durationUnits

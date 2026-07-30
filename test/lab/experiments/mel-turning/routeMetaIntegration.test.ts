@@ -37,7 +37,7 @@ describe("Mel turning route metadata integration", () => {
       component: loadMelTurningLabPage
     });
     expect(MEL_TURNING_LAB_LINK).toEqual({
-      label: "Mel Turning",
+      label: "Turning Model Explorer",
       to: MEL_TURNING_LAB_ROUTE.path
     });
   });

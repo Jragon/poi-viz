@@ -4,7 +4,7 @@ export const MEL_TURNING_LAB_ROUTE = {
 } as const;
 
 export const MEL_TURNING_LAB_LINK = {
-  label: "Mel Turning",
+  label: "Turning Model Explorer",
   to: MEL_TURNING_LAB_ROUTE.path
 } as const;
 

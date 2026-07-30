@@ -67,6 +67,33 @@ describe("bodyOverlay", () => {
     );
   });
 
+  it("rotates an inactive hand's default support target with the root", () => {
+    const layout = createSceneLayout({ cssWidth: 400, cssHeight: 300 });
+    const front = computeBodyOverlay({
+      worldPoses: { left: createWorldPoses().left },
+      layout,
+      projectionSettings,
+      rootFacingDeg: 0
+    });
+    const midpoint = computeBodyOverlay({
+      worldPoses: { left: createWorldPoses().left },
+      layout,
+      projectionSettings,
+      rootFacingDeg: 90
+    });
+    const back = computeBodyOverlay({
+      worldPoses: { left: createWorldPoses().left },
+      layout,
+      projectionSettings,
+      rootFacingDeg: 180
+    });
+
+    expect(front?.pose.solve.rightArm.handTarget.x).toBeGreaterThan(0);
+    expect(midpoint?.pose.solve.rightArm.handTarget.x).toBeCloseTo(0);
+    expect(midpoint?.pose.solve.rightArm.handTarget.z).toBeLessThan(0);
+    expect(back?.pose.solve.rightArm.handTarget.x).toBeLessThan(0);
+  });
+
   it("uses the default left hand target when only the right rig is active", () => {
     const layout = createSceneLayout({
       cssWidth: 400,
@@ -106,6 +133,44 @@ describe("bodyOverlay", () => {
     expect(overlay).not.toBeNull();
     expect(overlay?.pose.solve.leftArm.handTarget).toEqual({ x: -0.75, y: 0.35, z: 0.1 });
     expect(overlay?.pose.solve.rightArm.handTarget).toEqual({ x: 0.75, y: 0.35, z: 0.2 });
+  });
+
+  it("threads root facing through the overlay while keeping world hand targets fixed", () => {
+    const layout = createSceneLayout({ cssWidth: 400, cssHeight: 300 });
+    const overlays = [0, 90, 180].map((rootFacingDeg) =>
+      computeBodyOverlay({
+        worldPoses: createWorldPoses(),
+        layout,
+        projectionSettings,
+        rootFacingDeg
+      })
+    );
+    const [front, midpoint, back] = overlays;
+
+    expect(front?.pose.shoulders.leftShoulder.x).toBeLessThan(
+      front?.pose.shoulders.rightShoulder.x ?? 0
+    );
+    expect(back?.pose.shoulders.leftShoulder.x).toBeGreaterThan(
+      back?.pose.shoulders.rightShoulder.x ?? 0
+    );
+    expect(overlays.map((overlay) => overlay?.rootFacingDeg)).toEqual([0, 90, 180]);
+
+    for (const overlay of overlays) {
+      expect(overlay?.pose.solve.leftArm.handTarget).toEqual({
+        x: -0.5,
+        y: 0.25,
+        z: 0.1
+      });
+      expect(overlay?.pose.solve.rightArm.handTarget).toEqual({
+        x: 0.5,
+        y: 0.25,
+        z: 0.2
+      });
+    }
+
+    const midpointFeet = midpoint?.pose.skeleton.joints;
+    expect(midpointFeet?.footLeft.x).toBeCloseTo(midpointFeet?.footRight.x ?? 0);
+    expect((midpointFeet?.footRight.z ?? 0) - (midpointFeet?.footLeft.z ?? 0)).toBeLessThan(0);
   });
 
   it("exposes solved skeleton joints and diagnostics on overlay poses", () => {

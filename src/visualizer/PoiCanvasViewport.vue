@@ -6,7 +6,11 @@ import type { ProjectionMode } from "@/engine/planeProjection";
 import { computeBodyOverlay, getBodyOverlaySceneExtent } from "@/visualizer/bodyOverlay";
 import { computeDisplayPixelsPerWorldUnit } from "@/visualizer/displayScale";
 import { computeDragProjection, createProjectionDragState } from "@/visualizer/projectionDrag";
-import { renderFrame, scaleBodyRigGeometry } from "@/visualizer/renderFrame";
+import {
+  renderFrame,
+  scaleBodyRigGeometry,
+  type BodyAnatomicalRenderStyles
+} from "@/visualizer/renderFrame";
 import { createSceneLayout, type SceneLayout } from "@/visualizer/sceneLayout";
 import { useVisualizerWorkspace } from "@/visualizer/visualizerWorkspace";
 
@@ -23,12 +27,16 @@ const props = withDefaults(
     webcamStream?: MediaStream | null;
     projectionDragEnabled?: boolean;
     bodyRigScale?: number | undefined;
+    rootFacingDeg?: number | undefined;
+    bodyAnatomicalStyles?: BodyAnatomicalRenderStyles;
+    showBodyFacingCue?: boolean;
   }>(),
   {
     isFullscreen: false,
     webcamActive: false,
     webcamStream: null,
-    projectionDragEnabled: true
+    projectionDragEnabled: true,
+    showBodyFacingCue: false
   }
 );
 
@@ -97,7 +105,8 @@ const draw = () => {
         layout,
         projectionSettings: core.session.projectionSettings.value,
         motionSolver: bodyRigMotionSolver,
-        time: core.transport.currentTime.value
+        time: core.transport.currentTime.value,
+        ...(props.rootFacingDeg === undefined ? {} : { rootFacingDeg: props.rootFacingDeg })
       })
     : null;
 
@@ -107,12 +116,16 @@ const draw = () => {
     rigOrder: core.rigOrder.value,
     trails: core.trails.value,
     bodyOverlay,
+    ...(props.bodyAnatomicalStyles === undefined
+      ? {}
+      : { bodyAnatomicalStyles: props.bodyAnatomicalStyles }),
     transparentBackground: props.webcamActive,
     showHandTrails: overlaySettings.visibility.showHandTrails,
     showHeadTrails: overlaySettings.visibility.showHeadTrails,
     showChainLines: overlaySettings.visibility.showChainLines,
     showNodeMarkers: overlaySettings.visibility.showNodeMarkers,
     showBodyRig: overlaySettings.visibility.showBodyRig,
+    showBodyFacingCue: props.showBodyFacingCue,
     showLabels: false,
     backSideRigIds
   });
@@ -159,6 +172,9 @@ watch(
     core.trails.value,
     display.overlaySettings.value,
     props.webcamActive,
+    props.rootFacingDeg,
+    props.bodyAnatomicalStyles,
+    props.showBodyFacingCue,
     core.session.projectionSettings.value
   ],
   () => {

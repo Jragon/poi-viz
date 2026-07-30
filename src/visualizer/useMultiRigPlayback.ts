@@ -111,8 +111,20 @@ export function useMultiRigPlayback(
     planeSideADepthWorld: number;
     planeSideBDepthWorld: number;
     planeSideDefaultSide: PlaneSideDisplaySettings["defaultSide"];
+    planeSideBoundaryKey: string;
     trails: MultiRigTrailSamples;
   } | null = null;
+
+  function planeSideBoundaryKey(settings: PlaneSideDisplaySettings): string {
+    const boundary = settings.boundary;
+    if (!boundary) return "loop";
+
+    return `${boundary.mode}:${JSON.stringify(
+      Object.entries(boundary.initialSideByRig ?? {}).sort(([left], [right]) =>
+        left.localeCompare(right)
+      )
+    )}`;
+  }
 
   const stopWatching = watch(
     () => toValue(sequence),
@@ -192,6 +204,7 @@ export function useMultiRigPlayback(
     const loopMode = options.loopMode ?? "off";
     const currentProjectionSettings = toValue(projectionSettings);
     const currentPlaneSideDisplaySettings = toValue(planeSideDisplaySettings);
+    const currentPlaneSideBoundaryKey = planeSideBoundaryKey(currentPlaneSideDisplaySettings);
     const optionLoopDuration = options.loopDuration ?? 0;
     const loopDuration =
       Number.isFinite(optionLoopDuration) && optionLoopDuration > 0 ? optionLoopDuration : null;
@@ -218,7 +231,8 @@ export function useMultiRigPlayback(
       trailCache.projectionPitchDeg === currentProjectionSettings.pitchDeg &&
       trailCache.planeSideADepthWorld === currentPlaneSideDisplaySettings.sideADepthWorld &&
       trailCache.planeSideBDepthWorld === currentPlaneSideDisplaySettings.sideBDepthWorld &&
-      trailCache.planeSideDefaultSide === currentPlaneSideDisplaySettings.defaultSide
+      trailCache.planeSideDefaultSide === currentPlaneSideDisplaySettings.defaultSide &&
+      trailCache.planeSideBoundaryKey === currentPlaneSideBoundaryKey
         ? trailCache.trails
         : null;
 
@@ -246,6 +260,7 @@ export function useMultiRigPlayback(
         planeSideADepthWorld: currentPlaneSideDisplaySettings.sideADepthWorld,
         planeSideBDepthWorld: currentPlaneSideDisplaySettings.sideBDepthWorld,
         planeSideDefaultSide: currentPlaneSideDisplaySettings.defaultSide,
+        planeSideBoundaryKey: currentPlaneSideBoundaryKey,
         trails: baseTrails
       };
     }

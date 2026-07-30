@@ -4,6 +4,7 @@ import { nextTick, ref, type MaybeRefOrGetter } from "vue";
 import { createTransport } from "@/composables/useTransport";
 import { projectWorldPoint } from "@/engine/planeProjection";
 import type { MultiRigSequence, Segment } from "@/engine/types";
+import type { PlaneSideDisplayBoundary } from "@/visualizer/planeSideDisplay";
 import {
   PLANE_SIDE_DEPTH_DEFAULT,
   PLANE_SIDE_DEPTH_MAX,
@@ -233,6 +234,31 @@ describe("useVisualizerSession", () => {
     session.setPlaneSideDepthsWorld(Number.NaN, Number.NaN);
     expect(session.planeSideADepthWorld.value).toBe(PLANE_SIDE_DEPTH_DEFAULT);
     expect(session.planeSideBDepthWorld.value).toBe(PLANE_SIDE_DEPTH_DEFAULT);
+  });
+
+  it("reacts to an explicit finite plane-side boundary", async () => {
+    const boundary = ref<PlaneSideDisplayBoundary>({
+      mode: "finite",
+      initialSideByRig: { left: "b" }
+    });
+    const { session } = createSession(makeSequence(2), {
+      planeSideDisplayBoundary: boundary
+    });
+
+    expect(session.planeSideDisplaySettings.value.boundary).toEqual({
+      mode: "finite",
+      initialSideByRig: { left: "b" }
+    });
+
+    boundary.value = {
+      mode: "finite",
+      initialSideByRig: { left: "a" }
+    };
+    await nextTick();
+
+    expect(session.planeSideDisplaySettings.value.boundary?.initialSideByRig).toEqual({
+      left: "a"
+    });
   });
 
   it("keeps the live trail tip aligned with the current frame between grid samples", async () => {

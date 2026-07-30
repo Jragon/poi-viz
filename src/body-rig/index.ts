@@ -3,5 +3,6 @@ export * from "./bodyRigDefaults";
 export * from "./bodyRigFrame";
 export * from "./bodyRigMotion";
 export * from "./bodyRigProjection";
+export * from "./bodyRigRootPose";
 export * from "./bodySkeletonFrame";
 export * from "./stickFigureGeometry";

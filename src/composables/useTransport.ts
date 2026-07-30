@@ -2,9 +2,12 @@ import { computed, ref, type Ref } from "vue";
 
 type FrameRequestCallback = (timestampMs: number) => void;
 
+export type TransportEndBehavior = "repeat" | "reset";
+
 export interface TransportOptions {
   initialDuration?: number;
   initialSpeed?: number;
+  initialEndBehavior?: TransportEndBehavior;
   unitsPerSecond?: number;
   maxFrameDeltaMs?: number;
   requestFrame?: (callback: FrameRequestCallback) => number;
@@ -18,6 +21,7 @@ export interface TransportController {
   readonly unitsPerSecond: Ref<number>;
   readonly isPlaying: Ref<boolean>;
   readonly progress: Ref<number>;
+  readonly endBehavior: Ref<TransportEndBehavior>;
   play: () => void;
   pause: () => void;
   toggle: () => void;
@@ -25,6 +29,7 @@ export interface TransportController {
   setCurrentTime: (nextTime: number) => void;
   setDuration: (nextDuration: number) => void;
   setSpeed: (nextSpeed: number) => void;
+  setEndBehavior: (nextBehavior: TransportEndBehavior) => void;
   dispose: () => void;
 }
 
@@ -74,6 +79,9 @@ export function createTransport(options: TransportOptions = {}): TransportContro
       : 1
   );
   const isPlaying = ref(false);
+  const endBehavior = ref<TransportEndBehavior>(
+    options.initialEndBehavior === "reset" ? "reset" : "repeat"
+  );
   const progress = computed(() => {
     if (duration.value <= 0) return 0;
     return currentTime.value / duration.value;
@@ -107,7 +115,16 @@ export function createTransport(options: TransportOptions = {}): TransportContro
       const deltaMs = Math.min(Math.max(timestampMs - lastFrameTimeMs, 0), maxFrameDeltaMs);
       const deltaUnits = (deltaMs / 1000) * unitsPerSecond.value * speed.value;
       const nextTime = currentTime.value + deltaUnits;
-      currentTime.value = nextTime >= duration.value ? 0 : nextTime;
+      if (nextTime >= duration.value) {
+        currentTime.value = 0;
+        if (endBehavior.value === "reset") {
+          isPlaying.value = false;
+          stopFrameLoop();
+          return;
+        }
+      } else {
+        currentTime.value = nextTime;
+      }
     }
 
     lastFrameTimeMs = timestampMs;
@@ -166,6 +183,10 @@ export function createTransport(options: TransportOptions = {}): TransportContro
     speed.value = nextSpeed;
   };
 
+  const setEndBehavior = (nextBehavior: TransportEndBehavior) => {
+    endBehavior.value = nextBehavior === "reset" ? "reset" : "repeat";
+  };
+
   const dispose = () => {
     pause();
   };
@@ -177,6 +198,7 @@ export function createTransport(options: TransportOptions = {}): TransportContro
     unitsPerSecond,
     isPlaying,
     progress,
+    endBehavior,
     play,
     pause,
     toggle,
@@ -184,6 +206,7 @@ export function createTransport(options: TransportOptions = {}): TransportContro
     setCurrentTime,
     setDuration,
     setSpeed,
+    setEndBehavior,
     dispose
   };
 }

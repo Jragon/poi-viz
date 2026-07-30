@@ -8,6 +8,11 @@ import {
   projectWorldBodyRig,
   type ProjectedBodyRigFrame
 } from "./bodyRigProjection";
+import {
+  buildBodyRigRootPose,
+  transformBodyRigRootPoint,
+  type BodyRigRootPose
+} from "./bodyRigRootPose";
 import { buildBodySkeletonFrame, type BodySkeletonFrame } from "./bodySkeletonFrame";
 import {
   solveWorldBodyRig,
@@ -82,10 +87,12 @@ export interface BuildBodyRigFrameInput {
 export interface BodyRigFrameSolveOptions {
   readonly yawSearchSteps?: number;
   readonly yawContinuity?: BodyRigYawContinuity;
+  readonly rootFacingDeg?: number;
 }
 
 export interface BodyRigPose {
   readonly body: BodyRigFrame;
+  readonly rootPose: BodyRigRootPose;
   readonly skeleton: BodySkeletonFrame;
   readonly projectedBody: ProjectedBodyRigStaticFrame;
   readonly shoulders: {
@@ -104,6 +111,7 @@ export interface BodyRigPose {
 function projectBodyRigFrame(
   body: BodyRigFrame,
   skeleton: BodySkeletonFrame,
+  rootPose: BodyRigRootPose,
   settings: PlaneProjectionSettings
 ): ProjectedBodyRigStaticFrame {
   const joints = skeleton.joints;
@@ -126,8 +134,14 @@ function projectBodyRigFrame(
     kneeRight: projectWorldPoint(joints.kneeRight, settings),
     footLeft: projectWorldPoint(joints.footLeft, settings),
     footRight: projectWorldPoint(joints.footRight, settings),
-    defaultLeftHandTarget: projectWorldPoint(body.defaultLeftHandTarget, settings),
-    defaultRightHandTarget: projectWorldPoint(body.defaultRightHandTarget, settings)
+    defaultLeftHandTarget: projectWorldPoint(
+      transformBodyRigRootPoint(rootPose, body.defaultLeftHandTarget),
+      settings
+    ),
+    defaultRightHandTarget: projectWorldPoint(
+      transformBodyRigRootPoint(rootPose, body.defaultRightHandTarget),
+      settings
+    )
   };
 }
 
@@ -263,13 +277,14 @@ export function solveBodyRigFrame(
   projectionSettings: PlaneProjectionSettings,
   options: BodyRigFrameSolveOptions = {}
 ): BodyRigPose {
+  const rootPose = buildBodyRigRootPose(body.shoulderGirdleCenter, options.rootFacingDeg);
   const solve = solveWorldBodyRig({
     root: {
-      shoulderGirdleCenter: body.shoulderGirdleCenter,
-      neutralPelvisCenter: body.pelvisCenter,
-      neutralChestCenter: body.chest,
-      worldUp: { x: 0, y: 1, z: 0 },
-      neutralForward: { x: 0, y: 0, z: 1 },
+      shoulderGirdleCenter: rootPose.origin,
+      neutralPelvisCenter: transformBodyRigRootPoint(rootPose, body.pelvisCenter),
+      neutralChestCenter: transformBodyRigRootPoint(rootPose, body.chest),
+      worldUp: rootPose.up,
+      neutralForward: rootPose.forward,
       scale: 1
     },
     config: body.rigConfig,
@@ -278,12 +293,13 @@ export function solveBodyRigFrame(
     ...(options.yawContinuity === undefined ? {} : { yawContinuity: options.yawContinuity })
   });
   const projected = projectWorldBodyRig(solve, projectionSettings);
-  const skeleton = buildBodySkeletonFrame(body, solve);
+  const skeleton = buildBodySkeletonFrame(body, solve, rootPose);
 
   return {
     body,
+    rootPose,
     skeleton,
-    projectedBody: projectBodyRigFrame(body, skeleton, projectionSettings),
+    projectedBody: projectBodyRigFrame(body, skeleton, rootPose, projectionSettings),
     shoulders: {
       leftShoulder: projected.leftShoulder,
       rightShoulder: projected.rightShoulder,

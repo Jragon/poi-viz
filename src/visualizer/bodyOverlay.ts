@@ -19,6 +19,7 @@ export { DEFAULT_VISUALIZER_BODY_RIG_IDS as DEFAULT_BODY_OVERLAY_RIG_IDS };
 
 export interface BodyOverlayFrame {
   readonly pose: BodyRigPose;
+  readonly rootFacingDeg: number;
   readonly solverDiagnostics: SkeletonSolverDiagnostics;
   readonly dimensions: BodyRigDimensions;
   readonly rigIds: BodyOverlayRigIds;
@@ -36,6 +37,7 @@ export interface BodyOverlayInput {
   readonly rigIds?: Partial<BodyOverlayRigIds>;
   readonly motionSolver?: BodyRigMotionSolver;
   readonly time?: number;
+  readonly rootFacingDeg?: number;
 }
 
 export interface BodyOverlaySceneExtentInput {
@@ -80,6 +82,7 @@ export function computeBodyOverlay(input: BodyOverlayInput): BodyOverlayFrame | 
 
   return {
     pose: solved.pose,
+    rootFacingDeg: solved.pose.rootPose.facingDeg,
     solverDiagnostics: solved.pose.skeleton.solverDiagnostics,
     dimensions: solved.dimensions,
     rigIds: solved.rigIds,

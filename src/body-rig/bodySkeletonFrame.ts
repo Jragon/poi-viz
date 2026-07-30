@@ -1,6 +1,11 @@
 import type { Vec3 } from "@/engine/types";
 
 import type { BodyRigFrame } from "./bodyRigFrame";
+import {
+  buildBodyRigRootPose,
+  transformBodyRigRootPoint,
+  type BodyRigRootPose
+} from "./bodyRigRootPose";
 import type { ArmReachRange, BodyRigWorldSolveResult } from "./stickFigureGeometry";
 
 const MIN_CHAIN_LENGTH = 1e-8;
@@ -206,17 +211,20 @@ export interface BodySkeletonFrame {
 
 export function buildBodySkeletonFrame(
   body: BodyRigFrame,
-  solve: BodyRigWorldSolveResult
+  solve: BodyRigWorldSolveResult,
+  rootPose: BodyRigRootPose = buildBodyRigRootPose(body.shoulderGirdleCenter)
 ): BodySkeletonFrame {
   const hipLeft = transformPelvisPoint(body, solve, body.hipLeft);
   const hipRight = transformPelvisPoint(body, solve, body.hipRight);
+  const footLeft = transformBodyRigRootPoint(rootPose, body.footLeft);
+  const footRight = transformBodyRigRootPoint(rootPose, body.footRight);
   const leftUpperLegLength = length3(subtract3(body.kneeLeft, body.hipLeft));
   const leftLowerLegLength = length3(subtract3(body.footLeft, body.kneeLeft));
   const rightUpperLegLength = length3(subtract3(body.kneeRight, body.hipRight));
   const rightLowerLegLength = length3(subtract3(body.footRight, body.kneeRight));
   const joints: Record<SkeletonJointName, Vec3> = {
-    headCenter: body.headCenter,
-    neck: body.neck,
+    headCenter: transformBodyRigRootPoint(rootPose, body.headCenter),
+    neck: transformBodyRigRootPoint(rootPose, body.neck),
     chest: solve.chest.center,
     clavicleLeft: solve.shoulderGirdle.left.shoulderBase,
     clavicleRight: solve.shoulderGirdle.right.shoulderBase,
@@ -231,20 +239,20 @@ export function buildBodySkeletonFrame(
     hipRight,
     kneeLeft: solvePlantedKnee(
       hipLeft,
-      body.footLeft,
+      footLeft,
       leftUpperLegLength,
       leftLowerLegLength,
       solve.pelvis.forward
     ),
     kneeRight: solvePlantedKnee(
       hipRight,
-      body.footRight,
+      footRight,
       rightUpperLegLength,
       rightLowerLegLength,
       solve.pelvis.forward
     ),
-    footLeft: body.footLeft,
-    footRight: body.footRight
+    footLeft,
+    footRight
   };
 
   const orientation: SkeletonOrientationCue = {

@@ -60,4 +60,47 @@ describe("BodyRigMotionSolver", () => {
 
     expect(restarted).toEqual(staticPose);
   });
+
+  it("reproduces root-facing poses after scrubbing backward", () => {
+    const dimensions = buildBodyRigDimensionsForCanonicalUnitRadius(1);
+    const body = buildBodyRigFrameFromDimensions(dimensions);
+    const solver = new BodyRigMotionSolver();
+    const goals = {
+      leftHandTarget: { x: -0.25, y: 0.4, z: 0 },
+      rightHandTarget: { x: 0.25, y: 0.4, z: 0 }
+    };
+
+    const chronological = [0, 90, 180].map((rootFacingDeg, time) =>
+      solver.solve(body, goals, DEFAULT_PLANE_PROJECTION_SETTINGS, {
+        time,
+        rootFacingDeg
+      })
+    );
+
+    for (const [time, rootFacingDeg] of [0, 90, 180].entries()) {
+      const fresh = new BodyRigMotionSolver().solve(
+        body,
+        goals,
+        DEFAULT_PLANE_PROJECTION_SETTINGS,
+        {
+          time,
+          rootFacingDeg
+        }
+      );
+      expect(chronological[time]).toEqual(fresh);
+    }
+
+    const scrubbed = solver.solve(body, goals, DEFAULT_PLANE_PROJECTION_SETTINGS, {
+      time: 1,
+      rootFacingDeg: 90
+    });
+    const fresh = new BodyRigMotionSolver().solve(body, goals, DEFAULT_PLANE_PROJECTION_SETTINGS, {
+      time: 1,
+      rootFacingDeg: 90
+    });
+
+    expect(scrubbed).toEqual(fresh);
+    expect(scrubbed.rootPose.facingDeg).toBe(90);
+    expect(scrubbed.skeleton.joints.footLeft.x).toBeCloseTo(scrubbed.skeleton.joints.footRight.x);
+  });
 });

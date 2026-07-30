@@ -3,20 +3,20 @@ import type { CartesianMultiRigPose, RigId, Vec2 } from "@/engine/types";
 import type { BodyOverlayFrame } from "@/visualizer/bodyOverlay";
 
 import {
-    DEFAULT_RIG_STYLES,
-    clearFrame,
-    drawFadingPolyline,
-    drawLabel,
-    drawLine,
-    drawNode,
-    drawPolyline,
-    type RigRenderStyle
+  DEFAULT_RIG_STYLES,
+  clearFrame,
+  drawFadingPolyline,
+  drawLabel,
+  drawLine,
+  drawNode,
+  drawPolyline,
+  type RigRenderStyle
 } from "@/visualizer/drawingTools";
 import {
-    getRigAnchor,
-    translatePoint,
-    worldToCanvas,
-    type SceneLayout
+  getRigAnchor,
+  translatePoint,
+  worldToCanvas,
+  type SceneLayout
 } from "@/visualizer/sceneLayout";
 
 export interface RenderFrameGeometry {
@@ -75,6 +75,13 @@ export interface RigTrail {
   readonly head?: readonly Vec2[];
 }
 
+export interface BodyAnatomicalRenderStyle {
+  readonly lineColor?: string;
+  readonly handColor?: string;
+}
+
+export type BodyAnatomicalRenderStyles = Partial<Record<ArmSide, BodyAnatomicalRenderStyle>>;
+
 export interface RenderFrameOptions {
   readonly backgroundColor?: string;
   readonly transparentBackground?: boolean;
@@ -83,11 +90,13 @@ export interface RenderFrameOptions {
   readonly rigStyles?: Partial<Record<RigId, RigRenderStyle>>;
   readonly trails?: Partial<Record<RigId, RigTrail>>;
   readonly bodyOverlay?: BodyOverlayFrame | null;
+  readonly bodyAnatomicalStyles?: BodyAnatomicalRenderStyles;
   readonly showHandTrails?: boolean;
   readonly showHeadTrails?: boolean;
   readonly showChainLines?: boolean;
   readonly showNodeMarkers?: boolean;
   readonly showBodyRig?: boolean;
+  readonly showBodyFacingCue?: boolean;
   readonly showLabels?: boolean;
   readonly backSideRigIds?: readonly RigId[];
 }
@@ -103,21 +112,31 @@ function styleForRig(
 function bodyArmStyle(
   bodyOverlay: BodyOverlayFrame,
   side: ArmSide,
-  styles: Map<RigId, RigRenderStyle>
+  styles: Map<RigId, RigRenderStyle>,
+  anatomicalStyles?: BodyAnatomicalRenderStyles
 ): string {
   const rigId = side === "left" ? bodyOverlay.rigIds.left : bodyOverlay.rigIds.right;
 
-  return styles.get(rigId)?.lineColor ?? (side === "left" ? "#5eead4" : "#fbbf24");
+  return (
+    anatomicalStyles?.[side]?.lineColor ??
+    styles.get(rigId)?.lineColor ??
+    (side === "left" ? "#5eead4" : "#fbbf24")
+  );
 }
 
 function bodyHandStyle(
   bodyOverlay: BodyOverlayFrame,
   side: ArmSide,
-  styles: Map<RigId, RigRenderStyle>
+  styles: Map<RigId, RigRenderStyle>,
+  anatomicalStyles?: BodyAnatomicalRenderStyles
 ): string {
   const rigId = side === "left" ? bodyOverlay.rigIds.left : bodyOverlay.rigIds.right;
 
-  return styles.get(rigId)?.handColor ?? (side === "left" ? "#2dd4bf" : "#f59e0b");
+  return (
+    anatomicalStyles?.[side]?.handColor ??
+    styles.get(rigId)?.handColor ??
+    (side === "left" ? "#2dd4bf" : "#f59e0b")
+  );
 }
 
 function drawBodyHandBehindBodyRing(
@@ -156,15 +175,16 @@ function drawBodyArm(
   side: ArmSide,
   geometry: RenderFrameGeometry,
   styles: Map<RigId, RigRenderStyle>,
+  anatomicalStyles: BodyAnatomicalRenderStyles | undefined,
   nodeFill: string
 ) {
   const pose = bodyOverlay.pose;
-  const handStyle = bodyHandStyle(bodyOverlay, side, styles);
+  const handStyle = bodyHandStyle(bodyOverlay, side, styles, anatomicalStyles);
 
   drawPolyline(
     ctx,
     getBodyRigArmPoints(pose, side).map(toCanvas),
-    bodyArmStyle(bodyOverlay, side, styles),
+    bodyArmStyle(bodyOverlay, side, styles, anatomicalStyles),
     geometry.bodyArmLineWidth
   );
 
@@ -191,12 +211,27 @@ function drawBodyArm(
   }
 }
 
+export function getBodyFacingCueLabel(rootFacingDeg: number): string {
+  if (!Number.isFinite(rootFacingDeg)) {
+    throw new RangeError("Body facing cue requires a finite root-facing angle");
+  }
+
+  const normalized = ((rootFacingDeg % 360) + 360) % 360;
+  const rounded = Math.round(normalized) % 360;
+
+  if (rounded === 0) return "FRONT";
+  if (rounded === 180) return "BACK";
+  return "TURNING";
+}
+
 function renderBodyOverlay(
   ctx: CanvasRenderingContext2D,
   layout: SceneLayout,
   bodyOverlay: BodyOverlayFrame,
   geometry: RenderFrameGeometry,
-  styles: Map<RigId, RigRenderStyle>
+  styles: Map<RigId, RigRenderStyle>,
+  anatomicalStyles?: BodyAnatomicalRenderStyles,
+  showFacingCue = false
 ) {
   const pose = bodyOverlay.pose;
   const body = pose.projectedBody;
@@ -214,7 +249,7 @@ function renderBodyOverlay(
   const frontArms = armDrawOrder.filter((side) => !bodyOverlay.behindBodySides[side]);
 
   for (const side of behindArms) {
-    drawBodyArm(ctx, toCanvas, bodyOverlay, side, geometry, styles, nodeFill);
+    drawBodyArm(ctx, toCanvas, bodyOverlay, side, geometry, styles, anatomicalStyles, nodeFill);
   }
 
   drawLine(
@@ -281,7 +316,21 @@ function renderBodyOverlay(
   }
 
   for (const side of frontArms) {
-    drawBodyArm(ctx, toCanvas, bodyOverlay, side, geometry, styles, nodeFill);
+    drawBodyArm(ctx, toCanvas, bodyOverlay, side, geometry, styles, anatomicalStyles, nodeFill);
+  }
+
+  if (showFacingCue) {
+    const cueAnchor = toCanvas(body.headCenter);
+    drawLabel(
+      ctx,
+      getBodyFacingCueLabel(bodyOverlay.rootFacingDeg),
+      {
+        x: cueAnchor.x,
+        y: cueAnchor.y - body.headRadius * layout.pixelsPerWorldUnit - 8
+      },
+      "#f8fafc",
+      "600 11px ui-monospace, SFMono-Regular, monospace"
+    );
   }
   ctx.restore();
 }
@@ -352,7 +401,15 @@ export function renderFrame(
   });
 
   if (showBodyRig && options.bodyOverlay) {
-    renderBodyOverlay(ctx, layout, options.bodyOverlay, geometry, styles);
+    renderBodyOverlay(
+      ctx,
+      layout,
+      options.bodyOverlay,
+      geometry,
+      styles,
+      options.bodyAnatomicalStyles,
+      options.showBodyFacingCue
+    );
   }
 
   rigOrder.forEach((rigId, index) => {

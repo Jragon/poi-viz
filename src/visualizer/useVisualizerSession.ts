@@ -19,7 +19,10 @@ import {
   type ProjectionModePreference
 } from "@/engine/planeProjection";
 import type { MultiRigSequence, PlaneSide } from "@/engine/types";
-import type { PlaneSideDisplaySettings } from "@/visualizer/planeSideDisplay";
+import type {
+  PlaneSideDisplayBoundary,
+  PlaneSideDisplaySettings
+} from "@/visualizer/planeSideDisplay";
 import {
   useMultiRigPlayback,
   type MultiRigPlaybackController,
@@ -47,6 +50,7 @@ export const PLANE_SIDE_DISPLAY_DEFAULT_SIDE: PlaneSide = "a";
 export interface VisualizerSessionOptions {
   readonly autoplay?: boolean;
   readonly resumeOnSequenceChange?: boolean;
+  readonly planeSideDisplayBoundary?: MaybeRefOrGetter<PlaneSideDisplayBoundary | undefined>;
 }
 
 export interface VisualizerSession {
@@ -128,11 +132,19 @@ export function useVisualizerSession(
     yawDeg: projectionYawDeg.value,
     pitchDeg: projectionPitchDeg.value
   }));
-  const planeSideDisplaySettings = computed<PlaneSideDisplaySettings>(() => ({
-    sideADepthWorld: planeSideADepthWorld.value,
-    sideBDepthWorld: planeSideBDepthWorld.value,
-    defaultSide: PLANE_SIDE_DISPLAY_DEFAULT_SIDE
-  }));
+  const planeSideDisplaySettings = computed<PlaneSideDisplaySettings>(() => {
+    const boundary =
+      options.planeSideDisplayBoundary === undefined
+        ? undefined
+        : toValue(options.planeSideDisplayBoundary);
+
+    return {
+      sideADepthWorld: planeSideADepthWorld.value,
+      sideBDepthWorld: planeSideBDepthWorld.value,
+      defaultSide: PLANE_SIDE_DISPLAY_DEFAULT_SIDE,
+      ...(boundary === undefined ? {} : { boundary })
+    };
+  });
   const playback = useMultiRigPlayback(
     () => toValue(sequence),
     projectionSettings,

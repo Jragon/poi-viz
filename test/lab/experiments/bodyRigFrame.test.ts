@@ -144,4 +144,81 @@ describe("bodyRigFrame", () => {
       y: body.footRight.y
     });
   });
+
+  it("rotates the root support pose without rotating observer-fixed hand goals", () => {
+    const dimensions = buildDefaultBodyRigDimensions();
+    const body = buildBodyRigFrameFromDimensions(dimensions);
+    const goals = {
+      leftHandTarget: { x: -0.25, y: 0.4, z: 0 },
+      rightHandTarget: { x: 0.25, y: 0.4, z: 0 }
+    };
+    const poseAt0 = solveBodyRigFrame(body, goals, DEFAULT_PLANE_PROJECTION_SETTINGS, {
+      rootFacingDeg: 0
+    });
+    const poseAt90 = solveBodyRigFrame(body, goals, DEFAULT_PLANE_PROJECTION_SETTINGS, {
+      rootFacingDeg: 90
+    });
+    const poseAt180 = solveBodyRigFrame(body, goals, DEFAULT_PLANE_PROJECTION_SETTINGS, {
+      rootFacingDeg: 180
+    });
+
+    expect(poseAt0.shoulders.leftShoulder.x).toBeLessThan(poseAt0.shoulders.rightShoulder.x);
+    expect(poseAt180.shoulders.leftShoulder.x).toBeGreaterThan(poseAt180.shoulders.rightShoulder.x);
+
+    for (const pose of [poseAt0, poseAt90, poseAt180]) {
+      expect(pose.solve.leftArm.handTarget).toEqual(goals.leftHandTarget);
+      expect(pose.solve.rightArm.handTarget).toEqual(goals.rightHandTarget);
+      expect(distance3(pose.solve.leftArm.hand, goals.leftHandTarget)).toBeCloseTo(0);
+      expect(distance3(pose.solve.rightArm.hand, goals.rightHandTarget)).toBeCloseTo(0);
+    }
+
+    const feetAt0 = {
+      x: poseAt0.skeleton.joints.footRight.x - poseAt0.skeleton.joints.footLeft.x,
+      z: poseAt0.skeleton.joints.footRight.z - poseAt0.skeleton.joints.footLeft.z
+    };
+    const feetAt90 = {
+      x: poseAt90.skeleton.joints.footRight.x - poseAt90.skeleton.joints.footLeft.x,
+      z: poseAt90.skeleton.joints.footRight.z - poseAt90.skeleton.joints.footLeft.z
+    };
+    const feetAt180 = {
+      x: poseAt180.skeleton.joints.footRight.x - poseAt180.skeleton.joints.footLeft.x,
+      z: poseAt180.skeleton.joints.footRight.z - poseAt180.skeleton.joints.footLeft.z
+    };
+
+    expect(feetAt0.x).toBeGreaterThan(0);
+    expect(feetAt0.z).toBeCloseTo(0);
+    expect(feetAt90.x).toBeCloseTo(0);
+    expect(feetAt90.z).toBeLessThan(0);
+    expect(feetAt180.x).toBeLessThan(0);
+    expect(feetAt180.z).toBeCloseTo(0);
+    expect(Math.hypot(feetAt90.x, feetAt90.z)).toBeCloseTo(Math.hypot(feetAt0.x, feetAt0.z));
+
+    expect(
+      distance3(poseAt90.skeleton.joints.hipLeft, poseAt90.skeleton.joints.kneeLeft)
+    ).toBeCloseTo(distance3(body.hipLeft, body.kneeLeft));
+    expect(
+      distance3(poseAt90.skeleton.joints.kneeLeft, poseAt90.skeleton.joints.footLeft)
+    ).toBeCloseTo(distance3(body.kneeLeft, body.footLeft));
+    expect(
+      solveBodyRigFrame(body, goals, DEFAULT_PLANE_PROJECTION_SETTINGS, {
+        rootFacingDeg: 90
+      })
+    ).toEqual(poseAt90);
+  });
+
+  it("rejects a non-finite root-facing angle", () => {
+    const body = buildBodyRigFrameFromDimensions(buildDefaultBodyRigDimensions());
+
+    expect(() =>
+      solveBodyRigFrame(
+        body,
+        {
+          leftHandTarget: { x: -0.25, y: 0.4, z: 0 },
+          rightHandTarget: { x: 0.25, y: 0.4, z: 0 }
+        },
+        DEFAULT_PLANE_PROJECTION_SETTINGS,
+        { rootFacingDeg: Number.NaN }
+      )
+    ).toThrowError("Body rig root facing must be a finite number of degrees");
+  });
 });

@@ -264,6 +264,37 @@ describe("applyPlaneSideTransitionOffsets", () => {
     expect(result.left.handPosition.z).toBeCloseTo(-0.2, 10);
   });
 
+  it("uses an explicit source side at the start of a finite sequence", () => {
+    const prepared = makePreparedMultiRig([
+      makePreparedSegment("a"),
+      makePreparedSegment("b"),
+      makePreparedSegment("a")
+    ]);
+    const settings = {
+      sideADepthWorld: 0.2,
+      sideBDepthWorld: 0.2,
+      defaultSide: null,
+      boundary: {
+        mode: "finite" as const,
+        initialSideByRig: { left: "b" as const }
+      }
+    };
+
+    const atStart = applyPlaneSideTransitionOffsets(
+      { left: worldPoseWithMeta("a", 0, 0) },
+      prepared,
+      settings
+    );
+    const atMid = applyPlaneSideTransitionOffsets(
+      { left: worldPoseWithMeta("a", 0, 0.5) },
+      prepared,
+      settings
+    );
+
+    expect(atStart.left.handPosition.z).toBeCloseTo(-0.2, 10);
+    expect(atMid.left.handPosition.z).toBeCloseTo(0, 10);
+  });
+
   it("interpolates through zero at midpoint for a→b transition", () => {
     const prepared = makePreparedMultiRig([makePreparedSegment("a"), makePreparedSegment("b")]);
     const settings = { sideADepthWorld: 0.2, sideBDepthWorld: 0.2, defaultSide: null };

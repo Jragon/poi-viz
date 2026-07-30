@@ -49,4 +49,26 @@ describe("MelTurningGraph", () => {
     );
     expect(html).toContain('data-display-frame="observer-relative"');
   });
+
+  it("marks the active row and behind-body nodes without changing anatomical hand color", async () => {
+    const base = getVerifiedTurningTrace("ts-left-chasing-1-to-2");
+    const trace = {
+      ...base,
+      tracks: base.tracks.map((track) => ({
+        ...track,
+        nodes: track.nodes.map((node, index) => ({
+          ...node,
+          ...(index === 0 ? { handPlacement: "behind-body" as const } : {})
+        }))
+      }))
+    };
+    const fixture = defineComponent(
+      () => () => h(MelTurningGraph, { trace, frame: "observer-relative", activeStep: 9 })
+    );
+    const html = await renderToString(createSSRApp(fixture));
+
+    expect(html).toContain('data-hand-placement="behind-body"');
+    expect(html).toContain('stroke-width="4"');
+    expect(html).toContain("#fb7185");
+  });
 });

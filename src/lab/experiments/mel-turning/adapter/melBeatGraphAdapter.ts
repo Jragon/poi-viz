@@ -28,7 +28,7 @@ export type TurningReelDirection = ReelDirection;
 
 export type TurningReelPosition = Extract<
   ReelPosition,
-  "low-native" | "low-non-native"
+  "low-native" | "low-non-native" | "low-back"
 >;
 
 export interface TurningReelConfig {
@@ -87,7 +87,7 @@ export function deriveTurningTrackFromMel(draft: TurningTrackDraft): TurningTrac
         laneId: state.row.laneId as TurningLaneId,
         planeSide: state.planeSide,
         phase: state.phaseLabel,
-        ...(draftRow.handPlacement ? { handPlacement: draftRow.handPlacement } : {})
+        handPlacement: draftRow.handPlacement ?? (state.isBTB ? "behind-body" : "wall")
       };
     })
   };
