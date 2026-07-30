@@ -100,10 +100,10 @@
     <footer class="border-t border-ui-border-subtle bg-ui-surface-raised px-4 py-3">
       <h3 class="text-xs font-semibold text-slate-200">The review loop</h3>
       <p class="mt-1.5 text-xs leading-5 text-ui-text-secondary">
-        The direct explorer remains the visual baseline. The wider solver produces deterministic,
-        provenance-labelled preparation/turn/recovery candidates for CSV review. Physical testing
-        can accept, reject, or correct them; reviewed results are normalized before they alter the
-        model or become ordinary explorer choices.
+        The explorer now plays every materialized shortest solver route, including clearly marked
+        unresolved hypotheses. The Pattern Verifier remains the evidence boundary: each review
+        records possible, not possible, or inconclusive with freeform notes and optional notation
+        edits. Exported reviews are normalized before they alter solver rules or evidence status.
       </p>
     </footer>
   </article>

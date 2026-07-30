@@ -7,17 +7,20 @@ import {
   getTurningRootFacingDeg
 } from "@/lab/experiments/mel-turning/adapter/turningTracePlayback";
 import LowReelEndpointCard from "@/lab/experiments/mel-turning/components/LowReelEndpointCard.vue";
+import LowReelRouteStepsTable from "@/lab/experiments/mel-turning/components/LowReelRouteStepsTable.vue";
 import MelTurningGraph from "@/lab/experiments/mel-turning/components/MelTurningGraph.vue";
 import TurningResearchArticle from "@/lab/experiments/mel-turning/components/TurningResearchArticle.vue";
+import { buildLowReelEndpointPreviewTrace } from "@/lab/experiments/mel-turning/model/buildLowReelTurningTrace";
 import {
-  buildLowReelEndpointPreviewTrace,
-  buildLowReelTurningTrace
-} from "@/lab/experiments/mel-turning/model/buildLowReelTurningTrace";
+  buildLowReelRouteProjection,
+  lowReelRouteStateLocation
+} from "@/lab/experiments/mel-turning/model/lowReelRouteProjection";
 import {
-  formatLowReelSearchNode,
-  searchLowReelDirectTurns,
-  type LowReelDirectTurnCandidate
-} from "@/lab/experiments/mel-turning/model/lowReelDirectTurnSearch";
+  solveLowReelTurningRoutes,
+  type LowReelRouteCycleEntry,
+  type LowReelRouteSolverResult,
+  type LowReelTurningRoute
+} from "@/lab/experiments/mel-turning/model/lowReelRouteSolver";
 import {
   constrainTurningTarget,
   type ConstrainedTurningTarget
@@ -35,8 +38,10 @@ import {
 } from "@/visualizer/visualizerWorkspace";
 
 const { source, target, turnDirection } = useTurningExplorerUrlState();
-const graphFrame = ref<TurningDisplayFrame>("observer-relative");
-const selectedCandidateId = ref("");
+type ExplorerView = "body-graph" | "observer-graph" | "steps-table";
+
+const explorerView = ref<ExplorerView>("observer-graph");
+const selectedRouteId = ref("");
 const targetAdjustmentMessage = ref("");
 
 const sourceModel = computed({
@@ -61,35 +66,37 @@ const targetConstraintMessage = computed(
 );
 
 const searchResult = computed(() =>
-  searchLowReelDirectTurns({
+  solveLowReelTurningRoutes({
     source: source.value,
     target: target.value,
-    turnDirection: turnDirection.value
+    turnDirection: turnDirection.value,
+    options: {
+      maxRoutes: 40,
+      maxExtraHalfbeats: 0,
+      includeUnresolved: true
+    }
   })
 );
-const playableCandidates = computed(() =>
-  searchResult.value.candidates
-    .filter((candidate) => candidate.topologyStatus !== "invalid")
-    .sort((left, right) => statusRank(left.topologyStatus) - statusRank(right.topologyStatus))
+const shortestRoutes = computed(() =>
+  searchResult.value.routes
+    .filter((route) => route.isShortest)
+    .sort((left, right) => statusRank(left.modelStatus) - statusRank(right.modelStatus))
 );
-const rejectedCandidateCount = computed(
+const selectedRoute = computed(
   () =>
-    searchResult.value.candidates.filter((candidate) => candidate.topologyStatus === "invalid")
-      .length
-);
-const selectedCandidate = computed(
-  () =>
-    playableCandidates.value.find((candidate) => candidate.id === selectedCandidateId.value) ??
-    playableCandidates.value[0] ??
+    shortestRoutes.value.find((route) => route.id === selectedRouteId.value) ??
+    shortestRoutes.value[0] ??
     null
+);
+const activeProjection = computed(() =>
+  selectedRoute.value ? buildLowReelRouteProjection(searchResult.value, selectedRoute.value) : null
 );
 const sourcePreviewTrace = computed(() =>
   buildLowReelEndpointPreviewTrace(source.value, "Source reel preview")
 );
-const activeTrace = computed(() =>
-  selectedCandidate.value
-    ? buildLowReelTurningTrace(searchResult.value, selectedCandidate.value)
-    : sourcePreviewTrace.value
+const activeTrace = computed(() => activeProjection.value?.trace ?? sourcePreviewTrace.value);
+const graphFrame = computed<TurningDisplayFrame>(() =>
+  explorerView.value === "body-graph" ? "body-relative" : "observer-relative"
 );
 const playbackSequence = computed(() => compileTurningTracePlayback(activeTrace.value));
 const planeSideDisplayBoundary = computed<PlaneSideDisplayBoundary>(() => ({
@@ -103,10 +110,10 @@ const planeSideDisplayBoundary = computed<PlaneSideDisplayBoundary>(() => ({
 }));
 
 watch(
-  playableCandidates,
-  (candidates) => {
-    if (candidates.some((candidate) => candidate.id === selectedCandidateId.value)) return;
-    selectedCandidateId.value = candidates[0]?.id ?? "";
+  shortestRoutes,
+  (routes) => {
+    if (routes.some((route) => route.id === selectedRouteId.value)) return;
+    selectedRouteId.value = routes[0]?.id ?? "";
   },
   { immediate: true }
 );
@@ -134,13 +141,20 @@ const activeStep = computed(() => {
 });
 const scrubMaximum = computed(() => Math.max(transport.duration.value - 0.0001, 0));
 const candidateSummary = computed(() => {
-  const validCount = searchResult.value.candidates.filter(
-    (candidate) => candidate.topologyStatus === "valid"
-  ).length;
-  const unresolvedCount = searchResult.value.candidates.filter(
-    (candidate) => candidate.topologyStatus === "unresolved"
-  ).length;
-  return `${validCount} topology-valid · ${unresolvedCount} unresolved · ${rejectedCandidateCount.value} rejected`;
+  const validCount = shortestRoutes.value.filter((route) => route.modelStatus === "valid").length;
+  const unresolvedCount = shortestRoutes.value.length - validCount;
+  const total = searchResult.value.shortestRouteCount;
+  const materialized =
+    total > shortestRoutes.value.length
+      ? `${shortestRoutes.value.length} of ${total} shown`
+      : `${total}`;
+  return `${materialized} shortest · ${validCount} model-valid · ${unresolvedCount} unresolved`;
+});
+const searchStatus = computed<TurnTopologyStatus>(() => {
+  if (shortestRoutes.value.length === 0) return "invalid";
+  return shortestRoutes.value.some((route) => route.modelStatus === "valid")
+    ? "valid"
+    : "unresolved";
 });
 
 const anatomicalStyles = {
@@ -171,15 +185,9 @@ function statusRank(status: TurnTopologyStatus): number {
 }
 
 function statusLabel(status: TurnTopologyStatus): string {
-  if (status === "valid") return "Topology-valid";
-  if (status === "unresolved") return "Topology incomplete";
-  return "No direct bridge";
-}
-
-function candidateStatusLabel(status: TurnTopologyStatus): string {
-  if (status === "valid") return "topology-valid";
-  if (status === "unresolved") return "unresolved";
-  return "rejected";
+  if (status === "valid") return "Shortest route found";
+  if (status === "unresolved") return "Shortest route unresolved";
+  return "No model route";
 }
 
 function statusBadgeClass(status: TurnTopologyStatus): string {
@@ -192,23 +200,56 @@ function statusBadgeClass(status: TurnTopologyStatus): string {
   return "border-rose-500/50 bg-rose-950/35 text-rose-200";
 }
 
-function candidateButtonClass(candidate: LowReelDirectTurnCandidate): string {
-  if (selectedCandidate.value?.id === candidate.id) {
+function routeButtonClass(route: LowReelTurningRoute): string {
+  if (selectedRoute.value?.id === route.id) {
     return "border-sky-300 bg-sky-950/55 text-slate-100";
   }
   return "border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised";
 }
 
-function candidateMechanisms(candidate: LowReelDirectTurnCandidate): string {
-  return `Left ${candidate.leftTopology.mechanism} · Right ${candidate.rightTopology.mechanism}`;
+function routeStatusLabel(route: LowReelTurningRoute): string {
+  if (route.evidenceStatus === "exact-route-verified") return "verified";
+  return route.modelStatus === "valid" ? "model-valid" : "unresolved";
 }
 
-function candidateNodes(candidate: LowReelDirectTurnCandidate): string {
-  return `L ${formatLowReelSearchNode(candidate.source.left)} → ${formatLowReelSearchNode(
-    candidate.target.left
-  )} · R ${formatLowReelSearchNode(candidate.source.right)} → ${formatLowReelSearchNode(
-    candidate.target.right
-  )}`;
+function cycleStepForRouteState(cycle: readonly LowReelRouteCycleEntry[], stateId: string): number {
+  return cycle.find((entry) => entry.state.id === stateId)?.cycleStep ?? 0;
+}
+
+function routeRows(result: LowReelRouteSolverResult, route: LowReelTurningRoute): string {
+  const sourceState = route.states[0];
+  const targetState = route.states.at(-1);
+  if (!sourceState || !targetState) return "Missing route boundary";
+  return `Row ${cycleStepForRouteState(result.sourceCycle, sourceState.id) + 1} → row ${
+    cycleStepForRouteState(result.targetCycle, targetState.id) + 1
+  }`;
+}
+
+function routeShape(route: LowReelTurningRoute): string {
+  return `${route.bridgeHalfbeats} halfbeat${
+    route.bridgeHalfbeats === 1 ? "" : "s"
+  } · ${route.preparationHalfbeats} prep + 1 turn + ${route.recoveryHalfbeats} recovery`;
+}
+
+function routeTurnMechanisms(route: LowReelTurningRoute): string {
+  const turn = route.edges[route.turnEdgeIndex];
+  return turn?.kind === "body-turn"
+    ? `Left ${turn.leftAction} · Right ${turn.rightAction}`
+    : "Missing turn edge";
+}
+
+function routeBoundaryNodes(route: LowReelTurningRoute): string {
+  const sourceState = route.states[0];
+  const targetState = route.states.at(-1);
+  if (!sourceState || !targetState) return "Missing route boundary";
+  const node = (state: typeof sourceState, hand: "left" | "right") => {
+    const handState = state[hand];
+    return `${lowReelRouteStateLocation(state, hand)} ${handState.planeSide} ${handState.phase}`;
+  };
+  return `L ${node(sourceState, "left")} → ${node(targetState, "left")} · R ${node(
+    sourceState,
+    "right"
+  )} → ${node(targetState, "right")}`;
 }
 
 function formatDirectionMode(direction: ConstrainedTurningTarget["target"]["direction"]): string {
@@ -268,6 +309,10 @@ function onScrub(event: Event): void {
   transport.setCurrentTime(Number((event.target as HTMLInputElement).value));
 }
 
+function selectTableStep(step: number): void {
+  transport.setCurrentTime(Math.min(step * halfBeatDuration, scrubMaximum.value));
+}
+
 function toggleRepeat(): void {
   transport.setEndBehavior(transport.endBehavior.value === "repeat" ? "reset" : "repeat");
 }
@@ -289,15 +334,23 @@ function toggleRepeat(): void {
         <p class="text-sm leading-6 text-ui-text-secondary">
           Choose an exact source reel, then explore target hand positions using Mel’s Body Tracing
           model. Target direction is derived and only offsets that preserve the source timing stay
-          available. The search compares every next-halfbeat phase alignment, then plays one shared
-          180° turn in the existing poi visualizer.
+          available. The solver finds every materialized shortest preparation → turn → recovery
+          route, then plays the selected finite trace in the existing poi visualizer.
         </p>
-        <RouterLink
-          :to="{ name: 'body-tracing-explorer' }"
-          class="w-fit text-xs font-medium text-sky-300 underline decoration-sky-500/50 underline-offset-4 transition hover:text-sky-200"
-        >
-          Open the original Body Tracing Explorer
-        </RouterLink>
+        <div class="flex flex-wrap gap-x-4 gap-y-2">
+          <RouterLink
+            :to="{ name: 'body-tracing-explorer' }"
+            class="w-fit text-xs font-medium text-sky-300 underline decoration-sky-500/50 underline-offset-4 transition hover:text-sky-200"
+          >
+            Open the original Body Tracing Explorer
+          </RouterLink>
+          <RouterLink
+            :to="{ name: 'mel-turning-review' }"
+            class="w-fit text-xs font-medium text-violet-300 underline decoration-violet-500/50 underline-offset-4 transition hover:text-violet-200"
+          >
+            Open the Pattern Verifier Workbench
+          </RouterLink>
+        </div>
       </header>
 
       <section class="grid items-start gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(30rem,1fr)]">
@@ -370,16 +423,16 @@ function toggleRepeat(): void {
                 <p
                   class="text-[0.625rem] font-semibold uppercase tracking-[0.16em] text-ui-text-muted"
                 >
-                  Exact direct-edge search
+                  Shortest route search
                 </p>
-                <h2 class="mt-1 text-sm font-semibold text-slate-100">Turn candidates</h2>
+                <h2 class="mt-1 text-sm font-semibold text-slate-100">Solver routes</h2>
               </div>
               <div class="text-right">
                 <span
                   class="inline-flex rounded-full border px-2.5 py-1 text-[0.625rem] font-semibold uppercase tracking-[0.12em]"
-                  :class="statusBadgeClass(searchResult.status)"
+                  :class="statusBadgeClass(searchStatus)"
                 >
-                  {{ statusLabel(searchResult.status) }}
+                  {{ statusLabel(searchStatus) }}
                 </span>
                 <p class="mt-1 font-mono text-[0.625rem] text-ui-text-muted">
                   {{ candidateSummary }}
@@ -392,102 +445,98 @@ function toggleRepeat(): void {
               class="grid gap-2 border-b border-ui-border-subtle bg-amber-950/20 p-3"
             >
               <p
-                v-for="diagnostic in searchResult.diagnostics"
-                :key="`${diagnostic.code}-${diagnostic.hand ?? 'both'}`"
+                v-for="(diagnostic, diagnosticIndex) in searchResult.diagnostics"
+                :key="`${diagnostic.code}-${diagnosticIndex}`"
                 class="text-xs leading-5 text-amber-100"
               >
                 {{ diagnostic.message }}
               </p>
             </div>
 
-            <div v-if="playableCandidates.length > 0" class="grid gap-2 p-3 sm:grid-cols-2">
+            <div v-if="shortestRoutes.length > 0" class="grid gap-2 p-3 sm:grid-cols-2">
               <button
-                v-for="candidate in playableCandidates"
-                :key="candidate.id"
+                v-for="(route, routeIndex) in shortestRoutes"
+                :key="route.id"
                 type="button"
                 class="rounded-md border p-3 text-left transition"
-                :class="candidateButtonClass(candidate)"
-                :aria-pressed="selectedCandidate?.id === candidate.id"
-                @click="selectedCandidateId = candidate.id"
+                :class="routeButtonClass(route)"
+                :aria-pressed="selectedRoute?.id === route.id"
+                @click="selectedRouteId = route.id"
               >
                 <span class="flex items-center justify-between gap-2">
                   <span class="font-mono text-xs font-semibold">
-                    Row {{ candidate.source.cycleStep + 1 }} → row
-                    {{ candidate.target.cycleStep + 1 }}
+                    Route {{ routeIndex + 1 }} · {{ routeRows(searchResult, route) }}
                   </span>
                   <span
                     class="rounded-full border px-2 py-0.5 text-[0.5625rem] font-semibold uppercase tracking-[0.1em]"
-                    :class="statusBadgeClass(candidate.topologyStatus)"
+                    :class="statusBadgeClass(route.modelStatus)"
                   >
-                    {{ candidateStatusLabel(candidate.topologyStatus) }}
+                    {{ routeStatusLabel(route) }}
                   </span>
                 </span>
                 <span class="mt-2 block text-xs font-medium">
-                  {{ candidateMechanisms(candidate) }}
+                  {{ routeShape(route) }}
+                </span>
+                <span class="mt-1 block text-xs">
+                  {{ routeTurnMechanisms(route) }}
                 </span>
                 <span class="mt-1 block font-mono text-[0.625rem] leading-4 opacity-70">
-                  {{ candidateNodes(candidate) }}
+                  {{ routeBoundaryNodes(route) }}
                 </span>
               </button>
             </div>
             <p
-              v-if="playableCandidates.length > 0"
+              v-if="shortestRoutes.length > 0"
               class="border-t border-ui-border-subtle px-3 py-2 text-[0.625rem] leading-4 text-ui-text-muted"
             >
-              These generated bridges satisfy the current topology model; they are not promoted to
-              physically verified cases.
+              Only shortest routes are shown. Unresolved routes remain playable research hypotheses;
+              their badges do not claim physical verification.
             </p>
             <p v-else class="p-4 text-xs leading-5 text-ui-text-secondary">
-              No playable direct bridge is known for these exact endpoints. The source reel remains
-              available in the visualizer while you adjust the target.
+              No preparation/turn/recovery route is known for these exact endpoints in the current
+              solver grammar. The source reel remains available while you adjust the target.
             </p>
-
-            <details
-              v-if="rejectedCandidateCount > 0"
-              class="border-t border-ui-border-subtle px-3 py-2.5"
-            >
-              <summary
-                class="cursor-pointer text-xs font-medium text-ui-text-muted hover:text-ui-text-secondary"
-              >
-                {{ rejectedCandidateCount }} phase-compatible alignments rejected by known topology
-              </summary>
-              <ul class="mt-2 grid gap-1.5 text-[0.6875rem] leading-5 text-ui-text-muted">
-                <li
-                  v-for="candidate in searchResult.candidates.filter(
-                    (entry) => entry.topologyStatus === 'invalid'
-                  )"
-                  :key="candidate.id"
-                >
-                  Row {{ candidate.source.cycleStep + 1 }} → row
-                  {{ candidate.target.cycleStep + 1 }} ·
-                  {{
-                    candidate.leftTopology.diagnostics[0]?.message ??
-                    candidate.rightTopology.diagnostics[0]?.message ??
-                    "Known topology rejects this joint alignment."
-                  }}
-                </li>
-              </ul>
-            </details>
           </section>
 
           <section class="grid gap-2">
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-3 gap-2">
               <button
-                v-for="frame in ['body-relative', 'observer-relative'] as const"
-                :key="frame"
+                v-for="view in [
+                  { id: 'body-graph', label: 'Body-relative graph' },
+                  { id: 'observer-graph', label: 'Observer-relative graph' },
+                  { id: 'steps-table', label: 'Steps table' }
+                ] as const"
+                :key="view.id"
                 type="button"
                 class="h-9 rounded-md border px-3 text-xs font-semibold transition"
                 :class="
-                  graphFrame === frame
+                  explorerView === view.id
                     ? 'border-sky-300 bg-sky-300 text-slate-950'
                     : 'border-ui-border-strong bg-ui-surface text-ui-text-secondary hover:border-ui-focus hover:bg-ui-surface-raised'
                 "
-                @click="graphFrame = frame"
+                @click="explorerView = view.id"
               >
-                {{ frame === "body-relative" ? "Body-relative graph" : "Observer-relative graph" }}
+                {{ view.label }}
               </button>
             </div>
-            <MelTurningGraph :trace="activeTrace" :frame="graphFrame" :active-step="activeStep" />
+            <LowReelRouteStepsTable
+              v-if="explorerView === 'steps-table' && activeProjection"
+              :steps="activeProjection.steps"
+              :active-step="activeStep"
+              @select-step="selectTableStep"
+            />
+            <p
+              v-else-if="explorerView === 'steps-table'"
+              class="rounded-2xl border border-slate-700/80 bg-slate-950/75 p-5 text-xs leading-5 text-slate-400"
+            >
+              Select endpoints with a solver route to inspect its complete step table.
+            </p>
+            <MelTurningGraph
+              v-else
+              :trace="activeTrace"
+              :frame="graphFrame"
+              :active-step="activeStep"
+            />
           </section>
         </div>
 
@@ -503,7 +552,7 @@ function toggleRepeat(): void {
                   Existing visualizer · explicit body root
                 </p>
                 <h2 class="mt-1 text-sm font-semibold text-slate-100">
-                  {{ selectedCandidate ? "Selected turn" : "Source preview" }}
+                  {{ selectedRoute ? "Selected solver route" : "Source preview" }}
                 </h2>
               </div>
               <div class="text-right">

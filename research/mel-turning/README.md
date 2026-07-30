@@ -40,8 +40,10 @@ non-normative model.
 | `candidates/unresolved-turning-issues.csv`                                 | Consolidated register of the eight remaining rule/notation questions, with full routes for the unresolved low-back, SO, SS, and TO cases                                                   |
 | `candidates/low-weaves-left-clockwise-fixed-targets.csv`                   | Eight fixed source/target searches for the left low weave: TS offset 0→0/2 and SS offset 1→1/3, each turning left/right; includes every equal-shortest candidate from the partial topology |
 | `candidates/low-weaves-left-opposite-fixed-targets.csv`                    | Eight fixed source/target searches for the left low weave: SO inward offset 0→outward 0/2 and TO inward offset 1→outward 1/3, each turning left/right                                      |
-| `candidates/solver-review-001/cases.csv`                                   | Sixteen deterministic route-level cases: four verified controls plus six paired comparisons spanning timing, family, turn direction, and route shape                                       |
-| `candidates/solver-review-001/steps.csv`                                   | Full source cycle → bridge → target cycle rows for those cases, including resolved hand anchors, edge actions, and provenance                                                              |
+| `candidates/low-weave-opposite-review-001/workbench.json`                  | Current 16-route Pattern Verifier batch: fixed left low weave, SO/TO opposite inwards→outwards, both turn directions, same offsets first                                                   |
+| `candidates/low-weave-opposite-review-001/cases.csv`                       | Diagnostic route summary for the current focused batch                                                                                                                                     |
+| `candidates/low-weave-opposite-review-001/steps.csv`                       | Full source cycle → direct turn → target cycle rows for the current focused batch                                                                                                          |
+| `candidates/solver-review-001/workbench.json`                              | Superseded broad diversity-sampling experiment, retained as generator history                                                                                                              |
 
 The verified same-direction files cover both left and right body turns while both poi move clockwise
 in the observer frame. The turn-right routes were derived and checked independently rather than
@@ -107,12 +109,13 @@ exactly two offsets preserve source timing. Offset parity stays the same for mil
 weave→weave, and flips for mill↔weave. The explorer derives target direction and disables the two
 incompatible offsets, while parsing and solver entry points still validate inputs defensively.
 
-The interactive explorer continues to select exact direct turn edges. It now presents each selected
-bridge with one full source cycle before it and one full target cycle after it. Hand positions come
-from Mel's cyclic compiler, so a compact reel `C` row retains its resolved low hand anchor rather
-than being interpreted as a literal torso-centre point.
+The interactive explorer now uses the deterministic route solver directly. It shows all
+materialized shortest routes for the selected compatible endpoints, ordering model-valid routes
+before unresolved routes. A direct turn remains a one-edge shortest route; when none exists, the
+explorer automatically presents the shortest preparation and/or recovery bridges. Unresolved
+routes remain playable and visibly labelled as research hypotheses.
 
-A separate deterministic research solver can search longer bridges as:
+The route grammar is:
 
 ```text
 preparation* → one halfbeat body turn → recovery*
@@ -125,16 +128,21 @@ extensions remain explicitly unresolved except where an exact reviewed route sup
 The solver searches all fully resolved state-equivalent low-reel occurrences, not compact labels
 alone, and can materialize shortest or bounded near-shortest candidates for physical review.
 
-The expanded solver is not yet the explorer's default route source. Its purpose is to generate
-inspectable candidate packs, compare alternative preparation/turn/recovery routes, and refine the
-movement grammar before the UI presents those routes as normal options. See the
-[working solver model](low-reel-route-solver.md) for the exact boundary and limitations.
+Each selected route is presented with one full source cycle before its bridge and one full target
+cycle after it. Hand positions come from Mel's cyclic compiler, so a compact reel `C` row retains
+its resolved low hand anchor rather than being interpreted as a literal torso-centre point. The
+Model Explorer provides body-relative graph, observer-relative graph, and read-only step-table
+views over the same projected trace. See the [working solver model](low-reel-route-solver.md) for
+the exact boundary and limitations.
 
-The first deterministic pack is documented in
-[`candidates/solver-review-001/README.md`](candidates/solver-review-001/README.md). Generate a
-fresh copy with `pnpm generate:mel-turning-review -- --output <directory>`. The generator refuses
-to replace existing review CSVs unless `--force` is passed explicitly, because those files may
-contain physical annotations.
+The current focused pack is documented in
+[`candidates/low-weave-opposite-review-001/README.md`](candidates/low-weave-opposite-review-001/README.md).
+Generate a
+fresh copy with `pnpm generate:mel-turning-review -- --output <directory>`, then import its
+`workbench.json` into `/lab/mel-turning/review`. The workbench autosaves an isolated browser draft
+and exports a reviewed JSON artifact; it never writes evidence back into the repository
+automatically. The CSVs are diagnostic projections, not review storage. The generator refuses to
+replace an existing batch unless `--force` is passed explicitly.
 
 ## Runtime normalization
 
@@ -149,19 +157,16 @@ Each normalized fixture retains its CSV filename, exact case label, original fir
 turn step. Runtime code does not parse the CSVs. Source comparison is a manual audit step rather than
 a CSV-conformance test.
 
-The current deterministic model-explorer search lives in
-`src/lab/experiments/mel-turning/model/lowReelDirectTurnSearch.ts`. It compiles exact source and
-target cycles through the existing Mel adapter, enumerates every phase-compatible direct
-source-row-to-target-row turn, requires observer-fixed direction preservation, and keeps
-topology-valid, unresolved, and rejected classifications distinct. It remains the explorer's
-selected-bridge contract.
-
-The research path search lives separately in
+The current deterministic Model Explorer search lives in
 `src/lab/experiments/mel-turning/model/lowReelRouteSolver.ts`. It reuses the same endpoint
 compatibility and partial topology, adds resolved physical boundary identity, and searches exact
 Mel continuations plus explicit unresolved circle-extension hypotheses. It returns deterministic
 route identities, shortest counts, preparation/recovery lengths, provenance, model status, and
 exact-route evidence where currently normalized.
+
+The older direct-edge diagnostic remains in
+`src/lab/experiments/mel-turning/model/lowReelDirectTurnSearch.ts` for focused topology tests and
+historical comparisons. It no longer supplies the Model Explorer's selected route.
 
 The older compact-node equal-shortest product-graph results remain research provenance in the
 candidate CSVs, but compact `C` identity is no longer accepted as sufficient physical continuity.
@@ -268,10 +273,10 @@ right gate when its midpoint arrow points right.
 6. Update the verified-set table above.
 
 Generated route-review packs should also retain the solver version or commit, seed, exact route ID,
-resolved step sequence, edge provenance, and the reason each case was sampled. Prefer deterministic
-diversity sampling and paired alternatives for the same endpoints over uniform random selection.
-Physical edits must pass through an explicit normalization/audit step before becoming runtime
-evidence.
+resolved step sequence, edge provenance, and the reason each case was sampled. Each small batch
+should answer a narrow ordered question, starting with same hand positions and same offsets before
+changing endpoints or introducing longer bridges. Physical edits must pass through an explicit
+normalization/audit step before becoming runtime evidence.
 
 Suggested future names:
 

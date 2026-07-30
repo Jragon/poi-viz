@@ -3,7 +3,10 @@ import { describe, expect, it, vi } from "vitest";
 import {
   MEL_TURNING_LAB_LINK,
   MEL_TURNING_LAB_ROUTE,
-  loadMelTurningLabPage
+  MEL_TURNING_REVIEW_LINK,
+  MEL_TURNING_REVIEW_ROUTE,
+  loadMelTurningLabPage,
+  loadTurningPatternVerifierPage
 } from "@/lab/experiments/mel-turning/routeMeta";
 import { evaluateRouterModule, type RouterOptions } from "../../../helpers/evaluateRouterModule";
 
@@ -22,7 +25,15 @@ describe("Mel turning route metadata integration", () => {
     const createWebHistorySpy = vi.fn((base: string) => ({ base }));
 
     evaluateRouterModule(createRouterSpy, createWebHistorySpy, [
-      ["@/lab/experiments/mel-turning/routeMeta", { MEL_TURNING_LAB_ROUTE, loadMelTurningLabPage }],
+      [
+        "@/lab/experiments/mel-turning/routeMeta",
+        {
+          MEL_TURNING_LAB_ROUTE,
+          MEL_TURNING_REVIEW_ROUTE,
+          loadMelTurningLabPage,
+          loadTurningPatternVerifierPage
+        }
+      ],
       ["@/lab/experiments/three-d-debug/routeMeta", THREE_D_DEBUG_STUB],
       ["@/lab/experiments/vrm-rig/routeMeta", VRM_RIG_STUB]
     ]);
@@ -39,6 +50,18 @@ describe("Mel turning route metadata integration", () => {
     expect(MEL_TURNING_LAB_LINK).toEqual({
       label: "Turning Model Explorer",
       to: MEL_TURNING_LAB_ROUTE.path
+    });
+
+    const reviewRoute = routerOptions.routes.find(
+      (candidate) => candidate.name === MEL_TURNING_REVIEW_ROUTE.name
+    );
+    expect(reviewRoute).toEqual({
+      ...MEL_TURNING_REVIEW_ROUTE,
+      component: loadTurningPatternVerifierPage
+    });
+    expect(MEL_TURNING_REVIEW_LINK).toEqual({
+      label: "Turning Pattern Verifier",
+      to: MEL_TURNING_REVIEW_ROUTE.path
     });
   });
 });

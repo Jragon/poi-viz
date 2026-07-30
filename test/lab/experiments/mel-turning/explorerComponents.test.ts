@@ -4,7 +4,10 @@ import { createSSRApp, defineComponent, h } from "vue";
 
 import type { TurningReelConfig } from "@/lab/experiments/mel-turning/adapter/melBeatGraphAdapter";
 import LowReelEndpointCard from "@/lab/experiments/mel-turning/components/LowReelEndpointCard.vue";
+import LowReelRouteStepsTable from "@/lab/experiments/mel-turning/components/LowReelRouteStepsTable.vue";
 import TurningResearchArticle from "@/lab/experiments/mel-turning/components/TurningResearchArticle.vue";
+import { buildLowReelRouteProjection } from "@/lab/experiments/mel-turning/model/lowReelRouteProjection";
+import { solveLowReelTurningRoutes } from "@/lab/experiments/mel-turning/model/lowReelRouteSolver";
 
 describe("Mel turning explorer components", () => {
   it("exposes every low-reel position and the exact Mel-derived summary", async () => {
@@ -65,5 +68,43 @@ describe("Mel turning explorer components", () => {
     expect(html).toContain("Known from current evidence");
     expect(html).toContain("Still unresolved or physical");
     expect(html).toContain("finite path");
+  });
+
+  it("renders the complete solver route as a compact selectable steps table", async () => {
+    const result = solveLowReelTurningRoutes({
+      source: {
+        left: "low-native",
+        right: "low-native",
+        direction: { mode: "same", direction: "clockwise" },
+        offset: 0
+      },
+      target: {
+        left: "low-native",
+        right: "low-native",
+        direction: { mode: "same", direction: "counterclockwise" },
+        offset: 0
+      },
+      turnDirection: "left"
+    });
+    const route = result.routes[0];
+    if (!route) throw new Error("Expected a solver route for the table fixture.");
+    const projection = buildLowReelRouteProjection(result, route);
+    const fixture = defineComponent(
+      () => () =>
+        h(LowReelRouteStepsTable, {
+          steps: projection.steps,
+          activeStep: 4
+        })
+    );
+    const html = await renderToString(createSSRApp(fixture));
+
+    expect(html).toContain("Source cycle · shortest bridge · target cycle");
+    expect(html).toContain("Outgoing interval");
+    expect(html).toContain("Body turn");
+    expect(html).toContain("Circle extension");
+    expect(html).toContain(">Turn<");
+    expect(html).toContain(">Recovery<");
+    expect(html).toContain("unresolved");
+    expect(html).toContain("bg-sky-950/35");
   });
 });

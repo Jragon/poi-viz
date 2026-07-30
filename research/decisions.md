@@ -420,7 +420,7 @@ tracing or the engine.
 - Adjacent legal turn-edge phases are retained. A discrete halfbeat annotation does not imply an
   instantaneous torso rotation; continuous performance may centre the turn across that edge and
   overlap the neighbouring phase's turn window.
-- Joint arm openness, collisions, comfort, and naturalness remain physical verification data. A
+- Joint arm openness, collisions, and balance remain physical verification data. A
   pair of individually legal hand edges is not treated as proof of two-arm performability.
 
 The reusable search stays under `src/lab/experiments/mel-turning`; Mel body tracing remains
@@ -558,21 +558,102 @@ A separate deterministic low-reel solver is introduced for candidate generation:
   cycle, and uses deterministic breadth-first distance. It counts all shortest paths and
   materializes a capped, stable prefix; research calls may also request simple alternatives up to
   two halfbeats longer.
-- Structural/model status, exact-route evidence, and physical naturalness are separate. A shortest
+- Structural/model status, exact-route evidence, and physical possibility are separate. A shortest
   model route is not automatically a legal or preferred two-arm movement.
 
 The direct-turn search remains the interactive explorer's route source while the wider solver
-generates deterministic CSV review packs. Physical review must record corrections explicitly, then
-pass through normalization before changing runtime evidence or expanding the explorer. This
+generates deterministic JSON workbench batches. Physical review must record corrections explicitly,
+then pass through normalization before changing runtime evidence or expanding the explorer. This
 supersedes only the earlier deferral of all multi-edge modelling; it does not supersede the
 isolation, coordinate-frame, finite-transport, or evidence boundaries of the 2026-07-29 Model
 Explorer decision.
 
 The solver currently stores Mel-resolved interval endpoints and provenance, not complete continuous
-compiler drivers. Collision, joint limits, comfort, naturalness, direction changes, a second closing
+compiler drivers. Collision, joint limits, balance, direction changes, a second closing
 turn, wraps, cosmos, and arbitrary Mel graphs remain outside this decision.
 
 Validation requires exhaustive endpoint-compatibility coverage, deterministic route identity and
 ordering, exactly one turn per route, known direct and prepared verified controls, latent centre
 anchors that remain distinct, full source/bridge/target playback, unchanged original Mel behavior,
 and the normal repository quality gates.
+
+## 2026-07-30: Turning Candidate Review Uses a JSON Workbench
+
+Generated route review moves from editable CSV columns to a separate lab workbench and a versioned,
+self-contained JSON artifact.
+
+- The generated candidate batch is immutable input. It includes complete structured nodes, edges,
+  source/target metadata, evidence status, and provenance, so the review page never reruns the
+  solver.
+- The page presents one candidate at a time with the existing turning graph and a detailed step
+  table. It deliberately has no movement visualizer or keyboard shortcut layer.
+- Review outcome is `possible`, `not-possible`, or `inconclusive`. Pending is represented by no
+  review. Skill, familiarity, difficulty, comfort, confidence, and detailed body semantics are not
+  structured fields.
+- Each review has one verbatim freeform notes field. Later normalization may interpret those notes,
+  but the workbench does not force them into a premature body model.
+- A notation-level edit is stored beside the generated original. It may change compact location,
+  A/B side, phase, continuation kind, row count, and the single selected turn boundary. The
+  generated candidate remains available for comparison.
+- Browser-local drafts are keyed by batch ID and generated-content hash and survive refresh.
+  Import conflicts require an explicit resume-or-replace choice; there is no implicit merge.
+- Export produces reviewed JSON. Neither local drafts nor exports alter repository evidence,
+  solver behavior, or explorer choices until a separate normalization step is performed.
+- `cases.csv` and `steps.csv` remain deterministic diagnostic projections, not review storage.
+
+Validation requires strict artifact parsing, deterministic serialization, persistence round trips,
+edit invariants, immutable-original comparison, route registration, live refresh testing, and the
+normal repository quality gates.
+
+## 2026-07-30: First Turning Review Batch Fixes One Opposite Left-Weave Matrix
+
+The broad diversity-sampled solver pack is not used as the first physical-review queue. Mixing
+timings, hand positions, reel families, route lengths, and unresolved edge kinds makes a small
+number of reviews difficult to interpret.
+
+- Review batches contain at most 16 routes and answer one narrow question.
+- The first batch fixes the ordered hands at `low-native / low-non-native`, representing a left low
+  weave, and fixes the direction transition at opposite inwards to opposite outwards.
+- It includes both SO and TO timing and both left and right body turns. Direction and timing remain
+  compatibility constraints; the generator does not reverse poi or change timing to create a
+  route.
+- Only shortest one-halfbeat bridges are included. No preparation or recovery hypothesis is mixed
+  into this batch.
+- All same-offset direct phase variants come first: four per turn direction for SO offset 0→0 and
+  two per turn direction for TO offset 1→1, for twelve routes.
+- The remaining four slots contain one deterministic representative per alternate-offset query:
+  SO 0→2 and TO 1→3, each turning left and right.
+- One additional phase route exists for each alternate-offset query. Those four partners are
+  deferred solely because of the batch cap; the decision does not treat departure or arrival
+  phases as equivalent.
+- The old `solver-review-001` files remain checked in as a superseded generator-history artifact.
+
+Validation requires exact matrix counts and ordering, deterministic serialization, one body-turn
+edge per route, valid shortest one-halfbeat bridges, complete source and target playback cycles,
+and the normal repository quality gates.
+
+## 2026-07-30: Model Explorer Plays Shortest Solver Routes
+
+The Model Explorer replaces its direct-edge candidate selector with the deterministic low-reel
+route solver.
+
+- Endpoint controls and compatibility constraints remain unchanged.
+- The explorer requests `maxExtraHalfbeats = 0`, includes unresolved model edges, and materializes
+  at most 40 routes. It displays only shortest routes, ordering model-valid routes before unresolved
+  routes while retaining deterministic order within each status.
+- Direct turns require no special mode: they appear as one-halfbeat shortest routes. If no direct
+  route exists, the same selector presents the shortest preparation and/or recovery routes.
+- Unresolved routes are playable research hypotheses, not disabled errors. Their route and
+  interval badges remain explicit, and physical evidence status stays separate.
+- A lab-owned projection converts one selected route into exactly one full source cycle, the
+  complete bridge, and one full target cycle. The existing playback compiler and visualizer consume
+  that finite trace unchanged.
+- Body-relative graph, observer-relative graph, and read-only steps table are three views of the
+  same projection. Table selection scrubs the existing transport rather than owning a second
+  playback cursor.
+- The direct-edge search remains available for focused topology diagnostics but no longer supplies
+  interactive explorer choices.
+
+Validation requires direct and multi-edge projection fixtures, one body-turn event at the projected
+route boundary, Mel-resolved hand points on every playback node, table/playback synchronization,
+unchanged endpoint compatibility, live visual inspection, and the normal repository quality gates.

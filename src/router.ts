@@ -7,7 +7,9 @@ import BeatGraphEditorPage from "@/lab/experiments/mel-body-tracing/pages/BeatGr
 import BodyTracingExplorerPage from "@/lab/experiments/mel-body-tracing/pages/BodyTracingExplorerPage.vue";
 import {
   MEL_TURNING_LAB_ROUTE,
-  loadMelTurningLabPage
+  MEL_TURNING_REVIEW_ROUTE,
+  loadMelTurningLabPage,
+  loadTurningPatternVerifierPage
 } from "@/lab/experiments/mel-turning/routeMeta";
 import { GRAVITY_LAB_ROUTE, loadGravityLabPage } from "@/lab/experiments/gravity/routeMeta";
 import { PENDULUM_LAB_ROUTE, loadPendulumLabPage } from "@/lab/experiments/pendulum/routeMeta";
@@ -88,6 +90,10 @@ export const router = createRouter({
     {
       ...MEL_TURNING_LAB_ROUTE,
       component: loadMelTurningLabPage
+    },
+    {
+      ...MEL_TURNING_REVIEW_ROUTE,
+      component: loadTurningPatternVerifierPage
     },
     {
       ...PENDULUM_LAB_ROUTE,

@@ -1,0 +1,6908 @@
+{
+  "schemaVersion": 1,
+  "batch": {
+    "id": "low-weave-opposite-review-001",
+    "generator": "low-reel-route-solver-v1",
+    "seed": 20260730,
+    "contentHash": "dcb4e66e",
+    "candidates": [
+      {
+        "caseId": "low-weave-opposite-review-001-01",
+        "routeId": "low-reel-route-b7ae096f",
+        "selectionReason": "left low weave · opposite inwards→outwards · SO · same-offset · offset 0→0 · turn left · phase variant 1/4",
+        "source": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "inwards"
+          },
+          "offset": 0
+        },
+        "target": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "outwards"
+          },
+          "offset": 0
+        },
+        "turnDirection": "left",
+        "summary": {
+          "timing": "SO",
+          "sourceFamily": "weave",
+          "targetFamily": "weave",
+          "bridgeHalfbeats": 1,
+          "preparationHalfbeats": 0,
+          "recoveryHalfbeats": 0,
+          "shortestBridgeHalfbeats": 1,
+          "isShortest": true,
+          "modelStatus": "valid",
+          "evidenceStatus": "unreviewed",
+          "evidenceReferences": []
+        },
+        "steps": [
+          {
+            "step": 0,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 1,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 2,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 3,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 4,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "body-turn",
+              "leftAction": "cross",
+              "rightAction": "cross",
+              "modelStatus": "valid",
+              "provenance": [
+                "turn-topology:left:left-cross:right-cross"
+              ]
+            }
+          },
+          {
+            "step": 5,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 6,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 7,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 8,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 9,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": null
+          }
+        ]
+      },
+      {
+        "caseId": "low-weave-opposite-review-001-02",
+        "routeId": "low-reel-route-d23560bd",
+        "selectionReason": "left low weave · opposite inwards→outwards · SO · same-offset · offset 0→0 · turn left · phase variant 2/4",
+        "source": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "inwards"
+          },
+          "offset": 0
+        },
+        "target": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "outwards"
+          },
+          "offset": 0
+        },
+        "turnDirection": "left",
+        "summary": {
+          "timing": "SO",
+          "sourceFamily": "weave",
+          "targetFamily": "weave",
+          "bridgeHalfbeats": 1,
+          "preparationHalfbeats": 0,
+          "recoveryHalfbeats": 0,
+          "shortestBridgeHalfbeats": 1,
+          "isShortest": true,
+          "modelStatus": "valid",
+          "evidenceStatus": "unreviewed",
+          "evidenceReferences": []
+        },
+        "steps": [
+          {
+            "step": 0,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 1,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 2,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 3,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 4,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "body-turn",
+              "leftAction": "hold",
+              "rightAction": "hold",
+              "modelStatus": "valid",
+              "provenance": [
+                "turn-topology:left:left-hold:right-hold"
+              ]
+            }
+          },
+          {
+            "step": 5,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 6,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 7,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 8,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 9,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": null
+          }
+        ]
+      },
+      {
+        "caseId": "low-weave-opposite-review-001-03",
+        "routeId": "low-reel-route-2f518ce1",
+        "selectionReason": "left low weave · opposite inwards→outwards · SO · same-offset · offset 0→0 · turn left · phase variant 3/4",
+        "source": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "inwards"
+          },
+          "offset": 0
+        },
+        "target": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "outwards"
+          },
+          "offset": 0
+        },
+        "turnDirection": "left",
+        "summary": {
+          "timing": "SO",
+          "sourceFamily": "weave",
+          "targetFamily": "weave",
+          "bridgeHalfbeats": 1,
+          "preparationHalfbeats": 0,
+          "recoveryHalfbeats": 0,
+          "shortestBridgeHalfbeats": 1,
+          "isShortest": true,
+          "modelStatus": "valid",
+          "evidenceStatus": "unreviewed",
+          "evidenceReferences": []
+        },
+        "steps": [
+          {
+            "step": 0,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 1,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 2,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 3,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 4,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "body-turn",
+              "leftAction": "hold",
+              "rightAction": "hold",
+              "modelStatus": "valid",
+              "provenance": [
+                "turn-topology:left:left-hold:right-hold"
+              ]
+            }
+          },
+          {
+            "step": 5,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 6,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 7,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 8,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 9,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": null
+          }
+        ]
+      },
+      {
+        "caseId": "low-weave-opposite-review-001-04",
+        "routeId": "low-reel-route-40d38bd7",
+        "selectionReason": "left low weave · opposite inwards→outwards · SO · same-offset · offset 0→0 · turn left · phase variant 4/4",
+        "source": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "inwards"
+          },
+          "offset": 0
+        },
+        "target": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "outwards"
+          },
+          "offset": 0
+        },
+        "turnDirection": "left",
+        "summary": {
+          "timing": "SO",
+          "sourceFamily": "weave",
+          "targetFamily": "weave",
+          "bridgeHalfbeats": 1,
+          "preparationHalfbeats": 0,
+          "recoveryHalfbeats": 0,
+          "shortestBridgeHalfbeats": 1,
+          "isShortest": true,
+          "modelStatus": "valid",
+          "evidenceStatus": "unreviewed",
+          "evidenceReferences": []
+        },
+        "steps": [
+          {
+            "step": 0,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 1,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 2,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 3,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 4,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "body-turn",
+              "leftAction": "cross",
+              "rightAction": "cross",
+              "modelStatus": "valid",
+              "provenance": [
+                "turn-topology:left:left-cross:right-cross"
+              ]
+            }
+          },
+          {
+            "step": 5,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 6,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 7,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 8,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 9,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": null
+          }
+        ]
+      },
+      {
+        "caseId": "low-weave-opposite-review-001-05",
+        "routeId": "low-reel-route-257521dd",
+        "selectionReason": "left low weave · opposite inwards→outwards · SO · same-offset · offset 0→0 · turn right · phase variant 1/4",
+        "source": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "inwards"
+          },
+          "offset": 0
+        },
+        "target": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "outwards"
+          },
+          "offset": 0
+        },
+        "turnDirection": "right",
+        "summary": {
+          "timing": "SO",
+          "sourceFamily": "weave",
+          "targetFamily": "weave",
+          "bridgeHalfbeats": 1,
+          "preparationHalfbeats": 0,
+          "recoveryHalfbeats": 0,
+          "shortestBridgeHalfbeats": 1,
+          "isShortest": true,
+          "modelStatus": "valid",
+          "evidenceStatus": "unreviewed",
+          "evidenceReferences": []
+        },
+        "steps": [
+          {
+            "step": 0,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 1,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 2,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 3,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 4,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "body-turn",
+              "leftAction": "hold",
+              "rightAction": "hold",
+              "modelStatus": "valid",
+              "provenance": [
+                "turn-topology:right:left-hold:right-hold"
+              ]
+            }
+          },
+          {
+            "step": 5,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 6,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 7,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 8,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 9,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": null
+          }
+        ]
+      },
+      {
+        "caseId": "low-weave-opposite-review-001-06",
+        "routeId": "low-reel-route-2f9e2133",
+        "selectionReason": "left low weave · opposite inwards→outwards · SO · same-offset · offset 0→0 · turn right · phase variant 2/4",
+        "source": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "inwards"
+          },
+          "offset": 0
+        },
+        "target": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "outwards"
+          },
+          "offset": 0
+        },
+        "turnDirection": "right",
+        "summary": {
+          "timing": "SO",
+          "sourceFamily": "weave",
+          "targetFamily": "weave",
+          "bridgeHalfbeats": 1,
+          "preparationHalfbeats": 0,
+          "recoveryHalfbeats": 0,
+          "shortestBridgeHalfbeats": 1,
+          "isShortest": true,
+          "modelStatus": "valid",
+          "evidenceStatus": "unreviewed",
+          "evidenceReferences": []
+        },
+        "steps": [
+          {
+            "step": 0,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 1,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 2,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 3,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 4,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "body-turn",
+              "leftAction": "cross",
+              "rightAction": "cross",
+              "modelStatus": "valid",
+              "provenance": [
+                "turn-topology:right:left-cross:right-cross"
+              ]
+            }
+          },
+          {
+            "step": 5,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 6,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 7,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 8,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 9,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": null
+          }
+        ]
+      },
+      {
+        "caseId": "low-weave-opposite-review-001-07",
+        "routeId": "low-reel-route-58a97881",
+        "selectionReason": "left low weave · opposite inwards→outwards · SO · same-offset · offset 0→0 · turn right · phase variant 3/4",
+        "source": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "inwards"
+          },
+          "offset": 0
+        },
+        "target": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "outwards"
+          },
+          "offset": 0
+        },
+        "turnDirection": "right",
+        "summary": {
+          "timing": "SO",
+          "sourceFamily": "weave",
+          "targetFamily": "weave",
+          "bridgeHalfbeats": 1,
+          "preparationHalfbeats": 0,
+          "recoveryHalfbeats": 0,
+          "shortestBridgeHalfbeats": 1,
+          "isShortest": true,
+          "modelStatus": "valid",
+          "evidenceStatus": "unreviewed",
+          "evidenceReferences": []
+        },
+        "steps": [
+          {
+            "step": 0,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 1,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 2,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 3,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 4,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "body-turn",
+              "leftAction": "hold",
+              "rightAction": "hold",
+              "modelStatus": "valid",
+              "provenance": [
+                "turn-topology:right:left-hold:right-hold"
+              ]
+            }
+          },
+          {
+            "step": 5,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 6,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 7,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 8,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 9,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": null
+          }
+        ]
+      },
+      {
+        "caseId": "low-weave-opposite-review-001-08",
+        "routeId": "low-reel-route-fb144833",
+        "selectionReason": "left low weave · opposite inwards→outwards · SO · same-offset · offset 0→0 · turn right · phase variant 4/4",
+        "source": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "inwards"
+          },
+          "offset": 0
+        },
+        "target": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "outwards"
+          },
+          "offset": 0
+        },
+        "turnDirection": "right",
+        "summary": {
+          "timing": "SO",
+          "sourceFamily": "weave",
+          "targetFamily": "weave",
+          "bridgeHalfbeats": 1,
+          "preparationHalfbeats": 0,
+          "recoveryHalfbeats": 0,
+          "shortestBridgeHalfbeats": 1,
+          "isShortest": true,
+          "modelStatus": "valid",
+          "evidenceStatus": "unreviewed",
+          "evidenceReferences": []
+        },
+        "steps": [
+          {
+            "step": 0,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 1,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 2,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 3,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 4,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "body-turn",
+              "leftAction": "cross",
+              "rightAction": "cross",
+              "modelStatus": "valid",
+              "provenance": [
+                "turn-topology:right:left-cross:right-cross"
+              ]
+            }
+          },
+          {
+            "step": 5,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 6,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 7,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 8,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 9,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": null
+          }
+        ]
+      },
+      {
+        "caseId": "low-weave-opposite-review-001-09",
+        "routeId": "low-reel-route-c799c983",
+        "selectionReason": "left low weave · opposite inwards→outwards · TO · same-offset · offset 1→1 · turn left · phase variant 1/2",
+        "source": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "inwards"
+          },
+          "offset": 1
+        },
+        "target": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "outwards"
+          },
+          "offset": 1
+        },
+        "turnDirection": "left",
+        "summary": {
+          "timing": "TO",
+          "sourceFamily": "weave",
+          "targetFamily": "weave",
+          "bridgeHalfbeats": 1,
+          "preparationHalfbeats": 0,
+          "recoveryHalfbeats": 0,
+          "shortestBridgeHalfbeats": 1,
+          "isShortest": true,
+          "modelStatus": "valid",
+          "evidenceStatus": "unreviewed",
+          "evidenceReferences": []
+        },
+        "steps": [
+          {
+            "step": 0,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 1,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 2,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 3,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 4,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "body-turn",
+              "leftAction": "hold",
+              "rightAction": "hold",
+              "modelStatus": "valid",
+              "provenance": [
+                "turn-topology:left:left-hold:right-hold"
+              ]
+            }
+          },
+          {
+            "step": 5,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 6,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 7,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 8,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 9,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": null
+          }
+        ]
+      },
+      {
+        "caseId": "low-weave-opposite-review-001-10",
+        "routeId": "low-reel-route-23c42125",
+        "selectionReason": "left low weave · opposite inwards→outwards · TO · same-offset · offset 1→1 · turn left · phase variant 2/2",
+        "source": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "inwards"
+          },
+          "offset": 1
+        },
+        "target": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "outwards"
+          },
+          "offset": 1
+        },
+        "turnDirection": "left",
+        "summary": {
+          "timing": "TO",
+          "sourceFamily": "weave",
+          "targetFamily": "weave",
+          "bridgeHalfbeats": 1,
+          "preparationHalfbeats": 0,
+          "recoveryHalfbeats": 0,
+          "shortestBridgeHalfbeats": 1,
+          "isShortest": true,
+          "modelStatus": "valid",
+          "evidenceStatus": "unreviewed",
+          "evidenceReferences": []
+        },
+        "steps": [
+          {
+            "step": 0,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 1,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 2,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 3,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 4,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "body-turn",
+              "leftAction": "cross",
+              "rightAction": "cross",
+              "modelStatus": "valid",
+              "provenance": [
+                "turn-topology:left:left-cross:right-cross"
+              ]
+            }
+          },
+          {
+            "step": 5,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 6,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 7,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 8,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 9,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": null
+          }
+        ]
+      },
+      {
+        "caseId": "low-weave-opposite-review-001-11",
+        "routeId": "low-reel-route-a72ac383",
+        "selectionReason": "left low weave · opposite inwards→outwards · TO · same-offset · offset 1→1 · turn right · phase variant 1/2",
+        "source": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "inwards"
+          },
+          "offset": 1
+        },
+        "target": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "outwards"
+          },
+          "offset": 1
+        },
+        "turnDirection": "right",
+        "summary": {
+          "timing": "TO",
+          "sourceFamily": "weave",
+          "targetFamily": "weave",
+          "bridgeHalfbeats": 1,
+          "preparationHalfbeats": 0,
+          "recoveryHalfbeats": 0,
+          "shortestBridgeHalfbeats": 1,
+          "isShortest": true,
+          "modelStatus": "valid",
+          "evidenceStatus": "unreviewed",
+          "evidenceReferences": []
+        },
+        "steps": [
+          {
+            "step": 0,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 1,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 2,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 3,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 4,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "body-turn",
+              "leftAction": "hold",
+              "rightAction": "hold",
+              "modelStatus": "valid",
+              "provenance": [
+                "turn-topology:right:left-hold:right-hold"
+              ]
+            }
+          },
+          {
+            "step": 5,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 6,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 7,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 8,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 9,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": null
+          }
+        ]
+      },
+      {
+        "caseId": "low-weave-opposite-review-001-12",
+        "routeId": "low-reel-route-164f675d",
+        "selectionReason": "left low weave · opposite inwards→outwards · TO · same-offset · offset 1→1 · turn right · phase variant 2/2",
+        "source": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "inwards"
+          },
+          "offset": 1
+        },
+        "target": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "outwards"
+          },
+          "offset": 1
+        },
+        "turnDirection": "right",
+        "summary": {
+          "timing": "TO",
+          "sourceFamily": "weave",
+          "targetFamily": "weave",
+          "bridgeHalfbeats": 1,
+          "preparationHalfbeats": 0,
+          "recoveryHalfbeats": 0,
+          "shortestBridgeHalfbeats": 1,
+          "isShortest": true,
+          "modelStatus": "valid",
+          "evidenceStatus": "unreviewed",
+          "evidenceReferences": []
+        },
+        "steps": [
+          {
+            "step": 0,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 1,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 2,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 3,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 4,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "body-turn",
+              "leftAction": "cross",
+              "rightAction": "cross",
+              "modelStatus": "valid",
+              "provenance": [
+                "turn-topology:right:left-cross:right-cross"
+              ]
+            }
+          },
+          {
+            "step": 5,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 6,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 7,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 8,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 9,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": null
+          }
+        ]
+      },
+      {
+        "caseId": "low-weave-opposite-review-001-13",
+        "routeId": "low-reel-route-f93682a4",
+        "selectionReason": "left low weave · opposite inwards→outwards · SO · alternate-offset · offset 0→2 · turn left · first phase representative; 1 partner deferred",
+        "source": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "inwards"
+          },
+          "offset": 0
+        },
+        "target": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "outwards"
+          },
+          "offset": 2
+        },
+        "turnDirection": "left",
+        "summary": {
+          "timing": "SO",
+          "sourceFamily": "weave",
+          "targetFamily": "weave",
+          "bridgeHalfbeats": 1,
+          "preparationHalfbeats": 0,
+          "recoveryHalfbeats": 0,
+          "shortestBridgeHalfbeats": 1,
+          "isShortest": true,
+          "modelStatus": "valid",
+          "evidenceStatus": "unreviewed",
+          "evidenceReferences": []
+        },
+        "steps": [
+          {
+            "step": 0,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 1,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 2,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 3,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 4,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "body-turn",
+              "leftAction": "hold",
+              "rightAction": "cross",
+              "modelStatus": "valid",
+              "provenance": [
+                "turn-topology:left:left-hold:right-cross"
+              ]
+            }
+          },
+          {
+            "step": 5,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 6,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 7,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 8,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 9,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": null
+          }
+        ]
+      },
+      {
+        "caseId": "low-weave-opposite-review-001-14",
+        "routeId": "low-reel-route-964b99d4",
+        "selectionReason": "left low weave · opposite inwards→outwards · SO · alternate-offset · offset 0→2 · turn right · first phase representative; 1 partner deferred",
+        "source": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "inwards"
+          },
+          "offset": 0
+        },
+        "target": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "outwards"
+          },
+          "offset": 2
+        },
+        "turnDirection": "right",
+        "summary": {
+          "timing": "SO",
+          "sourceFamily": "weave",
+          "targetFamily": "weave",
+          "bridgeHalfbeats": 1,
+          "preparationHalfbeats": 0,
+          "recoveryHalfbeats": 0,
+          "shortestBridgeHalfbeats": 1,
+          "isShortest": true,
+          "modelStatus": "valid",
+          "evidenceStatus": "unreviewed",
+          "evidenceReferences": []
+        },
+        "steps": [
+          {
+            "step": 0,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 1,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 2,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 3,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 4,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "body-turn",
+              "leftAction": "cross",
+              "rightAction": "hold",
+              "modelStatus": "valid",
+              "provenance": [
+                "turn-topology:right:left-cross:right-hold"
+              ]
+            }
+          },
+          {
+            "step": 5,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 6,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 7,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 8,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 9,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": null
+          }
+        ]
+      },
+      {
+        "caseId": "low-weave-opposite-review-001-15",
+        "routeId": "low-reel-route-54c226aa",
+        "selectionReason": "left low weave · opposite inwards→outwards · TO · alternate-offset · offset 1→3 · turn left · first phase representative; 1 partner deferred",
+        "source": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "inwards"
+          },
+          "offset": 1
+        },
+        "target": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "outwards"
+          },
+          "offset": 3
+        },
+        "turnDirection": "left",
+        "summary": {
+          "timing": "TO",
+          "sourceFamily": "weave",
+          "targetFamily": "weave",
+          "bridgeHalfbeats": 1,
+          "preparationHalfbeats": 0,
+          "recoveryHalfbeats": 0,
+          "shortestBridgeHalfbeats": 1,
+          "isShortest": true,
+          "modelStatus": "valid",
+          "evidenceStatus": "unreviewed",
+          "evidenceReferences": []
+        },
+        "steps": [
+          {
+            "step": 0,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 1,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 2,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 3,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 4,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "body-turn",
+              "leftAction": "hold",
+              "rightAction": "cross",
+              "modelStatus": "valid",
+              "provenance": [
+                "turn-topology:left:left-hold:right-cross"
+              ]
+            }
+          },
+          {
+            "step": 5,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 6,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 7,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 8,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 9,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": null
+          }
+        ]
+      },
+      {
+        "caseId": "low-weave-opposite-review-001-16",
+        "routeId": "low-reel-route-4dff867e",
+        "selectionReason": "left low weave · opposite inwards→outwards · TO · alternate-offset · offset 1→3 · turn right · first phase representative; 1 partner deferred",
+        "source": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "inwards"
+          },
+          "offset": 1
+        },
+        "target": {
+          "left": "low-native",
+          "right": "low-non-native",
+          "direction": {
+            "mode": "opposite",
+            "flow": "outwards"
+          },
+          "offset": 3
+        },
+        "turnDirection": "right",
+        "summary": {
+          "timing": "TO",
+          "sourceFamily": "weave",
+          "targetFamily": "weave",
+          "bridgeHalfbeats": 1,
+          "preparationHalfbeats": 0,
+          "recoveryHalfbeats": 0,
+          "shortestBridgeHalfbeats": 1,
+          "isShortest": true,
+          "modelStatus": "valid",
+          "evidenceStatus": "unreviewed",
+          "evidenceReferences": []
+        },
+        "steps": [
+          {
+            "step": 0,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 1,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 2,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 3,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "source-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "source-cycle"
+              ]
+            }
+          },
+          {
+            "step": 4,
+            "facing": 0,
+            "region": "source",
+            "left": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": -0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "body-turn",
+              "leftAction": "hold",
+              "rightAction": "cross",
+              "modelStatus": "valid",
+              "provenance": [
+                "turn-topology:right:left-hold:right-cross"
+              ]
+            }
+          },
+          {
+            "step": 5,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 6,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 7,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 8,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "down",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": {
+              "kind": "target-cycle",
+              "leftAction": "reel-continuation",
+              "rightAction": "reel-continuation",
+              "modelStatus": "valid",
+              "provenance": [
+                "target-cycle"
+              ]
+            }
+          },
+          {
+            "step": 9,
+            "facing": 180,
+            "region": "target",
+            "left": {
+              "location": "L",
+              "planeSide": "a",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "right": {
+              "location": "C",
+              "planeSide": "b",
+              "phase": "up",
+              "handPointBody": {
+                "x": -0.5,
+                "y": -0.35
+              },
+              "handPointObserver": {
+                "x": 0.5,
+                "y": -0.35
+              }
+            },
+            "outgoingEdge": null
+          }
+        ]
+      }
+    ]
+  },
+  "reviews": {}
+}

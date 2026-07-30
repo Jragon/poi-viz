@@ -94,15 +94,20 @@ export function evaluateRouterModule(
           path: "/lab/timing-orbit",
           name: "timing-orbit-lab"
         },
-        loadTimingOrbitLabPage: () =>
-          Promise.resolve({ default: { name: "TimingOrbitLabPage" } })
+        loadTimingOrbitLabPage: () => Promise.resolve({ default: { name: "TimingOrbitLabPage" } })
       }
     ],
     [
       "@/lab/experiments/mel-turning/routeMeta",
       {
         MEL_TURNING_LAB_ROUTE: { path: "/lab/mel-turning", name: "mel-turning-lab" },
-        loadMelTurningLabPage: () => Promise.resolve({ default: { name: "MelTurningLabPage" } })
+        MEL_TURNING_REVIEW_ROUTE: {
+          path: "/lab/mel-turning/review",
+          name: "mel-turning-review"
+        },
+        loadMelTurningLabPage: () => Promise.resolve({ default: { name: "MelTurningLabPage" } }),
+        loadTurningPatternVerifierPage: () =>
+          Promise.resolve({ default: { name: "TurningPatternVerifierPage" } })
       }
     ],
     ...additionalStubs

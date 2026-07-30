@@ -19,9 +19,10 @@ It does not decide whether a route is comfortable, collision-free, anatomically 
 preferred. Those are physical-review results. It also does not change poi direction, timing, or
 phase continuity to make incompatible endpoints connect.
 
-The interactive explorer still uses the exact direct-turn search as its default bridge selector.
-The wider route solver exists alongside it so candidate routes can be inspected and exported for
-review before becoming explorer behavior.
+The interactive explorer uses this solver with `maxExtraHalfbeats = 0`: it presents only shortest
+routes for the selected exact endpoints. Model-valid routes are ordered before unresolved routes,
+but unresolved routes remain playable and visibly labelled. The separate verifier still controls
+physical review and evidence normalization.
 
 ## Compatible endpoints
 
@@ -164,9 +165,10 @@ halfbeats, the intended explorer trace is:
 4 source-cycle halfbeats → k bridge halfbeats → 4 target-cycle halfbeats
 ```
 
-The current direct explorer now shows one complete source cycle, its one-halfbeat turn bridge, and
-one complete target cycle. It uses Mel-resolved hand anchors, so symbolic centre rows no longer pull
-low-reel hands to the torso.
+The explorer shows one complete source cycle, the selected shortest bridge, and one complete target
+cycle. The bridge may be a direct turn or may contain preparation and recovery. It uses
+Mel-resolved hand anchors, so symbolic centre rows no longer pull low-reel hands to the torso. Its
+body graph, observer graph, and step table are projections of the same route data.
 
 The trace is finite. Reset returns to its beginning, and repeat replays the same finite trace; repeat
 does not claim that one 180-degree turn is a closed physical cycle.
@@ -175,26 +177,37 @@ does not claim that one 180-degree turn is a closed physical cycle.
 
 The solver is useful only if generated routes remain easy to falsify:
 
-1. Generate a deterministic, diverse review pack rather than a uniform random sample.
-2. Include known verified controls, new shortest preparation routes, recovery alternatives, and
-   unresolved/back-position probes.
-3. Record exact endpoints, route ID, every resolved state, every edge kind, provenance, model
+1. State one narrow physical question and generate a deterministic batch for it.
+2. Serialize a self-contained, versioned JSON artifact; the review page must not rerun the solver.
+3. Order candidates by shortest bridge, exact hand-position match, exact offset match, and then
+   alternate compatible phases. Keep each batch at or below 16 routes.
+4. Record exact endpoints, route ID, every resolved state, every edge kind, provenance, model
    status, and evidence status.
-4. Physically perform the complete route and record legality, naturalness, corrections, and notes.
-5. Normalize reviewed results explicitly; do not treat edited CSV rows as runtime truth
-   automatically.
-6. Refine the edge vocabulary or state identity only when repeated evidence demonstrates the need.
-7. Integrate expanded routes into the explorer only after the candidate grammar survives review.
+5. Import the artifact into the Turning Pattern Verifier and physically perform one complete route
+   at a time.
+6. Record `possible`, `not-possible`, or `inconclusive`, plus freeform notes and any notation edits.
+7. Export reviewed JSON and normalize it explicitly; neither browser drafts nor exported reviews
+   become runtime truth automatically.
+8. Refine the edge vocabulary or state identity only when repeated evidence demonstrates the need,
+   then integrate expanded routes only after the candidate grammar survives review.
 
-Paired alternatives for the same endpoints are more informative than unrelated random routes. They
-can isolate whether preparation placement, recovery placement, turn direction, or hold/cross
-topology caused the physical difference.
+This ordering is intentionally not a diversity sampler. The first question is whether every direct
+phase variant works while hand positions and offset are unchanged. Alternate compatible offsets
+come next. Only when a fixed hand-position pairing has no direct route should a later batch introduce
+preparation or recovery. That keeps each physical result attributable to a small change instead of
+mixing unrelated endpoint and route-shape differences.
 
 The first review pack lives in
-[`candidates/solver-review-001/`](candidates/solver-review-001/). Its four verified controls make
-notation or playback misunderstandings visible before the twelve unreviewed candidates. The
-candidate cases are six endpoint-matched pairs, so each comparison changes route shape or turn
-edge while holding the query fixed.
+[`candidates/low-weave-opposite-review-001/workbench.json`](candidates/low-weave-opposite-review-001/workbench.json).
+It fixes both hands in the left low-weave positions, changes opposite inwards to opposite outwards,
+and covers SO and TO timing with left and right body turns. All routes are shortest one-halfbeat
+bridges. The first twelve exhaust the same-offset phase variants; the final four are one
+deterministic representative for each alternate-offset timing/turn query. Four alternate-offset
+phase partners are deferred because of the 16-case cap, not because they are assumed equivalent.
+
+The earlier broad
+[`candidates/solver-review-001/workbench.json`](candidates/solver-review-001/workbench.json) pack is
+retained as a superseded sampling experiment. It is not the current physical-review queue.
 
 Generate the same deterministic batch elsewhere with:
 
@@ -202,17 +215,18 @@ Generate the same deterministic batch elsewhere with:
 pnpm generate:mel-turning-review -- --output /path/to/review-directory
 ```
 
-The default output is the checked-in `solver-review-001` directory. Existing review CSVs are
-protected because they may contain physical annotations; `--force` is required to replace them
-intentionally.
+The default output is the checked-in `low-weave-opposite-review-001` directory. Existing batch
+files are protected; `--force` is required to replace them intentionally. The generator also
+writes `cases.csv` and `steps.csv` as diagnostic projections, but review state lives only in
+imported, autosaved, and exported JSON.
 
 ## Known limits and open research
 
 - Same-anchor circle extension is the only generated preparation/recovery mechanism.
 - A fully matching boundary does not prove the incoming and outgoing continuous hand paths join
-  naturally.
+  physically.
 - Individually accepted hand actions do not prove simultaneous two-arm anatomy.
-- The solver has no collision, joint-limit, balance, comfort, or naturalness evaluator.
+- The solver has no collision, joint-limit, balance, or physical-performability evaluator.
 - Exact-route evidence matching covers only a small curated subset of the CSV corpus.
 - Back-position holds and some both-counterclockwise/opposite-direction cases remain sparsely
   verified.
